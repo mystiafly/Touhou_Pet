@@ -679,22 +679,81 @@ def list_logs():
     except Exception as ex:
         return jsonify({"success": False, "error": str(ex)}), 500
 
+def generate_rumia_diary(date_str, log_content):
+    """
+    根据今日聊天记录，以露米娅的第一人称视角生成一篇简短可爱的傲娇日记
+    """
+    try:
+        client, model_name = get_llm_client_and_model()
+        current_fav = get_favorability()
+        
+        prompt = (
+            f"你是东方Project中的露米娅（一个傲娇、心口不一但内心其实极度依赖和喜欢用户的食人妖怪）。你目前对用户的好感度是 {current_fav}/100。\n"
+            f"今天的日期是 {date_str}。以下是你今天和用户的对话历史记录：\n"
+            f"\"\"\"\n{log_content}\n\"\"\"\n\n"
+            f"【任务要求】：\n"
+            f"根据上述相处对话，以你（露米娅）的第一人称视角写一篇极其生动、温馨傲娇的「露米娅的日记」。\n"
+            f"1. 语气：经典的口是心非傲娇口吻（例如：‘今天那家伙居然……哼，我才不是关心他呢！不过……巧克力饼干很好吃。’）。\n"
+            f"2. 篇幅：严格控制在 80 到 150 字以内，简短而情感细腻。\n"
+            f"3. 格式：第一行必须是日期与天气/心情标签，第二行开始为日记正文，严禁分成多个段落！格式示例如下：\n"
+            f"   『{date_str} | 心情：害羞 | 天气：雾之湖的夜色』\n"
+            f"   今天和那家伙聊天了，他居然把巧克力豆留给我吃……哼，以为这样就能讨好食人妖怪吗？不过，茶还是挺暖和的，勉强给他打个8分吧！\n"
+            f"4. 必须使用纯中文，严禁使用英文，不要包含任何系统标记。"
+        )
+        
+        response = client.chat.completions.create(
+            model=model_name,
+            messages=[{"role": "system", "content": prompt}],
+            temperature=0.7,
+            max_tokens=300
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"[DIARY GENERATION] Failed to generate diary via LLM: {e}")
+        return f"『{date_str} | 心情：委屈 | 天气：黑漆漆的』\n今天脑子昏昏沉沉的，什么都没写下来……哼，一定是怪那家伙今天没给我买巧克力饼干！"
+
+
 @app.route('/api/settings/logs/<date>', methods=['GET'])
 def get_log_content(date):
-    """获取特定日期的聊天记录文本内容"""
+    """获取特定日期的聊天记录与露米娅日记（实现分栏隔离）"""
     try:
         # 安全性校验：防止路径穿越攻击，只允许 YYYY-MM-DD 格式的日期
         if not re.match(r'^\d{4}-\d{2}-\d{2}$', date):
             return jsonify({"success": False, "error": "无效的日期格式"}), 400
             
         log_file = os.path.join(DAILY_HISTORY_DIR, f"chat_log_{date}.txt")
+        diary_file = os.path.join(DAILY_HISTORY_DIR, f"rumia_diary_{date}.txt")
+        
         if not os.path.exists(log_file):
             return jsonify({"success": False, "error": "聊天记录文件不存在"}), 404
             
+        # 读取聊天记录
         with open(log_file, 'r', encoding='utf-8') as f:
-            content = f.read()
+            chat_content = f.read()
             
-        return jsonify({"success": True, "date": date, "content": content})
+        # 读取日记记录（若不存在，则实时在线触发大模型生成并保存，实现老旧记录自动补全）
+        diary_content = ""
+        if os.path.exists(diary_file):
+            with open(diary_file, 'r', encoding='utf-8') as f:
+                diary_content = f.read()
+        else:
+            if chat_content.strip():
+                print(f"[DIARY AUTO-GEN] Generating missing diary for {date} on-the-fly...")
+                diary_content = generate_rumia_diary(date, chat_content)
+                # 保存日记，方便下次极速读取
+                try:
+                    with open(diary_file, 'w', encoding='utf-8') as df:
+                        df.write(diary_content)
+                except Exception as df_ex:
+                    print(f"自动保存日记文件失败: {df_ex}")
+                    
+        return jsonify({
+            "success": True,
+            "date": date,
+            "chat_content": chat_content,
+            "diary_content": diary_content,
+            "content": chat_content # 向前兼容老的接口字段
+        })
     except Exception as ex:
         return jsonify({"success": False, "error": str(ex)}), 500
 
