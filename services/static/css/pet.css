@@ -1,0 +1,575 @@
+/* services/static/css/pet.css */
+
+/* 1. 基础环境：透明、无滚动条、鼠标穿透 */
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent !important;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+/* 2. 主容器：底部对齐 */
+.pet-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    pointer-events: none;
+}
+
+/* 3. 角色包装器：限制宽度，紧贴图片 */
+.character-wrapper {
+    position: relative;
+    width: fit-content;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+    margin-bottom: 0;
+}
+
+/* 4. 角色图片：强制大小、允许拖拽 */
+.character-wrapper img {
+    height: 300px;
+    width: auto;
+    filter: drop-shadow(0 5px 15px rgba(0,0,0,0.4));
+    cursor: grab;
+    -webkit-app-region: drag;
+    -webkit-user-select: none;
+    pointer-events: auto;
+}
+
+/* 5. 好感度样式 */
+.fav-container {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    text-align: center;
+    color: #ff6b8b;
+    font-weight: bold;
+    font-family: sans-serif;
+    font-size: 16px;
+    padding-bottom: 8px;
+    z-index: 100;
+    pointer-events: none;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    opacity: 1;
+}
+
+/* 6. 气泡样式 */
+.bubble {
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    padding: 15px;
+    border-radius: 15px;
+    margin-bottom: 10px;
+    max-width: 360px; /* 拓宽对话框，减少文字换行引起的垂直伸展 */
+    min-width: 100px;
+    width: max-content;
+    max-height: 180px; /* 限制最高高度，防止超出窗口顶部裁剪区域 */
+    overflow-y: auto;  /* 文字超长时自动滚动 */
+    position: relative;
+    transition: opacity 0.3s ease;
+    border: 1px solid #ff6b8b;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    backdrop-filter: blur(5px);
+    pointer-events: auto;
+    font-size: 14px;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+/* 气泡精致暗粉色滚动条样式 */
+.bubble::-webkit-scrollbar {
+    width: 6px;
+}
+.bubble::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+}
+.bubble::-webkit-scrollbar-thumb {
+    background: #ff6b8b;
+    border-radius: 10px;
+}
+.bubble::-webkit-scrollbar-thumb:hover {
+    background: #ff3b68;
+}
+
+.bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 10px 10px 0;
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.7) transparent transparent transparent;
+}
+
+/* 7. 输入框区域 (已合并定位与Flex布局) */
+.input-bar {
+    position: absolute;
+    bottom: 10px;
+    width: 220px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    -webkit-app-region: no-drag;
+    pointer-events: auto;
+
+    /* Flex布局用于排列设置按钮和输入框 */
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 10px;
+    box-sizing: border-box;
+}
+
+.pet-container:hover .input-bar,
+.input-bar:focus-within {
+    opacity: 1;
+}
+
+#pet-input {
+    width: 100%;
+    padding: 8px 15px;
+    border-radius: 20px;
+    border: 2px solid #ff6b8b;
+    background: rgba(255, 255, 255, 0.95);
+    outline: none;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+#pet-input:focus {
+    background: #ffffff;
+    box-shadow: 0 0 10px rgba(255, 107, 139, 0.5);
+    border-color: #ff3b68;
+}
+
+/* 8. 设置按钮与弹窗 */
+.icon-btn {
+    background: rgba(0, 0, 0, 0.6);
+    border: 2px solid #ff6b8b;
+    color: #ff6b8b;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    pointer-events: auto;
+    flex-shrink: 0; /* 防止被挤扁 */
+}
+
+.icon-btn:hover {
+    background: #ff6b8b;
+    color: white;
+    transform: rotate(90deg);
+}
+
+.settings-modal {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 200;
+    opacity: 1;
+    transition: opacity 0.3s;
+    pointer-events: auto;
+
+
+}
+
+.settings-modal.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.settings-content {
+    background: rgba(30, 30, 40, 0.95);
+    border: 2px solid #ff6b8b;
+    border-radius: 15px;
+    padding: 16px;
+    width: 200px;
+    height: 250px;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(255, 107, 139, 0.3);
+    backdrop-filter: blur(10px);
+    transform: scale(1);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    -webkit-app-region: no-drag;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-sizing: border-box;
+}
+
+.settings-content.wide {
+    width: 330px;
+    height: 420px;
+}
+
+.settings-modal.hidden .settings-content {
+    transform: scale(0.8);
+}
+
+.settings-content h3 {
+    color: #fff;
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+}
+
+.settings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.menu-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.menu-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.menu-btn.danger {
+    border-color: #ff3333;
+    color: #ff9999;
+}
+
+.menu-btn.danger:hover {
+    background: #ff3333;
+    color: white;
+}
+
+.close-btn {
+    background: transparent;
+    border: none;
+    color: #888;
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.close-btn:hover {
+    color: #fff;
+}
+
+.settings-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    color: #fff;
+    font-size: 13px;
+    margin-bottom: 12px;
+    text-align: left;
+}
+
+.settings-item label {
+    font-weight: 500;
+    color: #ff6b8b;
+}
+
+.settings-select {
+    width: 100%;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid #ff6b8b;
+    color: #fff;
+    outline: none;
+    cursor: pointer;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+
+.settings-select option {
+    background: #1e1e28;
+    color: #fff;
+}
+
+/* 9. 每日日志/日记页面样式 */
+.view-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.view-panel h3 {
+    margin: 0 0 10px 0;
+    color: #ff6b8b;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.logs-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-grow: 1;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.logs-sidebar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+    font-size: 13px;
+    width: 100%;
+}
+
+.logs-sidebar label {
+    font-weight: 500;
+    color: #ff6b8b;
+    flex-shrink: 0;
+}
+
+.log-content-wrapper {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 107, 139, 0.4);
+    border-radius: 8px;
+    padding: 10px;
+    flex-grow: 1;
+    overflow-y: auto;
+    text-align: left;
+    max-height: 230px;
+    box-sizing: border-box;
+}
+
+#log-content-area {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 11px;
+    color: #e0e0e0;
+    line-height: 1.4;
+}
+
+.info-btn {
+    background: rgba(0, 150, 255, 0.2);
+    border: 1px solid rgba(0, 150, 255, 0.4);
+    color: #8cc3ff;
+}
+
+.info-btn:hover {
+    background: rgba(0, 150, 255, 0.4);
+    color: #ffffff;
+}
+
+.small-btn {
+    font-size: 12px;
+    padding: 6px 10px;
+    width: 100%;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+/* 10. 大脑引擎配置页面样式 */
+#settings-engine-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    justify-content: space-between;
+    text-align: left;
+}
+
+#settings-engine-view h3 {
+    margin: 0 0 12px 0;
+    color: #ff6b8b;
+    font-size: 15px;
+    text-align: center;
+}
+
+.settings-desc {
+    font-size: 11px;
+    color: #aaa;
+    line-height: 1.4;
+    margin-top: 10px;
+    margin-bottom: 0;
+    text-align: center;
+}
+
+.primary-btn {
+    background: rgba(255, 107, 139, 0.15);
+    border: 1px solid rgba(255, 107, 139, 0.4);
+    color: #ff8fa4;
+}
+
+.primary-btn:hover {
+    background: rgba(255, 107, 139, 0.35);
+    color: #ffffff;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* 11. 记忆图谱页面样式 */
+.success-btn {
+    background: rgba(80, 250, 123, 0.15);
+    border: 1px solid rgba(80, 250, 123, 0.4);
+    color: #50fa7b;
+}
+
+.success-btn:hover {
+    background: rgba(80, 250, 123, 0.35);
+    color: #ffffff;
+}
+
+.graph-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-grow: 1;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.graph-controls-bar {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+}
+
+.graph-controls-bar button {
+    flex: 1;
+}
+
+.graph-container-wrapper {
+    position: relative;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 107, 139, 0.4);
+    border-radius: 8px;
+    flex-grow: 1;
+    overflow: hidden;
+    height: 230px;
+    box-sizing: border-box;
+}
+
+#graph-canvas-container {
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+}
+
+#graph-canvas-container:active {
+    cursor: grabbing;
+}
+
+.graph-legend {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    background: rgba(20, 20, 30, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    padding: 4px 8px;
+    display: flex;
+    gap: 10px;
+    pointer-events: none;
+    backdrop-filter: blur(5px);
+    z-index: 10;
+}
+
+.legend-item {
+    font-size: 10px;
+    color: #ccc;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.legend-color {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.legend-color.pink {
+    background: #ff8da1;
+    box-shadow: 0 0 4px #ff8da1;
+}
+
+.legend-color.blue {
+    background: #8be9fd;
+    box-shadow: 0 0 4px #8be9fd;
+}
+
+.graph-info-card {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    left: 8px;
+    background: rgba(30, 30, 40, 0.9);
+    border: 1px solid #ff6b8b;
+    border-radius: 6px;
+    padding: 8px;
+    text-align: left;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    backdrop-filter: blur(5px);
+    max-height: 85px;
+    overflow-y: auto;
+    box-sizing: border-box;
+    z-index: 10;
+}
+
+/* 关联卡片精致暗粉色滚动条样式 */
+.graph-info-card::-webkit-scrollbar {
+    width: 4px;
+}
+.graph-info-card::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+.graph-info-card::-webkit-scrollbar-thumb {
+    background: #ff6b8b;
+    border-radius: 10px;
+}
+
+.graph-info-card h4 {
+    margin: 0 0 4px 0;
+    font-size: 11px;
+    color: #ff6b8b;
+    font-weight: bold;
+}
+
+.graph-info-card p {
+    margin: 0;
+    font-size: 10px;
+    color: #e0e0e0;
+    line-height: 1.3;
+}
