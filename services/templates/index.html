@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>露米娅聊天室 - Web界面</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<div class="container">
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-ghost"></i> 露米娅</h2>
+            <p class="subtitle">东方Project角色聊天</p>
+        </div>
+
+        <div class="sidebar-info">
+            <div class="info-item">
+                <i class="fas fa-history"></i>
+                <span id="history-count">0</span> 条对话
+            </div>
+            <div class="info-item">
+                <i class="fas fa-user"></i>
+                <span>黑暗中的食人妖怪</span>
+            </div>
+        </div>
+
+        <div class="sidebar-controls">
+            <button id="clear-btn" class="btn-control">
+                <i class="fas fa-trash-alt"></i> 清空历史
+            </button>
+        </div>
+
+        <div class="sidebar-footer">
+            <p>基于 DeepSeek API</p>
+            <p class="small">保持黑暗，保持神秘...</p>
+        </div>
+    </div>
+
+    <!-- 主聊天区域 -->
+    <div class="main-content">
+        <div class="chat-header">
+            <h1><i class="fas fa-comments"></i> 与露米娅对话</h1>
+            <div class="chat-status">
+                <span class="status-indicator active"></span>
+                <span>在线</span>
+            </div>
+        </div>
+
+        <div class="chat-container">
+            <!-- 聊天历史区域 -->
+            <div id="chat-history" class="chat-history">
+                <!-- 消息会动态添加到这里 -->
+                <div class="welcome-message">
+                    <div class="message ai-message">
+                        <div class="message-header">
+                            <span class="message-sender">露米娅</span>
+                            <span class="message-time">现在</span>
+                        </div>
+                        <div class="message-content">
+                            你好！我是露米娅，一个喜欢在黑暗中恶作剧的食人妖怪～ 你想和我聊什么呢？
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 输入区域 -->
+            <div class="input-area">
+                <div class="input-container">
+                    <input
+                            type="text"
+                            id="message-input"
+                            placeholder="输入消息... (按 Enter 发送)"
+                            autocomplete="off"
+                    >
+                    <button id="send-btn" class="send-btn">
+                        <i class="fas fa-paper-plane"></i> 发送
+                    </button>
+                </div>
+                <div class="input-hints">
+                    <span class="hint"><i class="fas fa-lightbulb"></i> 提示：你可以问我关于东方Project的问题</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 加载提示 -->
+<div id="loading" class="loading" style="display: none;">
+    <div class="loading-content">
+        <div class="spinner"></div>
+        <p>露米娅正在思考...</p>
+    </div>
+</div>
+
+<script src="/static/js/script.js"></script>
+</body>
+</html>

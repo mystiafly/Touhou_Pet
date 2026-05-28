@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Rumia Pet</title>
+    <link rel="stylesheet" href="/static/css/pet.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Premium Interactive Network Graph Vis.js -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
+</head>
+<body>
+<div class="pet-container">
+
+    <div id="speech-bubble" class="bubble" style="opacity: 0;">
+        <p id="bubble-content">...</p>
+    </div>
+
+    <div class="character-wrapper">
+        <div id="fav-container" class="fav-container">
+            <i class="fas fa-heart"></i> <span id="fav-score">...</span>
+        </div>
+
+        <img src="/static/images/rumia_normal.png" id="rumia-img" alt="Rumia">
+    </div>
+
+    <div class="input-bar">
+        <button id="settings-btn" class="icon-btn">
+            <i class="fas fa-cog"></i>
+        </button>
+
+        <input type="text" id="pet-input" placeholder="和露米娅说话..." autocomplete="off">
+    </div>
+    <div id="settings-modal" class="settings-modal hidden">
+        <div class="settings-content">
+            <!-- 1. 主设置视图 -->
+            <div id="settings-main-view" class="view-panel">
+                <h3>系统设置</h3>
+                <div class="settings-list">
+                    <button id="open-engine-btn" class="menu-btn primary-btn">
+                        <i class="fas fa-brain"></i> 大脑引擎
+                    </button>
+                    <button id="open-logs-btn" class="menu-btn info-btn">
+                        <i class="fas fa-book"></i> 每日回忆 (日记)
+                    </button>
+                    <button id="open-graph-btn" class="menu-btn success-btn">
+                        <i class="fas fa-project-diagram"></i> 记忆图谱
+                    </button>
+                    <button id="exit-game-btn" class="menu-btn danger">
+                        <i class="fas fa-power-off"></i> 退出游戏
+                    </button>
+                </div>
+                <button id="close-settings-btn" class="close-btn">关闭</button>
+            </div>
+
+            <!-- 2. 大脑引擎配置视图 (默认隐藏) -->
+            <div id="settings-engine-view" class="view-panel hidden">
+                <h3><i class="fas fa-brain"></i> 大脑引擎配置</h3>
+                <div class="settings-list">
+                    <div class="settings-item">
+                        <label for="api-provider-select">选择AI大脑:</label>
+                        <select id="api-provider-select" class="settings-select">
+                            <option value="gemini">Gemini 2.5 Flash</option>
+                            <option value="deepseek-v4-flash">DeepSeek V4 Flash</option>
+                            <option value="deepseek-v4-pro">DeepSeek V4 Pro</option>
+                            <option value="deepseek-chat">DeepSeek V3 (标准版)</option>
+                        </select>
+                    </div>
+                    <p class="settings-desc">切换大脑后，露米娅的思考广度与对话情绪特征将会实时发生改变哦！</p>
+                </div>
+                <button id="back-engine-btn" class="menu-btn small-btn">
+                    <i class="fas fa-arrow-left"></i> 返回设置
+                </button>
+            </div>
+
+            <!-- 3. 日记浏览视图 (默认隐藏) -->
+            <div id="settings-logs-view" class="view-panel hidden">
+                <h3><i class="fas fa-book"></i> 每日回忆</h3>
+                <div class="logs-container">
+                    <div class="logs-sidebar">
+                        <label for="log-date-select">选择日期:</label>
+                        <select id="log-date-select" class="settings-select">
+                            <option value="">暂无记录...</option>
+                        </select>
+                    </div>
+                    <div class="log-content-wrapper">
+                        <pre id="log-content-area">请选择一个日期来查阅你和露米娅的聊天回忆...</pre>
+                    </div>
+                </div>
+                <button id="back-settings-btn" class="menu-btn small-btn">
+                    <i class="fas fa-arrow-left"></i> 返回设置
+                </button>
+            </div>
+
+            <!-- 4. 记忆图谱视图 (默认隐藏) -->
+            <div id="settings-graph-view" class="view-panel hidden">
+                <h3><i class="fas fa-project-diagram"></i> 记忆关系图谱</h3>
+                <div class="graph-layout">
+                    <div class="graph-controls-bar">
+                        <button id="manual-distill-btn" class="menu-btn small-btn success-btn">
+                            <i class="fas fa-sync-alt"></i> 整理今日记忆
+                        </button>
+                        <button id="seed-test-btn" class="menu-btn small-btn info-btn">
+                            <i class="fas fa-plus"></i> 注入测试记忆
+                        </button>
+                    </div>
+                    <div class="graph-container-wrapper">
+                        <div id="graph-canvas-container"></div>
+                        <!-- Glassmorphic floating legend and info card -->
+                        <div class="graph-legend">
+                            <span class="legend-item"><span class="legend-color pink"></span>回忆事记</span>
+                            <span class="legend-item"><span class="legend-color blue"></span>关联词/实体</span>
+                        </div>
+                        <div id="graph-info-card" class="graph-info-card hidden">
+                            <h4 id="info-node-title">节点详情</h4>
+                            <p id="info-node-content">点击图谱中的节点查看详细的记忆事实和关联信息...</p>
+                        </div>
+                    </div>
+                </div>
+                <button id="back-graph-btn" class="menu-btn small-btn">
+                    <i class="fas fa-arrow-left"></i> 返回设置
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/pet_script.js"></script>
+</body>
+</html>

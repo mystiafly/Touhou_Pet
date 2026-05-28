@@ -1,0 +1,25 @@
+# === 系统文件 ===
+.DS_Store
+Thumbs.db
+
+# === Node.js (Electron) ===
+node_modules/
+dist/
+out/
+.npm
+npm-debug.log
+
+# === Python (Flask) ===
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.pytest_cache/
+daily_history/
+favorability.json
+dialog_history.json
+
+# === 安全隐私 (绝对不能上传！) ===
+.env
