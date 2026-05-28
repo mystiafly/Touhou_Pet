@@ -80,7 +80,7 @@ body, html {
     border: 1px solid #ff6b8b;
     box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     backdrop-filter: blur(5px);
-    pointer-events: auto;
+    pointer-events: none;
     font-size: 14px;
     line-height: 1.5;
     word-wrap: break-word;
