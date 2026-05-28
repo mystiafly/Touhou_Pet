@@ -50,4 +50,3 @@ echo == Step 3/3 == Waking up Rumia. Please wait...
 echo.
 %PYTHON_EXE% run.py
 
-pause
