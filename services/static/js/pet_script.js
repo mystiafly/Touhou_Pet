@@ -326,6 +326,7 @@ class RumiaPet {
     showBubble(text, duration = null) {
         this.bubbleContent.innerText = text;
         this.bubble.style.opacity = '1';
+        this.bubble.style.pointerEvents = 'auto'; // 说话时启用鼠标交互（允许滚动、选择文本）
 
         if (this.bubbleTimer) clearTimeout(this.bubbleTimer);
 
@@ -345,6 +346,7 @@ class RumiaPet {
 
         this.bubbleTimer = setTimeout(() => {
             this.bubble.style.opacity = '0';
+            this.bubble.style.pointerEvents = 'none'; // 隐藏时完全穿透鼠标，防止挡住后面的东西
         }, showTime);
     }
 
