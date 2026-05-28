@@ -22,8 +22,9 @@ class RumiaPet {
         // [新增] 预加载图片 (防止切换时闪烁)
         this.preloadImages();
 
-        this.autoSpeakTimer = null;
-        this.autoSpeakCount = 0;
+        this.currentChatLog = "";
+        this.currentRumiaDiary = "";
+        this.activeLogTab = "chat"; // 'chat' 或 'diary'
 
         this.init();
     }
@@ -142,6 +143,10 @@ class RumiaPet {
         this.backSettingsBtn = document.getElementById('back-settings-btn');
         this.logDateSelect = document.getElementById('log-date-select');
         this.logContentArea = document.getElementById('log-content-area');
+
+        // [新增] 日记子标签页 DOM 引用
+        this.subtabChat = document.getElementById('subtab-chat');
+        this.subtabDiary = document.getElementById('subtab-diary');
         
         this.openGraphBtn = document.getElementById('open-graph-btn'); // [新增]
         this.backGraphBtn = document.getElementById('back-graph-btn'); // [新增]
@@ -222,6 +227,14 @@ class RumiaPet {
         this.logDateSelect.addEventListener('change', () => {
             this.loadLogContent();
         });
+
+        // [新增] 切换子选项卡事件绑定
+        if (this.subtabChat) {
+            this.subtabChat.addEventListener('click', () => this.switchLogTab('chat'));
+        }
+        if (this.subtabDiary) {
+            this.subtabDiary.addEventListener('click', () => this.switchLogTab('diary'));
+        }
     }
 
     // [新增] 辅助关闭方法，用于重置状态
@@ -237,6 +250,17 @@ class RumiaPet {
             this.logDateSelect.innerHTML = '<option value="">暂无记录...</option>';
             this.logContentArea.innerText = '请选择一个日期来查阅你和露米娅的聊天回忆...';
             
+            // [新增] 重置日志子选项卡状态
+            this.activeLogTab = "chat";
+            this.currentChatLog = "";
+            this.currentRumiaDiary = "";
+            if (this.subtabChat) {
+                this.subtabChat.classList.add('active');
+            }
+            if (this.subtabDiary) {
+                this.subtabDiary.classList.remove('active');
+            }
+
             // [新增] 销毁图谱
             if (this.network) {
                 this.network.destroy();
@@ -281,19 +305,54 @@ class RumiaPet {
         try {
             const response = await fetch(`/api/settings/logs/${val}`);
             const data = await response.json();
-            if (data.success && data.content) {
-                this.logContentArea.innerText = data.content;
-                // 滚动到底部，方便查看当天的最新聊天
-                setTimeout(() => {
-                    const wrapper = this.logContentArea.parentElement;
-                    wrapper.scrollTop = wrapper.scrollHeight;
-                }, 50);
+            if (data.success) {
+                this.currentChatLog = data.chat_content || "";
+                this.currentRumiaDiary = data.diary_content || "";
+                // 每次切换新日期时，默认显示聊天记录子选项卡
+                this.switchLogTab('chat');
             } else {
                 this.logContentArea.innerText = `读取回忆失败: ${data.error || '未知错误'}`;
+                this.currentChatLog = "";
+                this.currentRumiaDiary = "";
             }
         } catch (e) {
             console.error("加载日志内容失败:", e);
             this.logContentArea.innerText = '加载回忆失败，请稍后重试。';
+            this.currentChatLog = "";
+            this.currentRumiaDiary = "";
+        }
+    }
+
+    // [新增] 切换日志子选项卡 (聊天对话 / 露米娅日记)
+    switchLogTab(tab) {
+        if (!this.logDateSelect.value) {
+            return;
+        }
+        this.activeLogTab = tab;
+        
+        // 切换激活状态样式
+        if (this.subtabChat && this.subtabDiary) {
+            if (tab === 'chat') {
+                this.subtabChat.classList.add('active');
+                this.subtabDiary.classList.remove('active');
+                this.logContentArea.innerText = this.currentChatLog || "今天没有聊天对话记录哦。";
+                
+                // 滚动到底部，方便查看当天的最新聊天
+                setTimeout(() => {
+                    const wrapper = this.logContentArea.parentElement;
+                    if (wrapper) wrapper.scrollTop = wrapper.scrollHeight;
+                }, 50);
+            } else {
+                this.subtabChat.classList.remove('active');
+                this.subtabDiary.classList.add('active');
+                this.logContentArea.innerText = this.currentRumiaDiary || "今天露米娅没有写日记哦……哼，肯定是怪你没有好好理她！";
+                
+                // 日记从头阅读，重置滚动位置为0
+                setTimeout(() => {
+                    const wrapper = this.logContentArea.parentElement;
+                    if (wrapper) wrapper.scrollTop = 0;
+                }, 50);
+            }
         }
     }
 
