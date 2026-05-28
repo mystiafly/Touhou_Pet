@@ -9,6 +9,15 @@ ipcMain.on('set-ignore-mouse-events', (event, ignore, options) => {
     }
 });
 
+// 监听渲染进程发送的拖拽事件，动态移动窗口位置
+ipcMain.on('window-drag', (event, { deltaX, deltaY }) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+        const [x, y] = win.getPosition();
+        win.setPosition(Math.round(x + deltaX), Math.round(y + deltaY));
+    }
+});
+
 function createWindow() {
     const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 
