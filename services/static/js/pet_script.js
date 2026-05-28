@@ -93,7 +93,8 @@ class RumiaPet {
                             el.closest('.input-bar') ||
                             el.closest('.settings-content') ||
                             el.closest('.fav-container') ||
-                            (el.closest('#speech-bubble') && this.bubble.style.opacity === '1')
+                            (el.closest('#speech-bubble') && this.bubble.style.opacity === '1') ||
+                            (el.closest('#settings-modal') && !this.settingsModal.classList.contains('hidden'))
                         ) {
                             isInteractive = true;
                         }
