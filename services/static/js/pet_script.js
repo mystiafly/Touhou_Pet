@@ -51,31 +51,64 @@ class RumiaPet {
 
         this.loadStatus();
 
-        // [新增] 动态忽略鼠标事件（实现透明窗口边缘点击穿透到桌面，交互区域可点击）
+        // [新增] 动态忽略鼠标事件与JS拖拽窗口支持（解决 -webkit-app-region: drag 拦截 DOM 鼠标事件的 Bug）
         const { ipcRenderer } = window.require ? window.require('electron') : {};
         if (ipcRenderer) {
+            let isDragging = false;
+            let startX = 0, startY = 0;
+
+            // 监听露米娅图片上的 mousedown 开始拖动
+            this.img.addEventListener('mousedown', (e) => {
+                if (e.button === 0) { // 只有鼠标左键点击才允许拖拽
+                    isDragging = true;
+                    startX = e.screenX;
+                    startY = e.screenY;
+                    // 开始拖动时强行捕获鼠标，不忽略事件
+                    ipcRenderer.send('set-ignore-mouse-events', false);
+                    this.img.style.cursor = 'grabbing';
+                }
+            });
+
+            // 监听全局 mousemove 事件，处理拖拽计算和穿透检测
             window.addEventListener('mousemove', (e) => {
-                let isInteractive = false;
-                const el = e.target;
-                if (el) {
-                    // 如果悬停在：露米娅身体、输入框栏、设置菜单、或者“可见”的说话气泡上，则启用鼠标点击交互
-                    if (
-                        el.id === 'rumia-img' ||
-                        el.closest('.input-bar') ||
-                        el.closest('.settings-content') ||
-                        el.closest('.fav-container') ||
-                        (el.closest('#speech-bubble') && this.bubble.style.opacity === '1')
-                    ) {
-                        isInteractive = true;
+                if (isDragging) {
+                    const deltaX = e.screenX - startX;
+                    const deltaY = e.screenY - startY;
+                    startX = e.screenX;
+                    startY = e.screenY;
+                    // 发送拖拽位移给主进程移动整个窗口
+                    ipcRenderer.send('window-drag', { deltaX, deltaY });
+                } else {
+                    // 处于非拖拽的正常悬停状态下，进行点击穿透检测
+                    let isInteractive = false;
+                    const el = e.target;
+                    if (el) {
+                        if (
+                            el.id === 'rumia-img' ||
+                            el.closest('.input-bar') ||
+                            el.closest('.settings-content') ||
+                            el.closest('.fav-container') ||
+                            (el.closest('#speech-bubble') && this.bubble.style.opacity === '1')
+                        ) {
+                            isInteractive = true;
+                        }
+                    }
+                    
+                    if (isInteractive) {
+                        // 悬浮在角色/输入栏上时，激活点击
+                        ipcRenderer.send('set-ignore-mouse-events', false);
+                    } else {
+                        // 悬浮在背景空白处时，启用鼠标点击穿透（透明区域点击透过窗口到桌面）
+                        ipcRenderer.send('set-ignore-mouse-events', true, { forward: true });
                     }
                 }
-                
-                if (isInteractive) {
-                    // 鼠标在交互元素上，让 Electron 捕获点击事件
-                    ipcRenderer.send('set-ignore-mouse-events', false);
-                } else {
-                    // 鼠标在空白/透明处，让 Electron 忽略点击事件（穿透到桌面）
-                    ipcRenderer.send('set-ignore-mouse-events', true, { forward: true });
+            });
+
+            // 全局监听 mouseup 停止拖动
+            window.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    this.img.style.cursor = 'grab';
                 }
             });
         }
