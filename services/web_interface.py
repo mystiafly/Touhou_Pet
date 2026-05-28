@@ -522,6 +522,7 @@ def rumia_speak():
         f"【核心行为指南】：\n"
         f"- 你的这句话是**在沉默了一段时间后，主动、独立发起**的（或者是开机时的第一句主动打招呼），**绝对不是**针对上一句对话的“直接接话”或“回复”！\n"
         f"- 如果上一句已经是你（露米娅）说的话，请直接开启一个新的话题、发起新的问候、或者自言自语表达被冷落的情绪，绝对不要去假装回答上一句自己说的话，更不要假装用户已经说了话。\n"
+        f"- 格式与篇幅约束（极重要）：只允许输出单段话（绝对禁止换行符 \\n，绝对禁止分成多个段落！），字数严格控制在 40 到 70 字左右，保持简短可爱，适合在桌宠气泡中展示。\n"
         f"- 必须严格符合你当前对用户的好感度评分限制（当前好感度为 {current_fav}/100），且只能且必须遵循 '[心情][评分]对话内容' 格式输出。"
     )
 
@@ -541,9 +542,11 @@ def rumia_speak():
             print(msg['content'])
         print("="*100 + "\n")
 
+        # 让主动自言自语使用更低温度，生成更稳定的单段文本
         response = client.chat.completions.create(
             model=model_name,
             messages=current_context,
+            temperature=0.3,
             stream=False
         )
 
@@ -560,6 +563,13 @@ def rumia_speak():
         # 剔除主动自言自语中可能残留的浏览器任务标记，防止展示在聊天气泡中
         if re.search(r'\[BROWSER_TASK:\s*.*?\]', raw_reply, re.IGNORECASE):
             clean_content = re.sub(r'\[BROWSER_TASK:\s*.*?\]', '', clean_content, flags=re.IGNORECASE).strip()
+
+        # 限制只说单段话 (获取第一段，防止换行多段输出在大气泡中显示过长)
+        paragraphs = [p.strip() for p in clean_content.split('\n') if p.strip()]
+        if paragraphs:
+            clean_content = paragraphs[0]
+            # 重新拼装规范化后的单段 raw_reply 保存入历史，使下一轮对话更连贯
+            raw_reply = f"[{emotion}][{score}]{clean_content}"
 
         # === [修改开始] 新的好感度逻辑 ===
         change = 0
