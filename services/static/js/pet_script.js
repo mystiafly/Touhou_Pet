@@ -392,6 +392,7 @@ class RumiaPet {
 // [修改] 显示气泡 (duration 如果不传或传 null，则自动计算)
     showBubble(text, duration = null) {
         this.bubbleContent.innerText = text;
+        this.bubbleContent.scrollTop = 0; // 重置文字框滚动条位置到顶部，防止上一条超长文本残留滚动条
         this.bubble.style.opacity = '1';
         this.bubble.style.pointerEvents = 'auto'; // 说话时启用鼠标交互（允许滚动、选择文本）
 
