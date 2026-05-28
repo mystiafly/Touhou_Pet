@@ -72,8 +72,6 @@ body, html {
     max-width: 360px; /* 拓宽对话框，减少文字换行引起的垂直伸展 */
     min-width: 100px;
     width: max-content;
-    max-height: 180px; /* 限制最高高度，防止超出窗口顶部裁剪区域 */
-    overflow-y: auto;  /* 文字超长时自动滚动 */
     position: relative;
     transition: opacity 0.3s ease;
     border: 1px solid #ff6b8b;
@@ -83,21 +81,30 @@ body, html {
     font-size: 14px;
     line-height: 1.5;
     word-wrap: break-word;
+    overflow: visible; /* 确保对话框尾部箭头不被裁剪 */
 }
 
-/* 气泡精致暗粉色滚动条样式 */
-.bubble::-webkit-scrollbar {
+/* 内层文本段落处理滚动与最大高度限制，防止箭头随文字滚动位移 */
+#bubble-content {
+    margin: 0;
+    max-height: 150px; /* 限制文本段落最高高度 */
+    overflow-y: auto;  /* 文本超长时段落内滚动 */
+    pointer-events: auto; /* 允许在文本区域进行滚动与文字选择 */
+}
+
+/* 气泡精致暗粉色滚动条样式移至内层文本 */
+#bubble-content::-webkit-scrollbar {
     width: 6px;
 }
-.bubble::-webkit-scrollbar-track {
+#bubble-content::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.2);
     border-radius: 10px;
 }
-.bubble::-webkit-scrollbar-thumb {
+#bubble-content::-webkit-scrollbar-thumb {
     background: #ff6b8b;
     border-radius: 10px;
 }
-.bubble::-webkit-scrollbar-thumb:hover {
+#bubble-content::-webkit-scrollbar-thumb:hover {
     background: #ff3b68;
 }
 
