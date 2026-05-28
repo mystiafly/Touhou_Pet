@@ -69,6 +69,11 @@ class RumiaPet {
                 }
             });
 
+            // 阻止浏览器原生的图片拖拽行为（防止拉出虚影且 mouseup 无法触发的问题）
+            this.img.addEventListener('dragstart', (e) => {
+                e.preventDefault();
+            });
+
             // 监听全局 mousemove 事件，处理拖拽计算和穿透检测
             window.addEventListener('mousemove', (e) => {
                 if (isDragging) {
