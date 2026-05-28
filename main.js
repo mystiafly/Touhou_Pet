@@ -1,5 +1,13 @@
-const { app, BrowserWindow, screen } = require('electron');
+const { app, BrowserWindow, screen, ipcMain } = require('electron');
 const path = require('path');
+
+// 监听渲染进程发送的穿透事件，动态切换鼠标忽略状态
+ipcMain.on('set-ignore-mouse-events', (event, ignore, options) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+        win.setIgnoreMouseEvents(ignore, options);
+    }
+});
 
 function createWindow() {
     const { width, height } = screen.getPrimaryDisplay().workAreaSize;
@@ -16,7 +24,8 @@ function createWindow() {
         skipTaskbar: false, // 是否在任务栏显示（true则隐藏）
         resizable: false,   // 禁止改变大小
         webPreferences: {
-            nodeIntegration: true
+            nodeIntegration: true,
+            contextIsolation: false
         }
     });
 
