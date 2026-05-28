@@ -39,7 +39,6 @@ body, html {
     width: auto;
     filter: drop-shadow(0 5px 15px rgba(0,0,0,0.4));
     cursor: grab;
-    -webkit-app-region: drag;
     -webkit-user-select: none;
     pointer-events: auto;
 }
