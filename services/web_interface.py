@@ -279,7 +279,10 @@ def get_history():
             "content": msg["content"],
             "timestamp": datetime.now().strftime("%H:%M:%S")
         })
-    return jsonify({"history": dialogue})
+    return jsonify({
+        "history": dialogue,
+        "favorability": get_favorability()
+    })
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
