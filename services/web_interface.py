@@ -928,6 +928,16 @@ def manual_distill_now():
             metadata={"date": today_str}
         )
         
+        # [新增] 同步生成露米娅的今日手写日记并写入文件
+        diary_file_path = os.path.join(DAILY_HISTORY_DIR, f"rumia_diary_{today_str}.txt")
+        print(f"[MANUAL DISTILL] Generating today's Rumia Diary ({today_str})...")
+        today_diary = generate_rumia_diary(today_str, log_content)
+        try:
+            with open(diary_file_path, 'w', encoding='utf-8') as df:
+                df.write(today_diary)
+        except Exception as df_ex:
+            print(f"手动整理时保存日记失败: {df_ex}")
+        
         # 将今天记录为已蒸馏
         config_data = get_config()
         distilled_dates = config_data.get("distilled_dates", [])
@@ -936,7 +946,7 @@ def manual_distill_now():
             config_data["distilled_dates"] = distilled_dates
             save_config(config_data)
             
-        return jsonify({"success": True, "message": "露米娅非常认真地整理了今天的回忆！大脑已经扩充！"})
+        return jsonify({"success": True, "message": "露米娅非常认真地整理了今天的回忆，并且为您写下了一篇秘密日记哦！"})
     except Exception as ex:
         print(f"[API ERROR] Manual distill failed: {ex}")
         return jsonify({"success": False, "error": str(ex)}), 500
