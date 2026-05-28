@@ -2,8 +2,13 @@
 import sys
 import os
 
-# Ensure the root folder is in python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Ensure the root folder and services folder are in python path
+root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(root_path)
+sys.path.append(os.path.join(root_path, 'services'))
+
+# Change working directory to services to align with running environment
+os.chdir(os.path.join(root_path, 'services'))
 
 from services.web_interface import app, DAILY_HISTORY_DIR
 import json
