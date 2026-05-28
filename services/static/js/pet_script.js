@@ -51,6 +51,35 @@ class RumiaPet {
 
         this.loadStatus();
 
+        // [新增] 动态忽略鼠标事件（实现透明窗口边缘点击穿透到桌面，交互区域可点击）
+        const { ipcRenderer } = window.require ? window.require('electron') : {};
+        if (ipcRenderer) {
+            window.addEventListener('mousemove', (e) => {
+                let isInteractive = false;
+                const el = e.target;
+                if (el) {
+                    // 如果悬停在：露米娅身体、输入框栏、设置菜单、或者“可见”的说话气泡上，则启用鼠标点击交互
+                    if (
+                        el.id === 'rumia-img' ||
+                        el.closest('.input-bar') ||
+                        el.closest('.settings-content') ||
+                        el.closest('.fav-container') ||
+                        (el.closest('#speech-bubble') && this.bubble.style.opacity === '1')
+                    ) {
+                        isInteractive = true;
+                    }
+                }
+                
+                if (isInteractive) {
+                    // 鼠标在交互元素上，让 Electron 捕获点击事件
+                    ipcRenderer.send('set-ignore-mouse-events', false);
+                } else {
+                    // 鼠标在空白/透明处，让 Electron 忽略点击事件（穿透到桌面）
+                    ipcRenderer.send('set-ignore-mouse-events', true, { forward: true });
+                }
+            });
+        }
+
         setTimeout(() => this.greetUser(), 500);
     }
 
