@@ -495,6 +495,9 @@ class RumiaPet {
             if (data.success) {
                 this.showBubble(data.reply);
                 this.setEmotion(data.emotion);
+                if (data.favorability !== undefined) {
+                    this.favScore.innerText = data.favorability;
+                }
             }
         } catch (e) {
             console.error("打招呼失败:", e);
@@ -513,6 +516,9 @@ class RumiaPet {
             if (data.success) {
                 this.showBubble(data.reply);
                 this.setEmotion(data.emotion);
+                if (data.favorability !== undefined) {
+                    this.favScore.innerText = data.favorability;
+                }
             }
         } catch (e) {
             console.error(e);
