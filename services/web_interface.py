@@ -309,7 +309,8 @@ def chat():
         agent = get_memory_agent()
         if agent:
             try:
-                results = agent.search(user_message, filters={"user_id": "player_01"}, limit=3)
+                # 增加 threshold=0.45 过滤低相关度记忆，避免不相关的记忆一股脑全部注入
+                results = agent.search(user_message, filters={"user_id": "player_01"}, limit=3, threshold=0.45)
                 results_list = results.get("results", []) if isinstance(results, dict) else (results if isinstance(results, list) else [])
                 print(f"[MEMORY RECALL] Query: '{user_message}' - Found {len(results_list)} memories.")
                 if results_list:
@@ -333,7 +334,7 @@ def chat():
             priority_reminder += (
                 f"1. 唤醒的长期记忆（关于用户的偏好与经历）：\n"
                 f"{recalled_memories}\n"
-                f"（请在回复中自然、适度地运用这些记忆来展示与用户的熟悉感，绝对不能被动或死板地背诵，也不要向用户揭穿这是系统灌输的记忆。）\n"
+                f"（注：这些是关于用户的长期记忆。请仅在当前对话主题与这些记忆相关时（例如谈到食物、喜好、口味或以往零食经历等），才自然、适度地提及。如果当前对话完全无关，请绝对不要强行或刻意提及它们，保持对话的自然与真实性。）\n"
             )
         priority_reminder += (
             f"2. 当前你（露米娅）对用户的好感度为: {current_fav}/100。\n"
