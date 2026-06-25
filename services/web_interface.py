@@ -7,6 +7,13 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env'))
 # 导入你的主程序功能
 import sys
+
+# [修复] 重新配置 stdout/stderr 编码为 utf-8，防止 Windows (如 GBK 编码控制台) 下打印 Emoji (如 ⚠️) 触发 UnicodeEncodeError 导致 Flask 500 崩溃
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
 import re
 import subprocess
 
