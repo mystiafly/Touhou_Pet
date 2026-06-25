@@ -11,12 +11,28 @@ class RumiaPet {
 
 
 
-        // [新增] 图片映射表
+        // [修改] 升级为数组映射，每种情绪包含 3 张差分图
         this.images = {
-            'normal': '/static/images/rumia_normal.png',
-            'angry':  '/static/images/rumia_angry.png',
-            'shy':    '/static/images/rumia_shy.png',
-            'crying': '/static/images/rumia_crying.png'
+            'normal': [
+                '/static/images/rumia_normal.png',
+                '/static/images/rumia_normal_1.png',
+                '/static/images/rumia_normal_2.png'
+            ],
+            'angry': [
+                '/static/images/rumia_angry.png',
+                '/static/images/rumia_angry_1.png',
+                '/static/images/rumia_angry_2.png'
+            ],
+            'shy': [
+                '/static/images/rumia_shy.png',
+                '/static/images/rumia_shy_1.png',
+                '/static/images/rumia_shy_2.png'
+            ],
+            'crying': [
+                '/static/images/rumia_crying.png',
+                '/static/images/rumia_crying_1.png',
+                '/static/images/rumia_crying_2.png'
+            ]
         };
 
         // [新增] 预加载图片 (防止切换时闪烁)
@@ -30,9 +46,16 @@ class RumiaPet {
     }
 
     preloadImages() {
-        Object.values(this.images).forEach(src => {
-            const img = new Image();
-            img.src = src;
+        Object.values(this.images).forEach(item => {
+            if (Array.isArray(item)) {
+                item.forEach(src => {
+                    const img = new Image();
+                    img.src = src;
+                });
+            } else {
+                const img = new Image();
+                img.src = item;
+            }
         });
     }
 
@@ -430,16 +453,15 @@ class RumiaPet {
             setTimeout(() => window.close(), 1000);
         }
     }
-    // [新增] 切换表情的核心函数
+    // [修改] 切换表情的核心函数（在3张差分中随机选择一个）
     setEmotion(emotion) {
-        // 如果后端传来的心情不在列表里，默认用 normal
-        // 比如后端可能返回 "happy" 但我们只有 "normal"，就回退到 normal
-        const targetSrc = this.images[emotion] || this.images['normal'];
+        const list = this.images[emotion] || this.images['normal'];
+        const targetSrc = list[Math.floor(Math.random() * list.length)];
 
         // 如果当前已经是这张图，就不操作了，避免闪烁
         if (this.img.src.includes(targetSrc)) return;
 
-        console.log(`切换心情: ${emotion}`);
+        console.log(`切换心情: ${emotion} -> 随机差分: ${targetSrc}`);
 
         // 简单的淡入淡出效果
         this.img.style.opacity = '0.7';
