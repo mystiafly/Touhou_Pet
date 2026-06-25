@@ -24,6 +24,8 @@ sys.path.append('.')  # 确保可以导入当前目录的模块
 from settings_system import settings_bp
 # [新增] 导入时间系统
 from time_system import get_time_greeting_prompt
+# [新增] 导入现实世界元系统（感知现实时间与深夜模式）
+from real_world_system import get_meta_context_for_chat
 
 CONFIG_FILE = "config.json"
 
@@ -330,6 +332,11 @@ def chat():
             f"[SYSTEM REMINDER - P0 HIGHEST PRIORITY]\n"
             f"【最高优先级提醒与行为约束】\n"
         )
+        
+        # [新增] 注入当前现实元数据背景（包括当前时间、深夜模式等引导）
+        meta_context = get_meta_context_for_chat()
+        priority_reminder += f"{meta_context}\n\n"
+        
         if recalled_memories:
             priority_reminder += (
                 f"1. 唤醒的长期记忆（关于用户的偏好与经历）：\n"
