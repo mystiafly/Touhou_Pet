@@ -1,40 +1,47 @@
-# Changelog (更新日志)
+# 更新日志 (Changelog)
 
-All notable changes to the Rumia Desk Pet project will be documented in this file.
-The project adheres to Semantic Versioning (SemVer) with custom rules:
-- **MAJOR**: Breaking changes (only bumped when requested by the user).
-- **MINOR**: Backward-compatible new features.
-- **PATCH**: Backward-compatible bug fixes and minor documentation/config updates.
+本项目的所有重大变更都将记录在此文件中。
+项目遵循语义化版本 (SemVer) 规范，并采用以下自定义规则：
+- **MAJOR (主版本)**：不兼容的重大改动（仅在用户明确指示后才会增加）。
+- **MINOR (次版本)**：向后兼容的新功能。
+- **PATCH (修订号)**：向后兼容的缺陷修复或小幅文档/配置更新。
+
+---
+
+## [0.1.4] - 2026-06-26
+
+### 优化
+- 将根目录下的 `CHANGELOG.md` 更新日志翻译为中文，方便查阅。
 
 ---
 
 ## [0.1.3] - 2026-06-26
 
-### Added
-- Created this consolidated `CHANGELOG.md` at the project root to track version updates.
+### 新增
+- 在项目根目录下创建了统一的 `CHANGELOG.md` 更新日志文件。
 
 ---
 
 ## [0.1.2] - 2026-06-26
 
-### Changed
-- Synchronized distilled dates list in `services/config.json` after background memory distillation.
+### 变更
+- 后台整理引擎自动同步了 `services/config.json` 中的记忆蒸馏日期列表。
 
 ---
 
 ## [0.1.1] - 2026-06-26
 
-### Added
-- Established project-scoped SemVer rules in `.agents/AGENTS.md` to enforce version bumps on every commit.
+### 新增
+- 在 `.agents/AGENTS.md` 中确立了工作空间级别的 SemVer 版本控制规则，强制每次 Git 提交自动升级版本号。
 
 ---
 
 ## [0.1.0] - 2026-06-26
 
-### Added
-- **Initial Version Release**: Established `0.1.0` as the baseline version.
-- **Cross-Drive Migration**: Successfully migrated the entire project from C: drive to `G:\code\rumia` with full Git history and rebuilt Python/Node dependency environments.
-- **Daily Diary System (露米娅的日记)**: Implemented an LLM-powered tsundere diary generator and a glassmorphic sub-tab UI in System Settings to isolate diary text and chat history.
-- **Attention Priority System (方案 A)**: Implemented P0 tail injection for memory retrieval and P0 isolation for active speaking to prevent dialog repetition and self-answering.
-- **Chinese spaCy NLP Integration**: Configured local Chinese entity extraction and linking for the Mem0 physics-based memory graph.
-- **Windows Console Crash Fix**: Resolved `UnicodeEncodeError` crashes on Windows GBK consoles by reconfiguring `sys.stdout`/`sys.stderr` to write in UTF-8.
+### 新增
+- **初始版本发布**：正式确立 `0.1.0` 作为版本化管理的基线版本。
+- **跨盘完整迁移**：将项目从 C 盘完整迁移至 `G:\code\rumia`（保留全部 Git 历史），并在 G 盘全新构建了 Python 虚拟环境与 Node 依赖环境。
+- **每日日记系统 (露米娅的日记)**：实现了基于大模型的露米娅第一人称“秘密日记”生成器，并在系统设置中引入了玻璃拟态的子选项卡 UI（隔离“聊天对话”与“秘密日记”）。
+- **注意力优化系统 (方案 A)**：重构了 Prompt 结构，引入 P0 尾置提醒保障记忆的高精度召回，并实现 P0 主动说话场景隔离，彻底消除了桌宠自言自语时的接话感。
+- **中文语义图谱集成**：通过本地中文 spaCy NLP 实体提取器，打通了 Mem0 的实体链接机制，实现了完全本地化的中文记忆关系图谱。
+- **控制台 Emoji 崩溃修复**：将 `sys.stdout`/`sys.stderr` 强制重构为 UTF-8 编码，彻底解决了 Windows GBK 控制台在打印 Emoji ⚠️ 时触发的 UnicodeEncodeError 导致的 500 崩溃。
