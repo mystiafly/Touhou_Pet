@@ -495,7 +495,16 @@ def rumia_speak():
     data = request.json or {}
     # 获取请求类型，默认为 'auto' (自动/发呆)，也可以是 'greeting' (打招呼)
     request_type = data.get('type', 'auto')
-    count = data.get('count', 1)
+    
+    # [修复] 容错处理：若客户端传参 count 为 null/None，或非整数，强制降级默认为 1
+    count_raw = data.get('count', 1)
+    if count_raw is None:
+        count = 1
+    else:
+        try:
+            count = int(count_raw)
+        except (TypeError, ValueError):
+            count = 1
 
     print(f"---------> 收到主动说话请求: 类型={request_type}, 次数={count} <---------")
 
