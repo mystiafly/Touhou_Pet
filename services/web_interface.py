@@ -323,6 +323,88 @@ def parse_reply(text):
 
     return emotion, score, clean_content
 
+# === [感应预设系统] ===
+PRESETS_DIR = os.path.join(os.path.dirname(__file__), "presets")
+CUSTOM_PRESETS_FILE = os.path.join(PRESETS_DIR, "custom_presets.json")
+
+def init_custom_presets():
+    """初始化自定义感应预设的文件夹和文件，如果没有就建立并留空"""
+    if not os.path.exists(PRESETS_DIR):
+        os.makedirs(PRESETS_DIR)
+    if not os.path.exists(CUSTOM_PRESETS_FILE):
+        try:
+            with open(CUSTOM_PRESETS_FILE, 'w', encoding='utf-8') as f:
+                json.dump([], f, ensure_ascii=False, indent=2)
+            print(f"[PRESETS] 已成功建立感应预设管理文件: {CUSTOM_PRESETS_FILE} (目前留空)")
+        except Exception as e:
+            print(f"[PRESETS ERROR] 建立感应预设文件失败: {e}")
+
+# 自动执行初始化建立页面
+init_custom_presets()
+
+def load_and_trigger_presets(user_message, favorability):
+    """加载并根据条件与关键词匹配触发相应的感应预设提示词"""
+    if not os.path.exists(CUSTOM_PRESETS_FILE):
+        return ""
+    try:
+        with open(CUSTOM_PRESETS_FILE, 'r', encoding='utf-8') as f:
+            presets = json.load(f)
+    except Exception as e:
+        print(f"[PRESETS ERROR] 读取预设文件失败: {e}")
+        return ""
+    if not isinstance(presets, list):
+        return ""
+
+    triggered_prompts = []
+    for idx, preset in enumerate(presets):
+        if not isinstance(preset, dict):
+            continue
+        triggered = False
+        # 1. 检查关键词触发 (用户输入是否包含关键词)
+        keywords = preset.get("trigger_keywords", [])
+        if keywords and isinstance(keywords, list):
+            user_msg_lower = user_message.lower()
+            for kw in keywords:
+                if kw and isinstance(kw, str) and kw.lower() in user_msg_lower:
+                    triggered = True
+                    print(f"[PRESETS] 匹配到关键词 '{kw}'，触发预设: {preset.get('name', f'Preset-{idx}')}")
+                    break
+        # 2. 检查好感度条件范围
+        min_fav = preset.get("min_favorability")
+        max_fav = preset.get("max_favorability")
+        fav_ok = True
+        if min_fav is not None:
+            try:
+                if favorability < int(min_fav):
+                    fav_ok = False
+            except:
+                pass
+        if max_fav is not None:
+            try:
+                if favorability > int(max_fav):
+                    fav_ok = False
+            except:
+                pass
+
+        # 触发策略决策：
+        # - 如果设置了关键词：关键词必须匹配，且好感度范围也必须满足
+        # - 如果没设置关键词但设置了好感度条件：只需好感度范围满足即可触发
+        if keywords:
+            if triggered and fav_ok:
+                prompt_content = preset.get("prompt", "")
+                if prompt_content:
+                    triggered_prompts.append(prompt_content)
+        else:
+            if (min_fav is not None or max_fav is not None) and fav_ok:
+                prompt_content = preset.get("prompt", "")
+                if prompt_content:
+                    triggered_prompts.append(prompt_content)
+                    print(f"[PRESETS] 好感度条件满足，触发预设: {preset.get('name', f'Preset-{idx}')}")
+
+    if triggered_prompts:
+        return "\n".join(triggered_prompts)
+    return ""
+
 def generate_rumia_diary(date_str, log_content):
     """根据今日聊天记录，以第一人称生成傲娇日记"""
     try:
@@ -523,6 +605,11 @@ def chat(payload: dict = Body(...)):
                 f"{recalled_memories}\n"
                 f"（注：这些是关于用户的长期记忆。请仅在当前对话主题与这些记忆相关时（例如谈到食物、喜好、口味或以往零食经历等），才自然、适度地提及。如果当前对话完全无关，请绝对不要强行或刻意提及它们，保持对话的自然与真实性。）\n"
             )
+        # 触发自定义感应预设提示词
+        custom_presets = load_and_trigger_presets(user_message, current_fav)
+        if custom_presets:
+            priority_reminder += f"\n【触发的自定义感应设定】\n{custom_presets}\n\n"
+
         priority_reminder += (
             f"2. 当前你（露米娅）对用户的好感度为: {current_fav}/100。\n"
             f"3. 角色约束：请严格扮演露米娅（一个性格傲娇、古灵精怪、喜欢在黑暗中恶作剧的食人妖怪），用中文口吻回答。在进行亲密接触、情感表达或撒娇害羞时，强烈建议在台词中穿插用圆括号包裹的动作与表情描写（例如：‘(红着脸扭过头去)’或‘(有些娇嗔地轻轻捶你一下)’），使交互极其生动。此外，在可以的情况下（尤其是进行两性、深层亲密或 NSFW 交互时），非常建议你特地独立写出一至几段【没有情绪与评分前缀】的纯圆括号文本描述（如：‘(因为极度的羞耻感，她的手指微微抠紧了床单，低垂的睫毛在颤抖，呼吸也乱成了一团，黑暗随之蒙上了一层粉红色的魔力晕影)’），用以描述神态和客观情况。但请注意，为避免与表情匹配系统产生冲突，此类没有任何前缀的纯圆括号描述段落【绝对不能作为你整篇回复的最后一段】（即你回复的最后一段必须是带有正常 `[心情][评分]` 前缀的言语对话，以便正确匹配并显示你的当前表情图）。\n"
