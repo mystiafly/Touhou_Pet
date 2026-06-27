@@ -342,8 +342,47 @@ def init_custom_presets():
 # 自动执行初始化建立页面
 init_custom_presets()
 
+def check_semantic_presets(user_message, candidates):
+    """使用轻量级 LLM 调用进行二次语义感应匹配判断"""
+    if not candidates:
+        return []
+    try:
+        client, model_name = get_llm_client_and_model()
+        
+        prompt = (
+            "You are a semantic matching assistant. Your job is to determine if the user's message relates to any of the candidate topics.\n"
+            f"User's message: \"{user_message}\"\n\n"
+            "Candidate topics:\n"
+        )
+        for idx, p in enumerate(candidates):
+            keywords_str = ", ".join(p.get("trigger_keywords", []))
+            prompt += f"- ID: {idx}, Topic Name: \"{p.get('name', '')}\", Keywords/Topic description: \"{keywords_str}\"\n"
+            
+        prompt += (
+            "\nOutput ONLY a JSON list of IDs (integers) that are semantically related to the user's message, e.g., [0, 2]. "
+            "If none are relevant, output []. Do not include any markdown code blocks, explanations, or extra text."
+        )
+        
+        response = client.chat.completions.create(
+            model=model_name,
+            messages=[{"role": "system", "content": prompt}],
+            temperature=0.0,
+            max_tokens=50
+        )
+        
+        result_text = response.choices[0].message.content.strip()
+        # 清理可能包含的 Markdown 块语法
+        result_text = re.sub(r'```json\s*|```', '', result_text).strip()
+        
+        triggered_ids = json.loads(result_text)
+        if isinstance(triggered_ids, list):
+            return [int(x) for x in triggered_ids if str(x).isdigit() or isinstance(x, int)]
+    except Exception as e:
+        print(f"[PRESETS] 二次 AI 语义匹配失败: {e}")
+    return []
+
 def load_and_trigger_presets(user_message, favorability):
-    """加载并根据条件与关键词匹配触发相应的感应预设提示词"""
+    """加载并根据条件与关键词匹配触发相应的感应预设提示词 (混合模式：关键词直接触发 + AI二次语义感应)"""
     if not os.path.exists(CUSTOM_PRESETS_FILE):
         return ""
     try:
@@ -355,21 +394,15 @@ def load_and_trigger_presets(user_message, favorability):
     if not isinstance(presets, list):
         return ""
 
-    triggered_prompts = []
+    triggered_indices = set()
+    semantic_candidates = []
+    
+    # 第一阶段：对所有预设进行基本筛选 (好感度过滤) 以及关键词字面匹配
     for idx, preset in enumerate(presets):
         if not isinstance(preset, dict):
             continue
-        triggered = False
-        # 1. 检查关键词触发 (用户输入是否包含关键词)
-        keywords = preset.get("trigger_keywords", [])
-        if keywords and isinstance(keywords, list):
-            user_msg_lower = user_message.lower()
-            for kw in keywords:
-                if kw and isinstance(kw, str) and kw.lower() in user_msg_lower:
-                    triggered = True
-                    print(f"[PRESETS] 匹配到关键词 '{kw}'，触发预设: {preset.get('name', f'Preset-{idx}')}")
-                    break
-        # 2. 检查好感度条件范围
+            
+        # 检查好感度范围限制
         min_fav = preset.get("min_favorability")
         max_fav = preset.get("max_favorability")
         fav_ok = True
@@ -385,22 +418,52 @@ def load_and_trigger_presets(user_message, favorability):
                     fav_ok = False
             except:
                 pass
-
-        # 触发策略决策：
-        # - 如果设置了关键词：关键词必须匹配，且好感度范围也必须满足
-        # - 如果没设置关键词但设置了好感度条件：只需好感度范围满足即可触发
-        if keywords:
-            if triggered and fav_ok:
-                prompt_content = preset.get("prompt", "")
-                if prompt_content:
-                    triggered_prompts.append(prompt_content)
+                
+        if not fav_ok:
+            continue  # 好感度不符，直接不考虑
+            
+        # 检查关键词硬性匹配
+        keywords = preset.get("trigger_keywords", [])
+        keywords_ok = False
+        if keywords and isinstance(keywords, list):
+            user_msg_lower = user_message.lower()
+            for kw in keywords:
+                if kw and isinstance(kw, str) and kw.lower() in user_msg_lower:
+                    keywords_ok = True
+                    break
+                    
+        if keywords_ok:
+            # 关键词命中，直接确定触发
+            triggered_indices.add(idx)
+            print(f"[PRESETS] 关键词直接命中，触发预设: {preset.get('name', f'Preset-{idx}')}")
+        elif keywords:
+            # 包含关键词但没有直接字面命中，作为语义感应候选
+            # 复制字典并注入临时原始索引值
+            preset_copy = preset.copy()
+            preset_copy["_original_index"] = idx
+            semantic_candidates.append(preset_copy)
         else:
-            if (min_fav is not None or max_fav is not None) and fav_ok:
-                prompt_content = preset.get("prompt", "")
-                if prompt_content:
-                    triggered_prompts.append(prompt_content)
-                    print(f"[PRESETS] 好感度条件满足，触发预设: {preset.get('name', f'Preset-{idx}')}")
+            # 没有关键词限制，且好感度满足，直接触发
+            triggered_indices.add(idx)
+            print(f"[PRESETS] 无关键词限制且好感度满足，直接触发预设: {preset.get('name', f'Preset-{idx}')}")
 
+    # 第二阶段：对未命中的候选进行二次 AI 语义感应
+    if semantic_candidates:
+        print(f"[PRESETS] 进行二次 AI 语义感应匹配，候选数量: {len(semantic_candidates)}")
+        triggered_candidate_ids = check_semantic_presets(user_message, semantic_candidates)
+        for cid in triggered_candidate_ids:
+            if 0 <= cid < len(semantic_candidates):
+                orig_idx = semantic_candidates[cid]["_original_index"]
+                triggered_indices.add(orig_idx)
+                print(f"[PRESETS] 二次 AI 语义感应命中，触发预设: {presets[orig_idx].get('name', f'Preset-{orig_idx}')}")
+
+    # 汇总所有被触发的提示词
+    triggered_prompts = []
+    for idx in sorted(list(triggered_indices)):
+        prompt_content = presets[idx].get("prompt", "")
+        if prompt_content:
+            triggered_prompts.append(prompt_content)
+            
     if triggered_prompts:
         return "\n".join(triggered_prompts)
     return ""
