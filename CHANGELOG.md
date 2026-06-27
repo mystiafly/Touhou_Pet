@@ -8,10 +8,19 @@
 
 ---
 
+## [0.4.4] - 2026-06-28
+
+### 新增
+- **后端条件感应预设管理 (Lorebook-like Custom Presets)**：在 `services/presets/` 目录下创建了专门用于存放动态感应预设的配置文件 [custom_presets.json](file:///G:/code/rumia/services/presets/custom_presets.json)（初始建立并留空为 `[]`）。
+- **动态关键词与好感度匹配引擎**：在 [web_interface.py](file:///G:/code/rumia/services/web_interface.py) 中实现预设评估引擎。支持通过用户最新输入关键词（`trigger_keywords`）和好感度阈值区间（`min_favorability`/`max_favorability`）进行智能感应匹配，并将触发的定制提示词动态叠加进大模型每次对话的系统提示词（System Prompt）中。
+
+### 变更
+- **前端还原**：撤销并还原了之前误解读的设置界面 GUI 感应预设管理面板相关的前端代码修改（包括 `pet.html`、`pet.css` 及 `pet_script.js`），确保前台界面轻量且纯净。
+
 ## [0.4.3] - 2026-06-28
 
 ### 新增
-- **感应预设管理面板 (Conditional Presets Panel)**：在系统设置主界面新增“感应预设”菜单及管理面板（`#settings-presets-view`）。该面板使用虚线描边和暗色玻璃拟态底色，当前在无自定义感应预设记录时显示优雅的“暂无自定义感应预设记录”留空提示，为后续动态注入提示词（酒馆世界书触发等）留存了完整的交互面板。
+- **感应预设文件夹与底层初始化**：确立了条件感应预设机制的底层框架及版本标记。
 
 ## [0.4.2] - 2026-06-28
 
