@@ -675,3 +675,31 @@ body, html {
     color: #e0e0e0;
     line-height: 1.3;
 }
+
+/* 9. 感应预设管理面板 */
+.presets-manager-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+    height: 180px; /* 匹配主弹窗的高度限制 */
+    overflow-y: auto;
+}
+
+.presets-list-area {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px dashed rgba(255, 107, 139, 0.3);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.presets-empty-tip {
+    color: #888;
+    font-size: 11px;
+    line-height: 1.5;
+    text-align: center;
+}
