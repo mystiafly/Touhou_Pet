@@ -85,4 +85,7 @@ wasabi==1.1.3
 weasel==1.0.0
 Werkzeug==3.1.8
 wrapt==2.2.1
-zh_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/zh_core_web_sm-3.8.0/zh_core_web_sm-3.8.0-py3-none-any.whl#sha256=7de3bd267176b9b2a8defb6997c1cd296da16c57b5e712f72ea44a51755421c8
+./zh_core_web_sm-3.8.0-py3-none-any.whl
+fastapi==0.138.1
+uvicorn==0.49.0
+
