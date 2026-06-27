@@ -8,6 +8,11 @@
 
 ---
 
+## [0.4.6] - 2026-06-28
+
+### 新增
+- **初始动态感应预设配置 (NSFW Preset Template)**：在 [custom_presets.json](file:///G:/code/rumia/services/presets/custom_presets.json) 中添加了首个感应预设条目 `nsfw_preset`。配置了常用的触发关键词，并设置好感度限制为 $\ge 90$，规范了亲密交互时的客观描写逻辑，为您后续的个性化填词留存了干净的模版架构。
+
 ## [0.4.5] - 2026-06-28
 
 ### 新增
