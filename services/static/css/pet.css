@@ -123,7 +123,7 @@ body, html {
 .input-bar {
     position: absolute;
     bottom: 10px;
-    width: 220px;
+    width: 270px;
     opacity: 0;
     transition: opacity 0.3s;
     -webkit-app-region: no-drag;
@@ -132,7 +132,7 @@ body, html {
     /* Flex布局用于排列设置按钮和输入框 */
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     padding: 0 10px;
     box-sizing: border-box;
 }
@@ -149,7 +149,7 @@ body, html {
     border: 2px solid #ff6b8b;
     background: rgba(255, 255, 255, 0.95);
     outline: none;
-    font-size: 14px;
+    font-size: 13px;
     transition: all 0.3s ease;
 }
 
@@ -180,6 +180,59 @@ body, html {
     background: #ff6b8b;
     color: white;
     transform: rotate(90deg);
+}
+
+#presets-btn:hover {
+    transform: scale(1.15) !important;
+}
+
+/* 预制发言弹出层样式 */
+.presets-popup {
+    position: absolute;
+    bottom: 50px;
+    left: 10px;
+    background: rgba(30, 30, 40, 0.95);
+    border: 2px solid #ff6b8b;
+    border-radius: 12px;
+    padding: 6px 0;
+    width: 250px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+    backdrop-filter: blur(10px);
+    z-index: 300;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transform-origin: bottom left;
+}
+
+.presets-popup.hidden {
+    opacity: 0;
+    transform: translateY(10px) scale(0.9);
+    pointer-events: none;
+}
+
+.preset-item {
+    padding: 10px 16px;
+    color: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.preset-item:last-child {
+    border-bottom: none;
+}
+
+.preset-item:hover {
+    background: rgba(255, 107, 139, 0.2);
+    color: #ff6b8b;
+    padding-left: 20px;
 }
 
 .settings-modal {

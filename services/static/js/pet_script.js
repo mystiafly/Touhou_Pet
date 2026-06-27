@@ -65,6 +65,7 @@ class RumiaPet {
         });
 
         this.initSettings();
+        this.initPresets();
 
         this.resetAutoSpeakTimer();
 
@@ -781,6 +782,41 @@ class RumiaPet {
             distillBtn.innerHTML = originalText1;
             seedBtn.innerHTML = originalText2;
         }
+    }
+
+    // [新增] 初始化预制发言系统
+    initPresets() {
+        this.presetsBtn = document.getElementById('presets-btn');
+        this.presetsPopup = document.getElementById('presets-popup');
+
+        // 点击按钮切换菜单显示/隐藏
+        this.presetsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.presetsPopup.classList.toggle('hidden');
+        });
+
+        // 点击具体预制发言选项，自动填入输入框并触发发送
+        const items = this.presetsPopup.querySelectorAll('.preset-item');
+        items.forEach(item => {
+            item.addEventListener('click', (e) => {
+                const text = item.getAttribute('data-text');
+                this.input.value = text;
+                this.sendMessage();
+                this.presetsPopup.classList.add('hidden');
+            });
+        });
+
+        // 点击页面其他区域，自动收起预制菜单 (使用 contains 确保点击按钮内的图标时不会被误判并瞬间关闭)
+        document.addEventListener('click', (e) => {
+            if (this.presetsPopup && !this.presetsPopup.classList.contains('hidden')) {
+                if (this.presetsBtn && this.presetsBtn.contains(e.target)) {
+                    return; // 点击在预制按钮或其子图标上，由按钮自身的 listener 负责 toggle
+                }
+                if (!this.presetsPopup.contains(e.target)) {
+                    this.presetsPopup.classList.add('hidden');
+                }
+            }
+        });
     }
 }
 

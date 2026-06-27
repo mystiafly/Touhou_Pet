@@ -24,11 +24,28 @@
     </div>
 
     <div class="input-bar">
-        <button id="settings-btn" class="icon-btn">
+        <button id="settings-btn" class="icon-btn" title="系统设置">
             <i class="fas fa-cog"></i>
         </button>
 
+        <button id="presets-btn" class="icon-btn" title="预置发言">
+            <i class="fas fa-comment-dots"></i>
+        </button>
+
         <input type="text" id="pet-input" placeholder="和露米娅说话..." autocomplete="off">
+
+        <!-- 预制发言弹出层 -->
+        <div id="presets-popup" class="presets-popup hidden">
+            <div class="preset-item" data-text="我现在有点无聊，你逗逗我吧。">
+                <i class="fas fa-laugh-beam" style="color: #ffb86c;"></i> 无聊 (逗逗我吧)
+            </div>
+            <div class="preset-item" data-text="我现在有点不高兴，你安慰安慰我吧。">
+                <i class="fas fa-sad-tear" style="color: #8be9fd;"></i> 伤心 (安慰我吧)
+            </div>
+            <div class="preset-item" data-text="我现在有点性欲，你诱惑诱惑我吧（进行nsfw描述）。">
+                <i class="fas fa-heart" style="color: #ff5555;"></i> 色欲 (诱惑我吧)
+            </div>
+        </div>
     </div>
     <div id="settings-modal" class="settings-modal hidden">
         <div class="settings-content">
