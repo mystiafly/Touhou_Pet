@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Rumia Pet</title>
-    <link rel="stylesheet" href="/static/css/pet.css?v=0.4.3">
+    <link rel="stylesheet" href="/static/css/pet.css?v=0.5.3">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Premium Interactive Network Graph Vis.js -->
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
@@ -61,9 +61,6 @@
                     </button>
                     <button id="open-graph-btn" class="menu-btn success-btn">
                         <i class="fas fa-project-diagram"></i> 记忆图谱
-                    </button>
-                    <button id="open-presets-btn" class="menu-btn primary-btn" style="background: linear-gradient(135deg, #a8c0ff, #3f2b96);">
-                        <i class="fas fa-magic"></i> 感应预设
                     </button>
                     <button id="exit-game-btn" class="menu-btn danger">
                         <i class="fas fa-power-off"></i> 退出游戏
@@ -147,27 +144,10 @@
                     <i class="fas fa-arrow-left"></i> 返回设置
                 </button>
             </div>
-            
-            <!-- 5. 感应预设视图 (默认隐藏) -->
-            <div id="settings-presets-view" class="view-panel hidden">
-                <h3><i class="fas fa-magic"></i> 感应预设管理</h3>
-                <div class="presets-manager-container">
-                    <div id="presets-list-area" class="presets-list-area">
-                        <!-- 如果没有预设，显示留空提示 -->
-                        <div class="presets-empty-tip">
-                            <i class="fas fa-folder-open" style="font-size: 28px; color: #ff6b8b; margin-bottom: 8px; display:block;"></i>
-                            暂无自定义感应预设记录
-                        </div>
-                    </div>
-                </div>
-                <button id="back-presets-btn" class="menu-btn small-btn">
-                    <i class="fas fa-arrow-left"></i> 返回设置
-                </button>
-            </div>
         </div>
     </div>
 </div>
 
-<script src="/static/js/pet_script.js?v=0.4.3"></script>
+<script src="/static/js/pet_script.js?v=0.5.3"></script>
 </body>
 </html>

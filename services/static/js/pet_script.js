@@ -160,14 +160,11 @@ class RumiaPet {
         this.engineView = document.getElementById('settings-engine-view');
         this.logsView = document.getElementById('settings-logs-view');
         this.graphView = document.getElementById('settings-graph-view'); // [新增]
-        this.presetsView = document.getElementById('settings-presets-view'); // [新增]
         
         this.openEngineBtn = document.getElementById('open-engine-btn');
         this.backEngineBtn = document.getElementById('back-engine-btn');
         this.openLogsBtn = document.getElementById('open-logs-btn');
         this.backSettingsBtn = document.getElementById('back-settings-btn');
-        this.openPresetsBtn = document.getElementById('open-presets-btn'); // [新增]
-        this.backPresetsBtn = document.getElementById('back-presets-btn'); // [新增]
         this.logDateSelect = document.getElementById('log-date-select');
         this.logContentArea = document.getElementById('log-content-area');
 
@@ -246,17 +243,7 @@ class RumiaPet {
             this.settingsContent.classList.remove('wide');
         });
 
-        // [新增] 切换到感应预设面板
-        this.openPresetsBtn.addEventListener('click', () => {
-            this.mainView.classList.add('hidden');
-            this.presetsView.classList.remove('hidden');
-        });
 
-        // [新增] 返回主设置面板 (感应预设)
-        this.backPresetsBtn.addEventListener('click', () => {
-            this.presetsView.classList.add('hidden');
-            this.mainView.classList.remove('hidden');
-        });
 
         // [新增] 手动整理与测试注入事件监听
         this.manualDistillBtn.addEventListener('click', () => this.manualDistill(false));
@@ -284,7 +271,6 @@ class RumiaPet {
             this.logsView.classList.add('hidden');
             this.engineView.classList.add('hidden');
             this.graphView.classList.add('hidden'); // [新增]
-            this.presetsView.classList.add('hidden'); // [新增]
             this.mainView.classList.remove('hidden');
             this.settingsContent.classList.remove('wide');
             this.logDateSelect.innerHTML = '<option value="">暂无记录...</option>';
