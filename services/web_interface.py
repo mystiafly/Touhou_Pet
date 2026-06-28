@@ -42,7 +42,7 @@ templates = Jinja2Templates(directory="templates")
 CONFIG_FILE = "config.json"
 HISTORY_FILE = "dialog_history.json"
 DAILY_HISTORY_DIR = "daily_history"
-MAX_HISTORY_ROUNDS = 20000
+MAX_HISTORY_ROUNDS = 15
 FAVORABILITY_FILE = "favorability.json"
 
 # Mem0 记忆系统配置与初始化锁
