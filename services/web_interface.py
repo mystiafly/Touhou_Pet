@@ -422,6 +422,12 @@ def load_and_trigger_presets(user_message, favorability):
         if not fav_ok:
             continue  # 好感度不符，直接不考虑
             
+        # 检查常驻状态 (always_active)
+        if preset.get("always_active", False):
+            triggered_indices.add(idx)
+            print(f"[PRESETS] 常驻预设直接命中 (Always Active): {preset.get('name', f'Preset-{idx}')}")
+            continue
+
         # 检查关键词硬性匹配
         keywords = preset.get("trigger_keywords", [])
         keywords_ok = False
