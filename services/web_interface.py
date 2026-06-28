@@ -513,10 +513,17 @@ def load_and_trigger_presets(user_message, favorability):
         if not new_triggers:
             break
 
-    # 汇总所有被触发的提示词
+    # 汇总所有被触发的预设，并按优先级 (priority) 从高到低排序 (优先度高的放在对话最前面)
+    triggered_presets_list = []
+    for idx in triggered_indices:
+        triggered_presets_list.append(presets[idx])
+    
+    # 按照 priority 降序排序，若无此字段则默认为 0
+    triggered_presets_list.sort(key=lambda x: x.get("priority", 0), reverse=True)
+
     triggered_prompts = []
-    for idx in sorted(list(triggered_indices)):
-        prompt_content = presets[idx].get("prompt", "")
+    for preset in triggered_presets_list:
+        prompt_content = preset.get("prompt", "")
         if prompt_content:
             triggered_prompts.append(prompt_content)
             
