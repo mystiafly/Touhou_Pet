@@ -457,6 +457,56 @@ def load_and_trigger_presets(user_message, favorability):
                 triggered_indices.add(orig_idx)
                 print(f"[PRESETS] 二次 AI 语义感应命中，触发预设: {presets[orig_idx].get('name', f'Preset-{orig_idx}')}")
 
+    # 第三阶段：递归/链式触发判定
+    # 如果已经触发的预设提示词内容中包含了其他未触发预设的关键词，并且好感度条件满足，则将该预设连锁触发
+    max_depth = 5
+    for depth in range(max_depth):
+        new_triggers = False
+        
+        # 将当前所有已触发的提示词合并为一个扫描文本池
+        current_pool = ""
+        for idx in triggered_indices:
+            current_pool += " " + presets[idx].get("prompt", "")
+        current_pool_lower = current_pool.lower()
+        
+        # 扫描尚未触发的预设中是否含有好感度符合且关键词在扫描池里的条目
+        for idx, preset in enumerate(presets):
+            if not isinstance(preset, dict) or idx in triggered_indices:
+                continue
+                
+            # 同样需要校验好感度范围限制
+            min_fav = preset.get("min_favorability")
+            max_fav = preset.get("max_favorability")
+            fav_ok = True
+            if min_fav is not None:
+                try:
+                    if favorability < int(min_fav):
+                        fav_ok = False
+                except:
+                    pass
+            if max_fav is not None:
+                try:
+                    if favorability > int(max_fav):
+                        fav_ok = False
+                except:
+                    pass
+            
+            if not fav_ok:
+                continue
+                
+            # 检查关键词是否匹配当前已触发的提示词文本池
+            keywords = preset.get("trigger_keywords", [])
+            if keywords and isinstance(keywords, list):
+                for kw in keywords:
+                    if kw and isinstance(kw, str) and kw.lower() in current_pool_lower:
+                        triggered_indices.add(idx)
+                        new_triggers = True
+                        print(f"[PRESETS] 递归链式触发命中 (深度={depth+1})，预设: {preset.get('name', f'Preset-{idx}')} (由已触发内容中的关键词 '{kw}' 触发)")
+                        break
+                        
+        if not new_triggers:
+            break
+
     # 汇总所有被触发的提示词
     triggered_prompts = []
     for idx in sorted(list(triggered_indices)):
