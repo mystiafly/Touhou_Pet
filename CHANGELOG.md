@@ -8,6 +8,11 @@
 
 ---
 
+## [0.5.3] - 2026-06-29
+
+### 修复
+- **前端冗余预设 UI 完全清除 (Frontend Presets UI Complete Removal)**：彻底移除并回滚了此前误加到前端的 `open-presets-btn` 按钮及 `settings-presets-view` 设置面板，包括 HTML 结构、CSS 布局样式和 JS 事件绑定/关闭重置状态逻辑。同步将静态资源缓存击穿后缀提升至 `v=0.5.3`。确保了前端设置菜单的绝对纯净，使预设管理保持纯后端、纯文件化（`custom_presets.json`）的预期工作流。
+
 ## [0.5.2] - 2026-06-29
 
 ### 新增
