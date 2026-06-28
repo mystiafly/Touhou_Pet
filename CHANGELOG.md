@@ -8,6 +8,11 @@
 
 ---
 
+## [0.5.1] - 2026-06-29
+
+### 新增
+- **常驻圆括号客观描写预设 (Constant Parenthetical Description Preset)**：在 [custom_presets.json](file:///G:/code/rumia/services/presets/custom_presets.json) 中添加了蓝灯常驻条目 `always_active_parentheses_description`（设置好感度阈值 $\ge 90$）。无条件强制露米娅在稍微深入或亲密的交互中，必须在回复内至少特地写出一段无标签前缀的纯圆括号神态与肢体客观场景描写，并且必须符合表情匹配不冲突的位置规范。
+
 ## [0.5.0] - 2026-06-29
 
 ### 新增
