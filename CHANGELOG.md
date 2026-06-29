@@ -8,6 +8,13 @@
 
 ---
 
+## [0.5.8] - 2026-06-30
+
+### 修复
+- **Mem0 引擎初始化配置键名修正 (Mem0 API Base URL Configuration Fix)**：
+  - **根本原因**：Mem0 框架的 `OpenAIConfig` 和 `BaseEmbedderConfig` 预设参数中不接受 `"openai_api_base"` 键名，而应使用规范的 `"openai_base_url"`，这导致此前在特定引擎切换时后台静默初始化失败，使 `memory_agent` 对象在内存中持续呈 `None` 空值状态。
+  - **修复细节**：在 [web_interface.py](file:///G:/code/rumia/services/web_interface.py#L161-L211) 的所有大模型提供商初始化分支里，将所有违规的 `"openai_api_base"` 彻底替换为 `"openai_base_url"`。恢复了本地 Qdrant 向量记忆引擎的自启动，从而顺利解决了拉起记忆网络关系图谱（`/api/settings/memory_graph`）时产生的 500 内部服务器报错。
+
 ## [0.5.7] - 2026-06-30
 
 ### 优化
