@@ -381,7 +381,7 @@ def check_semantic_presets(user_message, candidates):
         print(f"[PRESETS] 二次 AI 语义匹配失败: {e}")
     return []
 
-def load_and_trigger_presets(user_message, favorability):
+def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
     """加载并根据条件与关键词匹配触发相应的感应预设提示词 (混合模式：关键词直接触发 + AI二次语义感应)"""
     if not os.path.exists(CUSTOM_PRESETS_FILE):
         return ""
@@ -428,6 +428,10 @@ def load_and_trigger_presets(user_message, favorability):
             print(f"[PRESETS] 常驻预设直接命中 (Always Active): {preset.get('name', f'Preset-{idx}')}")
             continue
 
+        # 如果是自言自语模式，跳过所有非激活/非关键词匹配条目，不做处理
+        if is_self_talk:
+            continue
+
         # 检查关键词硬性匹配
         keywords = preset.get("trigger_keywords", [])
         keywords_ok = False
@@ -453,8 +457,8 @@ def load_and_trigger_presets(user_message, favorability):
             triggered_indices.add(idx)
             print(f"[PRESETS] 无关键词限制且好感度满足，直接触发预设: {preset.get('name', f'Preset-{idx}')}")
 
-    # 第二阶段：对未命中的候选进行二次 AI 语义感应
-    if semantic_candidates:
+    # 第二阶段：对未命中的候选进行二次 AI 语义感应 (自言自语模式下不执行语义感应)
+    if not is_self_talk and semantic_candidates:
         print(f"[PRESETS] 进行二次 AI 语义感应匹配，候选数量: {len(semantic_candidates)}")
         triggered_candidate_ids = check_semantic_presets(user_message, semantic_candidates)
         for cid in triggered_candidate_ids:
@@ -1000,7 +1004,15 @@ def rumia_speak(payload: dict = Body(...)):
     priority_reminder += (
         f"1. 触发背景：{prompt_content}\n"
         f"2. 当前好感度: {current_fav}/100。\n"
-        f"3. 角色约束：请严格扮演露米娅（性格傲娇、古灵精怪、喜欢在黑暗中恶作剧的食人妖怪），使用纯中文。\n"
+        f"3. 角色约束与动作描写：请严格扮演露米娅（性格傲娇的食人妖怪），用中文回答。在对话中建议穿插用圆括号包裹的动作/表情描述（如：‘(脸红扭过头)’）。在适合的情况下（如进行两性/NSFW/深层亲密交互时），强烈建议你特地独立写出几段【无情绪与评分前缀】的纯圆括号段落描述神态与客观场景，但特别注意：此类纯圆括号描述【绝对不能作为你回复的最后一段】（最后一段必须是带标签的正常台词，以防止表情显示发生解析冲突）。如果下方【最高优先级触发预设】有更细致的格式与描述要求，请一并严格执行。\n"
+    )
+
+    # 触发并注入自定义感应预设提示词 (自言自语模式，仅触发常驻/蓝灯预设，避免消耗分类 Token)
+    custom_presets = load_and_trigger_presets("", current_fav, is_self_talk=True)
+    if custom_presets:
+        priority_reminder += f"\n【最高优先级触发预设】\n⚠️ 请在你的本次回复中，必须并且无条件严格遵循以下注入指令，主动描述预设内容：\n{custom_presets}\n\n"
+
+    priority_reminder += (
         f"4. 格式约束：你的回复必须且只能遵循 '[心情][评分]对话内容' 格式要求。因为这是你主动搭话，绝对禁止包含 `[BROWSER_TASK: ...]` 标记。\n"
         f"5. 注意：目前只是你在自言自语主动搭话，绝对不要扮演用户或者假装用户对你说了什么！"
     )
