@@ -974,6 +974,18 @@ def rumia_speak(payload: dict = Body(...)):
     short_idle = self_talk_presets.get("short_idle", "（现在是一段沉默的时间。请主动向我搭话。注意不要和之前说过的话重复。）")
     medium_idle = self_talk_presets.get("medium_idle", "（我已经很久没有理你了。请用害羞或生气的傲娇口吻主动向我搭话，抱怨我冷落你，或者引起我的注意。话语要带有强烈情绪。）")
     long_idle = self_talk_presets.get("long_idle", "（我已经很久没有理你了。请用非常委屈或嚎啕大哭的口吻主动向我搭话，表现出极度的孤独和难过。）")
+    system_role_constraint = self_talk_presets.get(
+        "system_role_constraint",
+        "请严格扮演露米娅（性格傲娇的食人妖怪），用中文回答。在对话中建议穿插用圆括号包裹的动作/表情描述（如：‘(脸红扭过头)’）。在适合的情况下（如进行两性/NSFW/深层亲密交互时），强烈建议你特地独立写出几段【无情绪与评分前缀】的纯圆括号段落描述神态与客观场景，但特别注意：此类纯圆括号描述【绝对不能作为你回复的最后一段】（最后一段必须是带标签的正常台词，以防止表情显示发生解析冲突）。如果下方【最高优先级触发预设】有更细致的格式与描述要求，请一并严格执行。"
+    )
+    format_constraint = self_talk_presets.get(
+        "format_constraint",
+        "你的回复必须且只能遵循 '[心情][评分]对话内容' 格式要求。因为这是你主动搭话，绝对禁止包含 `[BROWSER_TASK: ...]` 标记。"
+    )
+    self_talk_warning = self_talk_presets.get(
+        "self_talk_warning",
+        "目前只是你在自言自语主动搭话，绝对不要扮演用户或者假装用户对你说了什么！"
+    )
 
     prompt_content = ""
     if request_type == 'greeting':
@@ -1004,7 +1016,7 @@ def rumia_speak(payload: dict = Body(...)):
     priority_reminder += (
         f"1. 触发背景：{prompt_content}\n"
         f"2. 当前好感度: {current_fav}/100。\n"
-        f"3. 角色约束与动作描写：请严格扮演露米娅（性格傲娇的食人妖怪），用中文回答。在对话中建议穿插用圆括号包裹的动作/表情描述（如：‘(脸红扭过头)’）。在适合的情况下（如进行两性/NSFW/深层亲密交互时），强烈建议你特地独立写出几段【无情绪与评分前缀】的纯圆括号段落描述神态与客观场景，但特别注意：此类纯圆括号描述【绝对不能作为你回复的最后一段】（最后一段必须是带标签的正常台词，以防止表情显示发生解析冲突）。如果下方【最高优先级触发预设】有更细致的格式与描述要求，请一并严格执行。\n"
+        f"3. 角色约束与动作描写：{system_role_constraint}\n"
     )
 
     # 触发并注入自定义感应预设提示词 (自言自语模式，仅触发常驻/蓝灯预设，避免消耗分类 Token)
@@ -1013,8 +1025,8 @@ def rumia_speak(payload: dict = Body(...)):
         priority_reminder += f"\n【最高优先级触发预设】\n⚠️ 请在你的本次回复中，必须并且无条件严格遵循以下注入指令，主动描述预设内容：\n{custom_presets}\n\n"
 
     priority_reminder += (
-        f"4. 格式约束：你的回复必须且只能遵循 '[心情][评分]对话内容' 格式要求。因为这是你主动搭话，绝对禁止包含 `[BROWSER_TASK: ...]` 标记。\n"
-        f"5. 注意：目前只是你在自言自语主动搭话，绝对不要扮演用户或者假装用户对你说了什么！"
+        f"4. 格式约束：{format_constraint}\n"
+        f"5. 注意：{self_talk_warning}"
     )
     
     active_messages.append({"role": "system", "content": priority_reminder})
