@@ -8,6 +8,14 @@
 
 ---
 
+## [0.5.11] - 2026-06-30
+
+### 优化
+- **好感度全局制约提示词预设化重构 (Favorability Rules Migration to Presets)**：
+  - **架构解耦**：彻底重构了此前在 `/api/chat` 和 `/api/rumia_speak` 接口中硬编码的好感度阈值提示词（>90 好感度的“深度亲密状态解禁”和 100 满额好感度的“至高特权绝对顺从”）。
+  - **预设配置化**：将这两条核心规则作为常驻（always_active）条目移入 [custom_presets.json](file:///G:/code/rumia/services/presets/custom_presets.json#L27-L38)，分别配置了对应的 `min_favorability`（90 和 100）和递增排序优先级。
+  - **代码净化**：从 [web_interface.py](file:///G:/code/rumia/services/web_interface.py#L714-L974) 中完全清除了相关硬编码拼接块。在使后端代码更加清爽、符合单一职责原则的同时，让用户能够直接在预设 JSON 中定制或微调高好感度触发时的行为表现。
+
 ## [0.5.10] - 2026-06-30
 
 ### 新增
