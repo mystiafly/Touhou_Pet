@@ -1132,6 +1132,39 @@ def get_log_content(date: str):
     except Exception as ex:
         return JSONResponse({"success": False, "error": str(ex)}, status_code=500)
 
+# 8.5. 重新提炼并重写秘密日记接口
+@app.post("/api/settings/logs/{date}/rewrite")
+def rewrite_log_diary(date: str):
+    """重新打包并重写特定日期的露米娅日记"""
+    try:
+        if not re.match(r'^\d{4}-\d{2}-\d{2}$', date):
+            return JSONResponse({"success": False, "error": "无效的日期格式"}, status_code=400)
+            
+        log_file = os.path.join(DAILY_HISTORY_DIR, f"chat_log_{date}.txt")
+        diary_file = os.path.join(DAILY_HISTORY_DIR, f"rumia_diary_{date}.txt")
+        
+        if not os.path.exists(log_file):
+            return JSONResponse({"success": False, "error": "聊天记录文件不存在，无法重写日记"}, status_code=404)
+            
+        with open(log_file, 'r', encoding='utf-8') as lf:
+            log_content = lf.read()
+            
+        print(f"[DIARY SYSTEM] 正在为 {date} 重新提炼并重写露米娅的日记...")
+        # 强制重新调用 LLM 生成日记
+        new_diary_content = generate_rumia_diary(date, log_content)
+        
+        # 覆写现有的日记文件
+        with open(diary_file, 'w', encoding='utf-8') as df:
+            df.write(new_diary_content)
+            
+        return {
+            "success": True,
+            "date": date,
+            "diary_content": new_diary_content
+        }
+    except Exception as ex:
+        return JSONResponse({"success": False, "error": str(ex)}, status_code=500)
+
 # 9. 记忆网络关系图谱数据接口
 @app.get("/api/settings/memory_graph")
 def get_memory_graph():

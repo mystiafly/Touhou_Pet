@@ -176,6 +176,7 @@ class RumiaPet {
         this.backGraphBtn = document.getElementById('back-graph-btn'); // [新增]
         this.manualDistillBtn = document.getElementById('manual-distill-btn'); // [新增]
         this.seedTestBtn = document.getElementById('seed-test-btn'); // [新增]
+        this.rewriteDiaryBtn = document.getElementById('rewrite-diary-btn'); // [新增]
 
         // 打开菜单
         this.settingsBtn.addEventListener('click', async () => {
@@ -261,6 +262,9 @@ class RumiaPet {
         if (this.subtabDiary) {
             this.subtabDiary.addEventListener('click', () => this.switchLogTab('diary'));
         }
+        if (this.rewriteDiaryBtn) {
+            this.rewriteDiaryBtn.addEventListener('click', () => this.rewriteDiary());
+        }
     }
 
     // [新增] 辅助关闭方法，用于重置状态
@@ -275,6 +279,7 @@ class RumiaPet {
             this.settingsContent.classList.remove('wide');
             this.logDateSelect.innerHTML = '<option value="">暂无记录...</option>';
             this.logContentArea.innerText = '请选择一个日期来查阅你和露米娅的聊天回忆...';
+            if (this.rewriteDiaryBtn) this.rewriteDiaryBtn.style.display = 'none';
             
             // [新增] 重置日志子选项卡状态
             this.activeLogTab = "chat";
@@ -324,6 +329,7 @@ class RumiaPet {
         const val = this.logDateSelect.value;
         if (!val) {
             this.logContentArea.innerText = '请选择一个日期来查阅你和露米娅的聊天回忆...';
+            if (this.rewriteDiaryBtn) this.rewriteDiaryBtn.style.display = 'none';
             return;
         }
 
@@ -336,16 +342,57 @@ class RumiaPet {
                 this.currentRumiaDiary = data.diary_content || "";
                 // 每次切换新日期时，默认显示聊天记录子选项卡
                 this.switchLogTab('chat');
+                if (this.rewriteDiaryBtn) this.rewriteDiaryBtn.style.display = 'inline-block';
             } else {
                 this.logContentArea.innerText = `读取回忆失败: ${data.error || '未知错误'}`;
                 this.currentChatLog = "";
                 this.currentRumiaDiary = "";
+                if (this.rewriteDiaryBtn) this.rewriteDiaryBtn.style.display = 'none';
             }
         } catch (e) {
             console.error("加载日志内容失败:", e);
             this.logContentArea.innerText = '加载回忆失败，请稍后重试。';
             this.currentChatLog = "";
+            if (this.rewriteDiaryBtn) this.rewriteDiaryBtn.style.display = 'none';
             this.currentRumiaDiary = "";
+        }
+    }
+
+    // [新增] 重新打包对话并让露米娅重写今日日记
+    async rewriteDiary() {
+        const val = this.logDateSelect.value;
+        if (!val) return;
+
+        if (!confirm(`确定要让露米娅重新读一遍 ${val} 的对话并重写这天的日记吗？\n(这会消耗API token并需要几秒钟)`)) return;
+
+        this.rewriteDiaryBtn.disabled = true;
+        const originalText = this.rewriteDiaryBtn.innerHTML;
+        this.rewriteDiaryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在重写...';
+        
+        // 临时将日记内容替换为加载提示并切到日记选项卡
+        this.currentRumiaDiary = "露米娅正在挠头回忆这天的相处，努力重写日记中，这需要几秒钟时间，请稍候...哼！";
+        this.switchLogTab('diary');
+
+        try {
+            const response = await fetch(`/api/settings/logs/${val}/rewrite`, {
+                method: 'POST'
+            });
+            const data = await response.json();
+            if (data.success) {
+                this.currentRumiaDiary = data.diary_content || "";
+                this.switchLogTab('diary');
+                this.showBubble("这天的日记我已经重写写好啦！哼，这次写的可认真了，快看看！", 3500);
+            } else {
+                alert(`重写日记失败: ${data.error || '未知错误'}`);
+                this.currentRumiaDiary = "重写日记失败了...呜呜。";
+                this.switchLogTab('diary');
+            }
+        } catch (e) {
+            console.error("重写日记请求出错:", e);
+            alert("请求失败，请检查网络或后端是否正常。");
+        } finally {
+            this.rewriteDiaryBtn.disabled = false;
+            this.rewriteDiaryBtn.innerHTML = originalText;
         }
     }
 
