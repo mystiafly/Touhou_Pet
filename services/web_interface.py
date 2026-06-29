@@ -326,9 +326,10 @@ def parse_reply(text):
 # === [感应预设系统] ===
 PRESETS_DIR = os.path.join(os.path.dirname(__file__), "presets")
 CUSTOM_PRESETS_FILE = os.path.join(PRESETS_DIR, "custom_presets.json")
+SELF_TALK_PRESETS_FILE = os.path.join(PRESETS_DIR, "self_talk_presets.json")
 
 def init_custom_presets():
-    """初始化自定义感应预设的文件夹和文件，如果没有就建立并留空"""
+    """初始化自定义感应预设的文件夹和文件，如果没有就建立并初始化"""
     if not os.path.exists(PRESETS_DIR):
         os.makedirs(PRESETS_DIR)
     if not os.path.exists(CUSTOM_PRESETS_FILE):
@@ -338,6 +339,20 @@ def init_custom_presets():
             print(f"[PRESETS] 已成功建立感应预设管理文件: {CUSTOM_PRESETS_FILE} (目前留空)")
         except Exception as e:
             print(f"[PRESETS ERROR] 建立感应预设文件失败: {e}")
+            
+    if not os.path.exists(SELF_TALK_PRESETS_FILE):
+        try:
+            default_self_talk = {
+                "greeting_suffix": " 要求：话语简短（15字以内），体现露米娅的性格，不要和历史记录重复。",
+                "short_idle": "（现在是一段沉默的时间。请主动向我搭话。注意不要和之前说过的话重复。）",
+                "medium_idle": "（我已经很久没有理你了。请用害羞或生气的傲娇口吻主动向我搭话，抱怨我冷落你，或者引起我的注意。话语要带有强烈情绪。）",
+                "long_idle": "（我已经很久没有理你了。请用非常委屈或嚎啕大哭的口吻主动向我搭话，表现出极度的孤独和难过。）"
+            }
+            with open(SELF_TALK_PRESETS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(default_self_talk, f, ensure_ascii=False, indent=2)
+            print(f"[PRESETS] 已成功建立自言自语预设管理文件: {SELF_TALK_PRESETS_FILE}")
+        except Exception as e:
+            print(f"[PRESETS ERROR] 建立自言自语预设文件失败: {e}")
 
 # 自动执行初始化建立页面
 init_custom_presets()
@@ -946,18 +961,31 @@ def rumia_speak(payload: dict = Body(...)):
     print(f"---------> 收到主动说话请求: 类型={request_type}, 次数={count} <---------")
 
     messages = load_history()
-    prompt_content = ""
+    # 加载自言自语预设文件，如果读取失败则使用默认硬编码兜底
+    self_talk_presets = {}
+    if os.path.exists(SELF_TALK_PRESETS_FILE):
+        try:
+            with open(SELF_TALK_PRESETS_FILE, 'r', encoding='utf-8') as f:
+                self_talk_presets = json.load(f)
+        except Exception as e:
+            print(f"[PRESETS ERROR] 读取自言自语预设文件失败: {e}")
 
+    greeting_suffix = self_talk_presets.get("greeting_suffix", " 要求：话语简短（15字以内），体现露米娅的性格，不要和历史记录重复。")
+    short_idle = self_talk_presets.get("short_idle", "（现在是一段沉默的时间。请主动向我搭话。注意不要和之前说过的话重复。）")
+    medium_idle = self_talk_presets.get("medium_idle", "（我已经很久没有理你了。请用害羞或生气的傲娇口吻主动向我搭话，抱怨我冷落你，或者引起我的注意。话语要带有强烈情绪。）")
+    long_idle = self_talk_presets.get("long_idle", "（我已经很久没有理你了。请用非常委屈或嚎啕大哭的口吻主动向我搭话，表现出极度的孤独和难过。）")
+
+    prompt_content = ""
     if request_type == 'greeting':
         prompt_content = get_time_greeting_prompt()
-        prompt_content += " 要求：话语简短（15字以内），体现露米娅的性格，不要和历史记录重复。"
+        prompt_content += greeting_suffix
     else:
         if count < 3:
-            prompt_content = "（现在是一段沉默的时间。请主动向我搭话。注意不要和之前说过的话重复。）"
+            prompt_content = short_idle
         elif count == 3:
-            prompt_content = "（我已经很久没有理你了。请用害羞或生气的傲娇口吻主动向我搭话，抱怨我冷落你，或者引起我的注意。话语要带有强烈情绪。）"
+            prompt_content = medium_idle
         else:
-            prompt_content = "（我已经很久没有理你了。请用非常委屈或嚎啕大哭的口吻主动向我搭话，表现出极度的孤独和难过。）"
+            prompt_content = long_idle
 
     # 构建主动说话时的临时 System 提醒（不影响持久历史）
     active_messages = [msg.copy() for msg in messages]
