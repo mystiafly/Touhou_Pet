@@ -8,6 +8,13 @@
 
 ---
 
+## [0.5.12] - 2026-06-30
+
+### 新增
+- **自言自语场景提示词独立配置化 (Self-Talk Prompts Externalization)**：
+  - **新增配置文件**：在 `services/presets/` 目录下新增了 [self_talk_presets.json](file:///G:/code/rumia/services/presets/self_talk_presets.json)，将此前自言自语（主动搭话）中随闲置计数递进的 4 类硬编码引导词（开机问候后缀、短期沉默、中期冷落、长期遗忘）全部归口配置化。
+  - **动态读取与热重载**：重写了 `/api/rumia_speak` 里的提示词组装逻辑，每次调用时动态加载该配置文件，支持免重启热载，并设置了完善的代码级缺省文本兜底防灾逻辑。
+
 ## [0.5.11] - 2026-06-30
 
 ### 优化
