@@ -8,6 +8,13 @@
 
 ---
 
+## [0.5.13] - 2026-06-30
+
+### 优化
+- **自言自语全局制约提示词完全配置化 (Self-Talk System Rules Externalization)**：
+  - **规则配置化**：将 `/api/rumia_speak` 接口中原本硬编码在系统提示词中的“3. 角色约束与客观动作描写”、“4. 心情评分格式规范”、以及“5. 防分身扮演警告（禁止假装用户聊天）”这 3 项核心逻辑规则也归并移出代码。
+  - **扩充预设文件**：在 [self_talk_presets.json](file:///G:/code/rumia/services/presets/self_talk_presets.json#L5-L7) 中新增了 `system_role_constraint`、`format_constraint` 和 `self_talk_warning` 键名。在保留完美的缺省兜底值的同时，实现了自言自语（主动搭话）提示词指令的 100% 配置文件化。
+
 ## [0.5.12] - 2026-06-30
 
 ### 新增
