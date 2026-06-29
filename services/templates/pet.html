@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Rumia Pet</title>
-    <link rel="stylesheet" href="/static/css/pet.css?v=0.5.3">
+    <link rel="stylesheet" href="/static/css/pet.css?v=0.5.4">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Premium Interactive Network Graph Vis.js -->
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
@@ -110,9 +110,14 @@
                         </div>
                     </div>
                 </div>
-                <button id="back-settings-btn" class="menu-btn small-btn">
-                    <i class="fas fa-arrow-left"></i> 返回设置
-                </button>
+                <div class="logs-action-bar">
+                    <button id="back-settings-btn" class="menu-btn small-btn" style="margin: 0;">
+                        <i class="fas fa-arrow-left"></i> 返回设置
+                    </button>
+                    <button id="rewrite-diary-btn" class="menu-btn small-btn info-btn" style="margin: 0; display: none;">
+                        <i class="fas fa-sync-alt"></i> 重写这天日记
+                    </button>
+                </div>
             </div>
 
             <!-- 4. 记忆图谱视图 (默认隐藏) -->
@@ -148,6 +153,6 @@
     </div>
 </div>
 
-<script src="/static/js/pet_script.js?v=0.5.3"></script>
+<script src="/static/js/pet_script.js?v=0.5.4"></script>
 </body>
 </html>
