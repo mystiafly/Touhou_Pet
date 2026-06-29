@@ -8,6 +8,11 @@
 
 ---
 
+## [0.5.9] - 2026-06-30
+
+### 新增
+- **常驻排版段落上限预设 (Constant Paragraph Count Limit Preset)**：在 [custom_presets.json](file:///G:/code/rumia/services/presets/custom_presets.json) 中新增了蓝灯常驻条目 `always_active_paragraph_limit`（优先级设为最高的 200，好感度无门槛）。该预设强制约束露米娅在单次回复中无论话题如何，排版总段落数最多不能超过 4 段。以此避免生成过多零碎小段导致的刷屏与文本冗长。
+
 ## [0.5.8] - 2026-06-30
 
 ### 修复
