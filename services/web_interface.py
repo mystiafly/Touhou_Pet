@@ -538,6 +538,7 @@ def generate_rumia_diary(date_str, log_content):
         current_fav = get_favorability()
         
         prompt = (
+            f"【防截断至高指令】：你必须有始有终地完整写完这篇日记，绝对禁止在句子中途截断、断字或留下未完成的半句话！日记结尾必须以完整的标点符号（如“。”、“！”）完美落笔收尾。此命令具有最高执行优先级。\n\n"
             f"你是东方Project中的露米娅（一个傲娇、心口不一但内心其实极度依赖和喜欢用户的食人妖怪）。你目前对用户的好感度是 {current_fav}/100。\n"
             f"今天的日期是 {date_str}。以下是你今天和用户的对话历史记录：\n"
             f"\"\"\"\n{log_content}\n\"\"\"\n\n"
@@ -549,15 +550,14 @@ def generate_rumia_diary(date_str, log_content):
             f"   『{date_str} | 心情：害羞 | 天气：雾之湖的夜色』\n"
             f"   今天和那家伙聊天了，他居然把巧克力豆留给我吃……哼，以为这样就能讨好食人妖怪吗？\n"
             f"   其实，他今天摸我头的时候，我心跳得好快。但我绝对不能承认！不过，茶还是挺暖和的，勉强给他打个8分吧！\n"
-            f"4. 必须使用纯中文，严禁使用英文，不要包含任何系统标记。\n"
-            f"5. 防截断要求：必须完整地结束日记，绝对不能在句子中途截断或留下未完成的半句话。确保你的日记能够用一个完整的标点符号（如“！”、“。”）利落地结尾。"
+            f"4. 必须使用纯中文，严禁使用英文，不要包含任何系统标记。"
         )
         
         response = client.chat.completions.create(
             model=model_name,
             messages=[{"role": "system", "content": prompt}],
             temperature=0.7,
-            max_tokens=1200
+            max_tokens=5000
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
