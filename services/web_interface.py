@@ -548,14 +548,15 @@ def generate_rumia_diary(date_str, log_content):
             f"3. 格式：第一行必须是日期与天气/心情标签，第二行开始为日记正文，严禁分成多个段落！格式示例如下：\n"
             f"   『{date_str} | 心情：害羞 | 天气：雾之湖的夜色』\n"
             f"   今天和那家伙聊天了，他居然把巧克力豆留给我吃……哼，以为这样就能讨好食人妖怪吗？不过，茶还是挺暖和的，勉强给他打个8分吧！\n"
-            f"4. 必须使用纯中文，严禁使用英文，不要包含任何系统标记。"
+            f"4. 必须使用纯中文，严禁使用英文，不要包含任何系统标记。\n"
+            f"5. 防截断要求：必须完整地结束日记，绝对不能在句子中途截断或留下未完成的半句话。确保你的日记能够用一个完整的标点符号（如“！”、“。”）利落地结尾。"
         )
         
         response = client.chat.completions.create(
             model=model_name,
             messages=[{"role": "system", "content": prompt}],
             temperature=0.7,
-            max_tokens=300
+            max_tokens=500
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
