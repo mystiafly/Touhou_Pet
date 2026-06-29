@@ -161,7 +161,7 @@ def get_memory_agent():
                 "config": {
                     "api_key": gemini_key,
                     "model": "gemini-2.5-flash",
-                    "openai_api_base": "https://generativelanguage.googleapis.com/v1beta/openai/"
+                    "openai_base_url": "https://generativelanguage.googleapis.com/v1beta/openai/"
                 }
             }
             # 向量化也采用同一接口或兼容的 embedding
@@ -170,7 +170,7 @@ def get_memory_agent():
                 "config": {
                     "api_key": gemini_key,
                     "model": "text-embedding-004",
-                    "openai_api_base": "https://generativelanguage.googleapis.com/v1beta/openai/"
+                    "openai_base_url": "https://generativelanguage.googleapis.com/v1beta/openai/"
                 }
             }
         elif "deepseek" in provider and deepseek_key:
@@ -179,7 +179,7 @@ def get_memory_agent():
                 "config": {
                     "api_key": deepseek_key,
                     "model": "deepseek-chat",
-                    "openai_api_base": "https://api.deepseek.com"
+                    "openai_base_url": "https://api.deepseek.com"
                 }
             }
             # 异步微调中使用本地 embedding 节约 Token
@@ -197,7 +197,7 @@ def get_memory_agent():
                     "config": {
                         "api_key": gemini_key,
                         "model": "gemini-2.5-flash",
-                        "openai_api_base": "https://generativelanguage.googleapis.com/v1beta/openai/"
+                        "openai_base_url": "https://generativelanguage.googleapis.com/v1beta/openai/"
                     }
                 }
             elif deepseek_key:
@@ -206,7 +206,7 @@ def get_memory_agent():
                     "config": {
                         "api_key": deepseek_key,
                         "model": "deepseek-chat",
-                        "openai_api_base": "https://api.deepseek.com"
+                        "openai_base_url": "https://api.deepseek.com"
                     }
                 }
                 
