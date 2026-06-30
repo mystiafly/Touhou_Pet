@@ -45,8 +45,8 @@ def get_play_url(song_id):
     :param song_id: 网易云歌曲 ID
     :return: 音频流直链 (mp3)
     """
-    # 采用网易云经典的客户端外链重定向接口
-    return f"https://music.163.com/song/media/outer/url?id={song_id}.mp3"
+    # 采用网易云经典的客户端外链重定向接口 (必须使用 http 以免遭遇 HTTPS->HTTP 重定向降级阻断)
+    return f"http://music.163.com/song/media/outer/url?id={song_id}.mp3"
 
 def get_lyric(song_id):
     """

@@ -97,9 +97,14 @@ class RumiaPet {
         }
         this.musicAudio.addEventListener('timeupdate', () => this.updateLyrics());
         this.musicAudio.addEventListener('ended', () => this.stopMusic());
-        this.musicAudio.addEventListener('error', (e) => {
-            console.error("音乐播放错误:", e);
-            this.liveLyrics.innerText = "播放出错啦，可能是版权受限...";
+        this.musicAudio.addEventListener('error', () => {
+            const err = this.musicAudio.error;
+            let errMsg = "未知播放错误";
+            if (err) {
+                errMsg = `Code ${err.code}: ${err.message || "Src Not Supported / Network Issue"}`;
+            }
+            console.error("音乐播放错误:", errMsg);
+            this.liveLyrics.innerText = `播放出错: ${errMsg}`;
             this.musicIsPlaying = false;
             this.musicToggleBtn.innerHTML = '<i class="fas fa-play"></i>';
         });
@@ -1009,8 +1014,8 @@ class RumiaPet {
             
         } catch (e) {
             console.error("[MUSIC PLAYER ERROR] 播放异常:", e);
-            this.liveLyrics.innerText = "播放异常，可能由于网络超时或VIP版权限制。";
-            setTimeout(() => this.stopMusic(), 4000);
+            this.liveLyrics.innerText = `播放异常: ${e.message || e}`;
+            setTimeout(() => this.stopMusic(), 6000);
         }
     }
 
