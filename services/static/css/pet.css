@@ -880,12 +880,14 @@ body, html {
 
 /* 网易云音乐悬浮播放器栏 */
 .music-player-bar {
+    position: absolute;
+    bottom: 52px;
+    left: 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     width: calc(100% - 24px);
     height: 44px;
-    margin: 0 auto 8px auto;
     padding: 0 10px;
     box-sizing: border-box;
     background: rgba(25, 20, 25, 0.75);
@@ -896,16 +898,16 @@ body, html {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
     z-index: 99;
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    animation: slideDown 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    animation: slideUpPlayer 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .music-player-bar.hidden {
     display: none !important;
 }
 
-@keyframes slideDown {
+@keyframes slideUpPlayer {
     from {
-        transform: translateY(-10px);
+        transform: translateY(10px);
         opacity: 0;
     }
     to {
