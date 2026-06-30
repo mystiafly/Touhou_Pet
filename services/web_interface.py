@@ -28,6 +28,7 @@ load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env'))
 # 导入时间与现实感知模块
 from time_system import get_time_greeting_prompt
 from real_world_system import get_meta_context_for_chat
+from external_api import netease_music
 
 # 初始化 FastAPI
 app = FastAPI(title="Rumia Pet Backend", version="0.3.0")
@@ -1390,6 +1391,27 @@ def manual_distill_now(payload: dict = Body(default={})):
     except Exception as ex:
         print(f"[API ERROR] Manual distill failed: {ex}")
         return JSONResponse({"success": False, "error": str(ex)}, status_code=500)
+
+# === 网易云音乐原生控制 API ===
+@app.get("/api/music/search")
+def music_search(q: str):
+    """搜索网易云音乐单曲"""
+    if not q or not q.strip():
+        return {"success": False, "error": "Query cannot be empty"}
+    songs = netease_music.search_music(q)
+    return {"success": True, "songs": songs}
+
+@app.get("/api/music/lyric")
+def music_lyric(id: int):
+    """根据歌曲ID获取LRC歌词"""
+    lyric = netease_music.get_lyric(id)
+    return {"success": True, "lyric": lyric}
+
+@app.get("/api/music/url")
+def music_url(id: int):
+    """获取歌曲播放直链"""
+    url = netease_music.get_play_url(id)
+    return {"success": True, "url": url}
 
 # 11. 退出游戏接口 (原 settings_system 蓝图退出逻辑深度融合)
 @app.post("/api/settings/exit")

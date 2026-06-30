@@ -49,6 +49,18 @@ class RumiaPet {
         this.isSleeping = false;
         this.sleepTimer = null;
 
+        // [新增] 网易云音乐原生播放器控制与状态绑定
+        this.playerBar = document.getElementById('music-player-bar');
+        this.musicTitle = document.getElementById('music-title');
+        this.musicArtist = document.getElementById('music-artist');
+        this.liveLyrics = document.getElementById('live-lyrics');
+        this.musicToggleBtn = document.getElementById('music-toggle-btn');
+        this.musicStopBtn = document.getElementById('music-stop-btn');
+
+        this.musicAudio = new Audio();
+        this.lyricsArray = [];
+        this.musicIsPlaying = false;
+
         this.init();
     }
 
@@ -75,6 +87,22 @@ class RumiaPet {
         this.initPresets();
 
         this.resetAutoSpeakTimer();
+
+        // [新增] 网易云多媒体播放事件绑定
+        if (this.musicToggleBtn) {
+            this.musicToggleBtn.addEventListener('click', () => this.toggleMusic());
+        }
+        if (this.musicStopBtn) {
+            this.musicStopBtn.addEventListener('click', () => this.stopMusic());
+        }
+        this.musicAudio.addEventListener('timeupdate', () => this.updateLyrics());
+        this.musicAudio.addEventListener('ended', () => this.stopMusic());
+        this.musicAudio.addEventListener('error', (e) => {
+            console.error("音乐播放错误:", e);
+            this.liveLyrics.innerText = "播放出错啦，可能是版权受限...";
+            this.musicIsPlaying = false;
+            this.musicToggleBtn.innerHTML = '<i class="fas fa-play"></i>';
+        });
 
         // 点击身体互动 (如果正在睡觉则唤醒)
         this.img.addEventListener('click', () => {
@@ -535,6 +563,16 @@ class RumiaPet {
 
 // [修改] 显示气泡 (duration 如果不传或传 null，则自动计算)
     showBubble(text, duration = null) {
+        // [新增] 网易云点歌隐藏指令解析拦截
+        const musicRegex = /\[MUSIC_PLAY:\s*(.*?)\s*\]/;
+        const match = text.match(musicRegex);
+        if (match) {
+            const musicQuery = match[1];
+            text = text.replace(musicRegex, "").trim();
+            console.log(`[MUSIC CONTROLLER] 拦截到大模型点歌指令: ${musicQuery}`);
+            this.searchAndPlayMusic(musicQuery);
+        }
+
         this.bubbleContent.innerText = text;
         this.bubbleContent.scrollTop = 0; // 重置文字框滚动条位置到顶部，防止上一条超长文本残留滚动条
         this.bubble.style.opacity = '1';
@@ -914,6 +952,174 @@ class RumiaPet {
                 }
             }
         });
+    }
+
+    // [新增] 网易云音乐原生控制核心逻辑
+    async searchAndPlayMusic(query) {
+        if (!this.playerBar || !this.musicAudio) return;
+        
+        console.log(`[MUSIC PLAYER] 开始搜索并点播: ${query}`);
+        this.liveLyrics.innerText = "正在搜索音乐，请稍候...";
+        this.musicTitle.innerText = "正在搜索...";
+        this.musicArtist.innerText = "-";
+        this.playerBar.classList.remove('hidden');
+        
+        try {
+            // 1. 调用后端搜索
+            const searchResp = await fetch(`/api/music/search?q=${encodeURIComponent(query)}`);
+            const searchData = await searchResp.json();
+            
+            if (!searchData.success || !searchData.songs || searchData.songs.length === 0) {
+                this.liveLyrics.innerText = "没找到这首歌，换一首试试吧！";
+                this.musicTitle.innerText = "无结果";
+                setTimeout(() => this.stopMusic(), 4000);
+                return;
+            }
+            
+            const song = searchData.songs[0];
+            this.musicTitle.innerText = song.name;
+            this.musicArtist.innerText = song.artists;
+            this.liveLyrics.innerText = "正在加载音频流...";
+            
+            // 2. 加载歌词和播放直链
+            const [urlResp, lyricResp] = await Promise.all([
+                fetch(`/api/music/url?id=${song.id}`),
+                fetch(`/api/music/lyric?id=${song.id}`)
+            ]);
+            
+            const urlData = await urlResp.json();
+            const lyricData = await lyricResp.json();
+            
+            if (!urlData.success || !urlData.url) {
+                this.liveLyrics.innerText = "音频加载失败，可能因版权受限...";
+                setTimeout(() => this.stopMusic(), 4000);
+                return;
+            }
+            
+            // 解析歌词
+            this.parseLrc(lyricData.lyric || "");
+            
+            // 播放音频
+            this.musicAudio.src = urlData.url;
+            this.musicAudio.crossOrigin = "anonymous";
+            await this.musicAudio.play();
+            
+            this.musicIsPlaying = true;
+            this.musicToggleBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            console.log(`[MUSIC PLAYER] 成功播放: ${song.name} - ${song.artists}`);
+            
+        } catch (e) {
+            console.error("[MUSIC PLAYER ERROR] 播放异常:", e);
+            this.liveLyrics.innerText = "播放异常，可能由于网络超时或VIP版权限制。";
+            setTimeout(() => this.stopMusic(), 4000);
+        }
+    }
+
+    // 解析LRC格式歌词 [mm:ss.xx] 歌词内容
+    parseLrc(lyricText) {
+        this.lyricsArray = [];
+        if (!lyricText) {
+            this.lyricsArray.push({ time: 0, text: "（纯音乐，无歌词）" });
+            return;
+        }
+        
+        const lines = lyricText.split("\n");
+        const timeReg = /\[(\d+):(\d+)(?:\.(\d+))?\]/g;
+        
+        for (let line of lines) {
+            line = line.trim();
+            if (!line) continue;
+            
+            // 有可能有多个时间标签在一行，重置正则匹配索引
+            timeReg.lastIndex = 0;
+            
+            // 提取歌词文本部分 (去掉所有的 [xx:xx.xx] 时间标签)
+            const text = line.replace(/\[\d+:\d+(?:\.\d+)?\]/g, "").trim();
+            
+            let match;
+            // 重新遍历查找这行里所有匹配的时间点
+            timeReg.lastIndex = 0;
+            while ((match = timeReg.exec(line)) !== null) {
+                const min = parseInt(match[1], 10);
+                const sec = parseInt(match[2], 10);
+                const ms = match[3] ? parseInt(match[3].substring(0, 2), 10) : 0;
+                const totalSeconds = min * 60 + sec + ms / 100;
+                
+                this.lyricsArray.push({
+                    time: totalSeconds,
+                    text: text || "~~~" // 留白行替换为波浪号
+                });
+            }
+        }
+        
+        // 按照时间戳升序排序
+        this.lyricsArray.sort((a, b) => a.time - b.time);
+        
+        if (this.lyricsArray.length === 0) {
+            this.lyricsArray.push({ time: 0, text: "（歌词格式暂不支持解析）" });
+        }
+    }
+
+    // 同步刷新歌词显示
+    updateLyrics() {
+        if (!this.musicAudio || this.lyricsArray.length === 0) return;
+        const currentTime = this.musicAudio.currentTime;
+        
+        // 寻找最接近当前播放时间的歌词行
+        let activeIdx = 0;
+        for (let i = 0; i < this.lyricsArray.length; i++) {
+            if (currentTime >= this.lyricsArray[i].time) {
+                activeIdx = i;
+            } else {
+                break;
+            }
+        }
+        
+        const activeLyric = this.lyricsArray[activeIdx].text;
+        // 仅当歌词内容确实发生变化时才更新DOM，避免无谓渲染
+        if (this.liveLyrics.innerText !== activeLyric) {
+            this.liveLyrics.innerText = activeLyric;
+        }
+    }
+
+    // 播放/暂停切换
+    toggleMusic() {
+        if (!this.musicAudio || !this.musicAudio.src) return;
+        
+        if (this.musicIsPlaying) {
+            this.musicAudio.pause();
+            this.musicIsPlaying = false;
+            this.musicToggleBtn.innerHTML = '<i class="fas fa-play"></i>';
+            console.log("[MUSIC PLAYER] 暂停播放");
+        } else {
+            this.musicAudio.play().then(() => {
+                this.musicIsPlaying = true;
+                this.musicToggleBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                console.log("[MUSIC PLAYER] 恢复播放");
+            }).catch(e => {
+                console.error("恢复播放失败:", e);
+            });
+        }
+    }
+
+    // 停止播放并隐藏播放器
+    stopMusic() {
+        if (this.musicAudio) {
+            this.musicAudio.pause();
+            this.musicAudio.src = ""; // 彻底切断音频连接，释放流资源
+        }
+        this.musicIsPlaying = false;
+        this.lyricsArray = [];
+        if (this.musicToggleBtn) {
+            this.musicToggleBtn.innerHTML = '<i class="fas fa-play"></i>';
+        }
+        if (this.liveLyrics) {
+            this.liveLyrics.innerText = "让露米娅唱首歌给你听吧...";
+        }
+        if (this.playerBar) {
+            this.playerBar.classList.add('hidden');
+        }
+        console.log("[MUSIC PLAYER] 停止播放并收起控制面板");
     }
 }
 

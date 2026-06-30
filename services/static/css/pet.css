@@ -670,6 +670,201 @@ body, html {
 }
 
 .graph-info-card p {
+    font-family: monospace;
+    font-size: 11px;
+    color: #eee;
+    line-height: 1.6;
+}
+
+.info-btn {
+    background: rgba(0, 150, 255, 0.2);
+    border: 1px solid rgba(0, 150, 255, 0.4);
+    color: #8cc3ff;
+}
+
+.info-btn:hover {
+    background: rgba(0, 150, 255, 0.4);
+    color: #ffffff;
+}
+
+.small-btn {
+    font-size: 12px;
+    padding: 6px 10px;
+    width: 100%;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+/* 10. 大脑引擎配置页面样式 */
+#settings-engine-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    justify-content: space-between;
+    text-align: left;
+}
+
+#settings-engine-view h3 {
+    margin: 0 0 12px 0;
+    color: #ff6b8b;
+    font-size: 15px;
+    text-align: center;
+}
+
+.settings-desc {
+    font-size: 11px;
+    color: #aaa;
+    line-height: 1.4;
+    margin-top: 10px;
+    margin-bottom: 0;
+    text-align: center;
+}
+
+.primary-btn {
+    background: rgba(255, 107, 139, 0.15);
+    border: 1px solid rgba(255, 107, 139, 0.4);
+    color: #ff8fa4;
+}
+
+.primary-btn:hover {
+    background: rgba(255, 107, 139, 0.35);
+    color: #ffffff;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* 11. 记忆图谱页面样式 */
+.success-btn {
+    background: rgba(80, 250, 123, 0.15);
+    border: 1px solid rgba(80, 250, 123, 0.4);
+    color: #50fa7b;
+}
+
+.success-btn:hover {
+    background: rgba(80, 250, 123, 0.35);
+    color: #ffffff;
+}
+
+.graph-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-grow: 1;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.graph-controls-bar {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+}
+
+.graph-controls-bar button {
+    flex: 1;
+}
+
+.graph-container-wrapper {
+    position: relative;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 107, 139, 0.4);
+    border-radius: 8px;
+    flex-grow: 1;
+    overflow: hidden;
+    height: 230px;
+    box-sizing: border-box;
+}
+
+#graph-canvas-container {
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+}
+
+#graph-canvas-container:active {
+    cursor: grabbing;
+}
+
+.graph-legend {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    background: rgba(20, 20, 30, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    padding: 4px 8px;
+    display: flex;
+    gap: 10px;
+    pointer-events: none;
+    backdrop-filter: blur(5px);
+    z-index: 10;
+}
+
+.legend-item {
+    font-size: 10px;
+    color: #ccc;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.legend-color {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.legend-color.pink {
+    background: #ff8da1;
+    box-shadow: 0 0 4px #ff8da1;
+}
+
+.legend-color.blue {
+    background: #8be9fd;
+    box-shadow: 0 0 4px #8be9fd;
+}
+
+.graph-info-card {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    left: 8px;
+    background: rgba(30, 30, 40, 0.9);
+    border: 1px solid #ff6b8b;
+    border-radius: 6px;
+    padding: 8px;
+    text-align: left;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    backdrop-filter: blur(5px);
+    max-height: 85px;
+    overflow-y: auto;
+    box-sizing: border-box;
+    z-index: 10;
+}
+
+/* 关联卡片精致暗粉色滚动条样式 */
+.graph-info-card::-webkit-scrollbar {
+    width: 4px;
+}
+.graph-info-card::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+.graph-info-card::-webkit-scrollbar-thumb {
+    background: #ff6b8b;
+    border-radius: 10px;
+}
+
+.graph-info-card h4 {
+    margin: 0 0 4px 0;
+    font-size: 11px;
+    color: #ff6b8b;
+    font-weight: bold;
+}
+
+.graph-info-card p {
     margin: 0;
     font-size: 10px;
     color: #e0e0e0;
@@ -681,4 +876,147 @@ body, html {
     align-items: center;
     width: 100%;
     margin-top: 10px;
+}
+
+/* 网易云音乐悬浮播放器栏 */
+.music-player-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: calc(100% - 24px);
+    height: 44px;
+    margin: 0 auto 8px auto;
+    padding: 0 10px;
+    box-sizing: border-box;
+    background: rgba(25, 20, 25, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 107, 139, 0.3);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    z-index: 99;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    animation: slideDown 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.music-player-bar.hidden {
+    display: none !important;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-10px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.music-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 28%;
+    overflow: hidden;
+}
+
+.pulse-icon {
+    color: #ff6b8b;
+    font-size: 14px;
+    animation: pulseGlow 1.5s infinite ease-in-out;
+}
+
+@keyframes pulseGlow {
+    0%, 100% {
+        transform: scale(1);
+        text-shadow: 0 0 2px rgba(255, 107, 139, 0.3);
+    }
+    50% {
+        transform: scale(1.15);
+        text-shadow: 0 0 10px rgba(255, 107, 139, 0.9);
+        color: #ff3366;
+    }
+}
+
+.music-text {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#music-title {
+    font-size: 11px;
+    font-weight: bold;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#music-artist {
+    font-size: 9px;
+    color: #ff6b8b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.8;
+}
+
+.lyric-container {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 12px;
+    overflow: hidden;
+    width: 44%;
+}
+
+#live-lyrics {
+    font-size: 11px;
+    color: #ffd8a8;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 0 6px rgba(255, 107, 139, 0.5);
+    font-family: "Microsoft YaHei", sans-serif;
+}
+
+.music-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 28%;
+    justify-content: flex-end;
+}
+
+.ctrl-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    transition: all 0.2s ease;
+}
+
+.ctrl-btn:hover {
+    background: rgba(255, 107, 139, 0.2);
+    border-color: rgba(255, 107, 139, 0.5);
+    box-shadow: 0 0 8px rgba(255, 107, 139, 0.4);
+    transform: scale(1.08);
+}
+
+.ctrl-btn.danger-btn:hover {
+    background: rgba(255, 50, 50, 0.2);
+    border-color: rgba(255, 50, 50, 0.5);
+    box-shadow: 0 0 8px rgba(255, 50, 50, 0.4);
 }
