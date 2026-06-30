@@ -1001,7 +1001,6 @@ class RumiaPet {
             
             // 播放音频
             this.musicAudio.src = urlData.url;
-            this.musicAudio.crossOrigin = "anonymous";
             await this.musicAudio.play();
             
             this.musicIsPlaying = true;

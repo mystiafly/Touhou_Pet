@@ -8,6 +8,13 @@
 
 ---
 
+## [0.6.1] - 2026-07-01
+
+### 修复
+- **音乐播放跨域与重定向通道安全修复 (Music Playback CORS & HTTPS Hotfix)**：
+  - **移去跨域属性**：在 [pet_script.js](file:///G:/code/rumia/services/static/js/pet_script.js#L1001-L1005) 中去除了 `this.musicAudio.crossOrigin = "anonymous"` 属性配置。由此避免了由于网易云 CDN 节点没有响应预检的 CORS 报头而引发的 `Access-Control-Allow-Origin` 播放器跨域阻塞拦截。
+  - **升级 HTTPS 通道**：在 [netease_music.py](file:///G:/code/rumia/services/external_api/netease_music.py) 中，将所有的网易云 Web 接口和客户端重定向 API 地址全部由 `http://` 升级为 `https://`，保障在混合内容或网络沙盒环境中音频流和数据流的绝对畅通。
+
 ## [0.6.0] - 2026-07-01
 
 ### 新增
