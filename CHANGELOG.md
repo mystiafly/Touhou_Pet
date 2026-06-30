@@ -8,6 +8,13 @@
 
 ---
 
+## [0.6.2] - 2026-07-01
+
+### 修复
+- **播放条布局防遮挡重构 (Music Player Overlapping Layout Fix)**：
+  - **精确定位隔离**：将 `.music-player-bar` 从默认文档流改为绝对定位 `position: absolute; bottom: 52px; left: 12px;`，使其在垂直空间上稳定漂浮于输入框（`bottom: 10px`，高度约 36px）之上。彻底解决了播放栏打开时直接覆盖并遮挡用户原有输入框及设置按钮的 UI 冲突。
+  - **动画重构**：将原本的 `slideDown` 动画重构为由下往上滑出的 `slideUpPlayer` 动作，使得视觉交互更加符合物理直觉。
+
 ## [0.6.1] - 2026-07-01
 
 ### 修复
