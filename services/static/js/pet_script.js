@@ -32,6 +32,11 @@ class RumiaPet {
                 '/static/images/rumia_crying.png',
                 '/static/images/rumia_crying_1.png',
                 '/static/images/rumia_crying_2.png'
+            ],
+            'sleeping': [
+                '/static/images/rumia_sleeping.png',
+                '/static/images/rumia_sleeping_1.png',
+                '/static/images/rumia_sleeping_2.png'
             ]
         };
 
@@ -41,6 +46,8 @@ class RumiaPet {
         this.currentChatLog = "";
         this.currentRumiaDiary = "";
         this.activeLogTab = "chat"; // 'chat' 或 'diary'
+        this.isSleeping = false;
+        this.sleepTimer = null;
 
         this.init();
     }
@@ -69,9 +76,11 @@ class RumiaPet {
 
         this.resetAutoSpeakTimer();
 
-        // 点击身体互动（可选：点击变害羞）
+        // 点击身体互动 (如果正在睡觉则唤醒)
         this.img.addEventListener('click', () => {
-            // this.setEmotion('shy');
+            if (this.isSleeping) {
+                this.wakeUp(false);
+            }
         });
 
         this.loadStatus();
@@ -84,6 +93,9 @@ class RumiaPet {
 
             // 监听露米娅图片上的 mousedown 开始拖动
             this.img.addEventListener('mousedown', (e) => {
+                if (this.isSleeping) {
+                    this.wakeUp(false);
+                }
                 if (e.button === 0) { // 只有鼠标左键点击才允许拖拽
                     isDragging = true;
                     startX = e.screenX;
@@ -556,6 +568,7 @@ class RumiaPet {
 
         this.input.value = '';
         this.autoSpeakCount = 0;
+        this.wakeUp(true); // 静默唤醒 (接下来的大模型回复会展示表情与气泡)
         this.resetAutoSpeakTimer();
 
         this.showBubble("hmm...");
@@ -600,7 +613,10 @@ class RumiaPet {
 
     resetAutoSpeakTimer() {
         if (this.autoSpeakTimer) clearTimeout(this.autoSpeakTimer);
-        if (this.autoSpeakCount >= 6) return;
+        if (this.autoSpeakCount >= 6) {
+            this.scheduleSleepTimer();
+            return;
+        }
 
         // 时间设置 (单位: 毫秒)
         // 正常使用建议用分钟: 2 * 60 * 1000
@@ -609,6 +625,38 @@ class RumiaPet {
 
         const delay = Math.floor(Math.random() * (maxTime - minTime + 1)) + minTime;
         this.autoSpeakTimer = setTimeout(() => this.triggerRumiaSpeak(), delay);
+    }
+
+    // [新增] 达到最大自言自语次数后开启 10 分钟倒计时睡眠
+    scheduleSleepTimer() {
+        if (this.sleepTimer) clearTimeout(this.sleepTimer);
+        // 10 分钟 = 10 * 60 * 1000 毫秒
+        const sleepDelay = 10 * 60 * 1000;
+        console.log("露米娅完成了最后一次自言自语，开启 10 分钟闲置睡眠定时器...");
+        this.sleepTimer = setTimeout(() => {
+            console.log("闲置超时，露米娅入睡。");
+            this.isSleeping = true;
+            this.setEmotion('sleeping');
+            this.showBubble("（露米娅等累了，已经靠在角落呼呼大睡了……）", 10000);
+        }, sleepDelay);
+    }
+
+    // [新增] 唤醒函数
+    wakeUp(quiet = false) {
+        if (this.sleepTimer) {
+            clearTimeout(this.sleepTimer);
+            this.sleepTimer = null;
+        }
+        if (this.isSleeping) {
+            this.isSleeping = false;
+            console.log("露米娅被成功唤醒。");
+            this.setEmotion('normal');
+            if (!quiet) {
+                this.showBubble("呜...干嘛吵醒人家，人家刚才梦见超好吃的巧克力饼干了呢！", 3500);
+            }
+            this.autoSpeakCount = 0;
+            this.resetAutoSpeakTimer();
+        }
     }
 
     // [新增] 启动时打招呼
