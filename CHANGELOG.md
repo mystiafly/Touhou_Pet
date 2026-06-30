@@ -8,6 +8,15 @@
 
 ---
 
+## [0.5.15] - 2026-07-01
+
+### 新增
+- **网易云音乐原生点歌播放器完美接入 (Native NetEase Music Integration - Option A)**：
+  - **轻量后端适配**：在新建目录 `services/external_api/` 下建立了 [netease_music.py](file:///G:/code/rumia/services/external_api/netease_music.py) 模块，免 Node.js 逆向调用了网易云的网页检索、音乐直链重定向和 LRC 歌词接口，支持获取公网歌曲与原配歌词流。
+  - **API 接口暴露**：在 [web_interface.py](file:///G:/code/rumia/services/web_interface.py#L1395-L1414) 中新增了 `/api/music/search`、`/api/music/url` 和 `/api/music/lyric` 接口，用作前后端多媒体联通桥梁。
+  - **指令化交互预设**：在 [custom_presets.json](file:///G:/code/rumia/services/presets/custom_presets.json#L41-L47) 中新增了 `always_active_music_control` 常驻点歌命令预设，强制要求大模型识别用户放歌意图并尾随输出隐藏标记 `[MUSIC_PLAY: 歌名 歌手]`。
+  - **播放器面板 GUI & LRC 歌词同步**：在前端 [pet.html](file:///G:/code/rumia/services/templates/pet.html#L25-L45) 中内置了毛玻璃炫光多媒体播放条 `#music-player-bar`，在 [pet_script.js](file:///G:/code/rumia/services/static/js/pet_script.js#L957-L1095) 中引入原生 HTML5 Audio 并编写了 LRC 歌词时间戳解析器与 `timeupdate` 同步引擎，实现了桌面音乐点播与动态歌词实时滚动播放。
+
 ## [0.5.14] - 2026-07-01
 
 ### 新增

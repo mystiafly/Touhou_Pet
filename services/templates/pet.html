@@ -23,6 +23,28 @@
         <img src="/static/images/rumia_normal.png" id="rumia-img" alt="Rumia" draggable="false">
     </div>
 
+    <!-- 悬浮网易云音乐播放器栏 -->
+    <div id="music-player-bar" class="music-player-bar hidden">
+        <div class="music-info">
+            <i class="fas fa-music pulse-icon"></i>
+            <div class="music-text">
+                <span id="music-title">未在播放</span>
+                <span id="music-artist">-</span>
+            </div>
+        </div>
+        <div class="lyric-container">
+            <span id="live-lyrics">让露米娅唱首歌给你听吧...</span>
+        </div>
+        <div class="music-controls">
+            <button id="music-toggle-btn" class="ctrl-btn" title="播放/暂停">
+                <i class="fas fa-play"></i>
+            </button>
+            <button id="music-stop-btn" class="ctrl-btn danger-btn" title="关闭播放器">
+                <i class="fas fa-stop"></i>
+            </button>
+        </div>
+    </div>
+
     <div class="input-bar">
         <button id="settings-btn" class="icon-btn" title="系统设置">
             <i class="fas fa-cog"></i>
