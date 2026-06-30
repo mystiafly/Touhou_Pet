@@ -43,7 +43,8 @@ templates = Jinja2Templates(directory="templates")
 CONFIG_FILE = "config.json"
 HISTORY_FILE = "dialog_history.json"
 DAILY_HISTORY_DIR = "daily_history"
-MAX_HISTORY_ROUNDS = 15
+MIN_HISTORY_ROUNDS = 6
+MAX_HISTORY_ROUNDS = 12
 FAVORABILITY_FILE = "favorability.json"
 
 # Mem0 记忆系统配置与初始化锁
@@ -291,14 +292,20 @@ def save_history(messages):
     except IOError as e:
         print(f"警告：保存历史文件失败。错误：{e}")
 
-def trim_history(messages, max_rounds):
-    """修剪历史，只保留最近N轮对话"""
+def trim_history(messages):
+    """
+    阶梯式上下文裁剪逻辑 (Stepped Context Windowing)
+    为最大化利用 Prompt Caching，在历史未满 MAX_HISTORY_ROUNDS 时，
+    不移出老对话（保持 append-only，以实现后续请求的 100% 缓存匹配）；
+    一旦超过最大轮数，则一次性硬裁剪剪回 MIN_HISTORY_ROUNDS，重新建立新一轮的增长缓存。
+    """
     if len(messages) <= 1:
         return messages
     system_message = messages[0]
     dialogue = messages[1:]
-    if len(dialogue) > max_rounds * 2:
-        dialogue = dialogue[-(max_rounds * 2):]
+    if len(dialogue) > MAX_HISTORY_ROUNDS * 2:
+        dialogue = dialogue[-(MIN_HISTORY_ROUNDS * 2):]
+        print(f"[CONTEXT TRIM] 对话历史已满 {MAX_HISTORY_ROUNDS} 轮，触发阶梯式裁剪，硬剪回最近 {MIN_HISTORY_ROUNDS} 轮对话以重置并重建 Prompt Cache。")
     return [system_message] + dialogue
 
 def parse_reply(text):
@@ -883,7 +890,7 @@ def chat(payload: dict = Body(...)):
         current_fav = update_favorability(change)
 
         messages.append({"role": "assistant", "content": raw_reply})
-        messages = trim_history(messages, MAX_HISTORY_ROUNDS)
+        messages = trim_history(messages)
         save_history(messages)
 
         # 写入每日归档日志 (.txt)
@@ -1071,7 +1078,7 @@ def rumia_speak(payload: dict = Body(...)):
 
         # 归档入历史对话
         messages.append({"role": "assistant", "content": raw_reply})
-        messages = trim_history(messages, MAX_HISTORY_ROUNDS)
+        messages = trim_history(messages)
         save_history(messages)
 
         # 保存到文本日志
