@@ -721,35 +721,34 @@ def chat(payload: dict = Body(...)):
         active_messages = [msg.copy() for msg in messages]
         current_fav = get_favorability()
 
-        # 构建 P0 级核心系统制约提示词
+        # 1. 不变的规则部分 (Static Rules First to maximize Prompt Cache hits)
         priority_reminder = (
-            f"[SYSTEM REMINDER - P0 HIGHEST PRIORITY]\n"
-            f"【最高优先级提醒与行为约束】\n"
+            "[SYSTEM REMINDER - P0 HIGHEST PRIORITY]\n"
+            "【最高优先级提醒与行为约束（基础静态规则）】\n"
+            "1. 角色约束与动作描写：请严格扮演露米娅（性格傲娇的食人妖怪），用中文回答。在对话中建议穿插用圆括号包裹的动作/表情描述（如：‘(脸红扭过头)’）。在适合的情况下（如进行两性/NSFW/深层亲密交互时），强烈建议你特地独立写出几段【无情绪与评分前缀】的纯圆括号段落描述神态与客观场景，但特别注意：此类纯圆括号描述【绝对不能作为你回复的最后一段】（最后一段必须是带标签的正常台词，以防止表情显示发生解析冲突）。如果下方的【最高优先级触发预设】有更细致的格式与描述要求，请一并严格执行。\n"
+            "2. 格式约束：你的回复必须且只能遵循 '[心情][评分]对话内容' 格式要求（如含有明确浏览器自动化意图则在最末尾附加 `[BROWSER_TASK: ...]`）。\n\n"
+            "【以下是与当前会话有关的动态变量（自此往后的内容不计入基础静态缓存）】\n"
         )
         
-        # 现实环境时间感知
+        # 2. 现实环境时间感知 (Dynamic starting from Time)
         meta_context = get_meta_context_for_chat()
-        priority_reminder += f"{meta_context}\n\n"
+        priority_reminder += f"{meta_context}\n"
         
+        # 3. 动态好感度变化
+        priority_reminder += f"3. 当前你（露米娅）对用户的好感度为: {current_fav}/100。\n"
+
+        # 4. 唤醒的记忆变化
         if recalled_memories:
             priority_reminder += (
-                f"1. 唤醒的长期记忆（关于用户的偏好与经历）：\n"
+                f"4. 唤醒的长期记忆（关于用户的偏好与经历）：\n"
                 f"{recalled_memories}\n"
-                f"（注：这些是关于用户的长期记忆。请仅在当前对话主题与这些记忆相关时（例如谈到食物、喜好、口味或以往零食经历等），才自然、适度地提及。如果当前对话完全无关，请绝对不要强行或刻意提及它们，保持对话的自然与真实性。）\n"
+                f"（注：这些是关于用户的长期记忆。请仅在当前对话主题与这些记忆相关时，才自然、适度地提及。如果当前对话完全无关，请绝对不要强行或刻意提及它们，保持对话的自然与真实性。）\n"
             )
-        priority_reminder += (
-            f"2. 当前你（露米娅）对用户的好感度为: {current_fav}/100。\n"
-            f"3. 角色约束与动作描写：请严格扮演露米娅（性格傲娇的食人妖怪），用中文回答。在对话中建议穿插用圆括号包裹的动作/表情描述（如：‘(脸红扭过头)’）。在适合的情况下（如进行两性/NSFW/深层亲密交互时），强烈建议你特地独立写出几段【无情绪与评分前缀】的纯圆括号段落描述神态与客观场景，但特别注意：此类纯圆括号描述【绝对不能作为你回复的最后一段】（最后一段必须是带标签的正常台词，以防止表情显示发生解析冲突）。如果下方【最高优先级触发预设】有更细致的格式与描述要求，请一并严格执行。\n"
-        )
 
-        # 触发并注入自定义感应预设提示词 (移至最末尾，强化首尾效应注意力权重)
+        # 5. 触发并注入的自定义预设提示词
         custom_presets = load_and_trigger_presets(user_message, current_fav)
         if custom_presets:
-            priority_reminder += f"\n【最高优先级触发预设】\n⚠️ 请在你的本次回复中，必须并且无条件严格遵循以下注入指令，主动描述预设内容：\n{custom_presets}\n\n"
-
-        priority_reminder += (
-            f"4. 格式约束：你的回复必须且只能遵循 '[心情][评分]对话内容' 格式要求（如含有明确浏览器自动化意图则在最末尾附加 `[BROWSER_TASK: ...]`）。"
-        )
+            priority_reminder += f"\n【最高优先级触发预设】\n⚠️ 请在你的本次回复中，必须并且无条件严格遵循以下注入指令，主动描述预设内容：\n{custom_presets}\n"
         
         active_messages.append({"role": "system", "content": priority_reminder})
 
