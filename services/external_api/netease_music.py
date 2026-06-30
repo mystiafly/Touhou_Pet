@@ -3,7 +3,7 @@ import requests
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Referer": "http://music.163.com/"
+    "Referer": "https://music.163.com/"
 }
 
 def search_music(keyword, limit=5):
@@ -13,7 +13,7 @@ def search_music(keyword, limit=5):
     :param limit: 返回结果限制数量
     :return: 歌曲列表，包含id, name, artists, duration
     """
-    search_url = "http://music.163.com/api/search/get/web"
+    search_url = "https://music.163.com/api/search/get/web"
     params = {
         "s": keyword,
         "type": 1,  # 1表示单曲
@@ -46,7 +46,7 @@ def get_play_url(song_id):
     :return: 音频流直链 (mp3)
     """
     # 采用网易云经典的客户端外链重定向接口
-    return f"http://music.163.com/song/media/outer/url?id={song_id}.mp3"
+    return f"https://music.163.com/song/media/outer/url?id={song_id}.mp3"
 
 def get_lyric(song_id):
     """
@@ -54,7 +54,7 @@ def get_lyric(song_id):
     :param song_id: 网易云歌曲 ID
     :return: 歌词文本 (LRC格式)
     """
-    lyric_url = f"http://music.163.com/api/song/lyric?id={song_id}&lv=1&kv=1&tv=-1"
+    lyric_url = f"https://music.163.com/api/song/lyric?id={song_id}&lv=1&kv=1&tv=-1"
     
     try:
         response = requests.get(lyric_url, headers=HEADERS, timeout=5)
