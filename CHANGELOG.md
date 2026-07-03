@@ -8,6 +8,13 @@
 
 ---
 
+## [0.7.2] - 2026-07-04
+
+### 修复
+- **显式覆写 Mem0 内置 QdrantConfig 维度默认值 (QdrantConfig Dim Override)**：
+  - **动态维度传递**：Mem0 的 `QdrantConfig` Pydantic 模型内置将 `embedding_model_dims` 字段默认写死为 `1536`（针对 OpenAI 默认模型）。这导致我们在 DeepSeek 模式下即使指定了本地 384 维嵌入模型，Qdrant 依然会按照默认值 1536 维来创建集合。
+  - **修复实现**：在 [web_interface.py](file:///G:/code/rumia/services/web_interface.py#L215-L220) 中显式传入了 `"embedding_model_dims": vector_dims`（DeepSeek 为 384，Gemini 为 1536），确保 Qdrant 建立维度完全正确的集合。
+
 ## [0.7.1] - 2026-07-04
 
 ### 修复
