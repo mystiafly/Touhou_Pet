@@ -8,6 +8,13 @@
 
 ---
 
+## [0.7.3] - 2026-07-04
+
+### 优化
+- **启动时间差抖动与重试韧性改善 (Startup Delay & Retry Resilience)**：
+  - **延迟窗口调优**：将 [run.py](file:///G:/code/rumia/run.py#L28-L30) 中唤醒大脑（FastAPI 后端）与构建身体（Electron 前端）之间的初始睡眠等待时间由 `3秒` 提升至 `8秒`。这是为了给本地 Hugging Face sentence-transformers 庞大嵌入权重留出充裕的冷启动读取时间，避免 Electron 过快渲染请求导致连接被拒。
+  - **自动加载重试**：在 [main.js](file:///G:/code/rumia/main.js#L41-L49) 中添加了 Electron `loadURL` 捕获异常重试机制。如果在极端冷启动环境下初始握手遭遇 `ERR_CONNECTION_REFUSED`，渲染器将在 2 秒后自动发起重新载入重试。
+
 ## [0.7.2] - 2026-07-04
 
 ### 修复

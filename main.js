@@ -38,9 +38,16 @@ function createWindow() {
         }
     });
 
-    // 加载 Flask 的桌宠页面
-    // 注意：这里假设你的 Flask 运行在 5000 端口
-    win.loadURL('http://127.0.0.1:5000/pet');
+    // 加载 Flask 的桌宠页面 (支持后台慢启动自动重试)
+    const petUrl = 'http://127.0.0.1:5000/pet';
+    win.loadURL(petUrl).catch(err => {
+        console.log(`[ELECTRON] 初始请求 /pet 拒绝连接，准备在 2 秒后自动重试...`);
+        setTimeout(() => {
+            win.loadURL(petUrl).catch(retryErr => {
+                console.log(`[ELECTRON] 重试 /pet 再次失败，这通常发生在后端未完全就绪时: ${retryErr.message}`);
+            });
+        }, 2000);
+    });
 
     // 开发时可以打开控制台调试 CSS
     // win.webContents.openDevTools({ mode: 'detach' });

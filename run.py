@@ -13,20 +13,20 @@ def main():
     print(f"根目录: {root_dir}")
 
     # ==========================================
-    # 1. 启动大脑 (Flask 后端)
+    # 1. 启动大脑 (FastAPI 后端)
     # ==========================================
-    print("\n[1/2] 正在唤醒大脑 (Flask Backend)...")
+    print("\n[1/2] 正在唤醒大脑 (FastAPI Backend)...")
 
-    # 我们在 services 目录下运行 python web_interface.py
-    # 这样可以确保它能正确找到 dialog_history.json
+    # 在 services 目录下运行 FastAPI (uvicorn) 后端
+    # 确保能正确找到 dialog_history.json
     flask_process = subprocess.Popen(
         [sys.executable, 'web_interface.py'],
         cwd=services_dir,
         # creationflags=subprocess.CREATE_NEW_CONSOLE # 如果你想看到单独的后端黑框日志，可以取消注释这行
     )
 
-    # 给后端一点时间初始化 (3秒)
-    time.sleep(3)
+    # 给后端充足的时间初始化与加载本地嵌入特征权重 (自适应调整为 8 秒，保障极其流畅的启动)
+    time.sleep(8)
 
     # ==========================================
     # 2. 启动身体 (Electron 前端)
@@ -55,7 +55,7 @@ def main():
     except KeyboardInterrupt:
         print("\n检测到中断...")
     finally:
-        # 当 Electron 关闭后，自动杀死 Flask 后端
+        # 当 Electron 关闭后，自动杀死 FastAPI 后端
         print("正在让露米娅休息 (清理后台进程)...")
 
         # 尝试优雅关闭
