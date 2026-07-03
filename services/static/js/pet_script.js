@@ -662,9 +662,9 @@ class RumiaPet {
         }
 
         // 时间设置 (单位: 毫秒)
-        // 正常使用建议用分钟: 2 * 60 * 1000
-        let minTime = (this.autoSpeakCount < 3) ? 2 * 60 *1000 : 15 * 60 *1000;
-        let maxTime = (this.autoSpeakCount < 3) ? 5 * 60 *1000 : 20 * 60 *1000;
+        // 第一阶段（1-3次）：8-15分钟，第二阶段（4-6次）：30-40分钟
+        let minTime = (this.autoSpeakCount < 3) ? 8 * 60 * 1000 : 30 * 60 * 1000;
+        let maxTime = (this.autoSpeakCount < 3) ? 15 * 60 * 1000 : 40 * 60 * 1000;
 
         const delay = Math.floor(Math.random() * (maxTime - minTime + 1)) + minTime;
         this.autoSpeakTimer = setTimeout(() => this.triggerRumiaSpeak(), delay);
