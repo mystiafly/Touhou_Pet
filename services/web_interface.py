@@ -198,24 +198,30 @@ def get_memory_agent():
         deepseek_key = os.getenv("DEEPSEEK_API_KEY")
         gemini_key = os.getenv("GEMINI_API_KEY")
         
-        # 根据实际使用的嵌入模型自动区分 Qdrant 集合名称，防止维度混用冲突
+        # 根据实际使用的嵌入模型自动区分 Qdrant 集合名称与维度，防止维度混用冲突
         embed_suffix = "openai"
+        vector_dims = 1536
         if provider == "gemini" and gemini_key:
             embed_suffix = "gemini"
+            vector_dims = 1536
         elif "deepseek" in provider and deepseek_key:
             embed_suffix = "deepseek"
+            vector_dims = 384
         else:
             if gemini_key:
                 embed_suffix = "gemini"
+                vector_dims = 1536
             elif deepseek_key:
                 embed_suffix = "deepseek"
+                vector_dims = 384
                 
         mem0_config = {
             "vector_store": {
                 "provider": "qdrant",
                 "config": {
                     "path": os.path.abspath(os.path.join(os.path.dirname(__file__), "qdrant_db")),
-                    "collection_name": f"rumia_memory_{embed_suffix}"
+                    "collection_name": f"rumia_memory_{embed_suffix}",
+                    "embedding_model_dims": vector_dims
                 }
             },
             "version": "v1.1"
