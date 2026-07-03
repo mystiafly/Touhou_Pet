@@ -8,6 +8,16 @@
 
 ---
 
+## [0.7.0] - 2026-07-04
+
+### 重构
+- **大模型核心大脑向 LangChain/LangGraph 架构的里程碑升级 (LangChain & LangGraph Architecture Migration)**：
+  - **基于状态图的工作流引擎**：将底层的对话处理管道彻底重写为基于 **LangGraph** 的 `StateGraph` 对话状态机。规范定义了五个标准节点（`recall_memories` 长期记忆召回、`load_presets` 提示词预设加载、`generate_response` 模型调用生成、`parse_response` 情绪和指令解析、`update_history` 历史更新与裁剪），摆脱了手写串行控制流。
+  - **LangChain Model 接口大一统**：使用 `ChatOpenAI` 抽象模型调用接口，支持 DeepSeek 和 Google Gemini 的底层无缝切换与自动兜底降级。
+  - **缓存优化继承**：在 LangGraph 生成节点中完美继承并锁定了**“前置静态规则、置底时间与动态变量”**的 Prompt Caching 优化设计。
+  - **双模式解耦适配**：工作流引擎自动根据 `is_self_talk` 状态判定来动态匹配普通聊天或自言自语（自适应屏蔽浏览器操作、禁止假扮用户）的提示词拓扑结构。
+  - **依赖包追加**：在 `requirements.txt` 中添加了 `langchain`、`langchain-openai`、`langchain-community` 和 `langgraph` 基础包。
+
 ## [0.6.7] - 2026-07-03
 
 ### 优化

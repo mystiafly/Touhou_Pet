@@ -30,6 +30,12 @@ from time_system import get_time_greeting_prompt
 from real_world_system import get_meta_context_for_chat
 from external_api import netease_music
 
+# LangChain & LangGraph imports
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, BaseMessage
+from langgraph.graph import StateGraph, END
+from typing import TypedDict, List, Optional, Dict, Any
+
 # 初始化 FastAPI
 app = FastAPI(title="Rumia Pet Backend", version="0.3.0")
 
@@ -128,6 +134,53 @@ def get_llm_client_and_model():
         ), "deepseek-chat"
         
     raise ValueError("未检测到有效的 API 密钥环境，请检查 .env 文件。")
+
+def get_langchain_model():
+    """根据配置动态获取 LangChain ChatModel 包装实例"""
+    config_data = get_config()
+    provider = config_data.get("api_provider", os.getenv("API_PROVIDER", "gemini")).lower()
+    
+    deepseek_key = os.getenv("DEEPSEEK_API_KEY")
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    
+    api_key = None
+    base_url = None
+    model_name = None
+    
+    if provider == "gemini" and gemini_key:
+        api_key = gemini_key
+        base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
+        model_name = "gemini-2.5-flash"
+    elif provider == "deepseek-v4-pro" and deepseek_key:
+        api_key = deepseek_key
+        base_url = "https://api.deepseek.com"
+        model_name = "deepseek-v4-pro"
+    elif provider == "deepseek-v4-flash" and deepseek_key:
+        api_key = deepseek_key
+        base_url = "https://api.deepseek.com"
+        model_name = "deepseek-v4-flash"
+    elif provider in ["deepseek-chat", "deepseek"] and deepseek_key:
+        api_key = deepseek_key
+        base_url = "https://api.deepseek.com"
+        model_name = "deepseek-chat"
+    elif gemini_key:
+        api_key = gemini_key
+        base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
+        model_name = "gemini-2.5-flash"
+    elif deepseek_key:
+        api_key = deepseek_key
+        base_url = "https://api.deepseek.com"
+        model_name = "deepseek-chat"
+        
+    if not api_key:
+        raise ValueError("未检测到有效的 API 密钥环境，请检查 .env 文件。")
+        
+    return ChatOpenAI(
+        api_key=api_key,
+        base_url=base_url,
+        model=model_name,
+        temperature=0.7
+    )
 
 def get_memory_agent():
     """线程安全获取 Mem0 记忆引擎实例"""
@@ -330,6 +383,200 @@ def parse_reply(text):
     clean_content = re.sub(r'\[\d+\]', '', clean_content).strip()
 
     return emotion, score, clean_content
+
+# =====================================================================
+# 二、 LangGraph 对话工作流引擎定义
+# =====================================================================
+
+class AgentState(TypedDict):
+    user_message: str
+    is_self_talk: bool
+    history: List[Dict[str, Any]]
+    favorability: int
+    recalled_memories: str
+    custom_presets: str
+    raw_reply: str
+    emotion: str
+    score: int
+    clean_content: str
+    browser_task: Optional[str]
+
+def recall_memories_node(state: AgentState) -> Dict[str, Any]:
+    """读取 Mem0 事实库中的长期记忆"""
+    user_msg = state.get("user_message", "")
+    is_self = state.get("is_self_talk", False)
+    recalled = ""
+    if not is_self and user_msg:
+        agent = get_memory_agent()
+        if agent:
+            try:
+                results = agent.search(user_msg, filters={"user_id": "player_01"}, limit=3, threshold=0.45)
+                results_list = results.get("results", []) if isinstance(results, dict) else (results if isinstance(results, list) else [])
+                print(f"[MEMORY RECALL] Query: '{user_msg}' - Found {len(results_list)} memories.")
+                if results_list:
+                    recalled = "\n".join([f"- {r['memory']}" for r in results_list if isinstance(r, dict) and 'memory' in r])
+                    print(f"[MEMORY RECALL] Successfully retrieved: {recalled}")
+            except Exception as me:
+                print(f"[MEMORY RECALL] Search failed: {me}")
+    return {"recalled_memories": recalled}
+
+def load_presets_node(state: AgentState) -> Dict[str, Any]:
+    """匹配并加载当下好感度与关键词触发的系统提示词预设"""
+    user_msg = state.get("user_message", "")
+    current_fav = state.get("favorability", 10)
+    is_self = state.get("is_self_talk", False)
+    presets = load_and_trigger_presets(user_msg, current_fav, is_self_talk=is_self)
+    return {"custom_presets": presets}
+
+def generate_response_node(state: AgentState) -> Dict[str, Any]:
+    """装配前置静态与后置动态 Prompt，调用大模型生成回复"""
+    history_msgs = state.get("history", [])
+    current_fav = state.get("favorability", 10)
+    recalled_memories = state.get("recalled_memories", "")
+    custom_presets = state.get("custom_presets", "")
+    user_message = state.get("user_message", "")
+    is_self = state.get("is_self_talk", False)
+    
+    # 转换为 LangChain 消息格式
+    lc_history = []
+    for msg in history_msgs:
+        if msg["role"] == "system":
+            lc_history.append(SystemMessage(content=msg["content"]))
+        elif msg["role"] == "user":
+            lc_history.append(HumanMessage(content=msg["content"]))
+        elif msg["role"] == "assistant":
+            lc_history.append(AIMessage(content=msg["content"]))
+            
+    if is_self:
+        # 自言自语模式下的提示词组装 (保持静态规则前置优化缓存)
+        priority_reminder = (
+            "[SYSTEM REMINDER - P0 HIGHEST PRIORITY]\n"
+            "【最高优先级提醒与行为约束（基础静态规则）】\n"
+            "1. 角色约束与动作描写：请严格扮演露米娅（性格傲娇的食人妖怪），用中文回答。在对话中建议穿插用圆括号包裹的动作/表情描述（如：‘(脸红扭过头)’）。在适合的情况下（如进行两性/NSFW/深层亲密交互时），强烈建议你特地独立写出几段【无情绪与评分前缀】的纯圆括号段落描述神态与客观场景，但特别注意：此类纯圆括号描述【绝对不能作为你回复的最后一段】（最后一段必须是带标签的正常台词，以防止表情显示发生解析冲突）。如果下方的【最高优先级触发预设】有更细致的格式与描述要求，请一并严格执行。\n"
+            "2. 格式约束与要求：你的回复必须且只能遵循 '[心情][评分]对话内容' 格式要求。因为这是你主动搭话，绝对禁止包含 `[BROWSER_TASK: ...]` 标记。\n"
+            "3. 注意事项：目前只是你在自言自语主动搭话，绝对不要扮演用户或者假装用户对你说了什么！\n\n"
+            "【以下是与当前会话有关的动态变量（自此往后的内容不计入基础静态缓存）】\n"
+        )
+        meta_context = get_meta_context_for_chat()
+        priority_reminder += f"{meta_context}\n"
+        priority_reminder += f"4. 触发背景：{user_message}\n"
+        priority_reminder += f"5. 当前你（露米娅）对用户的好感度为: {current_fav}/100。\n"
+    else:
+        # 正常聊天模式下的提示词组装 (静态前置)
+        priority_reminder = (
+            "[SYSTEM REMINDER - P0 HIGHEST PRIORITY]\n"
+            "【最高优先级提醒与行为约束（基础静态规则）】\n"
+            "1. 角色约束与动作描写：请严格扮演露米娅（性格傲娇的食人妖怪），用中文回答。在对话中建议穿插用圆括号包裹的动作/表情描述（如：‘(脸红扭过头)’）。在适合的情况下（如进行两性/NSFW/深层亲密交互时），强烈建议你特地独立写出几段【无情绪与评分前缀】的纯圆括号段落描述神态与客观场景，但特别注意：此类纯圆括号描述【绝对不能作为你回复的最后一段】（最后一段必须是带标签的正常台词，以防止表情显示发生解析冲突）。如果下方的【最高优先级触发预设】有更细致的格式与描述要求，请一并严格执行。\n"
+            "2. 格式约束：你的回复必须且只能遵循 '[心情][评分]对话内容' 格式要求（如含有明确浏览器自动化意图则在最末尾附加 `[BROWSER_TASK: ...]`）。\n\n"
+            "【以下是与当前会话有关的动态变量（自此往后的内容不计入基础静态缓存）】\n"
+        )
+        meta_context = get_meta_context_for_chat()
+        priority_reminder += f"{meta_context}\n"
+        priority_reminder += f"3. 当前你（露米娅）对用户的好感度为: {current_fav}/100。\n"
+        
+        if recalled_memories:
+            priority_reminder += (
+                f"4. 唤醒的长期记忆（关于用户的偏好与经历）：\n"
+                f"{recalled_memories}\n"
+                "（注：这些是关于用户的长期记忆。请仅在当前对话主题与这些记忆相关时，才自然、适度地提及。如果当前对话完全无关，请绝对不要强行或刻意提及它们，保持对话的自然与真实性。）\n"
+            )
+            
+    if custom_presets:
+        priority_reminder += f"\n【最高优先级触发预设】\n⚠️ 请在你的本次回复中，必须并且无条件严格遵循以下注入指令，主动描述预设内容：\n{custom_presets}\n"
+        
+    active_messages = []
+    if lc_history and isinstance(lc_history[0], SystemMessage):
+        active_messages = [SystemMessage(content=priority_reminder)] + lc_history[1:]
+    else:
+        active_messages = [SystemMessage(content=priority_reminder)] + lc_history
+        
+    if not is_self and user_message:
+        active_messages.append(HumanMessage(content=user_message))
+        
+    model = get_langchain_model()
+    
+    print("\n" + "="*40 + " [AI REQUEST (LANGCHAIN)] " + "="*40)
+    print(f"Model: {model.model_name}")
+    for idx, msg in enumerate(active_messages, 1):
+        print(f"--- Message #{idx} ({msg.type.upper()}) ---")
+        print(msg.content)
+    print("="*94 + "\n")
+    
+    response = model.invoke(active_messages)
+    raw_reply = response.content
+    
+    print("\n" + "="*40 + " [AI RESPONSE (LANGCHAIN)] " + "="*40)
+    print(raw_reply)
+    print("="*95 + "\n")
+    
+    return {"raw_reply": raw_reply}
+
+def parse_response_node(state: AgentState) -> Dict[str, Any]:
+    """解析大模型返回的心情表情、好感评分、文本内容和浏览器操作指令"""
+    raw_reply = state.get("raw_reply", "")
+    emotion, score, clean_content = parse_reply(raw_reply)
+    
+    # 提取浏览器操作指令
+    browser_task = None
+    task_match = re.search(r'\[BROWSER_TASK:\s*(.*?)\]', raw_reply, re.IGNORECASE)
+    if task_match:
+        browser_task = task_match.group(1).strip()
+        clean_content = re.sub(r'\[BROWSER_TASK:\s*.*?\]', '', clean_content, flags=re.IGNORECASE).strip()
+        
+    return {
+        "emotion": emotion,
+        "score": score,
+        "clean_content": clean_content,
+        "browser_task": browser_task
+    }
+
+def update_history_node(state: AgentState) -> Dict[str, Any]:
+    """计算好感度增减、保存对话历史到本地，并触发阶梯式上下文裁剪"""
+    history_msgs = state.get("history", [])
+    raw_reply = state.get("raw_reply", "")
+    user_message = state.get("user_message", "")
+    is_self = state.get("is_self_talk", False)
+    score = state.get("score", 10)
+    
+    change = 0
+    if score > 15:
+        change = 1
+    elif score < 5:
+        change = -1
+        
+    new_fav = update_favorability(change)
+    
+    new_history = [msg.copy() for msg in history_msgs]
+    if not is_self and user_message:
+        new_history.append({"role": "user", "content": user_message})
+    new_history.append({"role": "assistant", "content": raw_reply})
+    
+    new_history = trim_history(new_history)
+    save_history(new_history)
+    
+    return {
+        "history": new_history,
+        "favorability": new_fav
+    }
+
+# 编排与编译 LangGraph 对话状态图
+workflow = StateGraph(AgentState)
+
+workflow.add_node("recall_memories", recall_memories_node)
+workflow.add_node("load_presets", load_presets_node)
+workflow.add_node("generate_response", generate_response_node)
+workflow.add_node("parse_response", parse_response_node)
+workflow.add_node("update_history", update_history_node)
+
+workflow.set_entry_point("recall_memories")
+
+workflow.add_edge("recall_memories", "load_presets")
+workflow.add_edge("load_presets", "generate_response")
+workflow.add_edge("generate_response", "parse_response")
+workflow.add_edge("parse_response", "update_history")
+workflow.add_edge("update_history", END)
+
+chat_workflow = workflow.compile()
 
 # === [感应预设系统] ===
 PRESETS_DIR = os.path.join(os.path.dirname(__file__), "presets")
@@ -700,92 +947,49 @@ def get_history():
 # 3. 核心聊天对话接口
 @app.post("/api/chat")
 def chat(payload: dict = Body(...)):
-    """发送聊天请求核心业务逻辑 (同步路由自动分配于后台线程池执行，完美防阻塞)"""
+    """发送聊天请求核心业务逻辑 (使用 LangGraph 引擎驱动)"""
     user_message = payload.get('message', '').strip()
     if not user_message:
         return JSONResponse({"error": "消息不能为空"}, status_code=400)
 
     messages = load_history()
-    messages.append({"role": "user", "content": user_message})
 
     try:
-        client, model_name = get_llm_client_and_model()
+        # 组装初始状态
+        initial_state = {
+            "user_message": user_message,
+            "is_self_talk": False,
+            "history": messages,
+            "favorability": get_favorability(),
+            "recalled_memories": "",
+            "custom_presets": "",
+            "raw_reply": "",
+            "emotion": "normal",
+            "score": 10,
+            "clean_content": "",
+            "browser_task": None
+        }
 
-        # Mem0 长期记忆检索
-        recalled_memories = ""
-        agent = get_memory_agent()
-        if agent:
-            try:
-                results = agent.search(user_message, filters={"user_id": "player_01"}, limit=3, threshold=0.45)
-                results_list = results.get("results", []) if isinstance(results, dict) else (results if isinstance(results, list) else [])
-                print(f"[MEMORY RECALL] Query: '{user_message}' - Found {len(results_list)} memories.")
-                if results_list:
-                    recalled_memories = "\n".join([f"- {r['memory']}" for r in results_list if isinstance(r, dict) and 'memory' in r])
-                    print(f"[MEMORY RECALL] Successfully retrieved: {recalled_memories}")
-            except Exception as me:
-                print(f"[MEMORY RECALL] Search failed: {me}")
+        # 调用 LangGraph 对话工作流
+        final_state = chat_workflow.invoke(initial_state)
 
-        active_messages = [msg.copy() for msg in messages]
-        current_fav = get_favorability()
+        raw_reply = final_state.get("raw_reply", "")
+        emotion = final_state.get("emotion", "normal")
+        score = final_state.get("score", 10)
+        clean_content = final_state.get("clean_content", "")
+        browser_task = final_state.get("browser_task", None)
+        current_fav = final_state.get("favorability", 10)
+        updated_history = final_state.get("history", [])
 
-        # 1. 不变的规则部分 (Static Rules First to maximize Prompt Cache hits)
-        priority_reminder = (
-            "[SYSTEM REMINDER - P0 HIGHEST PRIORITY]\n"
-            "【最高优先级提醒与行为约束（基础静态规则）】\n"
-            "1. 角色约束与动作描写：请严格扮演露米娅（性格傲娇的食人妖怪），用中文回答。在对话中建议穿插用圆括号包裹的动作/表情描述（如：‘(脸红扭过头)’）。在适合的情况下（如进行两性/NSFW/深层亲密交互时），强烈建议你特地独立写出几段【无情绪与评分前缀】的纯圆括号段落描述神态与客观场景，但特别注意：此类纯圆括号描述【绝对不能作为你回复的最后一段】（最后一段必须是带标签的正常台词，以防止表情显示发生解析冲突）。如果下方的【最高优先级触发预设】有更细致的格式与描述要求，请一并严格执行。\n"
-            "2. 格式约束：你的回复必须且只能遵循 '[心情][评分]对话内容' 格式要求（如含有明确浏览器自动化意图则在最末尾附加 `[BROWSER_TASK: ...]`）。\n\n"
-            "【以下是与当前会话有关的动态变量（自此往后的内容不计入基础静态缓存）】\n"
-        )
-        
-        # 2. 现实环境时间感知 (Dynamic starting from Time)
-        meta_context = get_meta_context_for_chat()
-        priority_reminder += f"{meta_context}\n"
-        
-        # 3. 动态好感度变化
-        priority_reminder += f"3. 当前你（露米娅）对用户的好感度为: {current_fav}/100。\n"
+        # 好感度增减评定
+        change = 0
+        if score > 15:
+            change = 1
+        elif score < 5:
+            change = -1
 
-        # 4. 唤醒的记忆变化
-        if recalled_memories:
-            priority_reminder += (
-                f"4. 唤醒的长期记忆（关于用户的偏好与经历）：\n"
-                f"{recalled_memories}\n"
-                f"（注：这些是关于用户的长期记忆。请仅在当前对话主题与这些记忆相关时，才自然、适度地提及。如果当前对话完全无关，请绝对不要强行或刻意提及它们，保持对话的自然与真实性。）\n"
-            )
-
-        # 5. 触发并注入的自定义预设提示词
-        custom_presets = load_and_trigger_presets(user_message, current_fav)
-        if custom_presets:
-            priority_reminder += f"\n【最高优先级触发预设】\n⚠️ 请在你的本次回复中，必须并且无条件严格遵循以下注入指令，主动描述预设内容：\n{custom_presets}\n"
-        
-        active_messages.append({"role": "system", "content": priority_reminder})
-
-        print("\n" + "="*40 + " [AI REQUEST] " + "="*40)
-        print(f"Model: {model_name}")
-        for idx, msg in enumerate(active_messages, 1):
-            print(f"--- Message #{idx} ({msg['role'].upper()}) ---")
-            print(msg['content'])
-        print("="*94 + "\n")
-
-        # 调用大模型接口
-        response = client.chat.completions.create(
-            model=model_name, messages=active_messages, stream=False
-        )
-
-        raw_reply = response.choices[0].message.content
-
-        print("\n" + "="*40 + " [AI RESPONSE] " + "="*40)
-        print(raw_reply)
-        print("="*95 + "\n")
-
-        emotion, score, clean_content = parse_reply(raw_reply)
-
-        # 检查浏览器自动化交互意图
-        browser_task = None
-        task_match = re.search(r'\[BROWSER_TASK:\s*(.*?)\]', raw_reply, re.IGNORECASE)
-        if task_match:
-            browser_task = task_match.group(1).strip()
-            clean_content = re.sub(r'\[BROWSER_TASK:\s*.*?\]', '', clean_content, flags=re.IGNORECASE).strip()
-            
+        # 检查并启动浏览器自动化进程
+        if browser_task:
             print(f"[BROWSER INTEGRATION] 检测到浏览器操作意图: {browser_task}")
             try:
                 services_dir = os.path.dirname(os.path.abspath(__file__))
@@ -814,7 +1018,6 @@ def chat(payload: dict = Body(...)):
                 if browser_use_dir and venv_python and demo_py:
                     global browser_process
                     
-                    # 定义发送任务到已有服务的后台线程函数
                     def send_task_to_browser_server(task_content):
                         import urllib.request
                         import json
@@ -830,10 +1033,8 @@ def chat(payload: dict = Body(...)):
                             print(f"[BROWSER INTEGRATION] 通过服务执行网页任务失败，正在降级为拉起新进程: {req_ex}")
                             launch_new_browser_process(task_content)
 
-                    # 定义拉起新浏览器后台服务进程的函数
                     def launch_new_browser_process(task_content):
                         global browser_process
-                        # 如果已有残留的 python 进程先彻底清理
                         if browser_process and browser_process.poll() is None:
                             try:
                                 if os.name == 'nt':
@@ -844,7 +1045,6 @@ def chat(payload: dict = Body(...)):
                             except Exception:
                                 pass
                         
-                        # 启动新实例进程，传入初始任务，后台常驻在 5005 端口上
                         browser_process = subprocess.Popen(
                             [venv_python, 'demo.py', task_content],
                             cwd=browser_use_dir,
@@ -854,7 +1054,6 @@ def chat(payload: dict = Body(...)):
                         )
                         print(f"[BROWSER INTEGRATION] 已在后台拉起全新的持久浏览器服务进程 (PID: {browser_process.pid})。")
 
-                    # 检测 5005 端口上的后台服务是否已开启
                     import socket
                     server_active = False
                     try:
@@ -878,21 +1077,6 @@ def chat(payload: dict = Body(...)):
             except Exception as ex:
                 print(f"[BROWSER INTEGRATION] 启动浏览器自动化进程失败: {ex}")
 
-        # 好感度增减评定
-        change = 0
-        if score > 15:
-            change = 1       
-        elif score < 5:
-            change = -1      
-        else:
-            change = 0       
-
-        current_fav = update_favorability(change)
-
-        messages.append({"role": "assistant", "content": raw_reply})
-        messages = trim_history(messages)
-        save_history(messages)
-
         # 写入每日归档日志 (.txt)
         try:
             today_str = datetime.now().strftime("%Y-%m-%d")
@@ -914,7 +1098,7 @@ def chat(payload: dict = Body(...)):
             "emotion": emotion,
             "favorability": current_fav,
             "fav_change": change,
-            "history_count": len(messages) - 1
+            "history_count": len(updated_history) - 1
         }
 
     except Exception as e:
@@ -953,7 +1137,7 @@ def post_config_api(payload: dict = Body(...)):
 # 6. 主动说话接口 (自言自语)
 @app.post("/api/rumia_speak")
 def rumia_speak(payload: dict = Body(...)):
-    """主动搭话与情绪递进业务逻辑 (同步路由自动分配于后台线程执行)"""
+    """主动搭话与情绪递进业务逻辑 (使用 LangGraph 对话引擎驱动)"""
     request_type = payload.get('type', 'idle').strip()
     count_raw = payload.get('count')
     
@@ -968,7 +1152,6 @@ def rumia_speak(payload: dict = Body(...)):
     print(f"---------> 收到主动说话请求: 类型={request_type}, 次数={count} <---------")
 
     messages = load_history()
-    # 加载自言自语预设文件，如果读取失败则使用默认硬编码兜底
     self_talk_presets = {}
     if os.path.exists(SELF_TALK_PRESETS_FILE):
         try:
@@ -981,18 +1164,6 @@ def rumia_speak(payload: dict = Body(...)):
     short_idle = self_talk_presets.get("short_idle", "（现在是一段沉默的时间。请主动向我搭话。注意不要和之前说过的话重复。）")
     medium_idle = self_talk_presets.get("medium_idle", "（我已经很久没有理你了。请用害羞或生气的傲娇口吻主动向我搭话，抱怨我冷落你，或者引起我的注意。话语要带有强烈情绪。）")
     long_idle = self_talk_presets.get("long_idle", "（我已经很久没有理你了。请用非常委屈或嚎啕大哭的口吻主动向我搭话，表现出极度的孤独和难过。）")
-    system_role_constraint = self_talk_presets.get(
-        "system_role_constraint",
-        "请严格扮演露米娅（性格傲娇的食人妖怪），用中文回答。在对话中建议穿插用圆括号包裹的动作/表情描述（如：‘(脸红扭过头)’）。在适合的情况下（如进行两性/NSFW/深层亲密交互时），强烈建议你特地独立写出几段【无情绪与评分前缀】的纯圆括号段落描述神态与客观场景，但特别注意：此类纯圆括号描述【绝对不能作为你回复的最后一段】（最后一段必须是带标签的正常台词，以防止表情显示发生解析冲突）。如果下方【最高优先级触发预设】有更细致的格式与描述要求，请一并严格执行。"
-    )
-    format_constraint = self_talk_presets.get(
-        "format_constraint",
-        "你的回复必须且只能遵循 '[心情][评分]对话内容' 格式要求。因为这是你主动搭话，绝对禁止包含 `[BROWSER_TASK: ...]` 标记。"
-    )
-    self_talk_warning = self_talk_presets.get(
-        "self_talk_warning",
-        "目前只是你在自言自语主动搭话，绝对不要扮演用户或者假装用户对你说了什么！"
-    )
 
     prompt_content = ""
     if request_type == 'greeting':
@@ -1006,67 +1177,30 @@ def rumia_speak(payload: dict = Body(...)):
         else:
             prompt_content = long_idle
 
-    # 构建主动说话时的临时 System 提醒（不影响持久历史）
-    active_messages = [msg.copy() for msg in messages]
-    
-    current_fav = get_favorability()
-    priority_reminder = (
-        f"[SYSTEM REMINDER - P0 HIGHEST PRIORITY]\n"
-        f"【最高优先级提醒与行为约束】\n"
-    )
-    
-    meta_context = get_meta_context_for_chat()
-    priority_reminder += f"{meta_context}\n\n"
-    
-
-
-    priority_reminder += (
-        f"1. 触发背景：{prompt_content}\n"
-        f"2. 当前好感度: {current_fav}/100。\n"
-        f"3. 角色约束与动作描写：{system_role_constraint}\n"
-    )
-
-    # 触发并注入自定义感应预设提示词 (自言自语模式，仅触发常驻/蓝灯预设，避免消耗分类 Token)
-    custom_presets = load_and_trigger_presets("", current_fav, is_self_talk=True)
-    if custom_presets:
-        priority_reminder += f"\n【最高优先级触发预设】\n⚠️ 请在你的本次回复中，必须并且无条件严格遵循以下注入指令，主动描述预设内容：\n{custom_presets}\n\n"
-
-    priority_reminder += (
-        f"4. 格式约束：{format_constraint}\n"
-        f"5. 注意：{self_talk_warning}"
-    )
-    
-    active_messages.append({"role": "system", "content": priority_reminder})
-
     try:
-        client, model_name = get_llm_client_and_model()
+        # 组装初始状态，将自言自语背景 prompt 作为 user_message 传递给工作流
+        initial_state = {
+            "user_message": prompt_content,
+            "is_self_talk": True,
+            "history": messages,
+            "favorability": get_favorability(),
+            "recalled_memories": "",
+            "custom_presets": "",
+            "raw_reply": "",
+            "emotion": "normal",
+            "score": 10,
+            "clean_content": "",
+            "browser_task": None
+        }
 
-        print("\n" + "="*40 + " [AI SPEAK REQUEST] " + "="*40)
-        print(f"Model: {model_name}")
-        for idx, msg in enumerate(active_messages, 1):
-            print(f"--- Message #{idx} ({msg['role'].upper()}) ---")
-            print(msg['content'])
-        print("="*94 + "\n")
+        # 调用 LangGraph 对话工作流
+        final_state = chat_workflow.invoke(initial_state)
 
-        response = client.chat.completions.create(
-            model=model_name, messages=active_messages, stream=False
-        )
-
-        raw_reply = response.choices[0].message.content
-
-        print("\n" + "="*40 + " [AI SPEAK RESPONSE] " + "="*40)
-        print(raw_reply)
-        print("="*95 + "\n")
-
-        emotion, score, clean_content = parse_reply(raw_reply)
-
-        # 检查浏览器操作 (自言自语模式下禁用触发)
-        browser_task = None
-        task_match = re.search(r'\[BROWSER_TASK:\s*(.*?)\]', raw_reply, re.IGNORECASE)
-        if task_match:
-            browser_task = task_match.group(1).strip()
-            clean_content = re.sub(r'\[BROWSER_TASK:\s*.*?\]', '', clean_content, flags=re.IGNORECASE).strip()
-            print(f"[BROWSER INTEGRATION] (主动说话) 拦截浏览器操作意图: {browser_task} (自言自语模式下禁止打开浏览器)")
+        emotion = final_state.get("emotion", "normal")
+        score = final_state.get("score", 10)
+        clean_content = final_state.get("clean_content", "")
+        current_fav = final_state.get("favorability", 10)
+        updated_history = final_state.get("history", [])
 
         # 主动搭话好感度计算
         change = 0
@@ -1074,12 +1208,6 @@ def rumia_speak(payload: dict = Body(...)):
             change = 1
         elif score < 5:
             change = -1
-        current_fav = update_favorability(change)
-
-        # 归档入历史对话
-        messages.append({"role": "assistant", "content": raw_reply})
-        messages = trim_history(messages)
-        save_history(messages)
 
         # 保存到文本日志
         try:
@@ -1098,7 +1226,7 @@ def rumia_speak(payload: dict = Body(...)):
             "emotion": emotion,
             "favorability": current_fav,
             "fav_change": change,
-            "history_count": len(messages) - 1
+            "history_count": len(updated_history) - 1
         }
 
     except Exception as e:
