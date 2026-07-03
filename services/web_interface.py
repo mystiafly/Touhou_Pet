@@ -198,12 +198,24 @@ def get_memory_agent():
         deepseek_key = os.getenv("DEEPSEEK_API_KEY")
         gemini_key = os.getenv("GEMINI_API_KEY")
         
+        # 根据实际使用的嵌入模型自动区分 Qdrant 集合名称，防止维度混用冲突
+        embed_suffix = "openai"
+        if provider == "gemini" and gemini_key:
+            embed_suffix = "gemini"
+        elif "deepseek" in provider and deepseek_key:
+            embed_suffix = "deepseek"
+        else:
+            if gemini_key:
+                embed_suffix = "gemini"
+            elif deepseek_key:
+                embed_suffix = "deepseek"
+                
         mem0_config = {
             "vector_store": {
                 "provider": "qdrant",
                 "config": {
                     "path": os.path.abspath(os.path.join(os.path.dirname(__file__), "qdrant_db")),
-                    "collection_name": "rumia_memory"
+                    "collection_name": f"rumia_memory_{embed_suffix}"
                 }
             },
             "version": "v1.1"
@@ -219,7 +231,7 @@ def get_memory_agent():
                     "openai_base_url": "https://generativelanguage.googleapis.com/v1beta/openai/"
                 }
             }
-            # 向量化也采用同一接口或兼容的 embedding
+            # 1536 维向量
             mem0_config["embedder"] = {
                 "provider": "openai",
                 "config": {
@@ -237,7 +249,7 @@ def get_memory_agent():
                     "openai_base_url": "https://api.deepseek.com"
                 }
             }
-            # 异步微调中使用本地 embedding 节约 Token
+            # 384 维向量
             mem0_config["embedder"] = {
                 "provider": "huggingface",
                 "config": {
@@ -245,13 +257,21 @@ def get_memory_agent():
                 }
             }
         else:
-            # 自动降级兜底
+            # 自动降级极简配置与兜底
             if gemini_key:
                 mem0_config["llm"] = {
                     "provider": "openai",
                     "config": {
                         "api_key": gemini_key,
                         "model": "gemini-2.5-flash",
+                        "openai_base_url": "https://generativelanguage.googleapis.com/v1beta/openai/"
+                    }
+                }
+                mem0_config["embedder"] = {
+                    "provider": "openai",
+                    "config": {
+                        "api_key": gemini_key,
+                        "model": "text-embedding-004",
                         "openai_base_url": "https://generativelanguage.googleapis.com/v1beta/openai/"
                     }
                 }
@@ -262,6 +282,12 @@ def get_memory_agent():
                         "api_key": deepseek_key,
                         "model": "deepseek-chat",
                         "openai_base_url": "https://api.deepseek.com"
+                    }
+                }
+                mem0_config["embedder"] = {
+                    "provider": "huggingface",
+                    "config": {
+                        "model": "sentence-transformers/all-MiniLM-L6-v2"
                     }
                 }
                 

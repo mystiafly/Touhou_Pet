@@ -8,6 +8,13 @@
 
 ---
 
+## [0.7.1] - 2026-07-04
+
+### 修复
+- **向量记忆引擎 Qdrant 维度冲突修复 (Qdrant Dimension Mismatch Fix)**：
+  - **集合名后缀隔离**：在 `get_memory_agent` 初始化中，根据实际采用的嵌入提供商，自动将 Qdrant 集合名称动态划分为 `rumia_memory_gemini`（OpenAI 的 1536 维向量）或 `rumia_memory_deepseek`（Hugging Face 的 384 维向量）。彻底解决了由于用户在 Gemini (1536维) 和 DeepSeek (384维) 模型之间来回切换导致 Qdrant 集合维度冲突报错（`shapes not aligned`）而阻断启动的问题。
+  - **自动降级补全**：在自动降级和兜底逻辑中，显式补全了各自对应的嵌入生成器配置，确保无报错平滑降级。
+
 ## [0.7.0] - 2026-07-04
 
 ### 重构
