@@ -297,6 +297,38 @@ def get_memory_agent():
                     }
                 }
                 
+        # 自动检查并清理维度冲突的本地 Qdrant 集合 (避免 shapes not aligned 启动错误)
+        qdrant_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "qdrant_db"))
+        collection_name = f"rumia_memory_{embed_suffix}"
+        try:
+            from qdrant_client import QdrantClient
+            client = QdrantClient(path=qdrant_path)
+            
+            # 检查并修复主集合
+            try:
+                col_info = client.get_collection(collection_name)
+                existing_dims = col_info.config.params.vectors.size
+                if existing_dims != vector_dims:
+                    print(f"[QDRANT AUTO-HEAL] 检测到主集合 '{collection_name}' 维度冲突: 期望 {vector_dims} 维，实际 {existing_dims} 维。正在自动删除重建...")
+                    client.delete_collection(collection_name)
+            except Exception:
+                pass
+
+            # 检查并修复 entities 集合
+            entities_col = f"{collection_name}_entities"
+            try:
+                col_info = client.get_collection(entities_col)
+                existing_dims = col_info.config.params.vectors.size
+                if existing_dims != vector_dims:
+                    print(f"[QDRANT AUTO-HEAL] 检测到 entities 集合 '{entities_col}' 维度冲突: 期望 {vector_dims} 维，实际 {existing_dims} 维。正在自动删除重建...")
+                    client.delete_collection(entities_col)
+            except Exception:
+                pass
+                
+            client.close()
+        except Exception as heal_ex:
+            print(f"[QDRANT AUTO-HEAL] 自动检查修复 Qdrant 集合异常: {heal_ex}")
+                
         try:
             print(f"[MEM0] 正在以 {provider.upper()} 架构初始化 Qdrant 向量记忆引擎...")
             memory_agent = Memory.from_config(mem0_config)
