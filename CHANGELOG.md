@@ -8,6 +8,15 @@
 
 ---
 
+## [0.8.0] - 2026-07-04
+
+### 新特性
+- **LangGraph ReAct 闭环决策推理架构 (LangGraph ReAct Loop Integration)**：
+  - **工具执行节点化**：新建了 [execute_music_task_node](file:///G:/code/rumia/services/web_interface.py#L600-L633) 和 [execute_browser_task_node](file:///G:/code/rumia/services/web_interface.py#L634-L711) 两个状态机内部工具节点，将网页自动化拉起与网易云音乐搜索、预加载音频流/歌词的处理逻辑彻底封装收口进入状态机大脑。
+  - **条件回路路由**：引入了 [should_continue](file:///G:/code/rumia/services/web_interface.py#L800-L812) 动态路由条件边，大模型可生成并流转至工具节点，待工具执行完毕拿到数据反馈后，**自动循环返回 (Loop Back)** 至生成节点进行二次推理。
+  - **杜绝空头点歌幻觉**：如果网易云未搜到该歌曲，大模型在图内立即得知检索失败，并输出抱怨拒绝台词；若检索成功，大模型会结合真实的歌曲艺术家信息，生成极具个性的傲娇确认话语（例如：“《晴天》已经给你放起来了哦，快听吧笨蛋！”），前端通过全新 `playMusicDirectly` 接口接收后端打包的音频/歌词载荷，直接流畅播放，避免二次重复检索时延。
+  - **浏览器超时保护**：网页自动化任务增加了 10s 同步超时机制（方案 A），若在 10s 内未完成，则安全转为后台挂起运行，并将启动指令反馈给大模型，避免桌宠界面卡顿冻结。
+
 ## [0.7.4] - 2026-07-04
 
 ### 优化
