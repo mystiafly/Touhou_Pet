@@ -629,6 +629,12 @@ class RumiaPet {
                 this.showBubble(data.reply);
                 this.setEmotion(data.emotion);
 
+                // [新增] 如果后端返回了 ReAct 点歌数据，直接调用播放器播放，跳过重复搜索
+                if (data.music_play) {
+                    console.log(`[MUSIC PLAYER] 接收到 ReAct 点歌数据:`, data.music_play);
+                    this.playMusicDirectly(data.music_play);
+                }
+
                 // 2. 处理好感度 (不要再调用 showBubble 了！)
                 if (data.favorability !== undefined) {
                     // 先更新显示的数值
@@ -957,6 +963,35 @@ class RumiaPet {
                 }
             }
         });
+    }
+
+    // [新增] 直接播放后端通过 ReAct 检索返回的歌曲数据，绕过重复搜索步骤
+    playMusicDirectly(musicPlay) {
+        if (!this.playerBar || !this.musicAudio) return;
+        console.log(`[MUSIC PLAYER] 开始直接播歌: ${musicPlay.name} - ${musicPlay.artists}`);
+        
+        this.liveLyrics.innerText = "正在开始播放...";
+        this.musicTitle.innerText = musicPlay.name;
+        this.musicArtist.innerText = musicPlay.artists;
+        this.playerBar.classList.remove('hidden');
+        
+        try {
+            // 解析歌词
+            this.parseLrc(musicPlay.lyric || "");
+            
+            // 播放音频
+            this.musicAudio.src = musicPlay.url;
+            this.musicAudio.play().catch(e => {
+                console.error("[MUSIC PLAYER ERROR] play failed:", e);
+                this.liveLyrics.innerText = `播放失败: ${e.message || e}`;
+            });
+            
+            this.musicIsPlaying = true;
+            this.musicToggleBtn.innerHTML = '<i class="fas fa-pause"></i>';
+        } catch (e) {
+            console.error("[MUSIC PLAYER ERROR] playMusicDirectly exception:", e);
+            this.liveLyrics.innerText = `播歌异常: ${e.message || e}`;
+        }
     }
 
     // [新增] 网易云音乐原生控制核心逻辑

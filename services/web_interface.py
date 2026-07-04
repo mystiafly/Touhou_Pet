@@ -464,6 +464,9 @@ class AgentState(TypedDict):
     score: int
     clean_content: str
     browser_task: Optional[str]
+    browser_result: Optional[str]  # 网页任务执行反馈成果
+    music_task: Optional[str]      # 点歌检索关键词
+    music_result: Optional[dict]   # 网易云检索出的具体歌曲信息 (包含id, name, artists, url, lyric)
 
 def recall_memories_node(state: AgentState) -> Dict[str, Any]:
     """读取 Mem0 事实库中的长期记忆"""
@@ -548,6 +551,31 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
     if custom_presets:
         priority_reminder += f"\n【最高优先级触发预设】\n⚠️ 请在你的本次回复中，必须并且无条件严格遵循以下注入指令，主动描述预设内容：\n{custom_presets}\n"
         
+    # [ReAct 架构] 注入工具执行结果反馈给大模型作为决策依据
+    music_result = state.get("music_result")
+    if music_result:
+        if "error" in music_result:
+            priority_reminder += (
+                f"\n\n【工具调用反馈 - 点歌检索失败】\n"
+                f"你刚刚发起的点歌指令未能检索成功。错误或状态信息：{music_result['error']}。\n"
+                f"请在你的本次回复中，以傲娇、抱怨的傲娇语气明确告诉用户你没搜到这首歌，让他换个歌名重新点，并且绝对不要再在回复中输出任何 `[MUSIC_PLAY]` 标签。"
+            )
+        else:
+            priority_reminder += (
+                f"\n\n【工具调用反馈 - 点歌检索成功】\n"
+                f"你刚刚发起的点歌指令执行成功！系统已在前端为您播放歌曲：《{music_result['name']}》（艺术家/歌手: {music_result['artists']}）。\n"
+                f"请在你的本次回复中，以傲娇、扭捏但其实暗暗开心的口吻告诉用户你已经把这首《{music_result['name']}》（由 {music_result['artists']} 演唱）放起来了，命令他老实听着，并且绝对不要再在回复中输出任何 `[MUSIC_PLAY]` 标签。"
+            )
+            
+    browser_result = state.get("browser_result")
+    if browser_result:
+        priority_reminder += (
+            f"\n\n【工具调用反馈 - 网页浏览器自动化】\n"
+            f"你刚刚发起的浏览器搜索任务执行反馈如下：\n"
+            f"{browser_result}\n"
+            f"请仔细结合上述任务反馈内容，以傲娇的口吻将有用的信息提炼并娇嗔地回答给用户，或者傲娇地告诉他你已经帮他把浏览器跑起来了。绝对不要再在回复中输出任何 `[BROWSER_TASK]` 标签。"
+        )
+        
     active_messages = []
     if lc_history and isinstance(lc_history[0], SystemMessage):
         active_messages = [SystemMessage(content=priority_reminder)] + lc_history[1:]
@@ -576,23 +604,169 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
     return {"raw_reply": raw_reply}
 
 def parse_response_node(state: AgentState) -> Dict[str, Any]:
-    """解析大模型返回的心情表情、好感评分、文本内容和浏览器操作指令"""
+    """解析大模型返回的心情表情、好感评分、文本内容和点歌/浏览器操作指令"""
     raw_reply = state.get("raw_reply", "")
     emotion, score, clean_content = parse_reply(raw_reply)
     
-    # 提取浏览器操作指令
+    # 提取并清理浏览器操作指令
     browser_task = None
     task_match = re.search(r'\[BROWSER_TASK:\s*(.*?)\]', raw_reply, re.IGNORECASE)
     if task_match:
         browser_task = task_match.group(1).strip()
         clean_content = re.sub(r'\[BROWSER_TASK:\s*.*?\]', '', clean_content, flags=re.IGNORECASE).strip()
         
+    # 提取并清理隐藏点歌指令 (ReAct)
+    music_task = None
+    music_match = re.search(r'\[MUSIC_PLAY:\s*(.*?)\]', raw_reply, re.IGNORECASE)
+    if music_match:
+        music_task = music_match.group(1).strip()
+        clean_content = re.sub(r'\[MUSIC_PLAY:\s*.*?\]', '', clean_content, flags=re.IGNORECASE).strip()
+        
     return {
         "emotion": emotion,
         "score": score,
         "clean_content": clean_content,
-        "browser_task": browser_task
+        "browser_task": browser_task,
+        "music_task": music_task
     }
+
+def execute_music_task_node(state: AgentState) -> Dict[str, Any]:
+    """工具节点：在图内部同步查询网易云音乐 API，预加载播放链接与歌词"""
+    music_query = state.get("music_task")
+    if not music_query:
+        return {"music_result": None}
+        
+    print(f"[REACT MUSIC NODE] 开始为查询词执行网易云点歌: {music_query}")
+    try:
+        from external_api import netease_music
+        songs = netease_music.search_music(music_query, limit=1)
+        if not songs:
+            print(f"[REACT MUSIC NODE] 未找到相关歌曲: {music_query}")
+            return {"music_result": {"error": f"未找到关于 '{music_query}' 的歌曲，请让用户换个歌名搜索哦"}}
+            
+        song = songs[0]
+        song_id = song["id"]
+        song_name = song["name"]
+        song_artists = song["artists"]
+        
+        # 预加载音频流和歌词
+        play_url = netease_music.get_play_url(song_id)
+        lyric_text = netease_music.get_lyric(song_id)
+        
+        result = {
+            "id": song_id,
+            "name": song_name,
+            "artists": song_artists,
+            "url": play_url,
+            "lyric": lyric_text
+        }
+        print(f"[REACT MUSIC NODE] 点歌成功: {song_name} - {song_artists}")
+        return {"music_result": result}
+    except Exception as ex:
+        print(f"[REACT MUSIC NODE ERROR] 点歌失败: {ex}")
+        return {"music_result": {"error": f"点歌系统访问异常: {str(ex)}"}}
+
+def execute_browser_task_node(state: AgentState) -> Dict[str, Any]:
+    """工具节点：在大脑内部管理浏览器自动化任务的触发"""
+    browser_task = state.get("browser_task")
+    if not browser_task:
+        return {"browser_result": None}
+        
+    print(f"[REACT BROWSER NODE] 开始触发浏览器自动化任务: {browser_task}")
+    
+    # 获取 browser-use 环境目录
+    services_dir = os.path.dirname(os.path.abspath(__file__))
+    rumia_dir = os.path.dirname(services_dir)
+    workspace_dir = os.path.dirname(rumia_dir)
+    
+    candidate_paths = [
+        os.path.join(workspace_dir, 'browser-use'),
+        os.path.expanduser(r"~\Desktop\code\new\browser-use"),
+        os.path.expanduser(r"~\Desktop\code\browser-use")
+    ]
+    
+    browser_use_dir = None
+    venv_python = None
+    demo_py = None
+    
+    for path in candidate_paths:
+        test_venv = os.path.join(path, '.venv', 'Scripts', 'python.exe')
+        test_demo = os.path.join(path, 'demo.py')
+        if os.path.exists(test_venv) and os.path.exists(test_demo):
+            browser_use_dir = path
+            venv_python = test_venv
+            demo_py = test_demo
+            break
+            
+    if not (browser_use_dir and venv_python and demo_py):
+        print(f"[REACT BROWSER NODE ERROR] 未找到有效的 browser-use 运行环境")
+        return {"browser_result": "未能在系统部署中定位到 browser-use 运行目录，无法启动网页自动化。"}
+        
+    # 判断 5005 端口是否活跃
+    import socket
+    server_active = False
+    try:
+        with socket.create_connection(("127.0.0.1", 5005), timeout=0.5):
+            server_active = True
+    except Exception:
+        pass
+        
+    # 定义拉起本地独立进程的降级方法
+    def launch_new_browser_process(task_content):
+        global browser_process
+        if browser_process and browser_process.poll() is None:
+            try:
+                if os.name == 'nt':
+                    subprocess.call(['taskkill', '/F', '/T', '/PID', str(browser_process.pid)],
+                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                else:
+                    browser_process.terminate()
+            except Exception:
+                pass
+        
+        browser_process = subprocess.Popen(
+            [venv_python, 'demo.py', task_content],
+            cwd=browser_use_dir,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            creationflags=0x08000000 if os.name == 'nt' else 0
+        )
+        print(f"[REACT BROWSER NODE] 降级拉起后台独立浏览器进程成功 (PID: {browser_process.pid})")
+        
+    # 执行 ReAct 分支选择
+    if server_active:
+        print(f"[REACT BROWSER NODE] 侦测到活跃后台服务 (Port 5005)，尝试同步执行任务...")
+        import urllib.request
+        import json
+        try:
+            req = urllib.request.Request(
+                "http://127.0.0.1:5005/run",
+                data=json.dumps({"task": browser_task}).encode('utf-8'),
+                headers={'Content-Type': 'application/json'}
+            )
+            # 缩短等待为 10 秒 (方案 A)
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                resp_text = resp.read().decode('utf-8')
+                print(f"[REACT BROWSER NODE] 浏览器同步执行成功返回: {resp_text}")
+                return {"browser_result": f"浏览器自动化成功，获取的网页内容简报如下: {resp_text}"}
+        except Exception as req_ex:
+            print(f"[REACT BROWSER NODE] 同步执行超时或异常，已自动转为后台挂起运行: {req_ex}")
+            # 降级异步拉起
+            threading.Thread(
+                target=launch_new_browser_process,
+                args=(browser_task,),
+                daemon=True
+            ).start()
+            return {"browser_result": f"已在后台成功帮用户拉起全新浏览器窗口执行自动化任务 '{browser_task}'，请让用户自行观看浏览器界面。"}
+    else:
+        print(f"[REACT BROWSER NODE] 服务端口非活跃，直接降级为后台拉起独立进程...")
+        # 异步拉起
+        threading.Thread(
+            target=launch_new_browser_process,
+            args=(browser_task,),
+            daemon=True
+        ).start()
+        return {"browser_result": f"已在后台成功拉起浏览器进程，正在对任务 '{browser_task}' 展开自动化处理，请让用户查看本地弹出的浏览器窗口。"}
 
 def update_history_node(state: AgentState) -> Dict[str, Any]:
     """计算好感度增减、保存对话历史到本地，并触发阶梯式上下文裁剪"""
@@ -623,6 +797,19 @@ def update_history_node(state: AgentState) -> Dict[str, Any]:
         "favorability": new_fav
     }
 
+def should_continue(state: AgentState) -> str:
+    """管理 ReAct 工作流路由：判断是否需要流转到音乐或网页自动化工具节点"""
+    # 如果检测到点歌意图，且还没有获得音乐检索反馈 (避免无限循环)
+    if state.get("music_task") and state.get("music_result") is None:
+        return "execute_music_task"
+        
+    # 如果检测到浏览器操作意图，且还没有获得自动化执行反馈
+    if state.get("browser_task") and state.get("browser_result") is None:
+        return "execute_browser_task"
+        
+    # 无需更多工具执行，流向历史归档并退出状态机
+    return "update_history"
+
 # 编排与编译 LangGraph 对话状态图
 workflow = StateGraph(AgentState)
 
@@ -630,6 +817,8 @@ workflow.add_node("recall_memories", recall_memories_node)
 workflow.add_node("load_presets", load_presets_node)
 workflow.add_node("generate_response", generate_response_node)
 workflow.add_node("parse_response", parse_response_node)
+workflow.add_node("execute_music_task", execute_music_task_node)
+workflow.add_node("execute_browser_task", execute_browser_task_node)
 workflow.add_node("update_history", update_history_node)
 
 workflow.set_entry_point("recall_memories")
@@ -637,7 +826,22 @@ workflow.set_entry_point("recall_memories")
 workflow.add_edge("recall_memories", "load_presets")
 workflow.add_edge("load_presets", "generate_response")
 workflow.add_edge("generate_response", "parse_response")
-workflow.add_edge("parse_response", "update_history")
+
+# 在解析之后增加条件路由分支 (ReAct 循环)
+workflow.add_conditional_edges(
+    "parse_response",
+    should_continue,
+    {
+        "execute_music_task": "execute_music_task",
+        "execute_browser_task": "execute_browser_task",
+        "update_history": "update_history"
+    }
+)
+
+# 工具执行完毕后循环返回大模型重新思考并生成
+workflow.add_edge("execute_music_task", "generate_response")
+workflow.add_edge("execute_browser_task", "generate_response")
+
 workflow.add_edge("update_history", END)
 
 chat_workflow = workflow.compile()
@@ -1031,10 +1235,13 @@ def chat(payload: dict = Body(...)):
             "emotion": "normal",
             "score": 10,
             "clean_content": "",
-            "browser_task": None
+            "browser_task": None,
+            "browser_result": None,
+            "music_task": None,
+            "music_result": None
         }
 
-        # 调用 LangGraph 对话工作流
+        # 调用 LangGraph 对话工作流 (ReAct 闭环)
         final_state = chat_workflow.invoke(initial_state)
 
         raw_reply = final_state.get("raw_reply", "")
@@ -1052,95 +1259,6 @@ def chat(payload: dict = Body(...)):
         elif score < 5:
             change = -1
 
-        # 检查并启动浏览器自动化进程
-        if browser_task:
-            print(f"[BROWSER INTEGRATION] 检测到浏览器操作意图: {browser_task}")
-            try:
-                services_dir = os.path.dirname(os.path.abspath(__file__))
-                rumia_dir = os.path.dirname(services_dir)
-                workspace_dir = os.path.dirname(rumia_dir)
-                
-                candidate_paths = [
-                    os.path.join(workspace_dir, 'browser-use'),
-                    os.path.expanduser(r"~\Desktop\code\new\browser-use"),
-                    os.path.expanduser(r"~\Desktop\code\browser-use")
-                ]
-                
-                browser_use_dir = None
-                venv_python = None
-                demo_py = None
-                
-                for path in candidate_paths:
-                    test_venv = os.path.join(path, '.venv', 'Scripts', 'python.exe')
-                    test_demo = os.path.join(path, 'demo.py')
-                    if os.path.exists(test_venv) and os.path.exists(test_demo):
-                        browser_use_dir = path
-                        venv_python = test_venv
-                        demo_py = test_demo
-                        break
-                
-                if browser_use_dir and venv_python and demo_py:
-                    global browser_process
-                    
-                    def send_task_to_browser_server(task_content):
-                        import urllib.request
-                        import json
-                        try:
-                            req = urllib.request.Request(
-                                "http://127.0.0.1:5005/run",
-                                data=json.dumps({"task": task_content}).encode('utf-8'),
-                                headers={'Content-Type': 'application/json'}
-                            )
-                            with urllib.request.urlopen(req, timeout=300) as resp:
-                                print(f"[BROWSER INTEGRATION] 任务通过后台浏览器服务执行完成: {resp.read().decode('utf-8')}")
-                        except Exception as req_ex:
-                            print(f"[BROWSER INTEGRATION] 通过服务执行网页任务失败，正在降级为拉起新进程: {req_ex}")
-                            launch_new_browser_process(task_content)
-
-                    def launch_new_browser_process(task_content):
-                        global browser_process
-                        if browser_process and browser_process.poll() is None:
-                            try:
-                                if os.name == 'nt':
-                                    subprocess.call(['taskkill', '/F', '/T', '/PID', str(browser_process.pid)],
-                                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                                else:
-                                    browser_process.terminate()
-                            except Exception:
-                                pass
-                        
-                        browser_process = subprocess.Popen(
-                            [venv_python, 'demo.py', task_content],
-                            cwd=browser_use_dir,
-                            stdout=subprocess.DEVNULL,
-                            stderr=subprocess.DEVNULL,
-                            creationflags=0x08000000 if os.name == 'nt' else 0
-                        )
-                        print(f"[BROWSER INTEGRATION] 已在后台拉起全新的持久浏览器服务进程 (PID: {browser_process.pid})。")
-
-                    import socket
-                    server_active = False
-                    try:
-                        with socket.create_connection(("127.0.0.1", 5005), timeout=0.5):
-                            server_active = True
-                    except Exception:
-                        pass
-
-                    if server_active:
-                        print(f"[BROWSER INTEGRATION] 检测到运行中的持久浏览器服务，正在将任务发送至该服务: {browser_task}")
-                        threading.Thread(
-                            target=send_task_to_browser_server,
-                            args=(browser_task,),
-                            daemon=True
-                        ).start()
-                    else:
-                        print(f"[BROWSER INTEGRATION] 未检测到浏览器服务，正在后台拉起全新持久服务实例并执行任务...")
-                        launch_new_browser_process(browser_task)
-                else:
-                    print(f"[BROWSER INTEGRATION] 警告: 未找到 browser-use 路径。")
-            except Exception as ex:
-                print(f"[BROWSER INTEGRATION] 启动浏览器自动化进程失败: {ex}")
-
         # 写入每日归档日志 (.txt)
         try:
             today_str = datetime.now().strftime("%Y-%m-%d")
@@ -1152,9 +1270,23 @@ def chat(payload: dict = Body(...)):
                 lf.write(f"[{time_str}] 露米娅({emotion}): {clean_content}\n")
                 if browser_task:
                     lf.write(f"           [触发网页操作: {browser_task}]\n")
+                music_res = final_state.get("music_result")
+                if music_res and "error" not in music_res:
+                    lf.write(f"           [触发点歌: {music_res['name']} - {music_res['artists']}]\n")
                 lf.write("\n")
         except Exception as log_ex:
             print(f"写入每日聊天日志失败: {log_ex}")
+
+        # 如果点歌成功，提取音乐载荷返回给前端播放器
+        music_play = None
+        music_res = final_state.get("music_result")
+        if music_res and "error" not in music_res:
+            music_play = {
+                "name": music_res["name"],
+                "artists": music_res["artists"],
+                "url": music_res["url"],
+                "lyric": music_res["lyric"]
+            }
 
         return {
             "success": True,
@@ -1162,7 +1294,8 @@ def chat(payload: dict = Body(...)):
             "emotion": emotion,
             "favorability": current_fav,
             "fav_change": change,
-            "history_count": len(updated_history) - 1
+            "history_count": len(updated_history) - 1,
+            "music_play": music_play
         }
 
     except Exception as e:
@@ -1254,7 +1387,10 @@ def rumia_speak(payload: dict = Body(...)):
             "emotion": "normal",
             "score": 10,
             "clean_content": "",
-            "browser_task": None
+            "browser_task": None,
+            "browser_result": None,
+            "music_task": None,
+            "music_result": None
         }
 
         # 调用 LangGraph 对话工作流
