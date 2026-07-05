@@ -124,6 +124,7 @@ class RumiaPet {
         if (ipcRenderer) {
             let isDragging = false;
             let startX = 0, startY = 0;
+            let isIgnoring = false; // [状态追踪] 避免重复且无意义的高频 IPC 通信导致界面卡死
 
             // 监听露米娅图片上的 mousedown 开始拖动
             this.img.addEventListener('mousedown', (e) => {
@@ -136,6 +137,7 @@ class RumiaPet {
                     startY = e.screenY;
                     // 开始拖动时强行捕获鼠标，不忽略事件
                     ipcRenderer.send('set-ignore-mouse-events', false);
+                    isIgnoring = false; // 同步状态
                     this.img.style.cursor = 'grabbing';
                 }
             });
@@ -157,7 +159,11 @@ class RumiaPet {
                 } else {
                     // 处于非拖拽的正常悬停状态下，进行点击穿透检测
                     let isInteractive = false;
-                    const el = e.target;
+                    
+                    // [改进] 使用 elementFromPoint 精准定位鼠标下的节点，解决 Electron 忽略事件时 e.target 强行变为 html/body 的问题
+                    let el = document.elementFromPoint(e.clientX, e.clientY);
+                    if (!el) el = e.target;
+
                     try {
                         if (el && typeof el.closest === 'function') {
                             if (
@@ -176,12 +182,17 @@ class RumiaPet {
                         console.error('[MOUSE_EVENTS] Error in interactive check:', err);
                     }
                     
+                    // [改进] 只有当忽略状态真实发生变更时才向 Electron 发送 IPC，避免疯狂刷屏导致 CPU 消耗或输入无响应
                     if (isInteractive) {
-                        // 悬浮在角色/输入栏/音乐栏等交互元素上时，激活点击
-                        ipcRenderer.send('set-ignore-mouse-events', false);
+                        if (isIgnoring) {
+                            ipcRenderer.send('set-ignore-mouse-events', false);
+                            isIgnoring = false;
+                        }
                     } else {
-                        // 悬浮在背景空白处时，启用鼠标点击穿透
-                        ipcRenderer.send('set-ignore-mouse-events', true, { forward: true });
+                        if (!isIgnoring) {
+                            ipcRenderer.send('set-ignore-mouse-events', true, { forward: true });
+                            isIgnoring = true;
+                        }
                     }
                 }
             });

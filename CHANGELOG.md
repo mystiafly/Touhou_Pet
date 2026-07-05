@@ -8,6 +8,13 @@
 
 ---
 
+## [0.8.9] - 2026-07-05
+
+### 修复与优化
+- **双重修复 Electron 点击穿透锁定 Bug (Dual Fix for Electron Mouse Ignore Lock)**：
+  - **Hit-Test 精度修复**：在 Electron 将鼠标忽略状态设为 `true` 时，Chromium 的 `e.target` 在移回交互元素时将失效（仅返回 `html`/`body` 根节点），导致状态锁死无法恢复。使用 [document.elementFromPoint](file:///G:/code/rumia/services/static/js/pet_script.js#L159) 替换/补充 `e.target` 进行精准物理碰撞检测，完美解决检测失灵的问题。
+  - **高频通信限流优化**：增加了 `isIgnoring` [状态追踪变量](file:///G:/code/rumia/services/static/js/pet_script.js#L127)，只有当忽略状态**真正发生切换时**才向主进程发送 IPC 消息，彻底根治鼠标滑动时因高频发送 IPC 消息给主进程导致的点击锁死/界面卡顿。
+
 ## [0.8.8] - 2026-07-05
 
 ### 修复与优化
