@@ -158,17 +158,23 @@ class RumiaPet {
                     // 处于非拖拽的正常悬停状态下，进行点击穿透检测
                     let isInteractive = false;
                     const el = e.target;
-                    if (el) {
-                        if (
-                            el.id === 'rumia-img' ||
-                            el.closest('.input-bar') ||
-                            el.closest('.settings-content') ||
-                            el.closest('.fav-container') ||
-                            el.closest('#music-player-bar') ||
-                            (el.closest('#speech-bubble') && this.bubble.style.opacity === '1') ||
-                            (el.closest('#settings-modal') && !this.settingsModal.classList.contains('hidden'))
-                        ) {
-                            isInteractive = true;
+                    // 防御性安全设计：确保 el 存在且拥有 closest 方法（例如 document 节点就没有该方法，容易引发脚本崩溃）
+                    if (el && typeof el.closest === 'function') {
+                        try {
+                            if (
+                                el.id === 'rumia-img' ||
+                                el.closest('#rumia-img') ||
+                                el.closest('.input-bar') ||
+                                el.closest('.settings-content') ||
+                                el.closest('.fav-container') ||
+                                el.closest('#music-player-bar') ||
+                                (this.bubble && el.closest('#speech-bubble') && this.bubble.style.opacity === '1') ||
+                                (this.settingsModal && el.closest('#settings-modal') && !this.settingsModal.classList.contains('hidden'))
+                            ) {
+                                isInteractive = true;
+                            }
+                        } catch (err) {
+                            console.error("[MOUSEMOVE DETECT ERROR]:", err);
                         }
                     }
                     

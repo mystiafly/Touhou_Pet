@@ -8,6 +8,12 @@
 
 ---
 
+## [0.8.4] - 2026-07-05
+
+### 修复
+- **防悬停监听器崩溃逻辑卫语句防护 (mousemove Listener Crash Defense & Robustness)**：
+  - **避让函数可用性校验**：在 [pet_script.js](file:///G:/code/rumia/services/static/js/pet_script.js#L161) 中，为全局 `mousemove` 监听器中的 `el.closest` 调用增加了防御性的卫语句（`typeof el.closest === 'function'` 校验）。当鼠标划出窗口、或悬停在非 `Element` 类型节点（例如 `document`）上时，由于该节点不具备 `closest` 方法，会导致事件监听器抛出 `TypeError` 崩溃报错，进而导致 Electron 锁死在 `ignore-mouse-events = true`（鼠标穿透）的例外模式中而无法恢复。现已对整个检查块进行了安全的 Try-Catch 和类型验证包裹，彻底修复了概率性点不动、锁死鼠标穿透的底层 Bug。
+
 ## [0.8.3] - 2026-07-05
 
 ### 修复
