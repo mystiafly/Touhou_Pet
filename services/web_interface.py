@@ -426,25 +426,46 @@ def trim_history(messages):
     return [system_message] + dialogue
 
 def parse_reply(text):
-    """解析格式：[mood][score]content 并返回 (emotion, score, clean_content)"""
+    """解析格式：[mood][score]content 并返回 (emotion, score, clean_content)
+    升级说明：支持中文心情/评分降级映射，以及正则强力防御性清洗标签泄露"""
     if not text or not isinstance(text, str):
         return "normal", 10, ""
         
-    tags = re.findall(r'\[(normal|angry|shy|crying)\]', text)
+    # 1. 提取心情表情 (支持英文标准表情与中文落子表情)
     emotion = "normal"
+    tags = re.findall(r'\[(normal|angry|shy|crying)\]', text)
     if tags:
         emotion = tags[-1]
+    else:
+        # 中文候选表情提取，并转换映射为系统可识别的对应动画名
+        chinese_emotion_map = {
+            "开心": "normal", "微笑": "normal", "常态": "normal", "平静": "normal", "慵懒": "normal", "愉悦": "normal",
+            "生气": "angry", "愤怒": "angry", "傲娇": "angry", "抱怨": "angry",
+            "害羞": "shy", "脸红": "shy", "扭捏": "shy", "羞耻": "shy",
+            "大哭": "crying", "委屈": "crying", "难过": "crying", "嚎啕大哭": "crying", "流泪": "crying"
+        }
+        for cn_emo, en_emo in chinese_emotion_map.items():
+            if f"[{cn_emo}]" in text:
+                emotion = en_emo
+                break
 
-    score_match = re.search(r'\[(\d+)\]', text)
-    score = 10 
+    # 2. 提取评分好感度变化 (支持纯数字 [12] 以及 [评分: 92] 等变体)
+    score = 10
+    score_match = re.search(r'\[(?:评分:\s*)?(\d+)\]', text)
     if score_match:
         try:
-            score = int(score_match.group(1))
+            raw_score = int(score_match.group(1))
+            # 兼容处理：如果模型输出了 0-100 范围的百分制评分（例如 92），我们将其折算为系统的 0-20 区间 (除以5)
+            if raw_score > 20:
+                score = min(20, max(0, int(raw_score / 5)))
+            else:
+                score = min(20, max(0, raw_score))
         except:
             pass
 
-    clean_content = re.sub(r'\[(normal|angry|shy|crying)\]', '', text)
-    clean_content = re.sub(r'\[\d+\]', '', clean_content).strip()
+    # 3. 清理除了系统级别工具任务标签以外的所有方括号标签，保障对白内容绝对不泄露格式标签
+    # 采用负向先行断言正则，智能跳过 BROWSER_TASK 和 MUSIC_PLAY 标签的清洗
+    clean_content = re.sub(r'\[(?!BROWSER_TASK|MUSIC_PLAY)[^\]]+\]', '', text).strip()
 
     return emotion, score, clean_content
 
@@ -520,7 +541,10 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
             "[SYSTEM REMINDER - P0 HIGHEST PRIORITY]\n"
             "【最高优先级提醒与行为约束（基础静态规则）】\n"
             "1. 角色约束与动作描写：请严格扮演露米娅（性格傲娇的食人妖怪），用中文回答。在对话中建议穿插用圆括号包裹的动作/表情描述（如：‘(脸红扭过头)’）。在适合的情况下（如进行两性/NSFW/深层亲密交互时），强烈建议你特地独立写出几段【无情绪与评分前缀】的纯圆括号段落描述神态与客观场景，但特别注意：此类纯圆括号描述【绝对不能作为你回复的最后一段】（最后一段必须是带标签的正常台词，以防止表情显示发生解析冲突）。如果下方的【最高优先级触发预设】有更细致的格式与描述要求，请一并严格执行。\n"
-            "2. 格式约束与要求：你的回复必须且只能遵循 '[心情][评分]对话内容' 格式要求。因为这是你主动搭话，绝对禁止包含 `[BROWSER_TASK: ...]` 标记。\n"
+            "2. 格式约束与要求：你的回复必须且只能遵循 '[心情][评分]对话内容' 格式要求。其中：\n"
+            "   - '[心情]' 必须且只能是以下英文单词之一：[normal] (常态/开心/微笑/平静), [angry] (生气/愤怒/傲娇抱怨), [shy] (害羞/脸红/扭捏), [crying] (委屈/难过/大哭)。绝对禁止使用任何中文心情标签（如 [开心] ❌，[慵懒] ❌）。\n"
+            "   - '[评分]' 必须且只能是方括号内包裹一个 0 到 20 之间的纯数字评分（如 [12]），代表当前言论的好感度评分（10为基准，>10加分，<10扣分）。绝对禁止写成类似 [评分: 92] ❌ 这样的非法格式。\n"
+            "   - 示例：'[normal][12]哼，笨蛋！(双手叉腰)' 或 '[shy][18]才、才没有想你呢！(脸红别过头)'。因为这是你主动搭话，绝对禁止包含 `[BROWSER_TASK: ...]` 标记。\n"
             "3. 注意事项：目前只是你在自言自语主动搭话，绝对不要扮演用户或者假装用户对你说了什么！\n\n"
             "【以下是与当前会话有关的动态变量（自此往后的内容不计入基础静态缓存）】\n"
         )
@@ -534,7 +558,10 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
             "[SYSTEM REMINDER - P0 HIGHEST PRIORITY]\n"
             "【最高优先级提醒与行为约束（基础静态规则）】\n"
             "1. 角色约束与动作描写：请严格扮演露米娅（性格傲娇的食人妖怪），用中文回答。在对话中建议穿插用圆括号包裹的动作/表情描述（如：‘(脸红扭过头)’）。在适合的情况下（如进行两性/NSFW/深层亲密交互时），强烈建议你特地独立写出几段【无情绪与评分前缀】的纯圆括号段落描述神态与客观场景，但特别注意：此类纯圆括号描述【绝对不能作为你回复的最后一段】（最后一段必须是带标签的正常台词，以防止表情显示发生解析冲突）。如果下方的【最高优先级触发预设】有更细致的格式与描述要求，请一并严格执行。\n"
-            "2. 格式约束：你的回复必须且只能遵循 '[心情][评分]对话内容' 格式要求（如含有明确浏览器自动化意图则在最末尾附加 `[BROWSER_TASK: ...]`）。\n\n"
+            "2. 格式约束：你的回复必须且只能遵循 '[心情][评分]对话内容' 格式要求（如含有明确浏览器自动化意图则在最末尾附加 `[BROWSER_TASK: ...]`）。其中：\n"
+            "   - '[心情]' 必须且只能是以下英文单词之一：[normal] (常态/微笑/平静), [angry] (生气/愤怒/傲娇抱怨), [shy] (害羞/脸红/扭捏), [crying] (委屈/难过/大哭)。绝对禁止使用任何中文心情标签（如 [开心] ❌，[慵懒] ❌）。\n"
+            "   - '[评分]' 必须且只能是方括号内包裹一个 0 到 20 之间的纯数字评分（如 [12]），代表当前言论的好感度评分（10为基准，>10加分，<10扣分）。绝对禁止写成类似 [评分: 92] ❌ 这样的非法格式。\n"
+            "   - 示例：'[normal][12]哼，笨蛋！(双手叉腰)' 或 '[shy][18]才、才没有想你呢！(脸红别过头)'。\n\n"
             "【以下是与当前会话有关的动态变量（自此往后的内容不计入基础静态缓存）】\n"
         )
         meta_context = get_meta_context_for_chat()
