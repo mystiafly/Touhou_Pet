@@ -8,6 +8,12 @@
 
 ---
 
+## [0.8.6] - 2026-07-05
+
+### 回滚
+- **前端代码完全退回至 0.8.1 版本 (Frontend Reverted to 0.8.1)**：
+  - **无损回滚**：由于 `0.8.2` ~ `0.8.5` 期间进行的音频框定位重构以及 Electron 穿透白名单调试产生了未知的页面锁定/不可点击 Bug，已将所有前端文件（[main.js](file:///G:/code/rumia/main.js), [pet.html](file:///G:/code/rumia/services/templates/pet.html), [pet.css](file:///G:/code/rumia/services/static/css/pet.css), [pet_script.js](file:///G:/code/rumia/services/static/js/pet_script.js), [package.json](file:///G:/code/rumia/package.json)）**100% 完整无差错地强制回滚至 0.8.1 版本的原始代码**，以恢复其原本绝对稳定的运行与点击状态。
+
 ## [0.8.5] - 2026-07-05
 
 ### 回滚与优化
