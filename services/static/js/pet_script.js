@@ -51,7 +51,6 @@ class RumiaPet {
 
         // [新增] 网易云音乐原生播放器控制与状态绑定
         this.playerBar = document.getElementById('music-player-bar');
-        this.inputBar = document.querySelector('.input-bar');
         this.musicTitle = document.getElementById('music-title');
         this.musicArtist = document.getElementById('music-artist');
         this.liveLyrics = document.getElementById('live-lyrics');
@@ -982,7 +981,6 @@ class RumiaPet {
         this.musicTitle.innerText = musicPlay.name;
         this.musicArtist.innerText = musicPlay.artists;
         this.playerBar.classList.remove('hidden');
-        if (this.inputBar) this.inputBar.classList.add('with-music');
         
         try {
             // 解析歌词
@@ -1012,7 +1010,6 @@ class RumiaPet {
         this.musicTitle.innerText = "正在搜索...";
         this.musicArtist.innerText = "-";
         this.playerBar.classList.remove('hidden');
-        if (this.inputBar) this.inputBar.classList.add('with-music');
         
         try {
             // 1. 调用后端搜索
@@ -1167,9 +1164,6 @@ class RumiaPet {
         }
         if (this.playerBar) {
             this.playerBar.classList.add('hidden');
-        }
-        if (this.inputBar) {
-            this.inputBar.classList.remove('with-music');
         }
         console.log("[MUSIC PLAYER] 停止播放并收起控制面板");
     }

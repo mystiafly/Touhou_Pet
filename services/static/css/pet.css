@@ -125,7 +125,7 @@ body, html {
     bottom: 10px;
     width: 270px;
     opacity: 0;
-    transition: bottom 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease;
+    transition: opacity 0.3s;
     -webkit-app-region: no-drag;
     pointer-events: auto;
 
@@ -135,10 +135,6 @@ body, html {
     gap: 8px;
     padding: 0 10px;
     box-sizing: border-box;
-}
-
-.input-bar.with-music {
-    bottom: 56px; /* 音乐栏处于下方时自动向上让出空间 */
 }
 
 .pet-container:hover .input-bar,
@@ -885,7 +881,7 @@ body, html {
 /* 网易云音乐悬浮播放器栏 */
 .music-player-bar {
     position: absolute;
-    bottom: 8px; /* 移至最底部 */
+    bottom: 52px;
     left: 12px;
     display: flex;
     justify-content: space-between;
