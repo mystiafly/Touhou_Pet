@@ -8,6 +8,12 @@
 
 ---
 
+## [0.8.3] - 2026-07-05
+
+### 修复
+- **Electron 鼠标点击忽略白名单修复 (Electron Mouse Ignore Whitelist Fix)**：
+  - **穿透过滤白名单补全**：在 [pet_script.js](file:///G:/code/rumia/services/static/js/pet_script.js#L167) 中将 `#music-player-bar` 元素加入到 `isInteractive` 穿透判定白名单中。虽然在 `0.8.2` 中通过 CSS 开启了 `pointer-events`，但由于没有在 JS 侧将其加入 Electron 的非穿透过滤白名单，导致鼠标悬停在播放栏上方时，Electron 仍会触发穿透事件（Ignore Mouse Events = True），使得点击事件被直接穿透到系统桌面。现已修复，按钮可正常点击，且不影响非交互空白区域的穿透。
+
 ## [0.8.2] - 2026-07-05
 
 ### 优化与修复
