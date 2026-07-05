@@ -51,6 +51,7 @@ class RumiaPet {
 
         // [新增] 网易云音乐原生播放器控制与状态绑定
         this.playerBar = document.getElementById('music-player-bar');
+        this.inputBar = document.querySelector('.input-bar');
         this.musicTitle = document.getElementById('music-title');
         this.musicArtist = document.getElementById('music-artist');
         this.liveLyrics = document.getElementById('live-lyrics');
@@ -157,24 +158,29 @@ class RumiaPet {
                     // 处于非拖拽的正常悬停状态下，进行点击穿透检测
                     let isInteractive = false;
                     const el = e.target;
-                    if (el) {
-                        if (
-                            el.id === 'rumia-img' ||
-                            el.closest('.input-bar') ||
-                            el.closest('.settings-content') ||
-                            el.closest('.fav-container') ||
-                            (el.closest('#speech-bubble') && this.bubble.style.opacity === '1') ||
-                            (el.closest('#settings-modal') && !this.settingsModal.classList.contains('hidden'))
-                        ) {
-                            isInteractive = true;
+                    try {
+                        if (el && typeof el.closest === 'function') {
+                            if (
+                                el.id === 'rumia-img' ||
+                                el.closest('.input-bar') ||
+                                el.closest('.music-player-bar') ||
+                                el.closest('.settings-content') ||
+                                el.closest('.fav-container') ||
+                                (this.bubble && el.closest('#speech-bubble') && this.bubble.style.opacity === '1') ||
+                                (this.settingsModal && el.closest('#settings-modal') && !this.settingsModal.classList.contains('hidden'))
+                            ) {
+                                isInteractive = true;
+                            }
                         }
+                    } catch (err) {
+                        console.error('[MOUSE_EVENTS] Error in interactive check:', err);
                     }
                     
                     if (isInteractive) {
-                        // 悬浮在角色/输入栏上时，激活点击
+                        // 悬浮在角色/输入栏/音乐栏等交互元素上时，激活点击
                         ipcRenderer.send('set-ignore-mouse-events', false);
                     } else {
-                        // 悬浮在背景空白处时，启用鼠标点击穿透（透明区域点击透过窗口到桌面）
+                        // 悬浮在背景空白处时，启用鼠标点击穿透
                         ipcRenderer.send('set-ignore-mouse-events', true, { forward: true });
                     }
                 }
@@ -974,6 +980,7 @@ class RumiaPet {
         this.musicTitle.innerText = musicPlay.name;
         this.musicArtist.innerText = musicPlay.artists;
         this.playerBar.classList.remove('hidden');
+        if (this.inputBar) this.inputBar.classList.add('with-music');
         
         try {
             // 解析歌词
@@ -1003,6 +1010,7 @@ class RumiaPet {
         this.musicTitle.innerText = "正在搜索...";
         this.musicArtist.innerText = "-";
         this.playerBar.classList.remove('hidden');
+        if (this.inputBar) this.inputBar.classList.add('with-music');
         
         try {
             // 1. 调用后端搜索
@@ -1157,6 +1165,9 @@ class RumiaPet {
         }
         if (this.playerBar) {
             this.playerBar.classList.add('hidden');
+        }
+        if (this.inputBar) {
+            this.inputBar.classList.remove('with-music');
         }
         console.log("[MUSIC PLAYER] 停止播放并收起控制面板");
     }

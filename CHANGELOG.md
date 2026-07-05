@@ -8,6 +8,11 @@
 
 ---
 
+## [0.8.8] - 2026-07-05
+
+### 修复与优化
+- **根治全屏点击失效 Bug (Fix Universal Click Ignore Lock)**：找到了此前导致 0.8.2-0.8.5 版本“什么都点不了”的罪魁祸首——这是由于在 Electron 鼠标穿透判定逻辑中，`e.target` (背景区域) 缺乏对 `closest` 方法的安全校验，导致抛出 `TypeError`，进而令 `set-ignore-mouse-events` 陷入永久忽略状态。在 [pet_script.js](file:///G:/code/rumia/services/static/js/pet_script.js#L160) 中加入了 `typeof el.closest === 'function'` 的安全拦截校验与 try-catch，并同时恢复了 [pet.css](file:///G:/code/rumia/services/static/css/pet.css#L886) 中针对音乐播放器栏的精美底部上浮布局。
+
 ## [0.8.6] - 2026-07-05
 
 ### 回滚
