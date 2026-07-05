@@ -8,6 +8,14 @@
 
 ---
 
+## [0.8.2] - 2026-07-05
+
+### 优化与修复
+- **音乐播放栏布局调整与点击穿透修复 (Music Player Layout & Clickability Fix)**：
+  - **暂停/停止按钮点击穿透修复**：在 [pet.css](file:///G:/code/rumia/services/static/css/pet.css#L900) 中为 `.music-player-bar` 显式添加了 `pointer-events: auto;`。由于父级容器禁用了鼠标事件，未设此属性导致所有点击直接穿透播放栏，使得暂停/停止按钮无法响应点击，现已完美修复。
+  - **播放栏下沉至输入框下方**：重新调整了 UI 层次结构，将 `.music-player-bar` 底边距（`bottom`）由 `52px` 调整为 `8px` 贴底放置，以置于输入框之下。
+  - **输入栏智能避让动画**：在 [pet.css](file:///G:/code/rumia/services/static/css/pet.css#L125-L136) 和 [pet_script.js](file:///G:/code/rumia/services/static/js/pet_script.js#L52) 中引入了 `.with-music` 动态避让逻辑。当音乐播放器处于激活显示状态时，输入栏底边距（`bottom`）会自动平滑上滑至 `56px` 以完美避让音乐栏；当音乐停止关闭时，输入栏会自动滑回 `10px` 贴底，实现极致的动效美感与无感自适应。
+
 ## [0.8.1] - 2026-07-05
 
 ### 修复
