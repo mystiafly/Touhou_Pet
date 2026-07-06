@@ -159,9 +159,6 @@ class RumiaPet {
                 } else {
                     // 处于非拖拽的正常悬停状态下，进行点击穿透检测
                     let isInteractive = false;
-                    
-                    // 处于非拖拽的正常悬停状态下，进行点击穿透检测
-                    let isInteractive = false;
                     const el = e.target;
                     if (el) {
                         if (
