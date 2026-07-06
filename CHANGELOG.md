@@ -8,6 +8,13 @@
 
 ---
 
+## [0.8.12] - 2026-07-06
+
+### 修复与优化
+- **根治 Electron 忽略鼠标状态下的穿透检测 (Geometry Bounding Box Hit Test)**：
+  - **几何边界检测**：在 Electron 中开启 `setIgnoreMouseEvents(true, { forward: true })` 后，Chromium 自身的 Event Hit-Testing 会被完全挂起，导致 `e.target` 或 `document.elementFromPoint` 在移回角色身上时失效（只返回 `body` 或 `html`），进而造成窗口永久性无法交互。
+  - **突破方案**：在 [pet_script.js](file:///G:/code/rumia/services/static/js/pet_script.js#L161) 中，彻底摒弃 DOM Hit-Test，改用纯几何数学计算 `getBoundingClientRect` 坐标匹配来判定鼠标是否悬停在交互元素上，彻底根治了 Electron 穿透锁死问题。
+
 ## [0.8.10] - 2026-07-06
 
 ### 修复与优化
