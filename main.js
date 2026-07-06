@@ -38,16 +38,17 @@ function createWindow() {
         }
     });
 
-    // 加载 Flask 的桌宠页面 (支持后台慢启动自动重试)
+    // 加载 Flask/FastAPI 的桌宠页面 (支持后台慢启动无限重试直到连接成功)
     const petUrl = 'http://127.0.0.1:5000/pet';
-    win.loadURL(petUrl).catch(err => {
-        console.log(`[ELECTRON] 初始请求 /pet 拒绝连接，准备在 2 秒后自动重试...`);
-        setTimeout(() => {
-            win.loadURL(petUrl).catch(retryErr => {
-                console.log(`[ELECTRON] 重试 /pet 再次失败，这通常发生在后端未完全就绪时: ${retryErr.message}`);
-            });
-        }, 2000);
-    });
+    function loadPetPage() {
+        win.loadURL(petUrl).then(() => {
+            console.log(`[ELECTRON] 成功连接并加载桌宠页面！`);
+        }).catch(err => {
+            console.log(`[ELECTRON] 页面请求拒绝 (后端尚未就绪)，在 1.5 秒后继续自动重试...`);
+            setTimeout(loadPetPage, 1500);
+        });
+    }
+    loadPetPage();
 
     // 开发时可以打开控制台调试 CSS
     // win.webContents.openDevTools({ mode: 'detach' });
