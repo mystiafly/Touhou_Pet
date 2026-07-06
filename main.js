@@ -51,7 +51,7 @@ function createWindow() {
     loadPetPage();
 
     // 开发时可以打开控制台调试 CSS
-    // win.webContents.openDevTools({ mode: 'detach' });
+    win.webContents.openDevTools({ mode: 'detach' });
 }
 
 app.whenReady().then(createWindow);
