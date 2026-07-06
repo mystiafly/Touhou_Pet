@@ -125,7 +125,6 @@ class RumiaPet {
         if (ipcRenderer) {
             let isDragging = false;
             let startX = 0, startY = 0;
-            let isIgnoring = false; // [状态追踪] 避免重复且无意义的高频 IPC 通信导致界面卡死
 
             // 监听露米娅图片上的 mousedown 开始拖动
             this.img.addEventListener('mousedown', (e) => {
@@ -138,7 +137,6 @@ class RumiaPet {
                     startY = e.screenY;
                     // 开始拖动时强行捕获鼠标，不忽略事件
                     ipcRenderer.send('set-ignore-mouse-events', false);
-                    isIgnoring = false; // 同步状态
                     this.img.style.cursor = 'grabbing';
                 }
             });
@@ -173,38 +171,6 @@ class RumiaPet {
                             (el.closest('#speech-bubble') && this.bubble && this.bubble.style.opacity === '1') ||
                             (this.settingsModal && el.closest('#settings-modal') && !this.settingsModal.classList.contains('hidden'))
                         ) {
-                            isInteractive = true;
-                        }
-                    }
-                    
-                    // 通道 2: 几何边界备用检测 (DPI-Safe 物理边界碰撞，解决 Electron 穿透时 DOM Hit-Test 挂起失效问题)
-                    if (!isInteractive) {
-                        const checkHover = (element) => {
-                            if (!element) return false;
-                            const rect = element.getBoundingClientRect();
-                            const mouseX = e.screenX - window.screenX;
-                            const mouseY = e.screenY - window.screenY;
-                            return (
-                                mouseX >= rect.left &&
-                                mouseX <= rect.right &&
-                                mouseY >= rect.top &&
-                                mouseY <= rect.bottom
-                            );
-                        };
-
-                        if (checkHover(this.img)) {
-                            isInteractive = true;
-                        } else if (checkHover(this.inputBar)) {
-                            isInteractive = true;
-                        } else if (this.presetsPopup && !this.presetsPopup.classList.contains('hidden') && checkHover(this.presetsPopup)) {
-                            isInteractive = true;
-                        } else if (this.playerBar && !this.playerBar.classList.contains('hidden') && checkHover(this.playerBar)) {
-                            isInteractive = true;
-                        } else if (this.favContainer && checkHover(this.favContainer)) {
-                            isInteractive = true;
-                        } else if (this.bubble && this.bubble.style.opacity === '1' && checkHover(this.bubble)) {
-                            isInteractive = true;
-                        } else if (this.settingsModal && !this.settingsModal.classList.contains('hidden') && checkHover(this.settingsModal)) {
                             isInteractive = true;
                         }
                     }
