@@ -160,6 +160,8 @@ class RumiaPet {
                     // 处于非拖拽的正常悬停状态下，进行点击穿透检测
                     let isInteractive = false;
                     const el = e.target;
+                    
+                    // 通道 1: 原生 DOM 碰撞检测 (e.target)
                     if (el) {
                         if (
                             el.id === 'rumia-img' ||
@@ -170,6 +172,39 @@ class RumiaPet {
                             (el.closest('#speech-bubble') && this.bubble && this.bubble.style.opacity === '1') ||
                             (this.settingsModal && el.closest('#settings-modal') && !this.settingsModal.classList.contains('hidden'))
                         ) {
+                            isInteractive = true;
+                        }
+                    }
+                    
+                    // 通道 2: 几何边界备用检测 (DPI-Safe 物理边界碰撞，解决 Electron 穿透时 DOM Hit-Test 挂起失效问题)
+                    if (!isInteractive) {
+                        const checkHover = (element) => {
+                            if (!element) return false;
+                            const rect = element.getBoundingClientRect();
+                            const dpr = window.devicePixelRatio || 1;
+                            const mouseX = (e.screenX - window.screenX) / dpr;
+                            const mouseY = (e.screenY - window.screenY) / dpr;
+                            return (
+                                mouseX >= rect.left &&
+                                mouseX <= rect.right &&
+                                mouseY >= rect.top &&
+                                mouseY <= rect.bottom
+                            );
+                        };
+
+                        if (checkHover(this.img)) {
+                            isInteractive = true;
+                        } else if (checkHover(this.inputBar)) {
+                            isInteractive = true;
+                        } else if (this.presetsPopup && !this.presetsPopup.classList.contains('hidden') && checkHover(this.presetsPopup)) {
+                            isInteractive = true;
+                        } else if (this.playerBar && !this.playerBar.classList.contains('hidden') && checkHover(this.playerBar)) {
+                            isInteractive = true;
+                        } else if (this.favContainer && checkHover(this.favContainer)) {
+                            isInteractive = true;
+                        } else if (this.bubble && this.bubble.style.opacity === '1' && checkHover(this.bubble)) {
+                            isInteractive = true;
+                        } else if (this.settingsModal && !this.settingsModal.classList.contains('hidden') && checkHover(this.settingsModal)) {
                             isInteractive = true;
                         }
                     }
