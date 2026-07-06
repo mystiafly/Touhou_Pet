@@ -160,15 +160,18 @@ class RumiaPet {
                     // 处于非拖拽的正常悬停状态下，进行点击穿透检测
                     let isInteractive = false;
                     
-                    // [改进] 使用 getBoundingClientRect 几何边界判定，彻底根治 Electron 在忽略鼠标事件状态下 DOM Hit-Test 失效的 Bug
+                    // [改进] 使用 screenX/screenY 减去 window.screenX/window.screenY 并除以 devicePixelRatio，彻底根治 DPI 缩放与 Electron 穿透事件坐标系错位 Bug
                     const checkHover = (element) => {
                         if (!element) return false;
                         const rect = element.getBoundingClientRect();
+                        const dpr = window.devicePixelRatio || 1;
+                        const mouseX = (e.screenX - window.screenX) / dpr;
+                        const mouseY = (e.screenY - window.screenY) / dpr;
                         return (
-                            e.clientX >= rect.left &&
-                            e.clientX <= rect.right &&
-                            e.clientY >= rect.top &&
-                            e.clientY <= rect.bottom
+                            mouseX >= rect.left &&
+                            mouseX <= rect.right &&
+                            mouseY >= rect.top &&
+                            mouseY <= rect.bottom
                         );
                     };
 
@@ -176,6 +179,8 @@ class RumiaPet {
                         if (checkHover(this.img)) {
                             isInteractive = true;
                         } else if (checkHover(this.inputBar)) {
+                            isInteractive = true;
+                        } else if (this.presetsPopup && !this.presetsPopup.classList.contains('hidden') && checkHover(this.presetsPopup)) {
                             isInteractive = true;
                         } else if (this.playerBar && !this.playerBar.classList.contains('hidden') && checkHover(this.playerBar)) {
                             isInteractive = true;
