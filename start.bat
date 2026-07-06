@@ -50,5 +50,5 @@ if errorlevel 1 %PYTHON_EXE% -m pip install mem0ai sentence-transformers qdrant-
 echo.
 echo == Step 3/3 == Waking up Rumia. Please wait...
 echo.
-%PYTHON_EXE% run.py
+%PYTHON_EXE% run.py <nul
 
