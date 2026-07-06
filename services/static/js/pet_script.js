@@ -160,52 +160,27 @@ class RumiaPet {
                     // 处于非拖拽的正常悬停状态下，进行点击穿透检测
                     let isInteractive = false;
                     
-                    // [改进] 使用 screenX/screenY 减去 window.screenX/window.screenY 并除以 devicePixelRatio，彻底根治 DPI 缩放与 Electron 穿透事件坐标系错位 Bug
-                    const checkHover = (element) => {
-                        if (!element) return false;
-                        const rect = element.getBoundingClientRect();
-                        const dpr = window.devicePixelRatio || 1;
-                        const mouseX = (e.screenX - window.screenX) / dpr;
-                        const mouseY = (e.screenY - window.screenY) / dpr;
-                        return (
-                            mouseX >= rect.left &&
-                            mouseX <= rect.right &&
-                            mouseY >= rect.top &&
-                            mouseY <= rect.bottom
-                        );
-                    };
-
-                    try {
-                        if (checkHover(this.img)) {
-                            isInteractive = true;
-                        } else if (checkHover(this.inputBar)) {
-                            isInteractive = true;
-                        } else if (this.presetsPopup && !this.presetsPopup.classList.contains('hidden') && checkHover(this.presetsPopup)) {
-                            isInteractive = true;
-                        } else if (this.playerBar && !this.playerBar.classList.contains('hidden') && checkHover(this.playerBar)) {
-                            isInteractive = true;
-                        } else if (this.favContainer && checkHover(this.favContainer)) {
-                            isInteractive = true;
-                        } else if (this.bubble && this.bubble.style.opacity === '1' && checkHover(this.bubble)) {
-                            isInteractive = true;
-                        } else if (this.settingsModal && !this.settingsModal.classList.contains('hidden') && checkHover(this.settingsModal)) {
+                    // 处于非拖拽的正常悬停状态下，进行点击穿透检测
+                    let isInteractive = false;
+                    const el = e.target;
+                    if (el) {
+                        if (
+                            el.id === 'rumia-img' ||
+                            el.closest('.input-bar') ||
+                            el.closest('.music-player-bar') ||
+                            el.closest('.settings-content') ||
+                            el.closest('.fav-container') ||
+                            (el.closest('#speech-bubble') && this.bubble && this.bubble.style.opacity === '1') ||
+                            (this.settingsModal && el.closest('#settings-modal') && !this.settingsModal.classList.contains('hidden'))
+                        ) {
                             isInteractive = true;
                         }
-                    } catch (err) {
-                        console.error('[MOUSE_EVENTS] Error in geometric hover check:', err);
                     }
                     
-                    // [改进] 只有当忽略状态真实发生变更时才向 Electron 发送 IPC，避免疯狂刷屏导致 CPU 消耗或输入无响应
                     if (isInteractive) {
-                        if (isIgnoring) {
-                            ipcRenderer.send('set-ignore-mouse-events', false);
-                            isIgnoring = false;
-                        }
+                        ipcRenderer.send('set-ignore-mouse-events', false);
                     } else {
-                        if (!isIgnoring) {
-                            ipcRenderer.send('set-ignore-mouse-events', true, { forward: true });
-                            isIgnoring = true;
-                        }
+                        ipcRenderer.send('set-ignore-mouse-events', true, { forward: true });
                     }
                 }
             });
