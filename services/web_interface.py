@@ -487,7 +487,9 @@ class AgentState(TypedDict):
     browser_task: Optional[str]
     browser_result: Optional[str]  # 网页任务执行反馈成果
     music_task: Optional[str]      # 点歌检索关键词
-    music_result: Optional[dict]   # 网易云检索出的具体歌曲信息 (包含id, name, artists, url, lyric)
+    music_result: Optional[dict]   # 网易云检索出的具体歌曲信息
+    launcher_task: Optional[str]   # 本地应用启动任务关键词
+    launcher_result: Optional[str] # 本地应用启动执行结果反馈
 
 def recall_memories_node(state: AgentState) -> Dict[str, Any]:
     """读取 Mem0 事实库中的长期记忆"""
@@ -554,11 +556,17 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
         priority_reminder += f"5. 当前你（露米娅）对用户的好感度为: {current_fav}/100。\n"
     else:
         # 正常聊天模式下的提示词组装 (静态前置)
+        config_data = get_config()
+        app_launcher = config_data.get("app_launcher", {})
+        available_apps_str = ", ".join(app_launcher.keys()) if app_launcher else "（尚未配置任何本地应用启动项）"
+
         priority_reminder = (
             "[SYSTEM REMINDER - P0 HIGHEST PRIORITY]\n"
             "【最高优先级提醒与行为约束（基础静态规则）】\n"
-            "1. 角色约束与动作描写：请严格扮演露米娅（性格傲娇的食人妖怪），用中文回答。在对话中建议穿插用圆括号包裹的动作/表情描述（如：‘(脸红扭过头)’）。在适合的情况下（如进行两性/NSFW/深层亲密交互时），强烈建议你特地独立写出几段【无情绪与评分前缀】的纯圆括号段落描述神态与客观场景，但特别注意：此类纯圆括号描述【绝对不能作为你回复的最后一段】（最后一段必须是带标签的正常台词，以防止表情显示发生解析冲突）。如果下方的【最高优先级触发预设】有更细致的格式与描述要求，请一并严格执行。\n"
-            "2. 格式约束：你的回复必须且只能遵循 '[心情][评分]对话内容' 格式要求（如含有明确浏览器自动化意图则在最末尾附加 `[BROWSER_TASK: ...]`）。其中：\n"
+            "1. 角色约束与动作描写：请严格扮演露米娅（性格傲娇的食人妖怪），用中文回答。在对话中建议穿插用圆括号包裹的动作/表情描述（如：‘(脸红扭过头)’）。在适合的情况下（如进行两性/NSFW/深层亲密交互时），强烈建议你特地独立写出几段【无情绪与评分前缀】的纯圆括号段落描述神态与客观场景，但特别注意：此类纯圆括号描述【绝对不能作为你回复的最后一段】（最后一段必须是带标签 of 正常台词，以防止表情显示发生解析冲突）。如果下方的【最高优先级触发预设】有更细致的格式与描述要求，请一并严格执行。\n"
+            "2. 格式约束：你的回复必须且只能遵循 '[心情][评分]对话内容' 格式要求。\n"
+            "   - 如有浏览器自动化搜索意图，请在最末尾附加 `[BROWSER_TASK: 搜索任务文本]`。\n"
+            "   - 如用户明确提出要你打开/拉起本地应用，且该应用存在于下方已配置列表里，请在回复最末尾附加 `[LAUNCH_APP: 精确匹配的应用名称]`。\n"
             "   - '[心情]' 必须且只能是以下英文单词之一：[normal] (常态/微笑/平静), [angry] (生气/愤怒/傲娇抱怨), [shy] (害羞/脸红/扭捏), [crying] (委屈/难过/大哭)。绝对禁止使用任何中文心情标签（如 [开心] ❌，[慵懒] ❌）。\n"
             "   - '[评分]' 必须且只能是方括号内包裹一个 0 到 20 之间的纯数字评分（如 [12]），代表当前言论的好感度评分（10为基准，>10加分，<10扣分）。绝对禁止写成类似 [评分: 92] ❌ 这样的非法格式。\n"
             "   - 示例：'[normal][12]哼，笨蛋！(双手叉腰)' 或 '[shy][18]才、才没有想你呢！(脸红别过头)'。\n\n"
@@ -567,10 +575,11 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
         meta_context = get_meta_context_for_chat()
         priority_reminder += f"{meta_context}\n"
         priority_reminder += f"3. 当前你（露米娅）对用户的好感度为: {current_fav}/100。\n"
+        priority_reminder += f"4. 当前系统支持你拉起启动的本地应用列表如下：【 {available_apps_str} 】。如果用户让你打开这些应用，请在回复末尾附带相应的 `[LAUNCH_APP: xxx]` 标记。如果用户说要打开的应用不在此列表中，请以傲娇口吻提示他先去配置文件 services/config.json 的 app_launcher 项中配置该应用的绝对文件路径。\n"
         
         if recalled_memories:
             priority_reminder += (
-                f"4. 唤醒的长期记忆（关于用户的偏好与经历）：\n"
+                f"5. 唤醒的长期记忆（关于用户的偏好与经历）：\n"
                 f"{recalled_memories}\n"
                 "（注：这些是关于用户的长期记忆。请仅在当前对话主题与这些记忆相关时，才自然、适度地提及。如果当前对话完全无关，请绝对不要强行或刻意提及它们，保持对话的自然与真实性。）\n"
             )
@@ -601,6 +610,15 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
             f"你刚刚发起的浏览器搜索任务执行反馈如下：\n"
             f"{browser_result}\n"
             f"请仔细结合上述任务反馈内容，以傲娇的口吻将有用的信息提炼并娇嗔地回答给用户，或者傲娇地告诉他你已经帮他把浏览器跑起来了。绝对不要再在回复中输出任何 `[BROWSER_TASK]` 标签。"
+        )
+        
+    launcher_result = state.get("launcher_result")
+    if launcher_result:
+        priority_reminder += (
+            f"\n\n【工具调用反馈 - 启动本地应用】\n"
+            f"你刚才发起的本地程序/快捷方式启动任务执行反馈如下：\n"
+            f"{launcher_result}\n"
+            f"请以你的口吻傲娇地回复用户。如果启动成功，告诉他已经打开了；如果启动失败或没找到配置，以傲娇/抱怨的语气说明，不要输出任何 `[LAUNCH_APP]` 标签。"
         )
         
     active_messages = []
@@ -649,12 +667,20 @@ def parse_response_node(state: AgentState) -> Dict[str, Any]:
         music_task = music_match.group(1).strip()
         clean_content = re.sub(r'\[MUSIC_PLAY:\s*.*?\]', '', clean_content, flags=re.IGNORECASE).strip()
         
+    # 提取并清理隐藏启动本地应用指令 (ReAct)
+    launcher_task = None
+    launcher_match = re.search(r'\[LAUNCH_APP:\s*(.*?)\]', raw_reply, re.IGNORECASE)
+    if launcher_match:
+        launcher_task = launcher_match.group(1).strip()
+        clean_content = re.sub(r'\[LAUNCH_APP:\s*.*?\]', '', clean_content, flags=re.IGNORECASE).strip()
+        
     return {
         "emotion": emotion,
         "score": score,
         "clean_content": clean_content,
         "browser_task": browser_task,
-        "music_task": music_task
+        "music_task": music_task,
+        "launcher_task": launcher_task
     }
 
 def execute_music_task_node(state: AgentState) -> Dict[str, Any]:
@@ -795,6 +821,46 @@ def execute_browser_task_node(state: AgentState) -> Dict[str, Any]:
         ).start()
         return {"browser_result": f"已在后台成功拉起浏览器进程，正在对任务 '{browser_task}' 展开自动化处理，请让用户查看本地弹出的浏览器窗口。"}
 
+def execute_launcher_task_node(state: AgentState) -> Dict[str, Any]:
+    """工具节点：在系统后台执行本地程序或快捷方式启动指令"""
+    launcher_task = state.get("launcher_task")
+    if not launcher_task:
+        return {"launcher_result": None}
+        
+    print(f"[REACT LAUNCHER NODE] 准备启动本地应用: {launcher_task}")
+    config_data = get_config()
+    app_launcher = config_data.get("app_launcher", {})
+    
+    # 模糊查找匹配应用名 (忽略大小写)
+    matched_app = None
+    matched_path = None
+    for app_name, app_path in app_launcher.items():
+        if launcher_task.lower() in app_name.lower() or app_name.lower() in launcher_task.lower():
+            matched_app = app_name
+            matched_path = app_path.strip()
+            break
+            
+    if not matched_path:
+        print(f"[REACT LAUNCHER NODE] 未找到该应用的启动配置: {launcher_task}")
+        return {"launcher_result": f"启动失败：你尚未配置关于 '{launcher_task}' 的启动路径。请在系统设置中添加。"}
+        
+    try:
+        # 如果是绝对路径且包含斜杠，才去判定物理存在
+        if ("\\" in matched_path or "/" in matched_path) and not os.path.exists(matched_path):
+            return {"launcher_result": f"启动失败：配置的路径 '{matched_path}' 在本地硬盘中不存在，请让用户重新检查配置。"}
+            
+        print(f"[REACT LAUNCHER NODE] 正在启动: {matched_path}")
+        if os.name == 'nt':
+            os.startfile(matched_path)
+        else:
+            import subprocess
+            subprocess.Popen(['open' if sys.platform == 'darwin' else 'xdg-open', matched_path])
+            
+        return {"launcher_result": f"成功反馈：本地应用 '{matched_app}' 已成功拉起！"}
+    except Exception as e:
+        print(f"[REACT LAUNCHER NODE ERROR] 启动异常: {e}")
+        return {"launcher_result": f"启动失败：在拉起 '{matched_app}' 时发生系统错误: {str(e)}"}
+
 def update_history_node(state: AgentState) -> Dict[str, Any]:
     """计算好感度增减、保存对话历史到本地，并触发阶梯式上下文裁剪"""
     history_msgs = state.get("history", [])
@@ -825,7 +891,7 @@ def update_history_node(state: AgentState) -> Dict[str, Any]:
     }
 
 def should_continue(state: AgentState) -> str:
-    """管理 ReAct 工作流路由：判断是否需要流转到音乐或网页自动化工具节点"""
+    """管理 ReAct 工作流路由：判断是否需要流转到音乐、网页自动化或本地应用启动工具节点"""
     # 如果检测到点歌意图，且还没有获得音乐检索反馈 (避免无限循环)
     if state.get("music_task") and state.get("music_result") is None:
         return "execute_music_task"
@@ -833,6 +899,10 @@ def should_continue(state: AgentState) -> str:
     # 如果检测到浏览器操作意图，且还没有获得自动化执行反馈
     if state.get("browser_task") and state.get("browser_result") is None:
         return "execute_browser_task"
+        
+    # 如果检测到本地应用启动意图，且还没有获得启动执行反馈
+    if state.get("launcher_task") and state.get("launcher_result") is None:
+        return "execute_launcher_task"
         
     # 无需更多工具执行，流向历史归档并退出状态机
     return "update_history"
@@ -846,6 +916,7 @@ workflow.add_node("generate_response", generate_response_node)
 workflow.add_node("parse_response", parse_response_node)
 workflow.add_node("execute_music_task", execute_music_task_node)
 workflow.add_node("execute_browser_task", execute_browser_task_node)
+workflow.add_node("execute_launcher_task", execute_launcher_task_node)
 workflow.add_node("update_history", update_history_node)
 
 workflow.set_entry_point("recall_memories")
@@ -861,6 +932,7 @@ workflow.add_conditional_edges(
     {
         "execute_music_task": "execute_music_task",
         "execute_browser_task": "execute_browser_task",
+        "execute_launcher_task": "execute_launcher_task",
         "update_history": "update_history"
     }
 )
@@ -868,6 +940,7 @@ workflow.add_conditional_edges(
 # 工具执行完毕后循环返回大模型重新思考并生成
 workflow.add_edge("execute_music_task", "generate_response")
 workflow.add_edge("execute_browser_task", "generate_response")
+workflow.add_edge("execute_launcher_task", "generate_response")
 
 workflow.add_edge("update_history", END)
 
