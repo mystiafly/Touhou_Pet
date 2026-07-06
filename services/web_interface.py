@@ -46,12 +46,13 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 # 全局变量定义
-CONFIG_FILE = "config.json"
-HISTORY_FILE = "dialog_history.json"
-DAILY_HISTORY_DIR = "daily_history"
+SERVICES_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG_FILE = os.path.join(SERVICES_DIR, "config.json")
+HISTORY_FILE = os.path.join(SERVICES_DIR, "dialog_history.json")
+DAILY_HISTORY_DIR = os.path.join(SERVICES_DIR, "daily_history")
 MIN_HISTORY_ROUNDS = 8
 MAX_HISTORY_ROUNDS = 16
-FAVORABILITY_FILE = "favorability.json"
+FAVORABILITY_FILE = os.path.join(SERVICES_DIR, "favorability.json")
 
 # Mem0 记忆系统配置与初始化锁
 memory_agent = None

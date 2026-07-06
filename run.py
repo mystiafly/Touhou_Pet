@@ -17,15 +17,9 @@ def main():
     # ==========================================
     print("\n[1/2] 正在唤醒大脑 (FastAPI Backend)...")
 
-    # 在 services 目录下运行 FastAPI (uvicorn) 后端
-    # 确保能正确找到 dialog_history.json
-    log_path = os.path.join(services_dir, 'backend.log')
-    log_file = open(log_path, 'w', encoding='utf-8')
     flask_process = subprocess.Popen(
         [sys.executable, 'web_interface.py'],
-        cwd=services_dir,
-        stdout=log_file,
-        stderr=log_file
+        cwd=services_dir
     )
 
     # 给后端充足的时间初始化与加载本地嵌入特征权重 (自适应调整为 8 秒，保障极其流畅的启动)
@@ -72,7 +66,6 @@ def main():
         else:
             flask_process.kill()
 
-        log_file.close()
         print("晚安，露米娅。")
 
 if __name__ == '__main__':
