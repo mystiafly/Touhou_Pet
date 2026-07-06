@@ -121,6 +121,7 @@ class RumiaPet {
 
         // [新增] 动态忽略鼠标事件与JS拖拽窗口支持（解决 -webkit-app-region: drag 拦截 DOM 鼠标事件的 Bug）
         const { ipcRenderer } = window.require ? window.require('electron') : {};
+        console.log('[DEBUG IPC] window.require:', !!window.require, 'ipcRenderer:', !!ipcRenderer);
         if (ipcRenderer) {
             let isDragging = false;
             let startX = 0, startY = 0;
@@ -181,9 +182,8 @@ class RumiaPet {
                         const checkHover = (element) => {
                             if (!element) return false;
                             const rect = element.getBoundingClientRect();
-                            const dpr = window.devicePixelRatio || 1;
-                            const mouseX = (e.screenX - window.screenX) / dpr;
-                            const mouseY = (e.screenY - window.screenY) / dpr;
+                            const mouseX = e.screenX - window.screenX;
+                            const mouseY = e.screenY - window.screenY;
                             return (
                                 mouseX >= rect.left &&
                                 mouseX <= rect.right &&
