@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LangGraph 极简互动教学 —— 露米娅大脑大解析</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #0d0d12;
+            --card-bg: rgba(20, 20, 30, 0.6);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --primary-pink: #ff6b8b;
+            --primary-pink-glow: rgba(255, 107, 139, 0.3);
+            --tech-purple: #bd93f9;
+            --tech-purple-glow: rgba(189, 147, 249, 0.3);
+            --tech-blue: #8be9fd;
+            --tech-blue-glow: rgba(139, 233, 253, 0.3);
+            --text-main: #f8f8f2;
+            --text-muted: #a0a0b8;
+            --success-color: #50fa7b;
+            --warning-color: #ffb86c;
+        }
+
+        * {
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(255, 107, 139, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 85% 70%, rgba(189, 147, 249, 0.08) 0%, transparent 45%);
+            background-attachment: fixed;
+            line-height: 1.6;
+        }
+
+        /* 标题栏 */
+        header {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px 20px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header-logo {
+            font-family: 'Outfit', sans-serif;
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary-pink), var(--tech-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-logo i {
+            -webkit-text-fill-color: var(--primary-pink);
+        }
+
+        .back-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.2s;
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .back-link:hover {
+            color: var(--primary-pink);
+            border-color: var(--primary-pink-glow);
+            background: rgba(255, 107, 139, 0.05);
+        }
+
+        /* 主体布局 */
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        @media (max-width: 968px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 左侧内容区 */
+        .content-section {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Outfit', sans-serif;
+            margin-top: 0;
+        }
+
+        h1 {
+            font-size: 42px;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transition: border-color 0.3s;
+        }
+
+        .glass-card:hover {
+            border-color: rgba(255, 107, 139, 0.2);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .section-title i {
+            color: var(--tech-purple);
+        }
+
+        /* 科普列表 */
+        .concept-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .concept-item {
+            display: flex;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 16px;
+            border-radius: 12px;
+        }
+
+        .concept-icon {
+            font-size: 20px;
+            color: var(--primary-pink);
+            margin-top: 3px;
+        }
+
+        .concept-text h4 {
+            margin: 0 0 5px 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .concept-text p {
+            margin: 0;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        /* 代码高亮区 */
+        code, pre {
+            font-family: 'Fira Code', monospace;
+            font-size: 13px;
+        }
+
+        pre {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            color: #f8f8f2;
+            margin: 15px 0 0 0;
+        }
+
+        /* 路线图 */
+        .roadmap-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .roadmap-step {
+            position: relative;
+            padding-left: 30px;
+            border-left: 2px solid var(--tech-blue-glow);
+        }
+
+        .roadmap-step::before {
+            content: '';
+            position: absolute;
+            left: -7px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--tech-blue);
+            box-shadow: 0 0 8px var(--tech-blue-glow);
+        }
+
+        .roadmap-step h4 {
+            margin: 0 0 5px 0;
+            font-size: 16px;
+        }
+
+        .roadmap-step p {
+            margin: 0;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* 右侧沙盒交互区 */
+        .sandbox-section {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            position: sticky;
+            top: 40px;
+            height: fit-content;
+        }
+
+        /* 决策拓扑图 */
+        .topology-container {
+            position: relative;
+            height: 480px;
+            background: rgba(10, 10, 15, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .topology-grid {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            z-index: 2;
+        }
+
+        .node-row {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .graph-node {
+            background: #181824;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            user-select: none;
+            color: var(--text-muted);
+        }
+
+        .graph-node i {
+            font-size: 14px;
+        }
+
+        /* 激活高亮 */
+        .graph-node.active-now {
+            color: #fff;
+            background: var(--tech-purple);
+            border-color: var(--tech-purple);
+            box-shadow: 0 0 15px var(--tech-purple-glow);
+            transform: scale(1.08);
+        }
+
+        .graph-node.tool-node.active-now {
+            background: var(--tech-blue);
+            border-color: var(--tech-blue);
+            box-shadow: 0 0 15px var(--tech-blue-glow);
+        }
+
+        .graph-node.completed-step {
+            color: var(--success-color);
+            border-color: rgba(80, 250, 123, 0.3);
+            background: rgba(80, 250, 123, 0.05);
+        }
+
+        /* 拓扑连接线 SVG */
+        .graph-links {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .link-line {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.05);
+            stroke-width: 2;
+            transition: stroke 0.3s, stroke-dasharray 0.3s;
+        }
+
+        .link-line.active-flow {
+            stroke: var(--tech-purple);
+            stroke-dasharray: 5;
+            animation: flowDash 1s linear infinite;
+        }
+
+        .link-line.active-tool-flow {
+            stroke: var(--tech-blue);
+            stroke-dasharray: 5;
+            animation: flowDash 1s linear infinite;
+        }
+
+        @keyframes flowDash {
+            to {
+                stroke-dashoffset: -20;
+            }
+        }
+
+        /* 沙盒控制器 */
+        .sandbox-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .sandbox-btn {
+            background: linear-gradient(135deg, var(--primary-pink), var(--tech-purple));
+            color: #fff;
+            border: none;
+            padding: 14px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: opacity 0.2s, transform 0.2s;
+            box-shadow: 0 4px 15px var(--primary-pink-glow);
+        }
+
+        .sandbox-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .sandbox-btn:active {
+            transform: translateY(1px);
+        }
+
+        .query-selector {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .query-selector:focus {
+            border-color: var(--primary-pink);
+        }
+
+        /* 状态记忆展示面板 */
+        .state-panel {
+            background: #14141d;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .state-header {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--tech-purple);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .state-log {
+            font-family: 'Fira Code', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+            max-height: 120px;
+            overflow-y: auto;
+            margin: 0;
+            white-space: pre-wrap;
+        }
+
+        .highlight-val {
+            color: var(--success-color);
+        }
+
+        .highlight-task {
+            color: var(--warning-color);
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-logo">
+        <i class="fas fa-project-diagram"></i>
+        <span>LangGraph 极简互动教程</span>
+    </div>
+    <a href="/pet" class="back-link">
+        <i class="fas fa-arrow-left"></i> 返回桌宠
+    </a>
+</header>
+
+<main>
+    <!-- 左侧：知识教学 -->
+    <div class="content-section">
+        <div>
+            <h1>认识 LangGraph</h1>
+            <div class="subtitle">—— 支撑露米娅实现“思考-行动-再反馈”的神经中枢</div>
+            <p style="color: var(--text-muted); margin: 0;">
+                传统的 AI 桌宠代码，一般只支持简单的“输入 -> 传给 API -> 回复”。但露米娅为了实现<strong>智能检索记忆</strong>、<strong>点歌</strong>、<strong>拉起应用</strong>以及<strong>控制浏览器</strong>等极其复杂的行为，底层使用了一套名为 <strong>LangGraph</strong> 的高级智能体架构。这篇教程将带您一窥她的大脑核心运作。
+            </p>
+        </div>
+
+        <!-- 核心概念 -->
+        <div class="glass-card">
+            <h3 class="section-title">
+                <i class="fas fa-cubes"></i> 大脑架构三大基石
+            </h3>
+            
+            <div class="concept-grid">
+                <div class="concept-item">
+                    <div class="concept-icon"><i class="fas fa-database"></i></div>
+                    <div class="concept-text">
+                        <h4>1. 状态 (State)</h4>
+                        <p>
+                            大模型的记忆其实是一块<strong>公共白板</strong>（也就是代码里的 <code>AgentState</code>）。上面记录了本次对话所有的输入、输出、当前心情分贝、检索到的长期事实，以及有没有未完成的点歌或浏览器任务。
+                        </p>
+                    </div>
+                </div>
+
+                <div class="concept-item">
+                    <div class="concept-icon"><i class="fas fa-share-alt"></i></div>
+                    <div class="concept-text">
+                        <h4>2. 节点 (Nodes)</h4>
+                        <p>
+                            就是大脑中<strong>分工明确的各个职能科室</strong>。例如“记忆科”负责翻找向量事实，“思考科”负责发给 AI 构思回复，“点歌科”负责去网易云查歌。各个科室只负责把自己的结果写到公共白板上。
+                        </p>
+                    </div>
+                </div>
+
+                <div class="concept-item">
+                    <div class="concept-icon"><i class="fas fa-route"></i></div>
+                    <div class="concept-text">
+                        <h4>3. 连线与条件路由 (Edges & Routing)</h4>
+                        <p>
+                            控制白板流转路线的神经纤维。最为关键的是 <strong>条件路由 (Conditional Edge)</strong>，就像大脑的决策阀门 <code>should_continue</code>：当思考科生成了 <code>[MUSIC_PLAY]</code>，路由阀门就会自动分流到“点歌科”去查歌，否则直接归档历史。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 结合露米娅实例 -->
+        <div class="glass-card">
+            <h3 class="section-title">
+                <i class="fas fa-brain"></i> 露米娅如何实现 ReAct 循环？
+            </h3>
+            <p style="font-size: 14px; color: var(--text-muted); margin: 0 0 15px 0;">
+                <strong>ReAct 模式（推理 + 行动）</strong>是露米娅表现聪明的秘诀。以大模型帮用户拉起记事本为例：
+            </p>
+            
+            <div class="concept-grid">
+                <div class="concept-item" style="background: rgba(255,255,255,0.01);">
+                    <div class="concept-text" style="width: 100%;">
+                        <strong style="color: var(--primary-pink); font-size:14px;">🧠 第一轮循环 (Reasoning)</strong>
+                        <p style="font-size:13px; margin: 5px 0 0 0;">
+                            用户输入“帮我开一下记事本”。大脑节点将配置信息塞给大模型，模型思考后在回复的隐蔽处打印了 <code>[LAUNCH_APP: 记事本]</code>。
+                        </p>
+                    </div>
+                </div>
+                <div class="concept-item" style="background: rgba(255,255,255,0.01);">
+                    <div class="concept-text" style="width: 100%;">
+                        <strong style="color: var(--tech-blue); font-size:14px;">⚡ 节点介入行动 (Acting)</strong>
+                        <p style="font-size:13px; margin: 5px 0 0 0;">
+                            <code>parse_response</code> 捕获了这个标签，将 <code>launcher_task</code> 设为 "记事本"，并自动抹去标签。条件路由分流到 <code>execute_launcher_task</code> 节点，后端用 Python 拉起记事本，并将成功结果写回 <code>launcher_result</code> 反馈记忆。
+                        </p>
+                    </div>
+                </div>
+                <div class="concept-item" style="background: rgba(255,255,255,0.01);">
+                    <div class="concept-text" style="width: 100%;">
+                        <strong style="color: var(--tech-purple); font-size:14px;">💬 第二轮循环 (Feedback & Speak)</strong>
+                        <p style="font-size:13px; margin: 5px 0 0 0;">
+                            因为工具执行完毕，工作流又绕回了 <code>generate_response</code> 思考科。大模型看到白板上写着“记事本启动成功！”，于是结合傲娇人设，生成了：“(脸红扭过头) 哼，记事本已经帮你打开啦，真是的...下次别想再命令我了！”
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 未来规划 -->
+        <div class="glass-card">
+            <h3 class="section-title">
+                <i class="fas fa-lightbulb"></i> 露米娅大脑的未来进化路线
+            </h3>
+            
+            <ul class="roadmap-list">
+                <li class="roadmap-step">
+                    <h4>🤝 多智能体分身讨论组 (Multi-Agent Swarm)</h4>
+                    <p>利用 LangGraph 极强的多智能体编排力，我们可以为她设计不同脑叶：比如由“学术姬”负责写代码、“游戏姬”负责陪玩、“情绪姬”管控傲娇，它们在后台甚至会相互拉群讨论，共同商量后决定最终给您发什么消息。</p>
+                </li>
+                <li class="roadmap-step">
+                    <h4>🛠️ 自我修复环 (Self-Healing Loop)</h4>
+                    <p>当露米娅调用本地应用路径写错了，或网络请求报错时。工作流不会中断，条件路由会带着报错栈 (Traceback) 扔回给大模型：“你写错参数了，请重新构思正确的指令”，让她在后台自主修正，重试成功后再呈现给您。</p>
+                </li>
+                <li class="roadmap-step">
+                    <h4>🚦 人机确认安全拦截 (Human-in-the-loop)</h4>
+                    <p>当露米娅在帮您控制浏览器或清空回收站时，LangGraph 可以在敏感节点前强制暂停（Interrupt），将状态抛给前台，等待您在桌宠界面上点击“同意”按钮后，状态才继续在图中流转执行，保证绝对的安全可控。</p>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 右侧：决策图沙盒交互 -->
+    <div class="sandbox-section">
+        <div class="glass-card" style="padding: 20px;">
+            <h3 style="margin-bottom: 15px; font-size:18px;"><i class="fas fa-flask" style="color:var(--primary-pink); margin-right: 8px;"></i> 大脑运行实时模拟器</h3>
+            <p style="font-size:13px; color: var(--text-muted); margin: 0 0 20px 0;">
+                选择下方的一种对话输入，点击运行，观察露米娅的大脑节点（Nodes）是如何按逻辑流转亮起、并且公共记忆板（State）的信息又是如何一步步改变的。
+            </p>
+            
+            <div class="sandbox-controls">
+                <label style="font-size: 12px; color: var(--text-muted); font-weight: 600;">选择您的测试语句：</label>
+                <select id="query-selector" class="query-selector">
+                    <option value="notepad">"露米娅，帮我打开记事本。" (应用启动 ReAct 分支)</option>
+                    <option value="music">"我想听一首 东方妖妖梦" (网易云播放 ReAct 分支)</option>
+                    <option value="normal">"露米娅大人今晚真漂亮！" (正常闲聊 线性归档分支)</option>
+                </select>
+                
+                <button id="run-btn" class="sandbox-btn">
+                    <i class="fas fa-play"></i> 启动大脑流转模拟
+                </button>
+            </div>
+        </div>
+
+        <!-- 决策拓扑图 -->
+        <div class="topology-container">
+            <svg class="graph-links" id="svg-links">
+                <!-- SVG 静态与动态连接线 -->
+                <path id="path-start" class="link-line" d="M 180, 50 Q 180, 75 180, 100" />
+                <path id="path-1" class="link-line" d="M 180, 140 Q 180, 160 180, 180" />
+                <path id="path-2" class="link-line" d="M 180, 220 Q 180, 240 180, 260" />
+                <path id="path-routing" class="link-line" d="M 180, 300 Q 180, 310 180, 320" />
+                
+                <!-- 条件路由分流线 -->
+                <path id="path-to-music" class="link-line" d="M 180, 340 L 70, 350 L 70, 395" />
+                <path id="path-to-launcher" class="link-line" d="M 180, 340 L 300, 350 L 300, 395" />
+                
+                <!-- 从工具返回思考的返回线 -->
+                <path id="path-from-music" class="link-line" d="M 70, 435 L 70, 460 L 25, 460 Q 5, 460 5, 330 L 5, 200 Q 5, 180 80, 180" />
+                <path id="path-from-launcher" class="link-line" d="M 300, 435 L 300, 460 L 345, 460 Q 365, 460 365, 330 L 365, 200 Q 365, 180 280, 180" />
+                
+                <!-- 直接结束线 -->
+                <path id="path-to-archive" class="link-line" d="M 180, 340 L 180, 395" />
+                <path id="path-to-end" class="link-line" d="M 180, 435 Q 180, 460 180, 470" />
+            </svg>
+            
+            <div class="topology-grid">
+                <!-- 第 1 排：记忆库 -->
+                <div class="node-row">
+                    <div id="node-recall" class="graph-node">
+                        <i class="fas fa-search"></i>
+                        <span>1. 检索长期记忆 (recall_memories)</span>
+                    </div>
+                </div>
+                
+                <!-- 第 2 排：预设加载 -->
+                <div class="node-row">
+                    <div id="node-presets" class="graph-node">
+                        <i class="fas fa-tag"></i>
+                        <span>2. 感应预设系统 (load_presets)</span>
+                    </div>
+                </div>
+                
+                <!-- 第 3 排：模型生成 -->
+                <div class="node-row">
+                    <div id="node-generate" class="graph-node">
+                        <i class="fas fa-brain"></i>
+                        <span>3. 模型大脑生成 (generate_response)</span>
+                    </div>
+                </div>
+                
+                <!-- 第 4 排：解析意图 -->
+                <div class="node-row">
+                    <div id="node-parse" class="graph-node">
+                        <i class="fas fa-code"></i>
+                        <span>4. 意图解析中心 (parse_response)</span>
+                    </div>
+                </div>
+                
+                <!-- 第 5 排：ReAct 路由分流与执行 -->
+                <div class="node-row" style="justify-content: space-between; padding: 0 10px; margin-top: 15px;">
+                    <div id="node-tool-music" class="graph-node tool-node" style="min-width: 105px;">
+                        <i class="fas fa-music"></i>
+                        <span>点歌执行</span>
+                    </div>
+                    <div id="node-archive" class="graph-node">
+                        <i class="fas fa-archive"></i>
+                        <span>历史归档</span>
+                    </div>
+                    <div id="node-tool-launcher" class="graph-node tool-node" style="min-width: 105px;">
+                        <i class="fas fa-rocket"></i>
+                        <span>应用启动</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 记忆白板展示 -->
+        <div class="state-panel">
+            <div class="state-header">
+                <i class="fas fa-clipboard-list"></i>
+                <span>AgentState 公共记忆板当前数据：</span>
+            </div>
+            <pre id="state-log" class="state-log">{
+  "user_message": "",
+  "history": [],
+  "recalled_memories": "",
+  "raw_reply": "",
+  "music_task": null,
+  "music_result": null,
+  "launcher_task": null,
+  "launcher_result": null
+}</pre>
+        </div>
+    </div>
+</main>
+
+<script>
+    const runBtn = document.getElementById('run-btn');
+    const querySelector = document.getElementById('query-selector');
+    const stateLog = document.getElementById('state-log');
+    
+    // 获取各节点的 DOM
+    const nodes = {
+        recall: document.getElementById('node-recall'),
+        presets: document.getElementById('node-presets'),
+        generate: document.getElementById('node-generate'),
+        parse: document.getElementById('node-parse'),
+        music: document.getElementById('node-tool-music'),
+        launcher: document.getElementById('node-tool-launcher'),
+        archive: document.getElementById('node-archive')
+    };
+
+    // 获取各连线的 DOM
+    const paths = {
+        start: document.getElementById('path-start'),
+        p1: document.getElementById('path-1'),
+        p2: document.getElementById('path-2'),
+        pRouting: document.getElementById('path-routing'),
+        toMusic: document.getElementById('path-to-music'),
+        toLauncher: document.getElementById('path-to-launcher'),
+        toArchive: document.getElementById('path-to-archive'),
+        fromMusic: document.getElementById('path-from-music'),
+        fromLauncher: document.getElementById('path-from-launcher'),
+        toEnd: document.getElementById('path-to-end')
+    };
+
+    // 辅助延时器
+    const sleep = ms => new Promise(res => setTimeout(res, ms));
+
+    // 清理所有状态高亮
+    function resetAllHighlights() {
+        Object.values(nodes).forEach(n => {
+            n.className = 'graph-node';
+            if (n.id.includes('tool')) n.classList.add('tool-node');
+        });
+        Object.values(paths).forEach(p => {
+            p.className = 'link-line';
+        });
+    }
+
+    // 渲染白板状态日志
+    function updateStateView(stateObj) {
+        stateLog.innerHTML = JSON.stringify(stateObj, null, 2)
+            .replace(/"music_task": "([^"]+)"/, '"music_task": "<span class=\'highlight-task\'>$1</span>"')
+            .replace(/"launcher_task": "([^"]+)"/, '"launcher_task": "<span class=\'highlight-task\'>$1</span>"')
+            .replace(/"music_result": \{([\s\S]+?)\}/, '"music_result": <span class=\'highlight-val\'>{\n$1\n  }</span>')
+            .replace(/"launcher_result": "([^"]+)"/, '"launcher_result": "<span class=\'highlight-val\'>$1</span>"');
+    }
+
+    // 运行沙盒流转动画
+    runBtn.addEventListener('click', async () => {
+        runBtn.disabled = true;
+        querySelector.disabled = true;
+        resetAllHighlights();
+        
+        const mode = querySelector.value;
+        let inputQuery = "";
+        if (mode === 'notepad') inputQuery = "帮我打开记事本";
+        else if (mode === 'music') inputQuery = "我想听一首 东方妖妖梦";
+        else inputQuery = "露米娅大人今晚真漂亮";
+
+        // 初始状态
+        let state = {
+            user_message: inputQuery,
+            history: [{ role: "user", content: inputQuery }],
+            recalled_memories: "",
+            raw_reply: "",
+            music_task: null,
+            music_result: null,
+            launcher_task: null,
+            launcher_result: null
+        };
+        updateStateView(state);
+        
+        // 1. recall_memories 节点
+        paths.start.classList.add('active-flow');
+        await sleep(600);
+        nodes.recall.classList.add('active-now');
+        state.recalled_memories = mode === 'music' ? "用户以前听过东方系列音乐" : "";
+        updateStateView(state);
+        await sleep(1000);
+        
+        // 2. load_presets 节点
+        nodes.recall.classList.replace('active-now', 'completed-step');
+        paths.p1.classList.add('active-flow');
+        await sleep(600);
+        nodes.presets.classList.add('active-now');
+        await sleep(1000);
+
+        // 3. generate_response 节点 (第一轮)
+        nodes.presets.classList.replace('active-now', 'completed-step');
+        paths.p2.classList.add('active-flow');
+        await sleep(600);
+        nodes.generate.classList.add('active-now');
+        await sleep(1000);
+
+        // 4. parse_response 节点
+        nodes.generate.classList.replace('active-now', 'completed-step');
+        paths.pRouting.classList.add('active-flow');
+        await sleep(600);
+        nodes.parse.classList.add('active-now');
+        
+        if (mode === 'notepad') {
+            state.raw_reply = "[normal][10]好的，我来帮你安排... [LAUNCH_APP: 记事本]";
+            state.launcher_task = "记事本";
+        } else if (mode === 'music') {
+            state.raw_reply = "[normal][12]给你放放歌吧！ [MUSIC_PLAY: 东方妖妖梦]";
+            state.music_task = "东方妖妖梦";
+        } else {
+            state.raw_reply = "[shy][16]哼...笨蛋！才没有高兴呢。(脸红转过身)";
+        }
+        updateStateView(state);
+        await sleep(1500);
+
+        nodes.parse.classList.replace('active-now', 'completed-step');
+
+        if (mode === 'notepad') {
+            // 条件分流到启动节点
+            paths.toLauncher.classList.add('active-tool-flow');
+            await sleep(800);
+            nodes.launcher.classList.add('active-now');
+            await sleep(1500); // 模拟后台拉起 notepad.exe
+            state.launcher_result = "成功反馈：本地应用 '记事本' 已成功拉起！";
+            updateStateView(state);
+            await sleep(1000);
+            
+            // ReAct 回流到 generate 重新思考
+            nodes.launcher.classList.replace('active-now', 'completed-step');
+            paths.fromLauncher.classList.add('active-flow');
+            await sleep(1000);
+            
+            // 第二轮思考
+            resetAllHighlights();
+            nodes.generate.classList.add('active-now');
+            state.raw_reply = "[normal][15]哼，记事本已经帮你打开啦，别来打扰我吃点心！(鼓起腮帮子)";
+            updateStateView(state);
+            await sleep(1500);
+            
+            // 重新流过解析
+            nodes.generate.className = 'graph-node completed-step';
+            paths.pRouting.className = 'link-line active-flow';
+            await sleep(600);
+            nodes.parse.className = 'graph-node active-now';
+            await sleep(1000);
+            
+            // 条件分流直接到归档
+            nodes.parse.className = 'graph-node completed-step';
+            paths.toArchive.className = 'link-line active-flow';
+            await sleep(600);
+            nodes.archive.className = 'graph-node active-now';
+            await sleep(1200);
+            nodes.archive.className = 'graph-node completed-step';
+            paths.toEnd.className = 'link-line active-flow';
+            await sleep(800);
+
+        } else if (mode === 'music') {
+            // 条件分流到音乐节点
+            paths.toMusic.classList.add('active-tool-flow');
+            await sleep(800);
+            nodes.music.classList.add('active-now');
+            await sleep(1500); // 模拟网易云接口拉取链接
+            state.music_result = {
+                name: "东方妖妖梦",
+                artists: "上海爱丽丝幻乐团",
+                url: "http://127.0.0.1/stream/12345.mp3"
+            };
+            updateStateView(state);
+            await sleep(1000);
+
+            // ReAct 回流到 generate 重新思考
+            nodes.music.classList.replace('active-now', 'completed-step');
+            paths.fromMusic.classList.add('active-flow');
+            await sleep(1000);
+
+            // 第二轮思考
+            resetAllHighlights();
+            nodes.generate.classList.add('active-now');
+            state.raw_reply = "[normal][18]这首《东方妖妖梦》我就勉为其难放给你听好了，老实站那听完！(双手抱胸)";
+            updateStateView(state);
+            await sleep(1500);
+
+            // 重新流过解析
+            nodes.generate.className = 'graph-node completed-step';
+            paths.pRouting.className = 'link-line active-flow';
+            await sleep(600);
+            nodes.parse.className = 'graph-node active-now';
+            await sleep(1000);
+
+            // 条件分流直接到归档
+            nodes.parse.className = 'graph-node completed-step';
+            paths.toArchive.className = 'link-line active-flow';
+            await sleep(600);
+            nodes.archive.className = 'graph-node active-now';
+            await sleep(1200);
+            nodes.archive.className = 'graph-node completed-step';
+            paths.toEnd.className = 'link-line active-flow';
+            await sleep(800);
+
+        } else {
+            // 正常闲聊模式，直接路由流向归档
+            paths.toArchive.classList.add('active-flow');
+            await sleep(600);
+            nodes.archive.classList.add('active-now');
+            await sleep(1200);
+            nodes.archive.classList.replace('active-now', 'completed-step');
+            paths.toEnd.classList.add('active-flow');
+            await sleep(800);
+        }
+
+        resetAllHighlights();
+        runBtn.disabled = false;
+        querySelector.disabled = false;
+    });
+</script>
+
+</body>
+</html>
