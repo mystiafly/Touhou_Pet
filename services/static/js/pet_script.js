@@ -160,26 +160,34 @@ class RumiaPet {
                     // 处于非拖拽的正常悬停状态下，进行点击穿透检测
                     let isInteractive = false;
                     
-                    // [改进] 使用 elementFromPoint 精准定位鼠标下的节点，解决 Electron 忽略事件时 e.target 强行变为 html/body 的问题
-                    let el = document.elementFromPoint(e.clientX, e.clientY);
-                    if (!el) el = e.target;
+                    // [改进] 使用 getBoundingClientRect 几何边界判定，彻底根治 Electron 在忽略鼠标事件状态下 DOM Hit-Test 失效的 Bug
+                    const checkHover = (element) => {
+                        if (!element) return false;
+                        const rect = element.getBoundingClientRect();
+                        return (
+                            e.clientX >= rect.left &&
+                            e.clientX <= rect.right &&
+                            e.clientY >= rect.top &&
+                            e.clientY <= rect.bottom
+                        );
+                    };
 
                     try {
-                        if (el && typeof el.closest === 'function') {
-                            if (
-                                el.id === 'rumia-img' ||
-                                el.closest('.input-bar') ||
-                                el.closest('.music-player-bar') ||
-                                el.closest('.settings-content') ||
-                                el.closest('.fav-container') ||
-                                (this.bubble && el.closest('#speech-bubble') && this.bubble.style.opacity === '1') ||
-                                (this.settingsModal && el.closest('#settings-modal') && !this.settingsModal.classList.contains('hidden'))
-                            ) {
-                                isInteractive = true;
-                            }
+                        if (checkHover(this.img)) {
+                            isInteractive = true;
+                        } else if (checkHover(this.inputBar)) {
+                            isInteractive = true;
+                        } else if (this.playerBar && !this.playerBar.classList.contains('hidden') && checkHover(this.playerBar)) {
+                            isInteractive = true;
+                        } else if (this.favContainer && checkHover(this.favContainer)) {
+                            isInteractive = true;
+                        } else if (this.bubble && this.bubble.style.opacity === '1' && checkHover(this.bubble)) {
+                            isInteractive = true;
+                        } else if (this.settingsModal && !this.settingsModal.classList.contains('hidden') && checkHover(this.settingsModal)) {
+                            isInteractive = true;
                         }
                     } catch (err) {
-                        console.error('[MOUSE_EVENTS] Error in interactive check:', err);
+                        console.error('[MOUSE_EVENTS] Error in geometric hover check:', err);
                     }
                     
                     // [改进] 只有当忽略状态真实发生变更时才向 Electron 发送 IPC，避免疯狂刷屏导致 CPU 消耗或输入无响应
