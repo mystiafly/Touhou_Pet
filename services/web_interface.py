@@ -1285,6 +1285,15 @@ def pet_mode():
         html = f.read()
     return HTMLResponse(content=html)
 
+@app.get("/langgraph_tutorial", response_class=HTMLResponse)
+def langgraph_tutorial():
+    """渲染 LangGraph 互动网页教学页面"""
+    path = os.path.join(os.path.dirname(__file__), "templates", "langgraph_tutorial.html")
+    with open(path, "r", encoding="utf-8") as f:
+        html = f.read()
+    return HTMLResponse(content=html)
+
+
 @app.get("/", response_class=HTMLResponse)
 def index():
     """渲染主页"""
