@@ -8,6 +8,12 @@
 
 ---
 
+## [0.8.10] - 2026-07-06
+
+### 修复与优化
+- **Electron 启动白屏与连接拒绝异常根治 (Robust Electron Backend Connection Polling)**：
+  - **无限轮询重试**：在此前版本中，如果 FastAPI 后端初始化速度较慢（例如需要加载本地模型权重），Electron 只会进行一次 2 秒后的延迟重试，随后即抛出 `ERR_CONNECTION_REFUSED` 异常并锁死在白屏状态。在 [main.js](file:///G:/code/rumia/main.js#L41) 中重构了加载逻辑，引入基于 Promise 递归的无限循环轮询加载机制，直至后端接口完全准备就绪并成功渲染，彻底消除启动时偶现的连接拒绝与白屏现象。
+
 ## [0.8.9] - 2026-07-05
 
 ### 修复与优化
