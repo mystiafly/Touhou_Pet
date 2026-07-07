@@ -629,15 +629,15 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
         active_messages = [SystemMessage(content=priority_reminder)] + lc_history
         
     if not is_self and user_message:
-        active_messages.append(HumanMessage(content=user_message))
-        # 尾部强效提醒 (方案 A 增强)：防止长历史上下文导致的注意力衰减，让 Gemini/DeepSeek 强制遵守指令
+        # 尾部强效提醒 (方案 A 增强)：防止长历史上下文导致的注意力衰减，让 Gemini/DeepSeek 强制遵守指令。
+        # 直接拼接在用户消息末尾，防止 API 适配器将 SystemMessage 调整到头部，确保 100% 处于模型生成前的最高注意力区间。
         tail_reminder = (
-            "[SYSTEM REMINDER - FORCED LAUNCH/SEARCH RULE]\n"
+            "\n\n[SYSTEM REMINDER - FORCED LAUNCH/SEARCH RULE]\n"
             "1. 如果用户要求你打开、拉起或启动本地应用（当前配置有：记事本, 网易云音乐, 网易云），你【必须】且只能在回复内容的最末尾加上相应的 `[LAUNCH_APP: 应用名称]` 标签（例如：`[LAUNCH_APP: 网易云音乐]`）。\n"
             "2. 如果用户有网页搜索意图，必须在最末尾加上 `[BROWSER_TASK: 搜索词]` 标签。\n"
             "3. 绝对禁止口头上说打开了但不在最末尾写标签！这关系到系统的物理拉起，必须输出方括号标签。"
         )
-        active_messages.append(SystemMessage(content=tail_reminder))
+        active_messages.append(HumanMessage(content=user_message + tail_reminder))
         
     model = get_langchain_model()
     
