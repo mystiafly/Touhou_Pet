@@ -2,8 +2,8 @@
   "api_provider": "deepseek-v4-pro",
   "app_launcher": {
     "记事本": "C:\\Windows\\System32\\notepad.exe",
-    "网易云音乐": "C:\\Users\\27218\\AppData\\Local\\Netease\\CloudMusic\\cloudmusic.exe",
-    "网易云": "C:\\Users\\27218\\AppData\\Local\\Netease\\CloudMusic\\cloudmusic.exe"
+    "网易云音乐": "H:\\\\CloudMusic\\\\cloudmusic.exe",
+    "网易云": "H:\\\\CloudMusic\\\\cloudmusic.exe"
   },
   "distilled_dates": [
     "2026-05-26",
@@ -19,6 +19,7 @@
     "2026-07-03",
     "2026-07-04",
     "2026-07-05",
-    "2026-07-06"
+    "2026-07-06",
+    "2026-07-07"
   ]
 }
