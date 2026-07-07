@@ -493,15 +493,15 @@ class AgentState(TypedDict):
     launcher_result: Optional[str] # 本地应用启动执行结果反馈
 
 def recall_memories_node(state: AgentState) -> Dict[str, Any]:
-    """读取 Mem0 事实库中的长期记忆 (使用 3 轮对话上下文作为语义召回 Query)"""
+    """读取 Mem0 事实库中的长期记忆 (使用 3+1 轮对话上下文进行语义召回)"""
     user_msg = state.get("user_message", "")
     history = state.get("history", [])
     is_self = state.get("is_self_talk", False)
     recalled = ""
     if not is_self and user_msg:
-        # 编译 3 轮对话上下文（包含最近 2 轮历史对话 + 当前最新一句话，角色与对白混排）
+        # 3+1 模式：提取最近的 3 条历史对话 + 当前最新一句话，角色与对白混排
         dialogue_msgs = [msg for msg in history if msg.get("role") in ("user", "assistant")]
-        recent_msgs = dialogue_msgs[-4:]  # 提取最近的 2 轮历史 (4 条消息)
+        recent_msgs = dialogue_msgs[-3:]  # 提取最近 3 条历史消息
         
         query_parts = []
         role_map = {"user": "用户", "assistant": "露米娅"}
@@ -513,9 +513,9 @@ def recall_memories_node(state: AgentState) -> Dict[str, Any]:
         agent = get_memory_agent()
         if agent:
             try:
-                print("\n" + "-"*20 + " [MEM0 SEARCH QUERY] " + "-"*20)
+                print("\n" + "-"*20 + " [MEM0 SEARCH QUERY (3+1)] " + "-"*20)
                 print(compiled_query)
-                print("-"*61 + "\n")
+                print("-"*68 + "\n")
                 
                 results = agent.search(compiled_query, filters={"user_id": "player_01"}, limit=3, threshold=0.45)
                 results_list = results.get("results", []) if isinstance(results, dict) else (results if isinstance(results, list) else [])
@@ -528,11 +528,32 @@ def recall_memories_node(state: AgentState) -> Dict[str, Any]:
     return {"recalled_memories": recalled}
 
 def load_presets_node(state: AgentState) -> Dict[str, Any]:
-    """匹配并加载当下好感度与关键词触发的系统提示词预设"""
+    """匹配并加载当下好感度与关键词触发的系统提示词预设 (使用 1+1 轮对话上下文进行触发判定)"""
     user_msg = state.get("user_message", "")
+    history = state.get("history", [])
     current_fav = state.get("favorability", 10)
     is_self = state.get("is_self_talk", False)
-    presets = load_and_trigger_presets(user_msg, current_fav, is_self_talk=is_self)
+    
+    if not is_self and user_msg:
+        # 1+1 模式：提取最近 1 条历史对话 (AI 上一轮回复) + 当前最新一句话，角色与对白混排
+        dialogue_msgs = [msg for msg in history if msg.get("role") in ("user", "assistant")]
+        recent_msgs = dialogue_msgs[-1:]  # 提取最近 1 条历史消息
+        
+        query_parts = []
+        role_map = {"user": "用户", "assistant": "露米娅"}
+        for msg in recent_msgs:
+            query_parts.append(f"{role_map.get(msg['role'], msg['role'])}: {msg['content']}")
+        query_parts.append(f"用户: {user_msg}")
+        compiled_query = "\n".join(query_parts)
+        
+        print("\n" + "-"*20 + " [PRESETS TRIGGER QUERY (1+1)] " + "-"*20)
+        print(compiled_query)
+        print("-"*72 + "\n")
+        
+        presets = load_and_trigger_presets(compiled_query, current_fav, is_self_talk=is_self)
+    else:
+        presets = load_and_trigger_presets(user_msg, current_fav, is_self_talk=is_self)
+        
     return {"custom_presets": presets}
 
 def generate_response_node(state: AgentState) -> Dict[str, Any]:
