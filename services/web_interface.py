@@ -828,9 +828,11 @@ def execute_launcher_task_node(state: AgentState) -> Dict[str, Any]:
     if not launcher_task:
         return {"launcher_result": None}
         
-    print(f"[REACT LAUNCHER NODE] 准备启动本地应用: {launcher_task}")
+    print("\n" + "="*20 + " [LAUNCHER NODE MONITOR] " + "="*20)
+    print(f"[MONITOR] 收到大模型发起的应用启动任务: '{launcher_task}'")
     config_data = get_config()
     app_launcher = config_data.get("app_launcher", {})
+    print(f"[MONITOR] 当前 config.json 登记的应用配置项: {json.dumps(app_launcher, ensure_ascii=False)}")
     
     # 模糊查找匹配应用名 (忽略大小写)
     matched_app = None
@@ -842,25 +844,40 @@ def execute_launcher_task_node(state: AgentState) -> Dict[str, Any]:
             break
             
     if not matched_path:
-        print(f"[REACT LAUNCHER NODE] 未找到该应用的启动配置: {launcher_task}")
-        return {"launcher_result": f"启动失败：你尚未配置关于 '{launcher_task}' 的启动路径。请在系统设置中添加。"}
+        err_msg = f"未找到该应用的启动配置，大模型提取的任务名是 '{launcher_task}'，请检查 config.json 中的应用名称。"
+        print(f"[MONITOR] {err_msg}")
+        print("="*65 + "\n")
+        return {"launcher_result": f"启动失败：{err_msg}"}
         
+    print(f"[MONITOR] 匹配成功：大模型任务 '{launcher_task}' 对应配置中的 '{matched_app}'，登记路径为: '{matched_path}'")
+    
     try:
         # 如果是绝对路径且包含斜杠，才去判定物理存在
-        if ("\\" in matched_path or "/" in matched_path) and not os.path.exists(matched_path):
-            return {"launcher_result": f"启动失败：配置的路径 '{matched_path}' 在本地硬盘中不存在，请让用户重新检查配置。"}
+        if ("\\" in matched_path or "/" in matched_path):
+            exists = os.path.exists(matched_path)
+            print(f"[MONITOR] 检查本地物理路径是否存在: {exists} ('{matched_path}')")
+            if not exists:
+                err_msg = f"物理路径不存在，请检查该文件是否被挪动或删除。配置路径为: '{matched_path}'"
+                print(f"[MONITOR] {err_msg}")
+                print("="*65 + "\n")
+                return {"launcher_result": f"启动失败：{err_msg}"}
             
-        print(f"[REACT LAUNCHER NODE] 正在启动: {matched_path}")
+        print(f"[MONITOR] 正在通过操作系统接口 os.startfile 唤醒程序: '{matched_path}'")
         if os.name == 'nt':
             os.startfile(matched_path)
         else:
             import subprocess
             subprocess.Popen(['open' if sys.platform == 'darwin' else 'xdg-open', matched_path])
             
-        return {"launcher_result": f"成功反馈：本地应用 '{matched_app}' 已成功拉起！"}
+        success_msg = f"本地应用 '{matched_app}' 已被成功拉起运行！"
+        print(f"[MONITOR] {success_msg}")
+        print("="*65 + "\n")
+        return {"launcher_result": f"成功反馈：{success_msg}"}
     except Exception as e:
-        print(f"[REACT LAUNCHER NODE ERROR] 启动异常: {e}")
-        return {"launcher_result": f"启动失败：在拉起 '{matched_app}' 时发生系统错误: {str(e)}"}
+        err_msg = f"在拉起 '{matched_app}' 时发生系统底层错误: {str(e)}"
+        print(f"[MONITOR] {err_msg}")
+        print("="*65 + "\n")
+        return {"launcher_result": f"启动失败：{err_msg}"}
 
 def update_history_node(state: AgentState) -> Dict[str, Any]:
     """计算好感度增减、保存对话历史到本地，并触发阶梯式上下文裁剪"""
@@ -1348,7 +1365,9 @@ def chat(payload: dict = Body(...)):
             "browser_task": None,
             "browser_result": None,
             "music_task": None,
-            "music_result": None
+            "music_result": None,
+            "launcher_task": None,
+            "launcher_result": None
         }
 
         # 调用 LangGraph 对话工作流 (ReAct 闭环)
@@ -1500,7 +1519,9 @@ def rumia_speak(payload: dict = Body(...)):
             "browser_task": None,
             "browser_result": None,
             "music_task": None,
-            "music_result": None
+            "music_result": None,
+            "launcher_task": None,
+            "launcher_result": None
         }
 
         # 调用 LangGraph 对话工作流
