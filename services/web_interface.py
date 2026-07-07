@@ -1454,7 +1454,11 @@ def clear_history_api():
 @app.get("/api/settings/config")
 def get_config_api():
     """获取本地大模型提供商配置"""
-    return get_config()
+    config = get_config()
+    config["has_deepseek"] = bool(os.getenv("DEEPSEEK_API_KEY"))
+    config["has_gemini"] = bool(os.getenv("GEMINI_API_KEY"))
+    config["success"] = True
+    return config
 
 @app.post("/api/settings/config")
 def post_config_api(payload: dict = Body(...)):
