@@ -493,20 +493,36 @@ class AgentState(TypedDict):
     launcher_result: Optional[str] # 本地应用启动执行结果反馈
 
 def recall_memories_node(state: AgentState) -> Dict[str, Any]:
-    """读取 Mem0 事实库中的长期记忆"""
+    """读取 Mem0 事实库中的长期记忆 (使用 3 轮对话上下文作为语义召回 Query)"""
     user_msg = state.get("user_message", "")
+    history = state.get("history", [])
     is_self = state.get("is_self_talk", False)
     recalled = ""
     if not is_self and user_msg:
+        # 编译 3 轮对话上下文（包含最近 2 轮历史对话 + 当前最新一句话，角色与对白混排）
+        dialogue_msgs = [msg for msg in history if msg.get("role") in ("user", "assistant")]
+        recent_msgs = dialogue_msgs[-4:]  # 提取最近的 2 轮历史 (4 条消息)
+        
+        query_parts = []
+        role_map = {"user": "用户", "assistant": "露米娅"}
+        for msg in recent_msgs:
+            query_parts.append(f"{role_map.get(msg['role'], msg['role'])}: {msg['content']}")
+        query_parts.append(f"用户: {user_msg}")
+        compiled_query = "\n".join(query_parts)
+        
         agent = get_memory_agent()
         if agent:
             try:
-                results = agent.search(user_msg, filters={"user_id": "player_01"}, limit=3, threshold=0.45)
+                print("\n" + "-"*20 + " [MEM0 SEARCH QUERY] " + "-"*20)
+                print(compiled_query)
+                print("-"*61 + "\n")
+                
+                results = agent.search(compiled_query, filters={"user_id": "player_01"}, limit=3, threshold=0.45)
                 results_list = results.get("results", []) if isinstance(results, dict) else (results if isinstance(results, list) else [])
-                print(f"[MEMORY RECALL] Query: '{user_msg}' - Found {len(results_list)} memories.")
+                print(f"[MEMORY RECALL] Query matches found: {len(results_list)}")
                 if results_list:
                     recalled = "\n".join([f"- {r['memory']}" for r in results_list if isinstance(r, dict) and 'memory' in r])
-                    print(f"[MEMORY RECALL] Successfully retrieved: {recalled}")
+                    print(f"[MEMORY RECALL] Successfully retrieved:\n{recalled}")
             except Exception as me:
                 print(f"[MEMORY RECALL] Search failed: {me}")
     return {"recalled_memories": recalled}
