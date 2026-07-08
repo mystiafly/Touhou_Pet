@@ -175,6 +175,36 @@ class RumiaPet {
                         }
                     }
                     
+                    // 通道 2: 几何边界备用检测 (DPI无关 Viewport 物理碰撞，解决 Electron 穿透状态下 de-focused 窗口中 DOM Hit-Test 挂起失效的 Bug)
+                    if (!isInteractive) {
+                        const checkHover = (element) => {
+                            if (!element) return false;
+                            const rect = element.getBoundingClientRect();
+                            return (
+                                e.clientX >= rect.left &&
+                                e.clientX <= rect.right &&
+                                e.clientY >= rect.top &&
+                                e.clientY <= rect.bottom
+                            );
+                        };
+
+                        if (checkHover(this.img)) {
+                            isInteractive = true;
+                        } else if (checkHover(this.inputBar)) {
+                            isInteractive = true;
+                        } else if (this.presetsPopup && !this.presetsPopup.classList.contains('hidden') && checkHover(this.presetsPopup)) {
+                            isInteractive = true;
+                        } else if (this.playerBar && !this.playerBar.classList.contains('hidden') && checkHover(this.playerBar)) {
+                            isInteractive = true;
+                        } else if (this.favContainer && checkHover(this.favContainer)) {
+                            isInteractive = true;
+                        } else if (this.bubble && this.bubble.style.opacity === '1' && checkHover(this.bubble)) {
+                            isInteractive = true;
+                        } else if (this.settingsModal && !this.settingsModal.classList.contains('hidden') && checkHover(this.settingsModal)) {
+                            isInteractive = true;
+                        }
+                    }
+                    
                     if (isInteractive) {
                         ipcRenderer.send('set-ignore-mouse-events', false);
                     } else {
