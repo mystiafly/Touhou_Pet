@@ -153,7 +153,6 @@ class RumiaPet {
                 if (isDragging) {
                     const deltaX = e.screenX - startX;
                     const deltaY = e.screenY - startY;
-                    console.log(`[DRAG DEBUG] dragging mousemove. screenX: ${e.screenX}, screenY: ${e.screenY}, deltaX: ${deltaX}, deltaY: ${deltaY}`);
                     startX = e.screenX;
                     startY = e.screenY;
                     // 发送拖拽位移给主进程移动整个窗口
@@ -219,7 +218,6 @@ class RumiaPet {
             // 全局监听 mouseup 停止拖动
             window.addEventListener('mouseup', () => {
                 if (isDragging) {
-                    console.log(`[DRAG DEBUG] mouseup triggered. Drag ended.`);
                     isDragging = false;
                     this.img.style.cursor = 'grab';
                 }
