@@ -1,6 +1,11 @@
 @echo off
 chcp 65001 >nul
 cd /d "%~dp0"
+
+echo [SYSTEM] Clearing orphaned ghost windows and port 5000...
+taskkill /F /IM electron.exe >nul 2>&1
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5000') do taskkill /f /pid %%a >nul 2>&1
+
 echo ========================================
 echo         Rumia Desktop Pet Startup
 echo ========================================
