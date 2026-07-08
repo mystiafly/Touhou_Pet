@@ -1473,7 +1473,10 @@ def chat(payload: dict = Body(...)):
         }
 
     except Exception as e:
-        print(f"API Error: {e}")
+        import traceback
+        print("\n" + "="*20 + " [API CHAT ERROR BACKTRACE] " + "="*20)
+        traceback.print_exc()
+        print("="*68 + "\n")
         return JSONResponse({"error": str(e)}, status_code=500)
 
 # 4. 清理对话历史接口
@@ -1610,7 +1613,10 @@ def rumia_speak(payload: dict = Body(...)):
         }
 
     except Exception as e:
-        print(f"主动说话失败: {e}")
+        import traceback
+        print("\n" + "="*20 + " [RUMIA SPEAK ERROR BACKTRACE] " + "="*20)
+        traceback.print_exc()
+        print("="*70 + "\n")
         return JSONResponse({"error": str(e)}, status_code=500)
 
 # 7. 秘密日记日期列表接口
