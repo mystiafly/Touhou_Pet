@@ -128,6 +128,7 @@ class RumiaPet {
 
             // 监听露米娅图片上的 mousedown 开始拖动
             this.img.addEventListener('mousedown', (e) => {
+                console.log(`[DRAG DEBUG] mousedown on pet. Button: ${e.button}, isSleeping: ${this.isSleeping}`);
                 if (this.isSleeping) {
                     this.wakeUp(false);
                 }
@@ -135,6 +136,7 @@ class RumiaPet {
                     isDragging = true;
                     startX = e.screenX;
                     startY = e.screenY;
+                    console.log(`[DRAG DEBUG] Drag started. initial screenX/Y: (${startX}, ${startY})`);
                     // 开始拖动时强行捕获鼠标，不忽略事件
                     ipcRenderer.send('set-ignore-mouse-events', false);
                     this.img.style.cursor = 'grabbing';
@@ -151,6 +153,7 @@ class RumiaPet {
                 if (isDragging) {
                     const deltaX = e.screenX - startX;
                     const deltaY = e.screenY - startY;
+                    console.log(`[DRAG DEBUG] dragging mousemove. screenX: ${e.screenX}, screenY: ${e.screenY}, deltaX: ${deltaX}, deltaY: ${deltaY}`);
                     startX = e.screenX;
                     startY = e.screenY;
                     // 发送拖拽位移给主进程移动整个窗口
@@ -160,8 +163,8 @@ class RumiaPet {
                     let isInteractive = false;
                     const el = e.target;
                     
-                    // 通道 1: 原生 DOM 碰撞检测 (e.target)
-                    if (el) {
+                    // 通道 1: 原生 DOM 碰撞检测 (e.target) - 增加 closest 函数类型防御，防止 target 为 document/window 时崩溃
+                    if (el && typeof el.closest === 'function') {
                         if (
                             el.id === 'rumia-img' ||
                             el.closest('.input-bar') ||
@@ -175,7 +178,7 @@ class RumiaPet {
                         }
                     }
                     
-                    // 通道 2: 几何边界备用检测 (DPI无关 Viewport 物理碰撞，解决 Electron 穿透状态下 de-focused 窗口中 DOM Hit-Test 挂起失效的 Bug)
+                    // 通道 2: 几何边界备用检测 (DPI无关 Viewport 物理碰撞，专门解决 Electron 穿透状态下 de-focused 窗口中 DOM Hit-Test 挂起失效的 Bug)
                     if (!isInteractive) {
                         const checkHover = (element) => {
                             if (!element) return false;
@@ -216,6 +219,7 @@ class RumiaPet {
             // 全局监听 mouseup 停止拖动
             window.addEventListener('mouseup', () => {
                 if (isDragging) {
+                    console.log(`[DRAG DEBUG] mouseup triggered. Drag ended.`);
                     isDragging = false;
                     this.img.style.cursor = 'grab';
                 }
