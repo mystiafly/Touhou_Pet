@@ -134,7 +134,6 @@ class RumiaPet {
         if (rumiaIPC) {
             let isDragging = false;
             let startX = 0, startY = 0;
-            let lastInteractive = null;
 
             // mousedown handler
             this.img.addEventListener('mousedown', (e) => {
@@ -180,14 +179,10 @@ class RumiaPet {
                         }
                     }
                     
-                    if (isInteractive !== lastInteractive) {
-                        lastInteractive = isInteractive;
-                        
-                        if (isInteractive) {
-                            rumiaIPC.sendSetIgnoreMouseEvents(false);
-                        } else {
-                            rumiaIPC.sendSetIgnoreMouseEvents(true, { forward: true });
-                        }
+                    if (isInteractive) {
+                        rumiaIPC.sendSetIgnoreMouseEvents(false);
+                    } else {
+                        rumiaIPC.sendSetIgnoreMouseEvents(true, { forward: true });
                     }
                 }
             });
