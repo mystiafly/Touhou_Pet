@@ -131,11 +131,11 @@ class RumiaPet {
                 return null;
             }
         })();
-        
         if (rumiaIPC) {
             let isDragging = false;
             let startX = 0, startY = 0;
             let lastInteractive = null;
+            let moveCount = 0;
 
             // mousedown handler
             this.img.addEventListener('mousedown', (e) => {
@@ -167,6 +167,11 @@ class RumiaPet {
                     console.log(`[DRAG DEBUG] Dragging mousemove. Delta: (${deltaX}, ${deltaY})`);
                     rumiaIPC.sendWindowDrag(deltaX, deltaY);
                 } else {
+                    moveCount++;
+                    if (moveCount % 30 === 0) {
+                        const imgRect = this.img ? this.img.getBoundingClientRect() : null;
+                        console.log(`[DRAG DEBUG] mousemove #${moveCount} client:(${e.clientX}, ${e.clientY}) rect: left=${imgRect?.left}, right=${imgRect?.right}, top=${imgRect?.top}, bottom=${imgRect?.bottom}, width=${imgRect?.width}, height=${imgRect?.height}`);
+                    }
                     let isInteractive = false;
                     const el = e.target;
                     
