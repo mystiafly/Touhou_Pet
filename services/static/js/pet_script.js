@@ -139,7 +139,6 @@ class RumiaPet {
 
             // mousedown handler
             this.img.addEventListener('mousedown', (e) => {
-                console.log(`[DRAG DEBUG] mousedown on pet. Button: ${e.button}, isSleeping: ${this.isSleeping}`);
                 if (this.isSleeping) {
                     this.wakeUp(false);
                 }
@@ -147,7 +146,6 @@ class RumiaPet {
                     isDragging = true;
                     startX = e.screenX;
                     startY = e.screenY;
-                    console.log(`[DRAG DEBUG] Drag started. initial screenX/Y: (${startX}, ${startY})`);
                     rumiaIPC.sendSetIgnoreMouseEvents(false);
                     this.img.style.cursor = 'grabbing';
                 }
@@ -164,7 +162,6 @@ class RumiaPet {
                     const deltaY = e.screenY - startY;
                     startX = e.screenX;
                     startY = e.screenY;
-                    console.log(`[DRAG DEBUG] Dragging mousemove. Delta: (${deltaX}, ${deltaY})`);
                     rumiaIPC.sendWindowDrag(deltaX, deltaY);
                     let isInteractive = false;
                     const el = e.target;
