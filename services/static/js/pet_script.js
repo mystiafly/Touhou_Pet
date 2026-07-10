@@ -100,12 +100,12 @@ class RumiaPet {
         this.musicAudio.addEventListener('ended', () => this.stopMusic());
         this.musicAudio.addEventListener('error', () => {
             const err = this.musicAudio.error;
-            let errMsg = "鏈煡鎾斁閿欒";
+            let errMsg = "未知播放错误";
             if (err) {
                 errMsg = `Code ${err.code}: ${err.message || "Src Not Supported / Network Issue"}`;
             }
-            console.error("闊充箰鎾斁閿欒:", errMsg);
-            this.liveLyrics.innerText = `鎾斁鍑洪敊: ${errMsg}`;
+            console.error("音乐播放错误:", errMsg);
+            this.liveLyrics.innerText = `播放出错: ${errMsg}`;
             this.musicIsPlaying = false;
             this.musicToggleBtn.innerHTML = '<i class="fas fa-play"></i>';
         });
@@ -142,7 +142,7 @@ class RumiaPet {
                 if (this.isSleeping) {
                     this.wakeUp(false);
                 }
-                if (e.button === 0) { // 鍙湁榧犳爣宸﹂敭鐐瑰嚮鎵嶅厑璁告嫋鎷?
+                if (e.button === 0) { // 只有鼠标左键点击才允许拖拽
                     isDragging = true;
                     startX = e.screenX;
                     startY = e.screenY;
@@ -368,8 +368,8 @@ class RumiaPet {
             this.graphView.classList.add('hidden'); // [鏂板]
             this.mainView.classList.remove('hidden');
             this.settingsContent.classList.remove('wide');
-            this.logDateSelect.innerHTML = '<option value="">鏆傛棤璁板綍...</option>';
-            this.logContentArea.innerText = '璇烽€夋嫨涓€涓棩鏈熸潵鏌ラ槄浣犲拰闇茬背濞呯殑鑱婂ぉ鍥炲繂...';
+            this.logDateSelect.innerHTML = '<option value="">暂无记录...</option>';
+            this.logContentArea.innerText = '请选择一个日期来查阅你和露米娅的聊天回忆...';
             if (this.rewriteDiaryBtn) this.rewriteDiaryBtn.style.display = 'none';
             
             // [鏂板] 閲嶇疆鏃ュ織瀛愰€夐」鍗＄姸鎬?
@@ -395,23 +395,23 @@ class RumiaPet {
 
     // [鏂板] 鍔犺浇鎵€鏈夊彲鐢ㄧ殑鏃ュ織鏃ユ湡鍒楄〃
     async loadLogsList() {
-        this.logDateSelect.innerHTML = '<option value="">鍔犺浇涓?..</option>';
+        this.logDateSelect.innerHTML = '<option value="">加载中...</option>';
         try {
             const response = await fetch('/api/settings/logs');
             const data = await response.json();
             if (data.success && data.dates && data.dates.length > 0) {
-                let html = '<option value="">-- 璇烽€夋嫨鏃ユ湡 --</option>';
+                let html = '<option value="">-- 请选择日期 --</option>';
                 data.dates.forEach(date => {
                     html += `<option value="${date}">${date}</option>`;
                 });
                 this.logDateSelect.innerHTML = html;
             } else {
-                this.logDateSelect.innerHTML = '<option value="">鏆傛棤鑱婂ぉ璁板綍</option>';
-                this.logContentArea.innerText = '杩樻病鏈変换浣曟瘡鏃ュ洖蹇嗚褰曞摝锛屽揩鍘诲拰闇茬背濞呭鑱婅亰鍚э紒';
+                this.logDateSelect.innerHTML = '<option value="">暂无聊天记录</option>';
+                this.logContentArea.innerText = '还没有任何每日回忆记录哦，快去和露米娅多聊聊天吧！';
             }
         } catch (e) {
             console.error("鍔犺浇鏃ュ織鍒楄〃澶辫触:", e);
-            this.logDateSelect.innerHTML = '<option value="">鍔犺浇澶辫触</option>';
+            this.logDateSelect.innerHTML = '<option value="">加载失败</option>';
         }
     }
 
@@ -419,12 +419,12 @@ class RumiaPet {
     async loadLogContent() {
         const val = this.logDateSelect.value;
         if (!val) {
-            this.logContentArea.innerText = '璇烽€夋嫨涓€涓棩鏈熸潵鏌ラ槄浣犲拰闇茬背濞呯殑鑱婂ぉ鍥炲繂...';
+            this.logContentArea.innerText = '请选择一个日期来查阅你和露米娅的聊天回忆...';
             if (this.rewriteDiaryBtn) this.rewriteDiaryBtn.style.display = 'none';
             return;
         }
 
-        this.logContentArea.innerText = '姝ｅ湪璇诲彇鍥炲繂涓?..';
+        this.logContentArea.innerText = '正在读取回忆中...';
         try {
             const response = await fetch(`/api/settings/logs/${val}`);
             const data = await response.json();
@@ -435,14 +435,14 @@ class RumiaPet {
                 this.switchLogTab('chat');
                 if (this.rewriteDiaryBtn) this.rewriteDiaryBtn.style.display = 'inline-block';
             } else {
-                this.logContentArea.innerText = `璇诲彇鍥炲繂澶辫触: ${data.error || '鏈煡閿欒'}`;
+                this.logContentArea.innerText = `读取回忆失败: ${data.error || '未知错误'}`;
                 this.currentChatLog = "";
                 this.currentRumiaDiary = "";
                 if (this.rewriteDiaryBtn) this.rewriteDiaryBtn.style.display = 'none';
             }
         } catch (e) {
-            console.error("鍔犺浇鏃ュ織鍐呭澶辫触:", e);
-            this.logContentArea.innerText = '鍔犺浇鍥炲繂澶辫触锛岃绋嶅悗閲嶈瘯銆?;
+            console.error("加载日志内容失败:", e);
+            this.logContentArea.innerText = '加载回忆失败，请稍后重试。';
             this.currentChatLog = "";
             if (this.rewriteDiaryBtn) this.rewriteDiaryBtn.style.display = 'none';
             this.currentRumiaDiary = "";
@@ -454,14 +454,14 @@ class RumiaPet {
         const val = this.logDateSelect.value;
         if (!val) return;
 
-        if (!confirm(`纭畾瑕佽闇茬背濞呴噸鏂拌涓€閬?${val} 鐨勫璇濆苟閲嶅啓杩欏ぉ鐨勬棩璁板悧锛焅n(杩欎細娑堣€桝PI token骞堕渶瑕佸嚑绉掗挓)`)) return;
+        if (!confirm(`确定要让露米娅重新读一遍 ${val} 的对话并重写这天的日记吗？\n(这会消耗API token并需要几秒钟)`)) return;
 
         this.rewriteDiaryBtn.disabled = true;
         const originalText = this.rewriteDiaryBtn.innerHTML;
-        this.rewriteDiaryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 姝ｅ湪閲嶅啓...';
+        this.rewriteDiaryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在重写...';
         
         // 涓存椂灏嗘棩璁板唴瀹规浛鎹负鍔犺浇鎻愮ず骞跺垏鍒版棩璁伴€夐」鍗?
-        this.currentRumiaDiary = "闇茬背濞呮鍦ㄦ尃澶村洖蹇嗚繖澶╃殑鐩稿锛屽姫鍔涢噸鍐欐棩璁颁腑锛岃繖闇€瑕佸嚑绉掗挓鏃堕棿锛岃绋嶅€?..鍝硷紒";
+        this.currentRumiaDiary = "露米娅正在埋头回忆这天的相处，努力重写日记中，这需要几秒钟时间，请稍候...哼！";
         this.switchLogTab('diary');
 
         try {
@@ -472,15 +472,15 @@ class RumiaPet {
             if (data.success) {
                 this.currentRumiaDiary = data.diary_content || "";
                 this.switchLogTab('diary');
-                this.showBubble("杩欏ぉ鐨勬棩璁版垜宸茬粡閲嶅啓鍐欏ソ鍟︼紒鍝硷紝杩欐鍐欑殑鍙鐪熶簡锛屽揩鐪嬬湅锛?, 3500);
+                this.showBubble("这天的日记我已经重新写好啦！哼，这次写的可真了，快看看！", 3500);
             } else {
-                alert(`閲嶅啓鏃ヨ澶辫触: ${data.error || '鏈煡閿欒'}`);
-                this.currentRumiaDiary = "閲嶅啓鏃ヨ澶辫触浜?..鍛滃憸銆?;
+                alert(`重写日记失败: ${data.error || '未知错误'}`);
+                this.currentRumiaDiary = "重写日记失败了...呜呜。";
                 this.switchLogTab('diary');
             }
         } catch (e) {
-            console.error("閲嶅啓鏃ヨ璇锋眰鍑洪敊:", e);
-            alert("璇锋眰澶辫触锛岃妫€鏌ョ綉缁滄垨鍚庣鏄惁姝ｅ父銆?);
+            console.error("重写日记请求出错:", e);
+            alert("请求失败，请检查网络或后端是否正常。");
         } finally {
             this.rewriteDiaryBtn.disabled = false;
             this.rewriteDiaryBtn.innerHTML = originalText;
@@ -499,9 +499,9 @@ class RumiaPet {
             if (tab === 'chat') {
                 this.subtabChat.classList.add('active');
                 this.subtabDiary.classList.remove('active');
-                this.logContentArea.innerText = this.currentChatLog || "浠婂ぉ娌℃湁鑱婂ぉ瀵硅瘽璁板綍鍝︺€?;
+                this.logContentArea.innerText = this.currentChatLog || "今天没有聊天对话记录哦。";
                 
-                // 婊氬姩鍒板簳閮紝鏂逛究鏌ョ湅褰撳ぉ鐨勬渶鏂拌亰澶?
+                // 滚动到底部，方便查看当天的最新聊天
                 setTimeout(() => {
                     const wrapper = this.logContentArea.parentElement;
                     if (wrapper) wrapper.scrollTop = wrapper.scrollHeight;
@@ -509,9 +509,9 @@ class RumiaPet {
             } else {
                 this.subtabChat.classList.remove('active');
                 this.subtabDiary.classList.add('active');
-                this.logContentArea.innerText = this.currentRumiaDiary || "浠婂ぉ闇茬背濞呮病鏈夊啓鏃ヨ鍝︹€︹€﹀摷锛岃偗瀹氭槸鎬綘娌℃湁濂藉ソ鐞嗗ス锛?;
+                this.logContentArea.innerText = this.currentRumiaDiary || "今天露米娅没有写日记哦……呜，肯定是怪你没有好好理她！";
                 
-                // 鏃ヨ浠庡ご闃呰锛岄噸缃粴鍔ㄤ綅缃负0
+                // 日记从头阅读，重置滚动位置为0
                 setTimeout(() => {
                     const wrapper = this.logContentArea.parentElement;
                     if (wrapper) wrapper.scrollTop = 0;
@@ -534,16 +534,16 @@ class RumiaPet {
                 const dsChatOption = this.apiSelect.querySelector('option[value="deepseek-chat"]');
                 
                 if (geminiOption) {
-                    geminiOption.innerText = data.has_gemini ? "Gemini 2.5 (妫€娴嬪埌 Key)" : "Gemini 2.5 (鏈娴嬪埌 Key)";
+                    geminiOption.innerText = data.has_gemini ? "Gemini 2.5 (检测到 Key)" : "Gemini 2.5 (未检测到 Key)";
                 }
                 if (dsFlashOption) {
-                    dsFlashOption.innerText = data.has_deepseek ? "DeepSeek V4 Flash (妫€娴嬪埌 Key)" : "DeepSeek V4 Flash (鏈娴嬪埌 Key)";
+                    dsFlashOption.innerText = data.has_deepseek ? "DeepSeek V4 Flash (检测到 Key)" : "DeepSeek V4 Flash (未检测到 Key)";
                 }
                 if (dsProOption) {
-                    dsProOption.innerText = data.has_deepseek ? "DeepSeek V4 Pro (妫€娴嬪埌 Key)" : "DeepSeek V4 Pro (鏈娴嬪埌 Key)";
+                    dsProOption.innerText = data.has_deepseek ? "DeepSeek V4 Pro (检测到 Key)" : "DeepSeek V4 Pro (未检测到 Key)";
                 }
                 if (dsChatOption) {
-                    dsChatOption.innerText = data.has_deepseek ? "DeepSeek V3 鏍囧噯鐗?(妫€娴嬪埌 Key)" : "DeepSeek V3 鏍囧噯鐗?(鏈娴嬪埌 Key)";
+                    dsChatOption.innerText = data.has_deepseek ? "DeepSeek V3 标准版 (检测到 Key)" : "DeepSeek V3 标准版 (未检测到 Key)";
                 }
             }
         } catch (e) {
@@ -561,18 +561,18 @@ class RumiaPet {
             });
             const data = await response.json();
             if (data.success) {
-                this.showBubble(`鎴戠殑澶ц剳宸叉垚鍔熷垏鎹负 ${val.toUpperCase()} 寮曟搸锛乣, 2000);
+                this.showBubble(`我的大脑已成功切换为 ${val.toUpperCase()} 引擎！`, 2000);
             }
         } catch (e) {
             console.error("淇濆瓨閰嶇疆澶辫触:", e);
-            this.showBubble("鍒囨崲寮曟搸澶辫触...", 2000);
+            this.showBubble("切换引擎失败...", 2000);
         }
     }
 
     async exitGame() {
-        if (!confirm("瑕佽闇茬背濞呭幓鐫¤鍚楋紵")) return;
+        if (!confirm("要让露米娅去睡觉吗？")) return;
 
-        this.showBubble("閭?..鏅氬畨鍟?..", 2000);
+        this.showBubble("那...晚安啦...", 2000);
         this.setEmotion('normal'); // 鎴栬€?sleeping 鍥?
         this.settingsModal.classList.add('hidden');
 
@@ -585,7 +585,7 @@ class RumiaPet {
             if (data.success) {
                 // 鍚庣浼氬湪1绉掑悗鑷潃锛屽墠绔彲浠ュ皾璇曞叧闂獥鍙?
                 setTimeout(() => {
-                    window.close(); // 灏濊瘯鍏抽棴娴忚鍣ㄧ獥鍙?
+                    window.close(); // 尝试关闭浏览器窗口
                 }, 1000);
             }
         } catch (e) {
@@ -602,7 +602,7 @@ class RumiaPet {
         // 濡傛灉褰撳墠宸茬粡鏄繖寮犲浘锛屽氨涓嶆搷浣滀簡锛岄伩鍏嶉棯鐑?
         if (this.img.src.includes(targetSrc)) return;
 
-        console.log(`鍒囨崲蹇冩儏: ${emotion} -> 闅忔満宸垎: ${targetSrc}`);
+        console.log(`切换心情: ${emotion} -> 随机差分: ${targetSrc}`);
 
         // 绠€鍗曠殑娣″叆娣″嚭鏁堟灉
         this.img.style.opacity = '0.7';
@@ -701,7 +701,7 @@ class RumiaPet {
                 }
             }
         } catch (e) {
-            this.showBubble("鍚笉鍒?.. (缃戠粶閿欒)");
+            this.showBubble("听不到... (网络错误)");
             this.setEmotion('crying');
         }
     }
@@ -727,12 +727,12 @@ class RumiaPet {
         if (this.sleepTimer) clearTimeout(this.sleepTimer);
         // 10 鍒嗛挓 = 10 * 60 * 1000 姣
         const sleepDelay = 10 * 60 * 1000;
-        console.log("闇茬背濞呭畬鎴愪簡鏈€鍚庝竴娆¤嚜瑷€鑷锛屽紑鍚?10 鍒嗛挓闂茬疆鐫＄湢瀹氭椂鍣?..");
+        console.log("露米娅完成了最后一次自言自语，开启 10 分钟闲置睡眠定时器...");
         this.sleepTimer = setTimeout(() => {
-            console.log("闂茬疆瓒呮椂锛岄湶绫冲▍鍏ョ潯銆?);
+            console.log("闲置超时，露米娅入睡。");
             this.isSleeping = true;
             this.setEmotion('sleeping');
-            this.showBubble("锛堥湶绫冲▍绛夌疮浜嗭紝宸茬粡闈犲湪瑙掕惤鍛煎懠澶х潯浜嗏€︹€︼級", 10000);
+            this.showBubble("（露米娅等累了，已经靠在角落呼呼大睡了……）", 10000);
         }, sleepDelay);
     }
 
@@ -744,10 +744,10 @@ class RumiaPet {
         }
         if (this.isSleeping) {
             this.isSleeping = false;
-            console.log("闇茬背濞呰鎴愬姛鍞ら啋銆?);
+            console.log("露米娅被成功唤醒。");
             this.setEmotion('normal');
             if (!quiet) {
-                this.showBubble("鍛?..骞插槢鍚甸啋浜哄锛屼汉瀹跺垰鎵嶆ⅵ瑙佽秴濂藉悆鐨勫阀鍏嬪姏楗煎共浜嗗憿锛?, 3500);
+                this.showBubble("呜...干嘛吵醒人家，人家刚才梦见超好吃的巧克力饼干了呢！", 3500);
             }
             this.autoSpeakCount = 0;
             this.resetAutoSpeakTimer();
@@ -812,10 +812,10 @@ class RumiaPet {
 
             if (data.favorability !== undefined) {
                 this.favScore.innerText = data.favorability;
-                console.log("鍒濆濂芥劅搴﹀凡鍔犺浇:", data.favorability);
+                console.log("初始好感度已加载:", data.favorability);
             }
         } catch (e) {
-            console.error("鍔犺浇鐘舵€佸け璐?, e);
+            console.error("加载状态失败", e);
         }
     }
 
@@ -917,7 +917,7 @@ class RumiaPet {
                             contentEl.innerText = node.full_text;
                         } else if (node.type === 'entity') {
                             titleEl.innerHTML = `<i class="fas fa-fingerprint" style="color: #8be9fd;"></i> 鍏宠仈璇?瀹炰綋 (${node.entity_type})`;
-                            contentEl.innerText = `杩欎釜璇嶈繛鎺ヤ簡闇茬背濞呭鎮ㄧ殑 鈥?{node.label}鈥?鐨勮蹇嗙鐗囥€俙;
+                            contentEl.innerText = `这个词连接了露米娅对您的 "${node.label}" 的记忆碎片。`;
                         }
                         
                         infoCard.classList.remove('hidden');
@@ -929,7 +929,7 @@ class RumiaPet {
             
         } catch (e) {
             console.error("鍔犺浇璁板繂鍥捐氨寮傚父:", e);
-            container.innerHTML = '<div style="color: #ff3333; text-align: center; padding-top: 80px; font-size:12px;">璇诲彇閿欒锛岃閲嶈瘯銆?/div>';
+            container.innerHTML = '<div style="color: #ff3333; text-align: center; padding-top: 80px; font-size:12px;">读取错误，请重试。</div>';
         }
     }
 
@@ -967,7 +967,7 @@ class RumiaPet {
             }
         } catch (e) {
             console.error("鎵嬪姩鏁寸悊璁板繂寮傚父:", e);
-            this.showBubble("闇茬背濞呯幇鍦ㄦ暣鐞嗕笉杩囨潵... (缃戠粶閿欒)", 3500);
+                this.showBubble("现在整理不过来... (网络错误)", 3500);
         } finally {
             distillBtn.disabled = false;
             seedBtn.disabled = false;
@@ -1002,7 +1002,7 @@ class RumiaPet {
         document.addEventListener('click', (e) => {
             if (this.presetsPopup && !this.presetsPopup.classList.contains('hidden')) {
                 if (this.presetsBtn && this.presetsBtn.contains(e.target)) {
-                    return; // 鐐瑰嚮鍦ㄩ鍒舵寜閽垨鍏跺瓙鍥炬爣涓婏紝鐢辨寜閽嚜韬殑 listener 璐熻矗 toggle
+                return; // 点击在预制按钮或其子图标上，由按钮自身事件处理
                 }
                 if (!this.presetsPopup.contains(e.target)) {
                     this.presetsPopup.classList.add('hidden');
@@ -1030,14 +1030,14 @@ class RumiaPet {
             this.musicAudio.src = musicPlay.url;
             this.musicAudio.play().catch(e => {
                 console.error("[MUSIC PLAYER ERROR] play failed:", e);
-                this.liveLyrics.innerText = `鎾斁澶辫触: ${e.message || e}`;
+                this.liveLyrics.innerText = `播放失败: ${e.message || e}`;
             });
             
             this.musicIsPlaying = true;
             this.musicToggleBtn.innerHTML = '<i class="fas fa-pause"></i>';
         } catch (e) {
             console.error("[MUSIC PLAYER ERROR] playMusicDirectly exception:", e);
-            this.liveLyrics.innerText = `鎾瓕寮傚父: ${e.message || e}`;
+                this.liveLyrics.innerText = `播歌异常: ${e.message || e}`;
         }
     }
 
@@ -1046,7 +1046,7 @@ class RumiaPet {
         if (!this.playerBar || !this.musicAudio) return;
         
         console.log(`[MUSIC PLAYER] 寮€濮嬫悳绱㈠苟鐐规挱: ${query}`);
-        this.liveLyrics.innerText = "姝ｅ湪鎼滅储闊充箰锛岃绋嶅€?..";
+            this.liveLyrics.innerText = "正在搜索音乐，请稍候...";
         this.musicTitle.innerText = "姝ｅ湪鎼滅储...";
         this.musicArtist.innerText = "-";
         this.playerBar.classList.remove('hidden');
@@ -1058,8 +1058,8 @@ class RumiaPet {
             const searchData = await searchResp.json();
             
             if (!searchData.success || !searchData.songs || searchData.songs.length === 0) {
-                this.liveLyrics.innerText = "娌℃壘鍒拌繖棣栨瓕锛屾崲涓€棣栬瘯璇曞惂锛?;
-                this.musicTitle.innerText = "鏃犵粨鏋?;
+                this.liveLyrics.innerText = "没找到这首歌，换一首试试吧";
+                this.musicTitle.innerText = "无结果";
                 setTimeout(() => this.stopMusic(), 4000);
                 return;
             }
@@ -1067,7 +1067,7 @@ class RumiaPet {
             const song = searchData.songs[0];
             this.musicTitle.innerText = song.name;
             this.musicArtist.innerText = song.artists;
-            this.liveLyrics.innerText = "姝ｅ湪鍔犺浇闊抽娴?..";
+            this.liveLyrics.innerText = "正在加载音频流...";
             
             // 2. 鍔犺浇姝岃瘝鍜屾挱鏀剧洿閾?
             const [urlResp, lyricResp] = await Promise.all([
@@ -1079,7 +1079,7 @@ class RumiaPet {
             const lyricData = await lyricResp.json();
             
             if (!urlData.success || !urlData.url) {
-                this.liveLyrics.innerText = "闊抽鍔犺浇澶辫触锛屽彲鑳藉洜鐗堟潈鍙楅檺...";
+                this.liveLyrics.innerText = "音频加载失败，可能因版权受限...";
                 setTimeout(() => this.stopMusic(), 4000);
                 return;
             }
@@ -1093,11 +1093,11 @@ class RumiaPet {
             
             this.musicIsPlaying = true;
             this.musicToggleBtn.innerHTML = '<i class="fas fa-pause"></i>';
-            console.log(`[MUSIC PLAYER] 鎴愬姛鎾斁: ${song.name} - ${song.artists}`);
+                console.log(`[MUSIC PLAYER] 成功播放: ${song.name} - ${song.artist}`);
             
         } catch (e) {
-            console.error("[MUSIC PLAYER ERROR] 鎾斁寮傚父:", e);
-            this.liveLyrics.innerText = `鎾斁寮傚父: ${e.message || e}`;
+                console.error("[MUSIC PLAYER ERROR] 播放异常:", e);
+                this.liveLyrics.innerText = `播放异常: ${e.message || e}`;
             setTimeout(() => this.stopMusic(), 6000);
         }
     }
@@ -1106,7 +1106,7 @@ class RumiaPet {
     parseLrc(lyricText) {
         this.lyricsArray = [];
         if (!lyricText) {
-            this.lyricsArray.push({ time: 0, text: "锛堢函闊充箰锛屾棤姝岃瘝锛? });
+            this.lyricsArray.push({ time: 0, text: "（纯音乐，无歌词）" });
             return;
         }
         
@@ -1134,7 +1134,7 @@ class RumiaPet {
                 
                 this.lyricsArray.push({
                     time: totalSeconds,
-                    text: text || "~~~" // 鐣欑櫧琛屾浛鎹负娉㈡氮鍙?
+                    text: text || "~~~" // 留白行替换为波浪号
                 });
             }
         }
@@ -1143,7 +1143,7 @@ class RumiaPet {
         this.lyricsArray.sort((a, b) => a.time - b.time);
         
         if (this.lyricsArray.length === 0) {
-            this.lyricsArray.push({ time: 0, text: "锛堟瓕璇嶆牸寮忔殏涓嶆敮鎸佽В鏋愶級" });
+            this.lyricsArray.push({ time: 0, text: "（歌词格式暂不支持解析）" });
         }
     }
 
@@ -1177,14 +1177,14 @@ class RumiaPet {
             this.musicAudio.pause();
             this.musicIsPlaying = false;
             this.musicToggleBtn.innerHTML = '<i class="fas fa-play"></i>';
-            console.log("[MUSIC PLAYER] 鏆傚仠鎾斁");
+            console.log("[MUSIC PLAYER] 暂停播放");
         } else {
             this.musicAudio.play().then(() => {
                 this.musicIsPlaying = true;
                 this.musicToggleBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                console.log("[MUSIC PLAYER] 鎭㈠鎾斁");
+                console.log("[MUSIC PLAYER] 恢复播放");
             }).catch(e => {
-                console.error("鎭㈠鎾斁澶辫触:", e);
+                console.error("恢复播放失败:", e);
             });
         }
     }
@@ -1193,7 +1193,7 @@ class RumiaPet {
     stopMusic() {
         if (this.musicAudio) {
             this.musicAudio.pause();
-            this.musicAudio.src = ""; // 褰诲簳鍒囨柇闊抽杩炴帴锛岄噴鏀炬祦璧勬簮
+            this.musicAudio.src = ""; // 彻底切断音频连接，释放流资源
         }
         this.musicIsPlaying = false;
         this.lyricsArray = [];
@@ -1201,7 +1201,7 @@ class RumiaPet {
             this.musicToggleBtn.innerHTML = '<i class="fas fa-play"></i>';
         }
         if (this.liveLyrics) {
-            this.liveLyrics.innerText = "璁╅湶绫冲▍鍞遍姝岀粰浣犲惉鍚?..";
+            this.liveLyrics.innerText = "让露米娅唱首歌给你听吧...";
         }
         if (this.playerBar) {
             this.playerBar.classList.add('hidden');
@@ -1209,7 +1209,7 @@ class RumiaPet {
         if (this.inputBar) {
             this.inputBar.classList.remove('with-music');
         }
-        console.log("[MUSIC PLAYER] 鍋滄鎾斁骞舵敹璧锋帶鍒堕潰鏉?);
+        console.log("[MUSIC PLAYER] 停止播放并收起控制面板");
     }
 }
 
