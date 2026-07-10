@@ -133,8 +133,6 @@ class RumiaPet {
         })();
         if (rumiaIPC) {
             // 初始化为穿透忽略状态，确保启动后立即生效
-            const container = document.querySelector('.pet-container');
-            if (container) container.classList.add('disable-pointer-events');
             rumiaIPC.sendSetIgnoreMouseEvents(true, { forward: true });
 
             let isDragging = false;
@@ -227,12 +225,9 @@ class RumiaPet {
                         console.log(`[DRAG DEBUG] Interactive changed to: ${isInteractive}, target: ${el ? el.id || el.className : 'null'}, clientX/Y: (${e.clientX}, ${e.clientY})`);
                         lastInteractive = isInteractive;
                         
-                        const container = document.querySelector('.pet-container');
                         if (isInteractive) {
-                            if (container) container.classList.remove('disable-pointer-events');
                             rumiaIPC.sendSetIgnoreMouseEvents(false);
                         } else {
-                            if (container) container.classList.add('disable-pointer-events');
                             rumiaIPC.sendSetIgnoreMouseEvents(true, { forward: true });
                         }
                     }
@@ -640,7 +635,6 @@ class RumiaPet {
         this.bubbleContent.innerText = text;
         this.bubbleContent.scrollTop = 0; // 閲嶇疆鏂囧瓧妗嗘粴鍔ㄦ潯浣嶇疆鍒伴《閮紝闃叉涓婁竴鏉¤秴闀挎枃鏈畫鐣欐粴鍔ㄦ潯
         this.bubble.style.opacity = '1';
-        this.bubble.style.pointerEvents = 'auto'; // 璇磋瘽鏃跺惎鐢ㄩ紶鏍囦氦浜掞紙鍏佽婊氬姩銆侀€夋嫨鏂囨湰锛?
 
         if (this.bubbleTimer) clearTimeout(this.bubbleTimer);
 
@@ -660,7 +654,6 @@ class RumiaPet {
 
         this.bubbleTimer = setTimeout(() => {
             this.bubble.style.opacity = '0';
-            this.bubble.style.pointerEvents = 'none'; // 闅愯棌鏃跺畬鍏ㄧ┛閫忛紶鏍囷紝闃叉鎸′綇鍚庨潰鐨勪笢瑗?
         }, showTime);
     }
 
