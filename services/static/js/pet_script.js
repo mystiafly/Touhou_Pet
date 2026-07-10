@@ -132,6 +132,11 @@ class RumiaPet {
             }
         })();
         if (rumiaIPC) {
+            // 初始化为穿透忽略状态，确保启动后立即生效
+            const container = document.querySelector('.pet-container');
+            if (container) container.classList.add('disable-pointer-events');
+            rumiaIPC.sendSetIgnoreMouseEvents(true, { forward: true });
+
             let isDragging = false;
             let startX = 0, startY = 0;
             let lastInteractive = null;
@@ -222,9 +227,12 @@ class RumiaPet {
                         console.log(`[DRAG DEBUG] Interactive changed to: ${isInteractive}, target: ${el ? el.id || el.className : 'null'}, clientX/Y: (${e.clientX}, ${e.clientY})`);
                         lastInteractive = isInteractive;
                         
+                        const container = document.querySelector('.pet-container');
                         if (isInteractive) {
+                            if (container) container.classList.remove('disable-pointer-events');
                             rumiaIPC.sendSetIgnoreMouseEvents(false);
                         } else {
+                            if (container) container.classList.add('disable-pointer-events');
                             rumiaIPC.sendSetIgnoreMouseEvents(true, { forward: true });
                         }
                     }
