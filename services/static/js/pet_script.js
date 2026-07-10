@@ -166,12 +166,6 @@ class RumiaPet {
                     startY = e.screenY;
                     console.log(`[DRAG DEBUG] Dragging mousemove. Delta: (${deltaX}, ${deltaY})`);
                     rumiaIPC.sendWindowDrag(deltaX, deltaY);
-                } else {
-                    moveCount++;
-                    if (moveCount % 30 === 0) {
-                        const imgRect = this.img ? this.img.getBoundingClientRect() : null;
-                        console.log(`[DRAG DEBUG] mousemove #${moveCount} client:(${e.clientX}, ${e.clientY}) rect: left=${imgRect?.left}, right=${imgRect?.right}, top=${imgRect?.top}, bottom=${imgRect?.bottom}, width=${imgRect?.width}, height=${imgRect?.height}`);
-                    }
                     let isInteractive = false;
                     const el = e.target;
                     
@@ -189,44 +183,10 @@ class RumiaPet {
                         }
                     }
                     
-                    if (!isInteractive) {
-                        const checkHover = (element) => {
-                            if (!element) return false;
-                            const rect = element.getBoundingClientRect();
-                            return (
-                                e.clientX >= rect.left &&
-                                e.clientX <= rect.right &&
-                                e.clientY >= rect.top &&
-                                e.clientY <= rect.bottom
-                            );
-                        };
-
-                        if (checkHover(this.img)) {
-                            isInteractive = true;
-                        } else if (checkHover(this.inputBar)) {
-                            isInteractive = true;
-                        } else if (this.presetsPopup && !this.presetsPopup.classList.contains('hidden') && checkHover(this.presetsPopup)) {
-                            isInteractive = true;
-                        } else if (this.playerBar && !this.playerBar.classList.contains('hidden') && checkHover(this.playerBar)) {
-                            isInteractive = true;
-                        } else if (this.favContainer && checkHover(this.favContainer)) {
-                            isInteractive = true;
-                        } else if (this.bubble && this.bubble.style.opacity === '1' && checkHover(this.bubble)) {
-                            isInteractive = true;
-                        } else if (this.settingsModal && !this.settingsModal.classList.contains('hidden') && checkHover(this.settingsModal)) {
-                            isInteractive = true;
-                        }
-                    }
-                    
-                    if (isInteractive !== lastInteractive) {
-                        console.log(`[DRAG DEBUG] Interactive changed to: ${isInteractive}, target: ${el ? el.id || el.className : 'null'}, clientX/Y: (${e.clientX}, ${e.clientY})`);
-                        lastInteractive = isInteractive;
-                        
-                        if (isInteractive) {
-                            rumiaIPC.sendSetIgnoreMouseEvents(false);
-                        } else {
-                            rumiaIPC.sendSetIgnoreMouseEvents(true, { forward: true });
-                        }
+                    if (isInteractive) {
+                        rumiaIPC.sendSetIgnoreMouseEvents(false);
+                    } else {
+                        rumiaIPC.sendSetIgnoreMouseEvents(true, { forward: true });
                     }
                 }
             });
@@ -632,6 +592,7 @@ class RumiaPet {
         this.bubbleContent.innerText = text;
         this.bubbleContent.scrollTop = 0; // 閲嶇疆鏂囧瓧妗嗘粴鍔ㄦ潯浣嶇疆鍒伴《閮紝闃叉涓婁竴鏉¤秴闀挎枃鏈畫鐣欐粴鍔ㄦ潯
         this.bubble.style.opacity = '1';
+        this.bubble.style.pointerEvents = 'auto'; // 璇磋瘽鏃跺惎鐢ㄩ紶鏍囦氦浜掞紙鍏佽婊氬姩銆侀€夋嫨鏂囨湰锛?
 
         if (this.bubbleTimer) clearTimeout(this.bubbleTimer);
 
@@ -651,6 +612,7 @@ class RumiaPet {
 
         this.bubbleTimer = setTimeout(() => {
             this.bubble.style.opacity = '0';
+            this.bubble.style.pointerEvents = 'none'; // 闅愯棌鏃跺畬鍏ㄧ┛閫忛紶鏍囷紝闃叉鎸′綇鍚庨潰鐨勪笢瑗?
         }, showTime);
     }
 
