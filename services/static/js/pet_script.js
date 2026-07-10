@@ -132,9 +132,6 @@ class RumiaPet {
             }
         })();
         if (rumiaIPC) {
-            // 初始化为穿透忽略状态，确保启动后立即生效
-            rumiaIPC.sendSetIgnoreMouseEvents(true, { forward: true });
-
             let isDragging = false;
             let startX = 0, startY = 0;
             let lastInteractive = null;
