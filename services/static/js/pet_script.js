@@ -221,12 +221,12 @@ class RumiaPet {
                     if (isInteractive !== lastInteractive) {
                         console.log(`[DRAG DEBUG] Interactive changed to: ${isInteractive}, target: ${el ? el.id || el.className : 'null'}, clientX/Y: (${e.clientX}, ${e.clientY})`);
                         lastInteractive = isInteractive;
-                    }
-                    
-                    if (isInteractive) {
-                        rumiaIPC.sendSetIgnoreMouseEvents(false);
-                    } else {
-                        rumiaIPC.sendSetIgnoreMouseEvents(true, { forward: true });
+                        
+                        if (isInteractive) {
+                            rumiaIPC.sendSetIgnoreMouseEvents(false);
+                        } else {
+                            rumiaIPC.sendSetIgnoreMouseEvents(true, { forward: true });
+                        }
                     }
                 }
             });
