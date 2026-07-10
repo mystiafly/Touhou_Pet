@@ -135,44 +135,41 @@ class RumiaPet {
         if (rumiaIPC) {
             let isDragging = false;
             let startX = 0, startY = 0;
+            let lastInteractive = null;
 
-            // 鐩戝惉闇茬背濞呭浘鐗囦笂鐨?mousedown 寮€濮嬫嫋鍔?
+            // mousedown handler
             this.img.addEventListener('mousedown', (e) => {
                 console.log(`[DRAG DEBUG] mousedown on pet. Button: ${e.button}, isSleeping: ${this.isSleeping}`);
                 if (this.isSleeping) {
                     this.wakeUp(false);
                 }
-                if (e.button === 0) { // 只有鼠标左键点击才允许拖拽
+                if (e.button === 0) { 
                     isDragging = true;
                     startX = e.screenX;
                     startY = e.screenY;
                     console.log(`[DRAG DEBUG] Drag started. initial screenX/Y: (${startX}, ${startY})`);
-                    // 寮€濮嬫嫋鍔ㄦ椂寮鸿鎹曡幏榧犳爣锛屼笉蹇界暐浜嬩欢
                     rumiaIPC.sendSetIgnoreMouseEvents(false);
                     this.img.style.cursor = 'grabbing';
                 }
             });
 
-            // 闃绘娴忚鍣ㄥ師鐢熺殑鍥剧墖鎷栨嫿琛屼负锛堥槻姝㈡媺鍑鸿櫄褰变笖 mouseup 鏃犳硶瑙﹀彂鐨勯棶棰橈級
             this.img.addEventListener('dragstart', (e) => {
                 e.preventDefault();
             });
 
-            // 鐩戝惉鍏ㄥ眬 mousemove 浜嬩欢锛屽鐞嗘嫋鎷借绠楀拰绌块€忔娴?
+            // mousemove handler
             window.addEventListener('mousemove', (e) => {
                 if (isDragging) {
                     const deltaX = e.screenX - startX;
                     const deltaY = e.screenY - startY;
                     startX = e.screenX;
                     startY = e.screenY;
-                    // 鍙戦€佹嫋鎷戒綅绉荤粰涓昏繘绋嬬Щ鍔ㄦ暣涓獥鍙?
+                    console.log(`[DRAG DEBUG] Dragging mousemove. Delta: (${deltaX}, ${deltaY})`);
                     rumiaIPC.sendWindowDrag(deltaX, deltaY);
                 } else {
-                    // 澶勪簬闈炴嫋鎷界殑姝ｅ父鎮仠鐘舵€佷笅锛岃繘琛岀偣鍑荤┛閫忔娴?
                     let isInteractive = false;
                     const el = e.target;
                     
-                    // 閫氶亾 1: 鍘熺敓 DOM 纰版挒妫€娴?(e.target) - 澧炲姞 closest 鍑芥暟绫诲瀷闃插尽锛岄槻姝?target 涓?document/window 鏃跺穿婧?
                     if (el && typeof el.closest === 'function') {
                         if (
                             el.id === 'rumia-img' ||
@@ -187,7 +184,6 @@ class RumiaPet {
                         }
                     }
                     
-                    // 閫氶亾 2: 鍑犱綍杈圭晫澶囩敤妫€娴?(DPI鏃犲叧 Viewport 鐗╃悊纰版挒锛屼笓闂ㄨВ鍐?Electron 绌块€忕姸鎬佷笅 de-focused 绐楀彛涓?DOM Hit-Test 鎸傝捣澶辨晥鐨?Bug)
                     if (!isInteractive) {
                         const checkHover = (element) => {
                             if (!element) return false;
@@ -217,10 +213,14 @@ class RumiaPet {
                         }
                     }
                     
+                    if (isInteractive !== lastInteractive) {
+                        console.log(`[DRAG DEBUG] Interactive changed to: ${isInteractive}, target: ${el ? el.id || el.className : 'null'}, clientX/Y: (${e.clientX}, ${e.clientY})`);
+                        lastInteractive = isInteractive;
+                    }
+                    
                     if (isInteractive) {
                         rumiaIPC.sendSetIgnoreMouseEvents(false);
                     } else {
-                        // ⚠️ 关键：必须带 { forward: true }，否则穿透后鼠标事件不再转发给渲染进程，导致 mousemove 永久失效
                         rumiaIPC.sendSetIgnoreMouseEvents(true, { forward: true });
                     }
                 }
