@@ -2070,4 +2070,4 @@ if __name__ == '__main__':
     t.start()
     
     print("[BACKEND] 正在启动本地极其流畅的 FastAPI 异步后台服务器...")
-    uvicorn.run("web_interface:app", host="127.0.0.1", port=5000, reload=False)
+    uvicorn.run(app, host="127.0.0.1", port=5000)
