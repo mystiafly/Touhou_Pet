@@ -687,6 +687,9 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
             "4. 绝对禁止口头上说打开了或查到了但不在最末尾写标签！必须输出方括号标签。"
         )
         active_messages.append(HumanMessage(content=user_message + tail_reminder))
+    elif is_self and user_message:
+        # 自言自语提示词，作为 SystemMessage 注入，指导模型进行自言自语生成，修复自言自语无响应或重复历史的Bug
+        active_messages.append(SystemMessage(content=user_message))
         
     model = get_langchain_model()
     
@@ -697,7 +700,50 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
         print(msg.content)
     print("="*94 + "\n")
     
-    response = model.invoke(active_messages)
+    try:
+        response = model.invoke(active_messages)
+    except Exception as primary_ex:
+        print(f"[BACKEND WARNING] 默认大模型 ({model.model_name}) 调用异常: {primary_ex}")
+        
+        # 自动切换到另一个引擎进行兜底
+        config_data = get_config()
+        current_provider = config_data.get("api_provider", os.getenv("API_PROVIDER", "gemini")).lower()
+        
+        fallback_provider = "gemini" if "deepseek" in current_provider else "deepseek-v4-pro"
+        deepseek_key = os.getenv("DEEPSEEK_API_KEY")
+        gemini_key = os.getenv("GEMINI_API_KEY")
+        
+        has_fallback = False
+        fallback_model = None
+        
+        if fallback_provider == "gemini" and gemini_key:
+            has_fallback = True
+            fallback_model = ChatOpenAI(
+                api_key=gemini_key,
+                base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+                model="gemini-2.5-flash",
+                temperature=0.7
+            )
+        elif "deepseek" in fallback_provider and deepseek_key:
+            has_fallback = True
+            fallback_model = ChatOpenAI(
+                api_key=deepseek_key,
+                base_url="https://api.deepseek.com",
+                model="deepseek-v4-pro",
+                temperature=0.7
+            )
+            
+        if has_fallback and fallback_model:
+            print(f"[BACKEND INFO] 正在尝试自动降级到备用大模型 ({fallback_model.model_name}) 进行兜底...")
+            try:
+                response = fallback_model.invoke(active_messages)
+                print("[BACKEND SUCCESS] 备用模型兜底成功！")
+            except Exception as fallback_ex:
+                print(f"[BACKEND ERROR] 备用大模型调用同样失败: {fallback_ex}")
+                raise primary_ex
+        else:
+            raise primary_ex
+            
     raw_reply = response.content
     
     print("\n" + "="*40 + " [AI RESPONSE (LANGCHAIN)] " + "="*40)
