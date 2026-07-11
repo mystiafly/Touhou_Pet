@@ -7,6 +7,14 @@ import signal
 def main():
     # 获取当前脚本所在的根目录路径
     root_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # 自动检查并重定向到虚拟环境 Python (防止用户双击 run.py 或使用全局 Python 导致依赖缺失崩溃)
+    venv_python = os.path.join(root_dir, '.venv', 'Scripts', 'python.exe') if os.name == 'nt' else os.path.join(root_dir, '.venv', 'bin', 'python')
+    if os.path.exists(venv_python) and os.path.abspath(sys.executable) != os.path.abspath(venv_python):
+        print(f"[SYSTEM] 检测到本地虚拟环境，已自动重定向并使用虚拟环境 Python 重新启动...")
+        subprocess.Popen([venv_python] + sys.argv, cwd=root_dir)
+        sys.exit(0)
+        
     services_dir = os.path.join(root_dir, 'services')
 
     print(f"--- 露米娅启动程序 ---")
