@@ -1,7 +1,7 @@
 const { app, BrowserWindow, screen, ipcMain } = require('electron');
 const path = require('path');
 
-// 监听渲染进程发送的穿透事件，动态切换鼠标忽略状态
+// 閻╂垵鎯夊〒鍙夌厠鏉╂稓鈻奸崣鎴︹偓浣烘畱缁屽潡鈧繋绨ㄦ禒璁圭礉閸斻劍鈧礁鍨忛幑銏ょ炊閺嶅洤鎷烽悾銉уЦ閹?
 ipcMain.on('set-ignore-mouse-events', (event, ignore, options) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) {
@@ -9,7 +9,7 @@ ipcMain.on('set-ignore-mouse-events', (event, ignore, options) => {
     }
 });
 
-// 监听渲染进程发送的拖拽事件，动态移动窗口位置
+// 閻╂垵鎯夊〒鍙夌厠鏉╂稓鈻奸崣鎴︹偓浣烘畱閹锋牗瀚挎禍瀣╂閿涘苯濮╅幀浣盒╅崝銊х崶閸欙絼缍呯純?
 ipcMain.on('window-drag', (event, { deltaX, deltaY }) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) {
@@ -21,36 +21,37 @@ ipcMain.on('window-drag', (event, { deltaX, deltaY }) => {
 function createWindow() {
     const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 
-    // 创建浏览器窗口
+    // 閸掓稑缂撳ù蹇氼潔閸ｃ劎鐛ラ崣?
     const win = new BrowserWindow({
-        width: 400,  // 桌宠窗口宽度
-        height: 600, // 桌宠窗口高度 (从 500px 调大至 600px 以留出更多对话空间)
-        x: width - 450, // 默认出现在右下角
-        y: height - 650, // 底部对齐位置适配调高 100px
-        frame: false,       // 无边框
-        transparent: true,  // 透明背景
-        alwaysOnTop: true,  // 始终置顶
-        skipTaskbar: false, // 是否在任务栏显示（true则隐藏）
-        resizable: false,   // 禁止改变大小
+        width: 400,  // 濡楀苯鐤囩粣妤€褰涚€硅棄瀹?
+        height: 600, // 濡楀苯鐤囩粣妤€褰涙妯哄 (娴?500px 鐠嬪啫銇囬懛?600px 娴犮儳鏆€閸戠儤娲挎径姘嚠鐠囨繄鈹栭梻?
+        x: width - 450, // 姒涙顓婚崙铏瑰箛閸︺劌褰告稉瀣潡
+        y: height - 650, // 鎼存洟鍎寸€靛綊缍堟担宥囩枂闁倿鍘ょ拫鍐彯 100px
+        frame: false,       // 閺冪姾绔熷?
+        transparent: true,  // 闁繑妲戦懗灞炬珯
+        alwaysOnTop: true,  // 婵绮撶純顕€銆?
+        skipTaskbar: false, // 閺勵垰鎯侀崷銊ゆ崲閸斺剝鐖弰鍓с仛閿涘澅rue閸掓瑩娈ｉ挊蹇ョ礆
+        resizable: false,   // 缁備焦顒涢弨鐟板綁婢堆冪毈
         webPreferences: {
             nodeIntegration: true,
-            contextIsolation: false
+            contextIsolation: false,
+            preload: path.join(__dirname, 'preload.js')
         }
     });
 
-    // 加载 Flask/FastAPI 的桌宠页面 (支持后台慢启动无限重试直到连接成功)
+    // 閸旂姾娴?Flask/FastAPI 閻ㄥ嫭顢戠€圭娀銆夐棃?(閺€顖涘瘮閸氬骸褰撮幈銏犳儙閸斻劍妫ら梽鎰板櫢鐠囨洜娲块崚鎷岀箾閹恒儲鍨氶崝?
     const petUrl = 'http://127.0.0.1:5000/pet';
     function loadPetPage() {
         win.loadURL(petUrl).then(() => {
-            console.log(`[ELECTRON] 成功连接并加载桌宠页面！`);
+            console.log(`[ELECTRON] 閹存劕濮涙潻鐐村复楠炶泛濮炴潪鑺ヮ攽鐎圭娀銆夐棃顫磼`);
         }).catch(err => {
-            console.log(`[ELECTRON] 页面请求拒绝 (后端尚未就绪)，在 1.5 秒后继续自动重试...`);
+            console.log(`[ELECTRON] 妞ょ敻娼扮拠閿嬬湴閹锋帞绮?(閸氬海顏亸姘弓鐏忚京鍗?閿涘苯婀?1.5 缁夋帒鎮楃紒褏鐢婚懛顏勫З闁插秷鐦?..`);
             setTimeout(loadPetPage, 1500);
         });
     }
     loadPetPage();
 
-    // 开发时可以打开控制台调试 CSS
+    // 瀵偓閸欐垶妞傞崣顖欎簰閹垫挸绱戦幒褍鍩楅崣鎷岀殶鐠?CSS
     win.webContents.openDevTools({ mode: 'detach' });
 }
 
