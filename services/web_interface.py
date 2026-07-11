@@ -493,6 +493,7 @@ class AgentState(TypedDict):
     launcher_result: Optional[str]
     search_task: Optional[str]
     search_result: Optional[str]
+    request_type: Optional[str]
 def recall_memories_node(state: AgentState) -> Dict[str, Any]:
     """读取 Mem0 事实库中的长期记忆 (使用 3+1 轮对话上下文进行语义召回，3 轮代表 6 条历史消息)"""
     user_msg = state.get("user_message", "")
@@ -671,10 +672,17 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
         )
         
     active_messages = []
+    is_greeting = state.get("request_type") == 'greeting'
     if lc_history and isinstance(lc_history[0], SystemMessage):
-        active_messages = [SystemMessage(content=priority_reminder)] + lc_history[1:]
+        if is_greeting:
+            active_messages = [SystemMessage(content=priority_reminder)]
+        else:
+            active_messages = [SystemMessage(content=priority_reminder)] + lc_history[1:]
     else:
-        active_messages = [SystemMessage(content=priority_reminder)] + lc_history
+        if is_greeting:
+            active_messages = [SystemMessage(content=priority_reminder)]
+        else:
+            active_messages = [SystemMessage(content=priority_reminder)] + lc_history
         
     if not is_self and user_message:
         # 尾部强效提醒 (方案 A 增强)：防止长历史上下文导致的注意力衰减，让 Gemini/DeepSeek 强制遵守指令。
@@ -1523,7 +1531,8 @@ def chat(payload: dict = Body(...)):
             "launcher_task": None,
             "launcher_result": None,
             "search_task": None,
-            "search_result": None
+            "search_result": None,
+            "request_type": "chat"
         }
 
         # 调用 LangGraph 对话工作流 (ReAct 闭环)
@@ -1686,7 +1695,8 @@ def rumia_speak(payload: dict = Body(...)):
             "launcher_task": None,
             "launcher_result": None,
             "search_task": None,
-            "search_result": None
+            "search_result": None,
+            "request_type": request_type
         }
 
         # 调用 LangGraph 对话工作流
