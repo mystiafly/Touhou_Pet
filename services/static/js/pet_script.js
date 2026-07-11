@@ -372,7 +372,7 @@ class RumiaPet {
                 this.logContentArea.innerText = '还没有任何每日回忆记录哦，快去和露米娅多聊聊天吧！';
             }
         } catch (e) {
-            console.error("鍔犺浇鏃ュ織鍒楄〃澶辫触:", e);
+            console.error("加载日志列表失败:", e);
             this.logDateSelect.innerHTML = '<option value="">加载失败</option>';
         }
     }
@@ -509,7 +509,7 @@ class RumiaPet {
                 }
             }
         } catch (e) {
-            console.error("鍔犺浇閰嶇疆澶辫触:", e);
+            console.error("加载配置失败:", e);
         }
     }
 
@@ -526,7 +526,7 @@ class RumiaPet {
                 this.showBubble(`我的大脑已成功切换为 ${val.toUpperCase()} 引擎！`, 2000);
             }
         } catch (e) {
-            console.error("淇濆瓨閰嶇疆澶辫触:", e);
+            console.error("保存配置失败:", e);
             this.showBubble("切换引擎失败...", 2000);
         }
     }
@@ -551,7 +551,7 @@ class RumiaPet {
                 }, 1000);
             }
         } catch (e) {
-            console.error("閫€鍑哄け璐?", e);
+            console.error("退出失败:", e);
             // 濡傛灉鍚庣宸茬粡姝讳簡锛宖etch 鍙兘浼氭姤閿欙紝杩欎篃绠楁垚鍔熼€€鍑轰簡
             setTimeout(() => window.close(), 1000);
         }
@@ -582,7 +582,7 @@ class RumiaPet {
         if (match) {
             const musicQuery = match[1];
             text = text.replace(musicRegex, "").trim();
-            console.log(`[MUSIC CONTROLLER] 鎷︽埅鍒板ぇ妯″瀷鐐规瓕鎸囦护: ${musicQuery}`);
+            console.log(`[MUSIC CONTROLLER] 拦截到大模型点歌指令: ${musicQuery}`);
             this.searchAndPlayMusic(musicQuery);
         }
 
@@ -605,7 +605,7 @@ class RumiaPet {
             showTime = Math.min(calcTime, 30000);
         }
 
-        console.log(`姘旀场鏄剧ず鏃堕暱: ${showTime/1000}绉?(瀛楁暟: ${text.length})`);
+        console.log(`气泡显示时长: ${showTime/1000}秒 (字数: ${text.length})`);
 
         this.bubbleTimer = setTimeout(() => {
             this.bubble.style.opacity = '0';
@@ -639,7 +639,7 @@ class RumiaPet {
 
                 // [鏂板] 濡傛灉鍚庣杩斿洖浜?ReAct 鐐规瓕鏁版嵁锛岀洿鎺ヨ皟鐢ㄦ挱鏀惧櫒鎾斁锛岃烦杩囬噸澶嶆悳绱?
                 if (data.music_play) {
-                    console.log(`[MUSIC PLAYER] 鎺ユ敹鍒?ReAct 鐐规瓕鏁版嵁:`, data.music_play);
+                    console.log(`[MUSIC PLAYER] 接收到 ReAct 点歌数据:`, data.music_play);
                     this.playMusicDirectly(data.music_play);
                 }
 
@@ -718,7 +718,7 @@ class RumiaPet {
 
     // [鏂板] 鍚姩鏃舵墦鎷涘懠
     async greetUser() {
-        console.log("姝ｅ湪灏濊瘯鎵撴嫑鍛?..");
+            console.log("正在尝试打招呼...");
         // 鍏堟樉绀虹瓑寰咃紝鎻愬崌浣撻獙
         this.showBubble("...", 2000);
 
@@ -738,7 +738,7 @@ class RumiaPet {
                 }
             }
         } catch (e) {
-            console.error("鎵撴嫑鍛煎け璐?", e);
+            console.error("打招呼失败:", e);
         }
     }
 
@@ -890,7 +890,7 @@ class RumiaPet {
             });
             
         } catch (e) {
-            console.error("鍔犺浇璁板繂鍥捐氨寮傚父:", e);
+            console.error("加载记忆图谱异常:", e);
             container.innerHTML = '<div style="color: #ff3333; text-align: center; padding-top: 80px; font-size:12px;">读取错误，请重试。</div>';
         }
     }
@@ -928,7 +928,7 @@ class RumiaPet {
                 this.showBubble(data.error, 3500);
             }
         } catch (e) {
-            console.error("鎵嬪姩鏁寸悊璁板繂寮傚父:", e);
+            console.error("手动整理记忆异常:", e);
                 this.showBubble("现在整理不过来... (网络错误)", 3500);
         } finally {
             distillBtn.disabled = false;
@@ -976,7 +976,7 @@ class RumiaPet {
     // [鏂板] 鐩存帴鎾斁鍚庣閫氳繃 ReAct 妫€绱㈣繑鍥炵殑姝屾洸鏁版嵁锛岀粫杩囬噸澶嶆悳绱㈡楠?
     playMusicDirectly(musicPlay) {
         if (!this.playerBar || !this.musicAudio) return;
-        console.log(`[MUSIC PLAYER] 寮€濮嬬洿鎺ユ挱姝? ${musicPlay.name} - ${musicPlay.artists}`);
+        console.log(`[MUSIC PLAYER] 开始直接播歌: ${musicPlay.name} - ${musicPlay.artists}`);
         
         this.liveLyrics.innerText = "姝ｅ湪寮€濮嬫挱鏀?..";
         this.musicTitle.innerText = musicPlay.name;
@@ -1007,7 +1007,7 @@ class RumiaPet {
     async searchAndPlayMusic(query) {
         if (!this.playerBar || !this.musicAudio) return;
         
-        console.log(`[MUSIC PLAYER] 寮€濮嬫悳绱㈠苟鐐规挱: ${query}`);
+        console.log(`[MUSIC PLAYER] 开始搜索并点播: ${query}`);
             this.liveLyrics.innerText = "正在搜索音乐，请稍候...";
         this.musicTitle.innerText = "姝ｅ湪鎼滅储...";
         this.musicArtist.innerText = "-";
