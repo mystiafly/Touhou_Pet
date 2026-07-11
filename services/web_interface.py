@@ -486,12 +486,13 @@ class AgentState(TypedDict):
     score: int
     clean_content: str
     browser_task: Optional[str]
-    browser_result: Optional[str]  # 网页任务执行反馈成果
-    music_task: Optional[str]      # 点歌检索关键词
-    music_result: Optional[dict]   # 网易云检索出的具体歌曲信息
-    launcher_task: Optional[str]   # 本地应用启动任务关键词
-    launcher_result: Optional[str] # 本地应用启动执行结果反馈
-
+    browser_result: Optional[str]
+    music_task: Optional[str]
+    music_result: Optional[dict]
+    launcher_task: Optional[str]
+    launcher_result: Optional[str]
+    search_task: Optional[str]
+    search_result: Optional[str]
 def recall_memories_node(state: AgentState) -> Dict[str, Any]:
     """读取 Mem0 事实库中的长期记忆 (使用 3+1 轮对话上下文进行语义召回，3 轮代表 6 条历史消息)"""
     user_msg = state.get("user_message", "")
@@ -604,6 +605,7 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
             "1. 角色约束与动作描写：请严格扮演露米娅（性格傲娇的食人妖怪），用中文回答。在对话中建议穿插用圆括号包裹的动作/表情描述（如：‘(脸红扭过头)’）。在适合的情况下（如进行两性/NSFW/深层亲密交互时），强烈建议你特地独立写出几段【无情绪与评分前缀】的纯圆括号段落描述神态与客观场景，但特别注意：此类纯圆括号描述【绝对不能作为你回复的最后一段】（最后一段必须是带标签 of 正常台词，以防止表情显示发生解析冲突）。如果下方的【最高优先级触发预设】有更细致的格式与描述要求，请一并严格执行。\n"
             "2. 格式约束：你的回复必须且只能遵循 '[心情][评分]对话内容' 格式要求。\n"
             "   - 如有浏览器自动化搜索意图，请在最末尾附加 `[BROWSER_TASK: 搜索任务文本]`。\n"
+            "   - 如有搜索引擎检索意图（只在后台查资料背景搜索，不在屏幕上打开浏览器），请在最末尾附加 `[SEARCH_ENGINE: 搜索词]`。\n"
             "   - 【重要应用启动指令】如果用户让你打开、拉起或启动已配置的本地应用，你【必须】在回复的最末尾附加 `[LAUNCH_APP: 精确匹配的应用名称]`。这是物理启动应用的唯一硬件信号，如果你口头上说打开了但没有输出该标签，那就是在欺骗用户，请绝对避免假装打开而不输出标签！\n"
             "   - '[心情]' 必须且只能是以下英文单词之一：[normal] (常态/微笑/平静), [angry] (生气/愤怒/傲娇抱怨), [shy] (害羞/脸红/扭捏), [crying] (委屈/难过/大哭)。绝对禁止使用任何中文心情标签（如 [开心] ❌，[慵懒] ❌）。\n"
             "   - '[评分]' 必须且只能是方括号内包裹一个 0 到 20 之间的纯数字评分（如 [12]），代表当前言论的好感度评分（10为基准，>10加分，<10扣分）。绝对禁止写成类似 [评分: 92] ❌ 这样的非法格式。\n"
@@ -650,6 +652,15 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
             f"请仔细结合上述任务反馈内容，以傲娇的口吻将有用的信息提炼并娇嗔地回答给用户，或者傲娇地告诉他你已经帮他把浏览器跑起来了。绝对不要再在回复中输出任何 `[BROWSER_TASK]` 标签。"
         )
         
+    search_result = state.get("search_result")
+    if search_result:
+        priority_reminder += (
+            f"\n\n【工具调用反馈 - 搜索引擎检索成功】\n"
+            f"你刚刚发起的搜索引擎检索（背景检索，未打开浏览器）结果反馈如下：\n"
+            f"{search_result}\n"
+            f"请仔细结合并提炼上述检索到的实时网页数据，以傲娇的口吻回答用户的提问，绝对不要再在回复中输出任何 `[SEARCH_ENGINE]` 标签。\n"
+        )
+        
     launcher_result = state.get("launcher_result")
     if launcher_result:
         priority_reminder += (
@@ -671,8 +682,9 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
         tail_reminder = (
             "\n\n[SYSTEM REMINDER - FORCED LAUNCH/SEARCH RULE]\n"
             "1. 如果用户要求你打开、拉起或启动本地应用（当前配置有：记事本, 网易云音乐, 网易云），你【必须】且只能在回复内容的最末尾加上相应的 `[LAUNCH_APP: 应用名称]` 标签（例如：`[LAUNCH_APP: 网易云音乐]`）。\n"
-            "2. 如果用户有网页搜索意图，必须在最末尾加上 `[BROWSER_TASK: 搜索词]` 标签。\n"
-            "3. 绝对禁止口头上说打开了但不在最末尾写标签！这关系到系统的物理拉起，必须输出方括号标签。"
+            "2. 如果用户有网页搜索意图，需要拉起浏览器，必须在最末尾加上 `[BROWSER_TASK: 搜索词]` 标签。\n"
+            "3. 如果你需要查询实时信息、知识科普或你不确定的内容（仅背景查资料，不拉起浏览器），你【必须】在回复的最末尾加上 `[SEARCH_ENGINE: 搜索词]` 标签。\n"
+            "4. 绝对禁止口头上说打开了或查到了但不在最末尾写标签！必须输出方括号标签。"
         )
         active_messages.append(HumanMessage(content=user_message + tail_reminder))
         
@@ -706,6 +718,13 @@ def parse_response_node(state: AgentState) -> Dict[str, Any]:
         browser_task = task_match.group(1).strip()
         clean_content = re.sub(r'\[BROWSER_TASK:\s*.*?\]', '', clean_content, flags=re.IGNORECASE).strip()
         
+    # 提取搜索引擎指令
+    search_task = None
+    search_match = re.search(r'\[SEARCH_ENGINE:\s*(.*?)\]', raw_reply, re.IGNORECASE)
+    if search_match:
+        search_task = search_match.group(1).strip()
+        clean_content = re.sub(r'\[SEARCH_ENGINE:\s*.*?\]', '', clean_content, flags=re.IGNORECASE).strip()
+        
     # 提取并清理隐藏点歌指令 (ReAct)
     music_task = None
     music_match = re.search(r'\[MUSIC_PLAY:\s*(.*?)\]', raw_reply, re.IGNORECASE)
@@ -725,6 +744,7 @@ def parse_response_node(state: AgentState) -> Dict[str, Any]:
         "score": score,
         "clean_content": clean_content,
         "browser_task": browser_task,
+        "search_task": search_task,
         "music_task": music_task,
         "launcher_task": launcher_task
     }
@@ -867,6 +887,48 @@ def execute_browser_task_node(state: AgentState) -> Dict[str, Any]:
         ).start()
         return {"browser_result": f"已在后台成功拉起浏览器进程，正在对任务 '{browser_task}' 展开自动化处理，请让用户查看本地弹出的浏览器窗口。"}
 
+def execute_search_task_node(state: AgentState) -> Dict[str, Any]:
+    """背景搜索引擎检索节点"""
+    search_query = state.get("search_task")
+    if not search_query:
+        return {"search_result": None}
+        
+    print(f"[REACT SEARCH NODE] 正在为大模型从必应检索: {search_query}")
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+        
+        url = f"https://cn.bing.com/search?q={requests.utils.quote(search_query)}"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+        r = requests.get(url, headers=headers, timeout=10)
+        if r.status_code != 200:
+            return {"search_result": f"搜索请求失败：HTTP {r.status_code}"}
+            
+        soup = BeautifulSoup(r.text, 'html.parser')
+        items = soup.find_all('li', class_='b_algo')
+        results = []
+        for item in items[:5]:  # 只取前5条结果，防止提示词溢出
+            title_el = item.find('h2')
+            snippet_el = item.find('p') or item.find('div', class_='b_caption')
+            if title_el:
+                title = title_el.get_text().strip()
+                snippet = snippet_el.get_text().strip() if snippet_el else ""
+                link_el = title_el.find('a')
+                link = link_el.get('href') if link_el else ""
+                results.append(f"标题: {title}\n链接: {link}\n摘要: {snippet}\n---")
+                
+        if not results:
+            return {"search_result": "未找到相关搜索结果。"}
+            
+        formatted_result = "\n".join(results)
+        print(f"[REACT SEARCH NODE] 检索成功，共获取 {len(results)} 条记录")
+        return {"search_result": formatted_result}
+    except Exception as ex:
+        print(f"[REACT SEARCH NODE ERROR] 检索失败: {ex}")
+        return {"search_result": f"检索异常: {str(ex)}"}
+
 def execute_launcher_task_node(state: AgentState) -> Dict[str, Any]:
     """工具节点：在系统后台执行本地程序或快捷方式启动指令"""
     launcher_task = state.get("launcher_task")
@@ -954,20 +1016,18 @@ def update_history_node(state: AgentState) -> Dict[str, Any]:
     }
 
 def should_continue(state: AgentState) -> str:
-    """管理 ReAct 工作流路由：判断是否需要流转到音乐、网页自动化或本地应用启动工具节点"""
-    # 如果检测到点歌意图，且还没有获得音乐检索反馈 (避免无限循环)
+    """💡 ReAct 路由逻辑：判断是否需要跳转到工具节点"""
     if state.get("music_task") and state.get("music_result") is None:
         return "execute_music_task"
         
-    # 如果检测到浏览器操作意图，且还没有获得自动化执行反馈
     if state.get("browser_task") and state.get("browser_result") is None:
         return "execute_browser_task"
         
-    # 如果检测到本地应用启动意图，且还没有获得启动执行反馈
+    if state.get("search_task") and state.get("search_result") is None:
+        return "execute_search_task"
+        
     if state.get("launcher_task") and state.get("launcher_result") is None:
         return "execute_launcher_task"
-        
-    # 无需更多工具执行，流向历史归档并退出状态机
     return "update_history"
 
 # 编排与编译 LangGraph 对话状态图
@@ -980,6 +1040,7 @@ workflow.add_node("parse_response", parse_response_node)
 workflow.add_node("execute_music_task", execute_music_task_node)
 workflow.add_node("execute_browser_task", execute_browser_task_node)
 workflow.add_node("execute_launcher_task", execute_launcher_task_node)
+workflow.add_node("execute_search_task", execute_search_task_node)
 workflow.add_node("update_history", update_history_node)
 
 workflow.set_entry_point("recall_memories")
@@ -995,6 +1056,7 @@ workflow.add_conditional_edges(
     {
         "execute_music_task": "execute_music_task",
         "execute_browser_task": "execute_browser_task",
+        "execute_search_task": "execute_search_task",
         "execute_launcher_task": "execute_launcher_task",
         "update_history": "update_history"
     }
@@ -1004,6 +1066,7 @@ workflow.add_conditional_edges(
 workflow.add_edge("execute_music_task", "generate_response")
 workflow.add_edge("execute_browser_task", "generate_response")
 workflow.add_edge("execute_launcher_task", "generate_response")
+workflow.add_edge("execute_search_task", "generate_response")
 
 workflow.add_edge("update_history", END)
 
@@ -1412,7 +1475,9 @@ def chat(payload: dict = Body(...)):
             "music_task": None,
             "music_result": None,
             "launcher_task": None,
-            "launcher_result": None
+            "launcher_result": None,
+            "search_task": None,
+            "search_result": None
         }
 
         # 调用 LangGraph 对话工作流 (ReAct 闭环)
@@ -1573,7 +1638,9 @@ def rumia_speak(payload: dict = Body(...)):
             "music_task": None,
             "music_result": None,
             "launcher_task": None,
-            "launcher_result": None
+            "launcher_result": None,
+            "search_task": None,
+            "search_result": None
         }
 
         # 调用 LangGraph 对话工作流
