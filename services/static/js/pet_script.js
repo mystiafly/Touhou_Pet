@@ -171,11 +171,14 @@ class RumiaPet {
                     const checkHover = (element) => {
                         if (!element) return false;
                         const rect = element.getBoundingClientRect();
+                        const dpr = window.devicePixelRatio || 1;
+                        const mouseX = (e.screenX - window.screenX) / dpr;
+                        const mouseY = (e.screenY - window.screenY) / dpr;
                         return (
-                            e.clientX >= rect.left &&
-                            e.clientX <= rect.right &&
-                            e.clientY >= rect.top &&
-                            e.clientY <= rect.bottom
+                            mouseX >= rect.left &&
+                            mouseX <= rect.right &&
+                            mouseY >= rect.top &&
+                            mouseY <= rect.bottom
                         );
                     };
 
@@ -191,6 +194,8 @@ class RumiaPet {
                         } else if (this.settingsModal && !this.settingsModal.classList.contains('hidden') && checkHover(this.settingsModal)) {
                             isInteractive = true;
                         } else if (this.playerBar && !this.playerBar.classList.contains('hidden') && checkHover(this.playerBar)) {
+                            isInteractive = true;
+                        } else if (this.presetsPopup && !this.presetsPopup.classList.contains('hidden') && checkHover(this.presetsPopup)) {
                             isInteractive = true;
                         } else {
                             // 通道 1: 原始 DOM 检测 (e.target) 作为兜底
