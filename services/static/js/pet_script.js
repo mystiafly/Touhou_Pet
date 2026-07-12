@@ -233,29 +233,6 @@ class RumiaPet {
                     if (dbInteractive) dbInteractive.innerText = isInteractive ? "TRUE" : "FALSE";
                     if (dbIgnoring) dbIgnoring.innerText = isIgnoring ? "TRUE" : "FALSE";
 
-                    // 同时写入服务日志 (节流 150ms)
-                    const now = Date.now();
-                    if (!window.lastDebugTime || now - window.lastDebugTime > 150) {
-                        window.lastDebugTime = now;
-                        fetch('/api/debug_coords', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                screenX: point.x,
-                                screenY: point.y,
-                                windowX: window.screenX,
-                                windowY: window.screenY,
-                                mouseX: mouseX,
-                                mouseY: mouseY,
-                                rect_left: rect.left,
-                                rect_right: rect.right,
-                                rect_top: rect.top,
-                                rect_bottom: rect.bottom,
-                                isInteractive: isInteractive,
-                                isIgnoring: isIgnoring
-                            })
-                        }).catch(() => {});
-                    }
                 });
             }
 
