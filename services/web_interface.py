@@ -34,6 +34,8 @@ from external_api import netease_music
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, BaseMessage
 from langgraph.graph import StateGraph, END
+from langgraph.checkpoint.sqlite import SqliteSaver
+import sqlite3
 from typing import TypedDict, List, Optional, Dict, Any
 
 # 初始化 FastAPI
@@ -1124,7 +1126,12 @@ workflow.add_edge("execute_search_task", "generate_response")
 
 workflow.add_edge("update_history", END)
 
-chat_workflow = workflow.compile()
+# 初始化并挂载 SQLite 持久化检查点
+checkpoint_db_path = os.path.join(os.path.dirname(__file__), "rumia_checkpoints.db")
+sqlite_conn = sqlite3.connect(checkpoint_db_path, check_same_thread=False)
+chat_checkpointer = SqliteSaver(sqlite_conn)
+
+chat_workflow = workflow.compile(checkpointer=chat_checkpointer)
 
 # === [感应预设系统] ===
 PRESETS_DIR = os.path.join(os.path.dirname(__file__), "presets")
@@ -1535,8 +1542,9 @@ def chat(payload: dict = Body(...)):
             "request_type": "chat"
         }
 
-        # 调用 LangGraph 对话工作流 (ReAct 闭环)
-        final_state = chat_workflow.invoke(initial_state)
+        # 调用 LangGraph 对话工作流 (ReAct 闭环)，附带持久化 thread_id
+        config = {"configurable": {"thread_id": "rumia_chat_thread"}}
+        final_state = chat_workflow.invoke(initial_state, config)
 
         raw_reply = final_state.get("raw_reply", "")
         emotion = final_state.get("emotion", "normal")
@@ -1699,8 +1707,9 @@ def rumia_speak(payload: dict = Body(...)):
             "request_type": request_type
         }
 
-        # 调用 LangGraph 对话工作流
-        final_state = chat_workflow.invoke(initial_state)
+        # 调用 LangGraph 对话工作流，附带持久化 thread_id
+        config = {"configurable": {"thread_id": "rumia_self_talk_thread"}}
+        final_state = chat_workflow.invoke(initial_state, config)
 
         emotion = final_state.get("emotion", "normal")
         score = final_state.get("score", 10)
