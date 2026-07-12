@@ -10,6 +10,12 @@
 </head>
 <body>
 <div class="pet-container">
+    <div id="debug-coord-panel" style="position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.85); color: #50fa7b; font-family: monospace; font-size: 11px; z-index: 99999; pointer-events: none; padding: 6px; border-radius: 4px; border: 1px solid #ff5555; line-height: 1.4;">
+        Mouse: <span id="debug-mouse-val">N/A</span><br>
+        ImgRect: <span id="debug-rect-val">N/A</span><br>
+        Interactive: <span id="debug-interactive-val">N/A</span><br>
+        Ignoring: <span id="debug-ignoring-val">N/A</span>
+    </div>
 
     <div id="speech-bubble" class="bubble" style="opacity: 0;">
         <p id="bubble-content">...</p>
