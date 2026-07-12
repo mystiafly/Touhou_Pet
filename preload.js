@@ -9,6 +9,9 @@ window.__rumiaIPC = {
     },
     sendWindowDrag: (deltaX, deltaY) => {
         ipcRenderer.send('window-drag', { deltaX, deltaY });
+    },
+    onGlobalMouseMove: (callback) => {
+        ipcRenderer.on('global-mouse-move', (event, point) => callback(point));
     }
 };
 
