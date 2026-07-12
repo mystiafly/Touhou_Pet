@@ -47,6 +47,7 @@ class RumiaPet {
         this.currentRumiaDiary = "";
         this.activeLogTab = "chat"; // 'chat' 鎴?'diary'
         this.isSleeping = false;
+        this.isMinimized = false;
         this.sleepTimer = null;
 
         // [鏂板] 缃戞槗浜戦煶涔愬師鐢熸挱鏀惧櫒鎺у埗涓庣姸鎬佺粦瀹?
@@ -132,6 +133,24 @@ class RumiaPet {
             }
         })();
         if (rumiaIPC) {
+            // 监听窗口最小化/恢复状态，控制自言自语的暂停与启动
+            if (typeof rumiaIPC.onWindowStateChanged === 'function') {
+                rumiaIPC.onWindowStateChanged((state) => {
+                    if (state === 'minimized') {
+                        this.isMinimized = true;
+                        if (this.autoSpeakTimer) {
+                            clearTimeout(this.autoSpeakTimer);
+                            this.autoSpeakTimer = null;
+                        }
+                        console.log("[WINDOW] Minimized to tray. Active speaking paused.");
+                    } else if (state === 'restored') {
+                        this.isMinimized = false;
+                        this.resetAutoSpeakTimer();
+                        console.log("[WINDOW] Restored from tray. Active speaking resumed.");
+                    }
+                });
+            }
+
             let isDragging = false;
             let startX = 0, startY = 0;
             let isIgnoring = false; // [状态追踪] 避免重复且无意义的高频 IPC 通信导致界面卡死
@@ -253,6 +272,7 @@ class RumiaPet {
         this.settingsModal = document.getElementById('settings-modal');
         this.closeSettingsBtn = document.getElementById('close-settings-btn');
         this.exitGameBtn = document.getElementById('exit-game-btn');
+        this.minimizeBtn = document.getElementById('minimize-btn');
         this.apiSelect = document.getElementById('api-provider-select');
 
         // [鏂板] 鏃ュ織涓庡ぇ鑴戝紩鎿庢煡鐪嬮潰鏉?DOM 寮曠敤
@@ -302,6 +322,16 @@ class RumiaPet {
 
         // 閫€鍑烘父鎴?
         this.exitGameBtn.addEventListener('click', () => this.exitGame());
+
+        // 最小化至托盘
+        if (this.minimizeBtn) {
+            this.minimizeBtn.addEventListener('click', () => {
+                this.settingsModal.classList.add('hidden');
+                if (window.__rumiaIPC && typeof window.__rumiaIPC.sendMinimizeToTray === 'function') {
+                    window.__rumiaIPC.sendMinimizeToTray();
+                }
+            });
+        }
 
         // [鏂板] 鍒囨崲鍒板ぇ鑴戝紩鎿庨潰鏉?
         this.openEngineBtn.addEventListener('click', () => {
@@ -721,6 +751,7 @@ class RumiaPet {
 
     resetAutoSpeakTimer() {
         if (this.autoSpeakTimer) clearTimeout(this.autoSpeakTimer);
+        if (this.isMinimized) return;
         if (this.autoSpeakCount >= 6) {
             this.scheduleSleepTimer();
             return;

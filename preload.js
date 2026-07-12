@@ -15,6 +15,12 @@ window.__rumiaIPC = {
     },
     sendExitApp: () => {
         ipcRenderer.send('exit-app');
+    },
+    sendMinimizeToTray: () => {
+        ipcRenderer.send('minimize-to-tray');
+    },
+    onWindowStateChanged: (callback) => {
+        ipcRenderer.on('window-state-changed', (event, state) => callback(state));
     }
 };
 
