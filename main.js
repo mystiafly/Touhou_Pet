@@ -1,7 +1,36 @@
-const { app, BrowserWindow, screen, ipcMain } = require('electron');
+const { app, BrowserWindow, screen, ipcMain, Tray, Menu } = require('electron');
 const path = require('path');
 
-// 閻╂垵鎯夊〒鍙夌厠鏉╂稓鈻奸崣鎴︹偓浣烘畱缁屽潡鈧繋绨ㄦ禒璁圭礉閸斻劍鈧礁鍨忛幑銏ょ炊閺嶅洤鎷烽悾銉уЦ閹?
+let tray = null;
+
+function createTray(win) {
+    if (tray) return;
+    tray = new Tray(path.join(__dirname, 'rumia.ico'));
+    const contextMenu = Menu.buildFromTemplate([
+        {
+            label: '显示露米娅',
+            click: () => {
+                win.show();
+                win.webContents.send('window-state-changed', 'restored');
+            }
+        },
+        {
+            label: '退出游戏',
+            click: () => {
+                app.quit();
+            }
+        }
+    ]);
+    tray.setToolTip('露米娅桌宠');
+    tray.setContextMenu(contextMenu);
+
+    tray.on('double-click', () => {
+        win.show();
+        win.webContents.send('window-state-changed', 'restored');
+    });
+}
+
+// 监听渲染进程发送的穿透事件，动态切换鼠标忽略状态
 ipcMain.on('set-ignore-mouse-events', (event, ignore, options) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) {
@@ -9,7 +38,7 @@ ipcMain.on('set-ignore-mouse-events', (event, ignore, options) => {
     }
 });
 
-// 閻╂垵鎯夊〒鍙夌厠鏉╂稓鈻奸崣鎴︹偓浣烘畱閹锋牗瀚挎禍瀣╂閿涘苯濮╅幀浣盒╅崝銊х崶閸欙絼缍呯純?
+// 监听渲染进程发送的拖拽事件
 ipcMain.on('window-drag', (event, { deltaX, deltaY }) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) {
@@ -21,6 +50,16 @@ ipcMain.on('window-drag', (event, { deltaX, deltaY }) => {
 // 监听渲染进程发送的退出事件，直接结束 Electron 进程
 ipcMain.on('exit-app', () => {
     app.quit();
+});
+
+// 监听最小化到系统托盘事件
+ipcMain.on('minimize-to-tray', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+        win.hide();
+        createTray(win); // 确保托盘已创建
+        win.webContents.send('window-state-changed', 'minimized');
+    }
 });
 
 function createWindow() {
