@@ -18,6 +18,11 @@ ipcMain.on('window-drag', (event, { deltaX, deltaY }) => {
     }
 });
 
+// 监听渲染进程发送的退出事件，直接结束 Electron 进程
+ipcMain.on('exit-app', () => {
+    app.quit();
+});
+
 function createWindow() {
     const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 
