@@ -2069,11 +2069,6 @@ def exit_game():
         os.kill(os.getpid(), signal.SIGTERM)
         
     threading.Thread(target=kill_server, daemon=True).start()
-@app.post("/api/debug_coords")
-def debug_coords(payload: dict = Body(...)):
-    # Debug coords file logging disabled for release version to prevent disk bloat
-    return {"success": True}
-
 # =====================================================================
 # 三、 独立测试启动入口
 # =====================================================================
