@@ -2069,6 +2069,11 @@ def exit_game():
         os.kill(os.getpid(), signal.SIGTERM)
         
     threading.Thread(target=kill_server, daemon=True).start()
+@app.post("/api/debug_coords")
+def debug_coords(payload: dict = Body(...)):
+    with open("debug_coords.log", "a", encoding="utf-8") as f:
+        import json
+        f.write(json.dumps(payload) + "\n")
     return {"success": True}
 
 # =====================================================================

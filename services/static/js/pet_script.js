@@ -229,6 +229,33 @@ class RumiaPet {
                             isIgnoring = true;
                         }
                     }
+                    
+                    // [DEBUG LOGGING]
+                    const now = Date.now();
+                    if (!window.lastDebugTime || now - window.lastDebugTime > 150) {
+                        window.lastDebugTime = now;
+                        const rect = this.img ? this.img.getBoundingClientRect() : {};
+                        const dpr = window.devicePixelRatio || 1;
+                        fetch('/api/debug_coords', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                screenX: e.screenX,
+                                screenY: e.screenY,
+                                windowX: window.screenX,
+                                windowY: window.screenY,
+                                clientX: e.clientX,
+                                clientY: e.clientY,
+                                dpr: dpr,
+                                rect_left: rect.left,
+                                rect_right: rect.right,
+                                rect_top: rect.top,
+                                rect_bottom: rect.bottom,
+                                isInteractive: isInteractive,
+                                isIgnoring: isIgnoring
+                            })
+                        }).catch(() => {});
+                    }
                 }
             });
 
