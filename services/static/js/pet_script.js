@@ -230,12 +230,25 @@ class RumiaPet {
                         }
                     }
                     
-                    // [DEBUG LOGGING]
+                    // [DEBUG LOGGING & DOM DISPLAY]
+                    const dbMouse = document.getElementById('debug-mouse-val');
+                    const dbRect = document.getElementById('debug-rect-val');
+                    const dbInteractive = document.getElementById('debug-interactive-val');
+                    const dbIgnoring = document.getElementById('debug-ignoring-val');
+                    
+                    const rect = this.img ? this.img.getBoundingClientRect() : {};
+                    const dpr = window.devicePixelRatio || 1;
+                    const mouseX = (e.screenX / dpr) - window.screenX;
+                    const mouseY = (e.screenY / dpr) - window.screenY;
+                    
+                    if (dbMouse) dbMouse.innerText = `X:${Math.round(mouseX)}, Y:${Math.round(mouseY)} (Client: ${e.clientX}, ${e.clientY}) (Screen: ${e.screenX}, ${e.screenY})`;
+                    if (dbRect) dbRect.innerText = `L:${Math.round(rect.left)}, R:${Math.round(rect.right)}, T:${Math.round(rect.top)}, B:${Math.round(rect.bottom)}`;
+                    if (dbInteractive) dbInteractive.innerText = isInteractive ? "TRUE" : "FALSE";
+                    if (dbIgnoring) dbIgnoring.innerText = isIgnoring ? "TRUE" : "FALSE";
+
                     const now = Date.now();
                     if (!window.lastDebugTime || now - window.lastDebugTime > 150) {
                         window.lastDebugTime = now;
-                        const rect = this.img ? this.img.getBoundingClientRect() : {};
-                        const dpr = window.devicePixelRatio || 1;
                         fetch('/api/debug_coords', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },

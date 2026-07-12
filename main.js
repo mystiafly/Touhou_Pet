@@ -42,11 +42,13 @@ function createWindow() {
     // 閸旂姾娴?Flask/FastAPI 閻ㄥ嫭顢戠€圭娀銆夐棃?(閺€顖涘瘮閸氬骸褰撮幈銏犳儙閸斻劍妫ら梽鎰板櫢鐠囨洜娲块崚鎷岀箾閹恒儲鍨氶崝?
     const petUrl = 'http://127.0.0.1:5000/pet';
     function loadPetPage() {
-        win.loadURL(petUrl).then(() => {
-            console.log(`[ELECTRON] 閹存劕濮涙潻鐐村复楠炶泛濮炴潪鑺ヮ攽鐎圭娀銆夐棃顫磼`);
-        }).catch(err => {
-            console.log(`[ELECTRON] 妞ょ敻娼扮拠閿嬬湴閹锋帞绮?(閸氬海顏亸姘弓鐏忚京鍗?閿涘苯婀?1.5 缁夋帒鎮楃紒褏鐢婚懛顏勫З闁插秷鐦?..`);
-            setTimeout(loadPetPage, 1500);
+        win.webContents.session.clearCache().then(() => {
+            win.loadURL(petUrl).then(() => {
+                console.log(`[ELECTRON] Page loaded successfully`);
+            }).catch(err => {
+                console.log(`[ELECTRON] Page load failed, retrying in 1.5s...`);
+                setTimeout(loadPetPage, 1500);
+            });
         });
     }
     loadPetPage();
