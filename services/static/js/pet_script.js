@@ -134,8 +134,7 @@ class RumiaPet {
         if (rumiaIPC) {
             let isDragging = false;
             let startX = 0, startY = 0;
-            let lastInteractive = null;
-            let moveCount = 0;
+            let isIgnoring = false; // [状态追踪] 避免重复且无意义的高频 IPC 通信导致界面卡死
 
             // mousedown handler
             this.img.addEventListener('mousedown', (e) => {
@@ -147,6 +146,7 @@ class RumiaPet {
                     startX = e.screenX;
                     startY = e.screenY;
                     rumiaIPC.sendSetIgnoreMouseEvents(false);
+                    isIgnoring = false; // 同步状态
                     this.img.style.cursor = 'grabbing';
                 }
             });
@@ -163,32 +163,71 @@ class RumiaPet {
                     startX = e.screenX;
                     startY = e.screenY;
                     rumiaIPC.sendWindowDrag(deltaX, deltaY);
+                } else {
+                    // 非拖拽正常状态下，进行点击穿透检测
                     let isInteractive = false;
-                    const el = e.target;
                     
-                    if (el && typeof el.closest === 'function') {
-                        if (
-                            el.id === 'rumia-img' ||
-                            el.closest('.input-bar') ||
-                            el.closest('.music-player-bar') ||
-                            el.closest('.settings-content') ||
-                            el.closest('.fav-container') ||
-                            (el.closest('#speech-bubble') && this.bubble && this.bubble.style.opacity === '1') ||
-                            (this.settingsModal && el.closest('#settings-modal') && !this.settingsModal.classList.contains('hidden'))
-                        ) {
+                    // 通道 2: 几何边界检测 (DPI-Safe 物理边界碰撞，解决 Electron 穿透时 DOM Hit-Test 挂起失效问题)
+                    const checkHover = (element) => {
+                        if (!element) return false;
+                        const rect = element.getBoundingClientRect();
+                        return (
+                            e.clientX >= rect.left &&
+                            e.clientX <= rect.right &&
+                            e.clientY >= rect.top &&
+                            e.clientY <= rect.bottom
+                        );
+                    };
+
+                    try {
+                        if (checkHover(this.img)) {
                             isInteractive = true;
+                        } else if (checkHover(this.inputBar)) {
+                            isInteractive = true;
+                        } else if (this.favContainer && checkHover(this.favContainer)) {
+                            isInteractive = true;
+                        } else if (this.bubble && this.bubble.style.opacity === '1' && checkHover(this.bubble)) {
+                            isInteractive = true;
+                        } else if (this.settingsModal && !this.settingsModal.classList.contains('hidden') && checkHover(this.settingsModal)) {
+                            isInteractive = true;
+                        } else if (this.playerBar && !this.playerBar.classList.contains('hidden') && checkHover(this.playerBar)) {
+                            isInteractive = true;
+                        } else {
+                            // 通道 1: 原始 DOM 检测 (e.target) 作为兜底
+                            const el = e.target;
+                            if (el && typeof el.closest === 'function') {
+                                if (
+                                    el.id === 'rumia-img' ||
+                                    el.closest('.input-bar') ||
+                                    el.closest('.music-player-bar') ||
+                                    el.closest('.settings-content') ||
+                                    el.closest('.fav-container') ||
+                                    (el.closest('#speech-bubble') && this.bubble && this.bubble.style.opacity === '1') ||
+                                    (this.settingsModal && el.closest('#settings-modal') && !this.settingsModal.classList.contains('hidden'))
+                                ) {
+                                    isInteractive = true;
+                                }
+                            }
                         }
+                    } catch (err) {
+                        console.error('[MOUSE_EVENTS] Error in hover check:', err);
                     }
                     
                     if (isInteractive) {
-                        rumiaIPC.sendSetIgnoreMouseEvents(false);
+                        if (isIgnoring) {
+                            rumiaIPC.sendSetIgnoreMouseEvents(false);
+                            isIgnoring = false;
+                        }
                     } else {
-                        rumiaIPC.sendSetIgnoreMouseEvents(true, { forward: true });
+                        if (!isIgnoring) {
+                            rumiaIPC.sendSetIgnoreMouseEvents(true, { forward: true });
+                            isIgnoring = true;
+                        }
                     }
                 }
             });
 
-            // 鍏ㄥ眬鐩戝惉 mouseup 鍋滄鎷栧姩
+            // 全局监听 mouseup 停止拖动
             window.addEventListener('mouseup', () => {
                 if (isDragging) {
                     isDragging = false;
