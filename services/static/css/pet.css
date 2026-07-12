@@ -8,7 +8,7 @@ body, html {
     height: 100%;
     background: transparent !important;
     overflow: hidden;
-    pointer-events: none;
+    pointer-events: auto;
 }
 
 /* 2. 主容器：底部对齐 */
@@ -20,7 +20,7 @@ body, html {
     flex-direction: column;
     align-items: center;
     justify-content: flex-end;
-    pointer-events: none;
+    pointer-events: auto;
 }
 
 /* 3. 角色包装器：限制宽度，紧贴图片 */
