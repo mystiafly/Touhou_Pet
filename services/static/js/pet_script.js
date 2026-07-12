@@ -172,8 +172,8 @@ class RumiaPet {
                         if (!element) return false;
                         const rect = element.getBoundingClientRect();
                         const dpr = window.devicePixelRatio || 1;
-                        const mouseX = (e.screenX - window.screenX) / dpr;
-                        const mouseY = (e.screenY - window.screenY) / dpr;
+                        const mouseX = (e.screenX / dpr) - window.screenX;
+                        const mouseY = (e.screenY / dpr) - window.screenY;
                         return (
                             mouseX >= rect.left &&
                             mouseX <= rect.right &&
