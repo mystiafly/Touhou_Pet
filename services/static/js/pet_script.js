@@ -606,25 +606,28 @@ class RumiaPet {
         if (!confirm("要让露米娅去睡觉吗？")) return;
 
         this.showBubble("那...晚安啦...", 2000);
-        this.setEmotion('normal'); // 鎴栬€?sleeping 鍥?
+        this.setEmotion('normal'); 
         this.settingsModal.classList.add('hidden');
 
         try {
-            const response = await fetch('/api/settings/exit', {
+            fetch('/api/settings/exit', {
                 method: 'POST'
-            });
-            const data = await response.json();
+            }).catch(() => {});
 
-            if (data.success) {
-                // 鍚庣浼氬湪1绉掑悗鑷潃锛屽墠绔彲浠ュ皾璇曞叧闂獥鍙?
-                setTimeout(() => {
-                    window.close(); // 尝试关闭浏览器窗口
-                }, 1000);
-            }
+            setTimeout(() => {
+                if (window.__rumiaIPC && typeof window.__rumiaIPC.sendExitApp === 'function') {
+                    window.__rumiaIPC.sendExitApp();
+                } else {
+                    window.close();
+                }
+            }, 1000);
         } catch (e) {
             console.error("退出失败:", e);
-            // 濡傛灉鍚庣宸茬粡姝讳簡锛宖etch 鍙兘浼氭姤閿欙紝杩欎篃绠楁垚鍔熼€€鍑轰簡
-            setTimeout(() => window.close(), 1000);
+            if (window.__rumiaIPC && typeof window.__rumiaIPC.sendExitApp === 'function') {
+                window.__rumiaIPC.sendExitApp();
+            } else {
+                window.close();
+            }
         }
     }
     // [淇敼] 鍒囨崲琛ㄦ儏鐨勬牳蹇冨嚱鏁帮紙鍦?寮犲樊鍒嗕腑闅忔満閫夋嫨涓€涓級

@@ -12,6 +12,9 @@ window.__rumiaIPC = {
     },
     onGlobalMouseMove: (callback) => {
         ipcRenderer.on('global-mouse-move', (event, point) => callback(point));
+    },
+    sendExitApp: () => {
+        ipcRenderer.send('exit-app');
     }
 };
 
