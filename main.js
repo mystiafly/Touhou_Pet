@@ -53,7 +53,18 @@ function createWindow() {
     }
     loadPetPage();
 
-    // 瀵偓閸欐垶妞傞崣顖欎簰閹垫挸绱戦幒褍鍩楅崣鎷岀殶鐠?CSS
+    // 定时向渲染进程推送系统级全局鼠标坐标 (每 50ms 一次，解决 Windows 11 下 setIgnoreMouseEvents 导致 mousemove 停止触发的系统 Bug)
+    const mouseTimer = setInterval(() => {
+        if (win && !win.isDestroyed()) {
+            const point = screen.getCursorScreenPoint();
+            win.webContents.send('global-mouse-move', point);
+        }
+    }, 50);
+
+    win.on('closed', () => {
+        clearInterval(mouseTimer);
+    });
+
     win.webContents.openDevTools({ mode: 'detach' });
 }
 

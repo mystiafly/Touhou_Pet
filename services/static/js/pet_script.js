@@ -155,7 +155,7 @@ class RumiaPet {
                 e.preventDefault();
             });
 
-            // mousemove handler
+            // mousemove handler (仅用于拖动，因为 hover 判定已移至 global_mouse_move)
             window.addEventListener('mousemove', (e) => {
                 if (isDragging) {
                     const deltaX = e.screenX - startX;
@@ -163,17 +163,21 @@ class RumiaPet {
                     startX = e.screenX;
                     startY = e.screenY;
                     rumiaIPC.sendWindowDrag(deltaX, deltaY);
-                } else {
-                    // 非拖拽正常状态下，进行点击穿透检测
+                }
+            });
+
+            // 监听系统全局鼠标坐标，用于无死角地进行 hover 和点击穿透判定
+            if (typeof rumiaIPC.onGlobalMouseMove === 'function') {
+                rumiaIPC.onGlobalMouseMove((point) => {
+                    if (isDragging) return;
+
                     let isInteractive = false;
-                    
-                    // 通道 2: 几何边界检测 (DPI-Safe 物理边界碰撞，解决 Electron 穿透时 DOM Hit-Test 挂起失效问题)
+
                     const checkHover = (element) => {
                         if (!element) return false;
                         const rect = element.getBoundingClientRect();
-                        const dpr = window.devicePixelRatio || 1;
-                        const mouseX = (e.screenX / dpr) - window.screenX;
-                        const mouseY = (e.screenY / dpr) - window.screenY;
+                        const mouseX = point.x - window.screenX;
+                        const mouseY = point.y - window.screenY;
                         return (
                             mouseX >= rect.left &&
                             mouseX <= rect.right &&
@@ -197,27 +201,11 @@ class RumiaPet {
                             isInteractive = true;
                         } else if (this.presetsPopup && !this.presetsPopup.classList.contains('hidden') && checkHover(this.presetsPopup)) {
                             isInteractive = true;
-                        } else {
-                            // 通道 1: 原始 DOM 检测 (e.target) 作为兜底
-                            const el = e.target;
-                            if (el && typeof el.closest === 'function') {
-                                if (
-                                    el.id === 'rumia-img' ||
-                                    el.closest('.input-bar') ||
-                                    el.closest('.music-player-bar') ||
-                                    el.closest('.settings-content') ||
-                                    el.closest('.fav-container') ||
-                                    (el.closest('#speech-bubble') && this.bubble && this.bubble.style.opacity === '1') ||
-                                    (this.settingsModal && el.closest('#settings-modal') && !this.settingsModal.classList.contains('hidden'))
-                                ) {
-                                    isInteractive = true;
-                                }
-                            }
                         }
                     } catch (err) {
-                        console.error('[MOUSE_EVENTS] Error in hover check:', err);
+                        console.error('[MOUSE_EVENTS] Error in global hover check:', err);
                     }
-                    
+
                     if (isInteractive) {
                         if (isIgnoring) {
                             rumiaIPC.sendSetIgnoreMouseEvents(false);
@@ -229,23 +217,23 @@ class RumiaPet {
                             isIgnoring = true;
                         }
                     }
-                    
-                    // [DEBUG LOGGING & DOM DISPLAY]
+
+                    // 更新可视化调试面板显示
                     const dbMouse = document.getElementById('debug-mouse-val');
                     const dbRect = document.getElementById('debug-rect-val');
                     const dbInteractive = document.getElementById('debug-interactive-val');
                     const dbIgnoring = document.getElementById('debug-ignoring-val');
-                    
+
                     const rect = this.img ? this.img.getBoundingClientRect() : {};
-                    const dpr = window.devicePixelRatio || 1;
-                    const mouseX = (e.screenX / dpr) - window.screenX;
-                    const mouseY = (e.screenY / dpr) - window.screenY;
-                    
-                    if (dbMouse) dbMouse.innerText = `X:${Math.round(mouseX)}, Y:${Math.round(mouseY)} (Client: ${e.clientX}, ${e.clientY}) (Screen: ${e.screenX}, ${e.screenY})`;
+                    const mouseX = point.x - window.screenX;
+                    const mouseY = point.y - window.screenY;
+
+                    if (dbMouse) dbMouse.innerText = `X:${Math.round(mouseX)}, Y:${Math.round(mouseY)} (Global: ${point.x}, ${point.y})`;
                     if (dbRect) dbRect.innerText = `L:${Math.round(rect.left)}, R:${Math.round(rect.right)}, T:${Math.round(rect.top)}, B:${Math.round(rect.bottom)}`;
                     if (dbInteractive) dbInteractive.innerText = isInteractive ? "TRUE" : "FALSE";
                     if (dbIgnoring) dbIgnoring.innerText = isIgnoring ? "TRUE" : "FALSE";
 
+                    // 同时写入服务日志 (节流 150ms)
                     const now = Date.now();
                     if (!window.lastDebugTime || now - window.lastDebugTime > 150) {
                         window.lastDebugTime = now;
@@ -253,13 +241,12 @@ class RumiaPet {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
-                                screenX: e.screenX,
-                                screenY: e.screenY,
+                                screenX: point.x,
+                                screenY: point.y,
                                 windowX: window.screenX,
                                 windowY: window.screenY,
-                                clientX: e.clientX,
-                                clientY: e.clientY,
-                                dpr: dpr,
+                                mouseX: mouseX,
+                                mouseY: mouseY,
                                 rect_left: rect.left,
                                 rect_right: rect.right,
                                 rect_top: rect.top,
@@ -269,8 +256,8 @@ class RumiaPet {
                             })
                         }).catch(() => {});
                     }
-                }
-            });
+                });
+            }
 
             // 全局监听 mouseup 停止拖动
             window.addEventListener('mouseup', () => {
