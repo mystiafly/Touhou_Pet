@@ -6,7 +6,7 @@ body, html {
     padding: 0;
     width: 100%;
     height: 100%;
-    background: transparent !important;
+    background: rgba(0, 0, 0, 0.005) !important;
     overflow: hidden;
     pointer-events: auto;
 }
