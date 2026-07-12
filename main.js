@@ -5,7 +5,7 @@ let tray = null;
 
 function createTray(win) {
     if (tray) return;
-    tray = new Tray(path.join(__dirname, 'rumia.ico'));
+    tray = new Tray(path.join(__dirname, 'rumia_tray.png'));
     const contextMenu = Menu.buildFromTemplate([
         {
             label: '显示露米娅',
