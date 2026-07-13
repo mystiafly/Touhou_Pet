@@ -17,9 +17,24 @@ venv/
 .venv/
 env/
 .pytest_cache/
+
+# === 动态生成的文件与数据库 ===
+services/*.db*
+services/*.log
+services/qdrant_db/
+services/qdrant_db_temp/
+services/characters/*/qdrant_db/
 daily_history/
-favorability.json
 dialog_history.json
+favorability.json
+user_profile.json
+global_config.json
+global_presets/
+
+# === 临时与测试文件 ===
+scratch/
+/*.py
+!test_*.py
 
 # === 安全隐私 (绝对不能上传！) ===
 .env

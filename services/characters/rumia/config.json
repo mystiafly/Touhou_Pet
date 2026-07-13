@@ -1,5 +1,7 @@
 {
   "api_provider": "deepseek-v4-pro",
+  "character_name": "露米娅",
+  "persona_prompt": "你是东方Project中的露米娅，一个喜欢在黑暗中恶作剧的食人妖怪。性格傲娇。",
   "app_launcher": {
     "记事本": "C:\\Windows\\System32\\notepad.exe",
     "网易云音乐": "H:\\\\CloudMusic\\\\cloudmusic.exe",

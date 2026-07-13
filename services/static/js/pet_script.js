@@ -11,46 +11,15 @@ class RumiaPet {
 
 
 
-        // [淇敼] 鍗囩骇涓烘暟缁勬槧灏勶紝姣忕鎯呯华鍖呭惈 3 寮犲樊鍒嗗浘
-        this.images = {
-            'normal': [
-                '/static/images/rumia_normal.png',
-                '/static/images/rumia_normal_1.png',
-                '/static/images/rumia_normal_2.png'
-            ],
-            'angry': [
-                '/static/images/rumia_angry.png',
-                '/static/images/rumia_angry_1.png',
-                '/static/images/rumia_angry_2.png'
-            ],
-            'shy': [
-                '/static/images/rumia_shy.png',
-                '/static/images/rumia_shy_1.png',
-                '/static/images/rumia_shy_2.png'
-            ],
-            'crying': [
-                '/static/images/rumia_crying.png',
-                '/static/images/rumia_crying_1.png',
-                '/static/images/rumia_crying_2.png'
-            ],
-            'sleeping': [
-                '/static/images/rumia_sleeping.png',
-                '/static/images/rumia_sleeping_1.png',
-                '/static/images/rumia_sleeping_2.png'
-            ]
-        };
-
-        // [鏂板] 棰勫姞杞藉浘鐗?(闃叉鍒囨崲鏃堕棯鐑?
-        this.preloadImages();
-
+        this.images = {};
+        
         this.currentChatLog = "";
         this.currentRumiaDiary = "";
-        this.activeLogTab = "chat"; // 'chat' 鎴?'diary'
+        this.activeLogTab = "chat";
         this.isSleeping = false;
         this.isMinimized = false;
         this.sleepTimer = null;
 
-        // [鏂板] 缃戞槗浜戦煶涔愬師鐢熸挱鏀惧櫒鎺у埗涓庣姸鎬佺粦瀹?
         this.playerBar = document.getElementById('music-player-bar');
         this.inputBar = document.querySelector('.input-bar');
         this.musicTitle = document.getElementById('music-title');
@@ -63,7 +32,53 @@ class RumiaPet {
         this.lyricsArray = [];
         this.musicIsPlaying = false;
 
-        this.init();
+        this.loadCharacterInfo().then(() => {
+            this.preloadImages();
+            this.init();
+        });
+    }
+
+
+    async loadCharacterInfo() {
+        try {
+            const response = await fetch('/api/character_info');
+            const data = await response.json();
+            const prefix = data.image_path; // e.g. /static/images/rumia/
+            this.images = {
+                'normal': [prefix + 'normal.png', prefix + 'normal_1.png', prefix + 'normal_2.png'],
+                'angry': [prefix + 'angry.png', prefix + 'angry_1.png', prefix + 'angry_2.png'],
+                'shy': [prefix + 'shy.png', prefix + 'shy_1.png', prefix + 'shy_2.png'],
+                'crying': [prefix + 'crying.png', prefix + 'crying_1.png', prefix + 'crying_2.png'],
+                'sleeping': [prefix + 'sleeping.png', prefix + 'sleeping_1.png', prefix + 'sleeping_2.png']
+            };
+            this.img.src = this.images['normal'][0];
+            
+            // set select value
+            const charSelect = document.getElementById('character-select');
+            if (charSelect) {
+                charSelect.value = data.character_id;
+                charSelect.addEventListener('change', async (e) => {
+                    const confirmSwitch = confirm(`确定要切换灵魂为 ${e.target.options[e.target.selectedIndex].text} 吗？\n这将导致程序退出，您需要手动重新打开！`);
+                    if (confirmSwitch) {
+                        await fetch('/api/switch_character', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ character_id: e.target.value })
+                        });
+                        if (typeof require !== 'undefined') {
+                            const { ipcRenderer } = require('electron');
+                            ipcRenderer.send('exit-app');
+                        } else {
+                            window.close();
+                        }
+                    } else {
+                        e.target.value = data.character_id; // revert
+                    }
+                });
+            }
+        } catch (e) {
+            console.error("Failed to load character info", e);
+        }
     }
 
     preloadImages() {

@@ -22,7 +22,7 @@ def get_current_time_stage():
     else: # 23点到5点
         return "midnight", "深夜"
 
-def get_time_greeting_prompt():
+def get_time_greeting_prompt(char_name: str = "角色"):
     """
     生成基于时间的打招呼 Prompt（系统提示词）
     """
@@ -32,30 +32,27 @@ def get_time_greeting_prompt():
     # 基础信息
     base_prompt = f"（现在是现实世界的{stage_name}，具体时间是{now_str}。"
 
-    # === 露米娅的时间观 ===
-    # 她是黑暗妖怪，白天困/讨厌阳光，晚上兴奋/活跃，中午/傍晚饿
-
     if stage == "morning":
-        return base_prompt + "太阳刚刚升起，光线很刺眼。你刚睡醒，或者准备去睡觉（因为你是夜行性妖怪）。请用[shy]或[normal]的心情，表现出慵懒、怕光或者没睡醒的样子向用户打招呼。）"
+        return base_prompt + "太阳刚刚升起，如果是早起的性格可以元气满满地打招呼；如果是夜行性或爱赖床的性格，请表现出慵懒或没睡醒的样子。）"
 
     elif stage in ["forenoon", "afternoon"]:
-        return base_prompt + "现在是大白天，到处都是讨厌的阳光。你只能躲在阴影里。请用[normal]或[angry]的心情，抱怨阳光太强，或者撒娇让用户帮你挡光。）"
+        return base_prompt + f"现在是白天。请根据{char_name}的性格，自然地向用户打招呼，可以聊聊白天的日常。）"
 
     elif stage == "noon":
-        return base_prompt + "是午饭时间了。你的肚子饿得咕咕叫。请用[angry]或[normal]的心情，强烈要求用户提供人类作为午餐，或者撒娇要吃的。）"
+        return base_prompt + f"是午饭时间了。请根据{char_name}的设定，和用户聊聊午饭，或者撒娇要吃的。）"
 
     elif stage == "dusk":
-        return base_prompt + "太阳终于要下山了，逢魔之时。你开始变得精神起来了。请用[normal]的心情，表现出对即将到来的夜晚的期待。）"
+        return base_prompt + f"太阳要下山了，逢魔之时。请根据{char_name}的设定，向用户打招呼，分享傍晚的氛围。）"
 
     elif stage == "night":
-        return base_prompt + "完全天黑了，这是你的主场！你感觉浑身充满了力量。请用[normal]或[angry]（恶作剧）的心情，兴奋地向用户打招呼，邀请他一起去夜游。）"
+        return base_prompt + f"完全天黑了，是晚上。请用符合{char_name}性格的口吻向用户打招呼，可以邀请他一起放松。）"
 
     elif stage == "midnight":
-        return base_prompt + "这是深夜，万籁俱寂。你正潜伏在黑暗中。请用[normal]或[shy]的心情，用略带吓人或神秘的口吻向还没睡的用户打招呼。）"
+        return base_prompt + f"这是深夜，万籁俱寂。请用符合{char_name}性格的口吻向还没睡的用户打招呼，可以关心、责备他熬夜，或者带着神秘感互动。）"
 
     return base_prompt + "请向用户打招呼。）"
 
 # 预留接口：未来如果对话也要感知时间，可以调用这个
-def get_time_context_for_chat():
+def get_time_context_for_chat(char_name: str = "角色"):
     stage, stage_name = get_current_time_stage()
     return f"（当前环境：{stage_name}）"
