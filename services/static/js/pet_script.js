@@ -744,6 +744,7 @@ class RumiaPet {
                 }
             }
         } catch (e) {
+            console.error("[CHAT ERROR] 聊天请求失败:", e);
             this.showBubble("听不到... (网络错误)");
             this.setEmotion('crying');
         }
