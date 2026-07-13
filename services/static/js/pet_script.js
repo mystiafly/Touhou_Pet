@@ -45,6 +45,7 @@ class RumiaPet {
             const data = await response.json();
             const prefix = data.image_path;
             this.charName = data.character_name || "她";
+            document.body.className = `theme-${data.character_id}`;
             document.getElementById("pet-input").placeholder = `和${this.charName}说话...`; // e.g. /static/images/rumia/
             this.images = {
                 'normal': [prefix + 'normal.png', prefix + 'normal_1.png', prefix + 'normal_2.png'],

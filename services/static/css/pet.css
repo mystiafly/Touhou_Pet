@@ -1,3 +1,33 @@
+
+:root {
+  --theme-main: var(--theme-main);
+  --theme-hover: var(--theme-hover);
+  --theme-glow-02: var(--theme-glow-02);
+  --theme-glow-03: var(--theme-glow-03);
+  --theme-glow-04: var(--theme-glow-04);
+  --theme-glow-05: var(--theme-glow-05);
+  --theme-glow-09: var(--theme-glow-09);
+  --theme-bg-015: var(--theme-bg-015);
+  --theme-bg-035: var(--theme-bg-035);
+  --theme-text-light: var(--theme-text-light);
+  --theme-text-bright: var(--theme-text-bright);
+  --theme-legend-pink: var(--theme-legend-pink);
+}
+
+body.theme-cirno {
+  --theme-main: #6bb5ff;
+  --theme-hover: #3b95ff;
+  --theme-glow-02: rgba(107, 181, 255, 0.2);
+  --theme-glow-03: rgba(107, 181, 255, 0.3);
+  --theme-glow-04: rgba(107, 181, 255, 0.4);
+  --theme-glow-05: rgba(107, 181, 255, 0.5);
+  --theme-glow-09: rgba(107, 181, 255, 0.9);
+  --theme-bg-015: rgba(107, 181, 255, 0.15);
+  --theme-bg-035: rgba(107, 181, 255, 0.35);
+  --theme-text-light: #a9d4ff;
+  --theme-text-bright: #3385ff;
+  --theme-legend-pink: #8be9fd;
+}
 /* services/static/css/pet.css */
 
 /* 1. 基础环境：透明、无滚动条、鼠标穿透 */
@@ -51,7 +81,7 @@ body, html {
     transform: translateX(-50%);
     width: max-content;
     text-align: center;
-    color: #ff6b8b;
+    color: var(--theme-main);
     font-weight: bold;
     font-family: sans-serif;
     font-size: 16px;
@@ -74,7 +104,7 @@ body, html {
     width: max-content;
     position: relative;
     transition: opacity 0.3s ease;
-    border: 1px solid #ff6b8b;
+    border: 1px solid var(--theme-main);
     box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     backdrop-filter: blur(5px);
     pointer-events: none;
@@ -101,11 +131,11 @@ body, html {
     border-radius: 10px;
 }
 #bubble-content::-webkit-scrollbar-thumb {
-    background: #ff6b8b;
+    background: var(--theme-main);
     border-radius: 10px;
 }
 #bubble-content::-webkit-scrollbar-thumb:hover {
-    background: #ff3b68;
+    background: var(--theme-hover);
 }
 
 .bubble::after {
@@ -150,7 +180,7 @@ body, html {
     width: 100%;
     padding: 8px 15px;
     border-radius: 20px;
-    border: 2px solid #ff6b8b;
+    border: 2px solid var(--theme-main);
     background: rgba(255, 255, 255, 0.95);
     outline: none;
     font-size: 13px;
@@ -159,15 +189,15 @@ body, html {
 
 #pet-input:focus {
     background: #ffffff;
-    box-shadow: 0 0 10px rgba(255, 107, 139, 0.5);
-    border-color: #ff3b68;
+    box-shadow: 0 0 10px var(--theme-glow-05);
+    border-color: var(--theme-hover);
 }
 
 /* 8. 设置按钮与弹窗 */
 .icon-btn {
     background: rgba(0, 0, 0, 0.6);
-    border: 2px solid #ff6b8b;
-    color: #ff6b8b;
+    border: 2px solid var(--theme-main);
+    color: var(--theme-main);
     width: 36px;
     height: 36px;
     border-radius: 50%;
@@ -181,7 +211,7 @@ body, html {
 }
 
 .icon-btn:hover {
-    background: #ff6b8b;
+    background: var(--theme-main);
     color: white;
     transform: rotate(90deg);
 }
@@ -196,7 +226,7 @@ body, html {
     bottom: 50px;
     left: 10px;
     background: rgba(30, 30, 40, 0.95);
-    border: 2px solid #ff6b8b;
+    border: 2px solid var(--theme-main);
     border-radius: 12px;
     padding: 6px 0;
     width: 250px;
@@ -234,8 +264,8 @@ body, html {
 }
 
 .preset-item:hover {
-    background: rgba(255, 107, 139, 0.2);
-    color: #ff6b8b;
+    background: var(--theme-glow-02);
+    color: var(--theme-main);
     padding-left: 20px;
 }
 
@@ -264,13 +294,13 @@ body, html {
 
 .settings-content {
     background: rgba(30, 30, 40, 0.95);
-    border: 2px solid #ff6b8b;
+    border: 2px solid var(--theme-main);
     border-radius: 15px;
     padding: 16px;
     width: 200px;
     height: 320px;
     text-align: center;
-    box-shadow: 0 0 20px rgba(255, 107, 139, 0.3);
+    box-shadow: 0 0 20px var(--theme-glow-03);
     backdrop-filter: blur(10px);
     transform: scale(1);
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
@@ -355,7 +385,7 @@ body, html {
 
 .settings-item label {
     font-weight: 500;
-    color: #ff6b8b;
+    color: var(--theme-main);
 }
 
 .settings-select {
@@ -363,7 +393,7 @@ body, html {
     padding: 6px 10px;
     border-radius: 6px;
     background: rgba(0, 0, 0, 0.6);
-    border: 1px solid #ff6b8b;
+    border: 1px solid var(--theme-main);
     color: #fff;
     outline: none;
     cursor: pointer;
@@ -388,7 +418,7 @@ body, html {
 
 .view-panel h3 {
     margin: 0 0 10px 0;
-    color: #ff6b8b;
+    color: var(--theme-main);
     font-size: 15px;
     display: flex;
     align-items: center;
@@ -416,13 +446,13 @@ body, html {
 
 .logs-sidebar label {
     font-weight: 500;
-    color: #ff6b8b;
+    color: var(--theme-main);
     flex-shrink: 0;
 }
 
 .log-content-wrapper {
     background: rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 107, 139, 0.4);
+    border: 1px solid var(--theme-glow-04);
     border-radius: 8px;
     padding: 8px;
     flex-grow: 1;
@@ -438,7 +468,7 @@ body, html {
     display: flex;
     gap: 6px;
     margin-bottom: 6px;
-    border-bottom: 1px solid rgba(255, 107, 139, 0.2);
+    border-bottom: 1px solid var(--theme-glow-02);
     padding-bottom: 6px;
     flex-shrink: 0;
 }
@@ -446,7 +476,7 @@ body, html {
 /* 子选项卡按钮 */
 .subtab-btn {
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 107, 139, 0.2);
+    border: 1px solid var(--theme-glow-02);
     color: #aaa;
     padding: 4px 10px;
     border-radius: 5px;
@@ -457,16 +487,16 @@ body, html {
 }
 
 .subtab-btn:hover {
-    background: rgba(255, 107, 139, 0.15);
+    background: var(--theme-bg-015);
     color: #fff;
-    border-color: rgba(255, 107, 139, 0.5);
+    border-color: var(--theme-glow-05);
 }
 
 .subtab-btn.active {
-    background: rgba(255, 107, 139, 0.3);
+    background: var(--theme-glow-03);
     color: #fff;
-    border-color: #ff6b8b;
-    box-shadow: 0 0 8px rgba(255, 107, 139, 0.3);
+    border-color: var(--theme-main);
+    box-shadow: 0 0 8px var(--theme-glow-03);
 }
 
 /* 内层文本滚动包裹区 */
@@ -515,7 +545,7 @@ body, html {
 
 #settings-engine-view h3 {
     margin: 0 0 12px 0;
-    color: #ff6b8b;
+    color: var(--theme-main);
     font-size: 15px;
     text-align: center;
 }
@@ -530,13 +560,13 @@ body, html {
 }
 
 .primary-btn {
-    background: rgba(255, 107, 139, 0.15);
-    border: 1px solid rgba(255, 107, 139, 0.4);
-    color: #ff8fa4;
+    background: var(--theme-bg-015);
+    border: 1px solid var(--theme-glow-04);
+    color: var(--theme-text-light);
 }
 
 .primary-btn:hover {
-    background: rgba(255, 107, 139, 0.35);
+    background: var(--theme-bg-035);
     color: #ffffff;
 }
 
@@ -578,7 +608,7 @@ body, html {
 .graph-container-wrapper {
     position: relative;
     background: rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 107, 139, 0.4);
+    border: 1px solid var(--theme-glow-04);
     border-radius: 8px;
     flex-grow: 1;
     overflow: hidden;
@@ -627,8 +657,8 @@ body, html {
 }
 
 .legend-color.pink {
-    background: #ff8da1;
-    box-shadow: 0 0 4px #ff8da1;
+    background: var(--theme-legend-pink);
+    box-shadow: 0 0 4px var(--theme-legend-pink);
 }
 
 .legend-color.blue {
@@ -642,7 +672,7 @@ body, html {
     right: 8px;
     left: 8px;
     background: rgba(30, 30, 40, 0.9);
-    border: 1px solid #ff6b8b;
+    border: 1px solid var(--theme-main);
     border-radius: 6px;
     padding: 8px;
     text-align: left;
@@ -662,14 +692,14 @@ body, html {
     background: rgba(0, 0, 0, 0.2);
 }
 .graph-info-card::-webkit-scrollbar-thumb {
-    background: #ff6b8b;
+    background: var(--theme-main);
     border-radius: 10px;
 }
 
 .graph-info-card h4 {
     margin: 0 0 4px 0;
     font-size: 11px;
-    color: #ff6b8b;
+    color: var(--theme-main);
     font-weight: bold;
 }
 
@@ -710,7 +740,7 @@ body, html {
 
 #settings-engine-view h3 {
     margin: 0 0 12px 0;
-    color: #ff6b8b;
+    color: var(--theme-main);
     font-size: 15px;
     text-align: center;
 }
@@ -725,13 +755,13 @@ body, html {
 }
 
 .primary-btn {
-    background: rgba(255, 107, 139, 0.15);
-    border: 1px solid rgba(255, 107, 139, 0.4);
-    color: #ff8fa4;
+    background: var(--theme-bg-015);
+    border: 1px solid var(--theme-glow-04);
+    color: var(--theme-text-light);
 }
 
 .primary-btn:hover {
-    background: rgba(255, 107, 139, 0.35);
+    background: var(--theme-bg-035);
     color: #ffffff;
 }
 
@@ -773,7 +803,7 @@ body, html {
 .graph-container-wrapper {
     position: relative;
     background: rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 107, 139, 0.4);
+    border: 1px solid var(--theme-glow-04);
     border-radius: 8px;
     flex-grow: 1;
     overflow: hidden;
@@ -822,8 +852,8 @@ body, html {
 }
 
 .legend-color.pink {
-    background: #ff8da1;
-    box-shadow: 0 0 4px #ff8da1;
+    background: var(--theme-legend-pink);
+    box-shadow: 0 0 4px var(--theme-legend-pink);
 }
 
 .legend-color.blue {
@@ -837,7 +867,7 @@ body, html {
     right: 8px;
     left: 8px;
     background: rgba(30, 30, 40, 0.9);
-    border: 1px solid #ff6b8b;
+    border: 1px solid var(--theme-main);
     border-radius: 6px;
     padding: 8px;
     text-align: left;
@@ -857,14 +887,14 @@ body, html {
     background: rgba(0, 0, 0, 0.2);
 }
 .graph-info-card::-webkit-scrollbar-thumb {
-    background: #ff6b8b;
+    background: var(--theme-main);
     border-radius: 10px;
 }
 
 .graph-info-card h4 {
     margin: 0 0 4px 0;
     font-size: 11px;
-    color: #ff6b8b;
+    color: var(--theme-main);
     font-weight: bold;
 }
 
@@ -897,7 +927,7 @@ body, html {
     background: rgba(25, 20, 25, 0.75);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 107, 139, 0.3);
+    border: 1px solid var(--theme-glow-03);
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
     z-index: 99;
@@ -933,7 +963,7 @@ body, html {
 }
 
 .pulse-icon {
-    color: #ff6b8b;
+    color: var(--theme-main);
     font-size: 14px;
     animation: pulseGlow 1.5s infinite ease-in-out;
 }
@@ -941,12 +971,12 @@ body, html {
 @keyframes pulseGlow {
     0%, 100% {
         transform: scale(1);
-        text-shadow: 0 0 2px rgba(255, 107, 139, 0.3);
+        text-shadow: 0 0 2px var(--theme-glow-03);
     }
     50% {
         transform: scale(1.15);
-        text-shadow: 0 0 10px rgba(255, 107, 139, 0.9);
-        color: #ff3366;
+        text-shadow: 0 0 10px var(--theme-glow-09);
+        color: var(--theme-text-bright);
     }
 }
 
@@ -967,7 +997,7 @@ body, html {
 
 #music-artist {
     font-size: 9px;
-    color: #ff6b8b;
+    color: var(--theme-main);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -991,7 +1021,7 @@ body, html {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    text-shadow: 0 0 6px rgba(255, 107, 139, 0.5);
+    text-shadow: 0 0 6px var(--theme-glow-05);
     font-family: "Microsoft YaHei", sans-serif;
 }
 
@@ -1019,9 +1049,9 @@ body, html {
 }
 
 .ctrl-btn:hover {
-    background: rgba(255, 107, 139, 0.2);
-    border-color: rgba(255, 107, 139, 0.5);
-    box-shadow: 0 0 8px rgba(255, 107, 139, 0.4);
+    background: var(--theme-glow-02);
+    border-color: var(--theme-glow-05);
+    box-shadow: 0 0 8px var(--theme-glow-04);
     transform: scale(1.08);
 }
 
