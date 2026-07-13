@@ -43,7 +43,9 @@ class RumiaPet {
         try {
             const response = await fetch('/api/character_info');
             const data = await response.json();
-            const prefix = data.image_path; // e.g. /static/images/rumia/
+            const prefix = data.image_path;
+            this.charName = data.character_name || "她";
+            document.getElementById("pet-input").placeholder = `和${this.charName}说话...`; // e.g. /static/images/rumia/
             this.images = {
                 'normal': [prefix + 'normal.png', prefix + 'normal_1.png', prefix + 'normal_2.png'],
                 'angry': [prefix + 'angry.png', prefix + 'angry_1.png', prefix + 'angry_2.png'],
@@ -625,7 +627,7 @@ class RumiaPet {
     }
 
     async exitGame() {
-        if (!confirm("要让她去睡觉吗？")) return;
+        if (!confirm(`要让${this.charName}去睡觉吗？`)) return;
 
         this.showBubble("那...晚安啦...", 2000);
         this.setEmotion('normal'); 

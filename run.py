@@ -17,7 +17,7 @@ def main():
         
     services_dir = os.path.join(root_dir, 'services')
 
-    print(f"--- 露米娅启动程序 ---")
+    print(f"--- 桌宠启动程序 ---")
     print(f"根目录: {root_dir}")
 
     # ==========================================
@@ -48,7 +48,7 @@ def main():
         shell=False
     )
 
-    print("\n>>> 露米娅已召唤成功！ <<<")
+    print("\n>>> 桌宠已召唤成功！ <<<")
     print("提示：关闭桌宠窗口，或者关闭此黑框，都会结束程序。")
 
     # ==========================================
@@ -61,7 +61,7 @@ def main():
         print("\n检测到中断...")
     finally:
         # 当 Electron 关闭后，自动杀死 FastAPI 后端
-        print("正在让露米娅休息 (清理后台进程)...")
+        print("正在让桌宠休息 (清理后台进程)...")
 
         # 尝试优雅关闭
         flask_process.terminate()
@@ -74,7 +74,7 @@ def main():
         else:
             flask_process.kill()
 
-        print("晚安，露米娅。")
+        print("晚安，再见。")
 
 if __name__ == '__main__':
     main()
