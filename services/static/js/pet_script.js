@@ -625,7 +625,7 @@ class RumiaPet {
     }
 
     async exitGame() {
-        if (!confirm("要让露米娅去睡觉吗？")) return;
+        if (!confirm("要让她去睡觉吗？")) return;
 
         this.showBubble("那...晚安啦...", 2000);
         this.setEmotion('normal'); 
@@ -804,7 +804,7 @@ class RumiaPet {
         }
         if (this.isSleeping) {
             this.isSleeping = false;
-            console.log("露米娅被成功唤醒。");
+            console.log("宠物被成功唤醒。");
             this.setEmotion('normal');
             if (!quiet) {
                 this.showBubble("呜...干嘛吵醒人家，人家刚才梦见超好吃的巧克力饼干了呢！", 3500);
