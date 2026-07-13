@@ -55,6 +55,7 @@ DAILY_HISTORY_DIR = os.path.join(SERVICES_DIR, "daily_history")
 MIN_HISTORY_ROUNDS = 8
 MAX_HISTORY_ROUNDS = 16
 FAVORABILITY_FILE = os.path.join(SERVICES_DIR, "favorability.json")
+USER_PROFILE_FILE = os.path.join(SERVICES_DIR, "user_profile.json")
 
 # Mem0 记忆系统配置与初始化锁
 memory_agent = None
@@ -364,6 +365,27 @@ def update_favorability(change):
         print(f"保存好感度失败: {e}")
     return new_score
 
+def get_user_profile():
+    """获取用户与露米娅的专属称呼档案"""
+    if os.path.exists(USER_PROFILE_FILE):
+        try:
+            with open(USER_PROFILE_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except:
+            pass
+    return {"user_called_as": "", "rumia_called_as": ""}
+
+def update_user_profile_key(key: str, value: str):
+    """更新称呼档案中的某个键值"""
+    profile = get_user_profile()
+    profile[key] = value
+    try:
+        with open(USER_PROFILE_FILE, 'w', encoding='utf-8') as f:
+            json.dump(profile, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"保存专属称呼档案失败: {e}")
+    return profile
+
 def load_history():
     """从文件加载对话历史，如果文件不存在则初始化新的历史"""
     current_fav = get_favorability()
@@ -467,8 +489,8 @@ def parse_reply(text):
             pass
 
     # 3. 清理除了系统级别工具任务标签以外的所有方括号标签，保障对白内容绝对不泄露格式标签
-    # 采用负向先行断言正则，智能跳过 BROWSER_TASK 和 MUSIC_PLAY 标签的清洗
-    clean_content = re.sub(r'\[(?!BROWSER_TASK|MUSIC_PLAY)[^\]]+\]', '', text).strip()
+    # 采用负向先行断言正则，智能跳过各类工具和指令标签的清洗
+    clean_content = re.sub(r'\[(?!BROWSER_TASK|MUSIC_PLAY|LAUNCH_APP|SEARCH_ENGINE|UPDATE_USER_NAME|UPDATE_RUMIA_NAME)[^\]]+\]', '', text).strip()
 
     return emotion, score, clean_content
 
@@ -495,6 +517,9 @@ class AgentState(TypedDict):
     launcher_result: Optional[str]
     search_task: Optional[str]
     search_result: Optional[str]
+    rename_task_user: Optional[str]
+    rename_task_rumia: Optional[str]
+    rename_result: Optional[str]
     request_type: Optional[str]
 def recall_memories_node(state: AgentState) -> Dict[str, Any]:
     """读取 Mem0 事实库中的长期记忆 (使用 3+1 轮对话上下文进行语义召回，3 轮代表 6 条历史消息)"""
@@ -592,10 +617,15 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
             "3. 注意事项：目前只是你在自言自语主动搭话，绝对不要扮演用户或者假装用户对你说了什么！\n\n"
             "【以下是与当前会话有关的动态变量（自此往后的内容不计入基础静态缓存）】\n"
         )
+        profile = get_user_profile()
+        user_name = profile.get("user_called_as", "")
+        rumia_name = profile.get("rumia_called_as", "")
+        
         meta_context = get_meta_context_for_chat()
         priority_reminder += f"{meta_context}\n"
         priority_reminder += f"4. 触发背景：{user_message}\n"
         priority_reminder += f"5. 当前你（露米娅）对用户的好感度为: {current_fav}/100。\n"
+        priority_reminder += f"6. 称呼设定：用户当前的名字/称呼是【{user_name}】（空代表未设定），你的名字目前是【{rumia_name}】（空代表露米娅）。\n"
     else:
         # 正常聊天模式下的提示词组装 (静态前置)
         config_data = get_config()
@@ -615,62 +645,82 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
             "   - 示例：'[normal][12]哼，笨蛋！(双手叉腰)' 或 '[shy][18]才、才没有想你呢！(脸红别过头)'。\n\n"
             "【以下是与当前会话有关的动态变量（自此往后的内容不计入基础静态缓存）】\n"
         )
+        profile = get_user_profile()
+        user_name = profile.get("user_called_as", "")
+        rumia_name = profile.get("rumia_called_as", "")
+        
         meta_context = get_meta_context_for_chat()
         priority_reminder += f"{meta_context}\n"
         priority_reminder += f"3. 当前你（露米娅）对用户的好感度为: {current_fav}/100。\n"
         priority_reminder += f"4. 当前系统支持你拉起启动的本地应用列表如下：【 {available_apps_str} 】。如果用户要求打开这些应用中的任何一个，你必须在回复文本的最末尾输出 `[LAUNCH_APP: 对应名称]`（例如：`[LAUNCH_APP: 网易云音乐]`）。如果用户说要打开的应用不在此列表中，请以傲娇口吻提示他先去配置文件 services/config.json 的 app_launcher 项中配置该应用的绝对文件路径。\n"
+        priority_reminder += (
+            f"5. 称呼设定：你目前称呼用户为【{user_name}】（空代表未设定），你的名字目前是【{rumia_name}】（空代表露米娅）。\n"
+            "   【绝对强制改名指令】如果你想修改或追加对用户的称呼，你【必须且只能】在回复的最末尾附带 [UPDATE_USER_NAME: 新称呼]。想修改自己的名字，必须附带 [UPDATE_RUMIA_NAME: 新名字]。\n"
+            "   【严重警告】如果你决定使用改名工具，请在本次回复中【仅输出】这行带有方括号的标签！绝对禁止输出任何废话或角色扮演台词！系统在后台修改完成后，会在第二回合把结果告诉你，那时你再正式进行对话！\n"
+            "   [修改宽容度] 如果当前称呼为空，你可以很宽松地填入。如果已有内容想完全替换，必须用户强烈要求才行。如果是追加（如变成“妈妈/老婆”），可以适当宽松同意。\n"
+        )
+        
+        dynamic_tail = ""
         
         if recalled_memories:
-            priority_reminder += (
-                f"5. 唤醒的长期记忆（关于用户的偏好与经历）：\n"
+            dynamic_tail += (
+                f"\n\n[SYSTEM INJECTION: 唤醒的长期记忆]\n"
                 f"{recalled_memories}\n"
-                "（注：这些是关于用户的长期记忆。请仅在当前对话主题与这些记忆相关时，才自然、适度地提及。如果当前对话完全无关，请绝对不要强行或刻意提及它们，保持对话的自然与真实性。）\n"
+                "（注：这些是关于用户的长期记忆。请仅在当前对话主题与这些记忆相关时，才自然、适度地提及。如果完全无关，绝对不要强行提及。）"
             )
             
     if custom_presets:
-        priority_reminder += f"\n【最高优先级触发预设】\n⚠️ 请在你的本次回复中，必须并且无条件严格遵循以下注入指令，主动描述预设内容：\n{custom_presets}\n"
+        dynamic_tail += (
+            f"\n\n[SYSTEM INJECTION: 触发预设]\n"
+            f"⚠️ 请在你的本次回复中，必须并且无条件严格遵循以下注入指令，主动描述预设内容：\n{custom_presets}"
+        )
         
     # [ReAct 架构] 注入工具执行结果反馈给大模型作为决策依据
     music_result = state.get("music_result")
     if music_result:
         if "error" in music_result:
-            priority_reminder += (
-                f"\n\n【工具调用反馈 - 点歌检索失败】\n"
-                f"你刚刚发起的点歌指令未能检索成功。错误或状态信息：{music_result['error']}。\n"
-                f"请在你的本次回复中，以傲娇、抱怨的傲娇语气明确告诉用户你没搜到这首歌，让他换个歌名重新点，并且绝对不要再在回复中输出任何 `[MUSIC_PLAY]` 标签。"
+            dynamic_tail += (
+                f"\n\n[SYSTEM INJECTION: 工具反馈 - 点歌检索失败]\n"
+                f"错误信息：{music_result['error']}。\n"
+                f"请以傲娇抱怨语气明确告诉用户没搜到，并绝对禁止再次输出 `[MUSIC_PLAY]` 标签。"
             )
         else:
-            priority_reminder += (
-                f"\n\n【工具调用反馈 - 点歌检索成功】\n"
-                f"你刚刚发起的点歌指令执行成功！系统已在前端为您播放歌曲：《{music_result['name']}》（艺术家/歌手: {music_result['artists']}）。\n"
-                f"请在你的本次回复中，以傲娇、扭捏但其实暗暗开心的口吻告诉用户你已经把这首《{music_result['name']}》（由 {music_result['artists']} 演唱）放起来了，命令他老实听着，并且绝对不要再在回复中输出任何 `[MUSIC_PLAY]` 标签。"
+            dynamic_tail += (
+                f"\n\n[SYSTEM INJECTION: 工具反馈 - 点歌检索成功]\n"
+                f"已播放歌曲：《{music_result['name']}》（歌手: {music_result['artists']}）。\n"
+                f"请以傲娇开心口吻告诉用户正在播放，绝对禁止再次输出 `[MUSIC_PLAY]` 标签。"
             )
             
     browser_result = state.get("browser_result")
     if browser_result:
-        priority_reminder += (
-            f"\n\n【工具调用反馈 - 网页浏览器自动化】\n"
-            f"你刚刚发起的浏览器搜索任务执行反馈如下：\n"
+        dynamic_tail += (
+            f"\n\n[SYSTEM INJECTION: 工具反馈 - 网页浏览器]\n"
             f"{browser_result}\n"
-            f"请仔细结合上述任务反馈内容，以傲娇的口吻将有用的信息提炼并娇嗔地回答给用户，或者傲娇地告诉他你已经帮他把浏览器跑起来了。绝对不要再在回复中输出任何 `[BROWSER_TASK]` 标签。"
+            f"请仔细提炼上述信息傲娇地回答用户，绝对禁止再次输出 `[BROWSER_TASK]` 标签。"
         )
         
     search_result = state.get("search_result")
     if search_result:
-        priority_reminder += (
-            f"\n\n【工具调用反馈 - 搜索引擎检索成功】\n"
-            f"你刚刚发起的搜索引擎检索（背景检索，未打开浏览器）结果反馈如下：\n"
+        dynamic_tail += (
+            f"\n\n[SYSTEM INJECTION: 工具反馈 - 搜索引擎]\n"
             f"{search_result}\n"
-            f"请仔细结合并提炼上述检索到的实时网页数据，以傲娇的口吻回答用户的提问，绝对不要再在回复中输出任何 `[SEARCH_ENGINE]` 标签。\n"
+            f"请结合上述搜索数据傲娇地回答用户，绝对禁止再次输出 `[SEARCH_ENGINE]` 标签。"
         )
         
     launcher_result = state.get("launcher_result")
     if launcher_result:
-        priority_reminder += (
-            f"\n\n【工具调用反馈 - 启动本地应用】\n"
-            f"你刚才发起的本地程序/快捷方式启动任务执行反馈如下：\n"
+        dynamic_tail += (
+            f"\n\n[SYSTEM INJECTION: 工具反馈 - 本地应用]\n"
             f"{launcher_result}\n"
-            f"请以你的口吻傲娇地回复用户。如果启动成功，告诉他已经打开了；如果启动失败或没找到配置，以傲娇/抱怨的语气说明，不要输出任何 `[LAUNCH_APP]` 标签。"
+            f"请说明启动情况，绝对禁止再次输出 `[LAUNCH_APP]` 标签。"
+        )
+        
+    rename_result = state.get("rename_result")
+    if rename_result:
+        dynamic_tail += (
+            f"\n\n[SYSTEM INJECTION: 工具反馈 - 称呼设定已更新]\n"
+            f"{rename_result}\n"
+            f"你现在已经知道了新设定，请立刻对用户之前的改名要求进行回应，禁止再次输出改名标签。"
         )
         
     active_messages = []
@@ -696,10 +746,10 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
             "3. 如果你需要查询实时信息、知识科普或你不确定的内容（仅背景查资料，不拉起浏览器），你【必须】在回复的最末尾加上 `[SEARCH_ENGINE: 搜索词]` 标签。\n"
             "4. 绝对禁止口头上说打开了或查到了但不在最末尾写标签！必须输出方括号标签。"
         )
-        active_messages.append(HumanMessage(content=user_message + tail_reminder))
+        active_messages.append(HumanMessage(content=user_message + dynamic_tail + tail_reminder))
     elif is_self and user_message:
         # 自言自语提示词，作为 SystemMessage 注入，指导模型进行自言自语生成，修复自言自语无响应或重复历史的Bug
-        active_messages.append(SystemMessage(content=user_message))
+        active_messages.append(SystemMessage(content=user_message + dynamic_tail))
         
     model = get_langchain_model()
     
@@ -795,6 +845,19 @@ def parse_response_node(state: AgentState) -> Dict[str, Any]:
         launcher_task = launcher_match.group(1).strip()
         clean_content = re.sub(r'\[LAUNCH_APP:\s*.*?\]', '', clean_content, flags=re.IGNORECASE).strip()
         
+    # 处理动态称呼更新指令
+    rename_task_user = None
+    user_name_match = re.search(r'\[UPDATE_USER_NAME:\s*(.*?)\]', raw_reply, re.IGNORECASE)
+    if user_name_match:
+        rename_task_user = user_name_match.group(1).strip()
+        clean_content = re.sub(r'\[UPDATE_USER_NAME:\s*.*?\]', '', clean_content, flags=re.IGNORECASE).strip()
+        
+    rename_task_rumia = None
+    rumia_name_match = re.search(r'\[UPDATE_RUMIA_NAME:\s*(.*?)\]', raw_reply, re.IGNORECASE)
+    if rumia_name_match:
+        rename_task_rumia = rumia_name_match.group(1).strip()
+        clean_content = re.sub(r'\[UPDATE_RUMIA_NAME:\s*.*?\]', '', clean_content, flags=re.IGNORECASE).strip()
+        
     return {
         "emotion": emotion,
         "score": score,
@@ -802,7 +865,9 @@ def parse_response_node(state: AgentState) -> Dict[str, Any]:
         "browser_task": browser_task,
         "search_task": search_task,
         "music_task": music_task,
-        "launcher_task": launcher_task
+        "launcher_task": launcher_task,
+        "rename_task_user": rename_task_user,
+        "rename_task_rumia": rename_task_rumia
     }
 
 def execute_music_task_node(state: AgentState) -> Dict[str, Any]:
@@ -1071,8 +1136,28 @@ def update_history_node(state: AgentState) -> Dict[str, Any]:
         "favorability": new_fav
     }
 
+def execute_rename_task_node(state: AgentState) -> Dict[str, Any]:
+    """💡 ReAct 节点：执行改名指令"""
+    new_user = state.get("rename_task_user")
+    new_rumia = state.get("rename_task_rumia")
+    
+    result_msgs = []
+    if new_user is not None:
+        update_user_profile_key("user_called_as", new_user)
+        result_msgs.append(f"用户的名字/称呼已变更为【{new_user}】")
+    if new_rumia is not None:
+        update_user_profile_key("rumia_called_as", new_rumia)
+        result_msgs.append(f"露米娅的名字已变更为【{new_rumia}】")
+        
+    if not result_msgs:
+        return {"rename_result": "未能解析到新称呼。"}
+    return {"rename_result": "，".join(result_msgs), "rename_task_user": None, "rename_task_rumia": None}
+
 def should_continue(state: AgentState) -> str:
     """💡 ReAct 路由逻辑：判断是否需要跳转到工具节点"""
+    if (state.get("rename_task_user") is not None or state.get("rename_task_rumia") is not None) and state.get("rename_result") is None:
+        return "execute_rename_task"
+        
     if state.get("music_task") and state.get("music_result") is None:
         return "execute_music_task"
         
@@ -1097,6 +1182,7 @@ workflow.add_node("execute_music_task", execute_music_task_node)
 workflow.add_node("execute_browser_task", execute_browser_task_node)
 workflow.add_node("execute_launcher_task", execute_launcher_task_node)
 workflow.add_node("execute_search_task", execute_search_task_node)
+workflow.add_node("execute_rename_task", execute_rename_task_node)
 workflow.add_node("update_history", update_history_node)
 
 workflow.set_entry_point("recall_memories")
@@ -1114,11 +1200,13 @@ workflow.add_conditional_edges(
         "execute_browser_task": "execute_browser_task",
         "execute_search_task": "execute_search_task",
         "execute_launcher_task": "execute_launcher_task",
+        "execute_rename_task": "execute_rename_task",
         "update_history": "update_history"
     }
 )
 
 # 工具执行完毕后循环返回大模型重新思考并生成
+workflow.add_edge("execute_rename_task", "generate_response")
 workflow.add_edge("execute_music_task", "generate_response")
 workflow.add_edge("execute_browser_task", "generate_response")
 workflow.add_edge("execute_launcher_task", "generate_response")
@@ -1539,6 +1627,9 @@ def chat(payload: dict = Body(...)):
             "launcher_result": None,
             "search_task": None,
             "search_result": None,
+            "rename_task_user": None,
+            "rename_task_rumia": None,
+            "rename_result": None,
             "request_type": "chat"
         }
 
@@ -1704,6 +1795,9 @@ def rumia_speak(payload: dict = Body(...)):
             "launcher_result": None,
             "search_task": None,
             "search_result": None,
+            "rename_task_user": None,
+            "rename_task_rumia": None,
+            "rename_result": None,
             "request_type": request_type
         }
 
