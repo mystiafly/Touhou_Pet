@@ -84,7 +84,7 @@ function createWindow() {
     });
 
     // 閸旂姾娴?Flask/FastAPI 閻ㄥ嫭顢戠€圭娀銆夐棃?(閺€顖涘瘮閸氬骸褰撮幈銏犳儙閸斻劍妫ら梽鎰板櫢鐠囨洜娲块崚鎷岀箾閹恒儲鍨氶崝?
-    const petUrl = 'http://127.0.0.1:5000/pet';
+    const petUrl = 'http://127.0.0.1:5000/pet?t=' + Date.now();
     function loadPetPage() {
         win.webContents.session.clearCache().then(() => {
             win.loadURL(petUrl).then(() => {

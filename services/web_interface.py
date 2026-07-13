@@ -49,13 +49,33 @@ templates = Jinja2Templates(directory="templates")
 
 # 全局变量定义
 SERVICES_DIR = os.path.dirname(os.path.abspath(__file__))
-CONFIG_FILE = os.path.join(SERVICES_DIR, "config.json")
-HISTORY_FILE = os.path.join(SERVICES_DIR, "dialog_history.json")
-DAILY_HISTORY_DIR = os.path.join(SERVICES_DIR, "daily_history")
+GLOBAL_CONFIG_FILE = os.path.join(SERVICES_DIR, "global_config.json")
+
+def get_active_character_id():
+    import json
+    if os.path.exists(GLOBAL_CONFIG_FILE):
+        try:
+            with open(GLOBAL_CONFIG_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f).get("active_character", "rumia")
+        except:
+            pass
+    return "rumia"
+
+def get_character_dir():
+    char_id = get_active_character_id()
+    d = os.path.join(SERVICES_DIR, "characters", char_id)
+    os.makedirs(d, exist_ok=True)
+    return d
+
+def get_file_path(filename):
+    return os.path.join(get_character_dir(), filename)
+
+CONFIG_FILE = get_file_path("config.json")
+HISTORY_FILE = get_file_path("dialog_history.json")
+DAILY_HISTORY_DIR = get_file_path("daily_history")
 MIN_HISTORY_ROUNDS = 8
 MAX_HISTORY_ROUNDS = 16
-FAVORABILITY_FILE = os.path.join(SERVICES_DIR, "favorability.json")
-USER_PROFILE_FILE = os.path.join(SERVICES_DIR, "user_profile.json")
+FAVORABILITY_FILE = get_file_path("favorability.json")
 
 # Mem0 记忆系统配置与初始化锁
 memory_agent = None
@@ -70,9 +90,11 @@ browser_process = None
 
 def get_config():
     """读取本地配置，默认api_provider为gemini"""
-    if os.path.exists(CONFIG_FILE):
+    config_file = get_file_path("config.json")
+    if os.path.exists(config_file):
         try:
-            with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+            import json
+            with open(config_file, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except:
             pass
@@ -80,9 +102,12 @@ def get_config():
 
 def save_config(config_data):
     """保存本地配置"""
+    config_file = get_file_path("config.json")
     try:
-        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+        import json
+        with open(config_file, 'w', encoding='utf-8') as f:
             json.dump(config_data, f, ensure_ascii=False, indent=2)
+
     except Exception as e:
         print(f"保存配置失败: {e}")
 
@@ -206,8 +231,8 @@ def get_memory_agent():
         embed_suffix = "openai"
         vector_dims = 1536
         if provider == "gemini" and gemini_key:
-            embed_suffix = "gemini"
-            vector_dims = 1536
+            embed_suffix = "gemini_v2"
+            vector_dims = 384
         elif "deepseek" in provider and deepseek_key:
             embed_suffix = "deepseek"
             vector_dims = 384
@@ -223,7 +248,7 @@ def get_memory_agent():
             "vector_store": {
                 "provider": "qdrant",
                 "config": {
-                    "path": os.path.abspath(os.path.join(os.path.dirname(__file__), "qdrant_db")),
+                    "path": os.path.join(get_character_dir(), "qdrant_db"),
                     "collection_name": f"rumia_memory_{embed_suffix}",
                     "embedding_model_dims": vector_dims
                 }
@@ -241,13 +266,11 @@ def get_memory_agent():
                     "openai_base_url": "https://generativelanguage.googleapis.com/v1beta/openai/"
                 }
             }
-            # 1536 维向量
+            # 384 维向量 (huggingface sentence-transformers)
             mem0_config["embedder"] = {
-                "provider": "openai",
+                "provider": "huggingface",
                 "config": {
-                    "api_key": gemini_key,
-                    "model": "text-embedding-004",
-                    "openai_base_url": "https://generativelanguage.googleapis.com/v1beta/openai/"
+                    "model": "sentence-transformers/all-MiniLM-L6-v2"
                 }
             }
         elif "deepseek" in provider and deepseek_key:
@@ -344,9 +367,9 @@ def get_memory_agent():
 
 def get_favorability():
     """获取好感度，默认60"""
-    if os.path.exists(FAVORABILITY_FILE):
+    if os.path.exists(get_file_path("favorability.json")):
         try:
-            with open(FAVORABILITY_FILE, 'r', encoding='utf-8') as f:
+            with open(get_file_path("favorability.json"), 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 return data.get('score', 60)
         except:
@@ -359,7 +382,7 @@ def update_favorability(change):
     new_score = current + change
     new_score = max(0, min(100, new_score))
     try:
-        with open(FAVORABILITY_FILE, 'w', encoding='utf-8') as f:
+        with open(get_file_path("favorability.json"), 'w', encoding='utf-8') as f:
             json.dump({"score": new_score}, f)
     except Exception as e:
         print(f"保存好感度失败: {e}")
@@ -367,9 +390,9 @@ def update_favorability(change):
 
 def get_user_profile():
     """获取用户与露米娅的专属称呼档案"""
-    if os.path.exists(USER_PROFILE_FILE):
+    if os.path.exists(get_file_path("user_profile.json")):
         try:
-            with open(USER_PROFILE_FILE, 'r', encoding='utf-8') as f:
+            with open(get_file_path("user_profile.json"), 'r', encoding='utf-8') as f:
                 return json.load(f)
         except:
             pass
@@ -380,7 +403,7 @@ def update_user_profile_key(key: str, value: str):
     profile = get_user_profile()
     profile[key] = value
     try:
-        with open(USER_PROFILE_FILE, 'w', encoding='utf-8') as f:
+        with open(get_file_path("user_profile.json"), 'w', encoding='utf-8') as f:
             json.dump(profile, f, ensure_ascii=False, indent=2)
     except Exception as e:
         print(f"保存专属称呼档案失败: {e}")
@@ -389,8 +412,11 @@ def update_user_profile_key(key: str, value: str):
 def load_history():
     """从文件加载对话历史，如果文件不存在则初始化新的历史"""
     current_fav = get_favorability()
+    config_data = get_config()
+    char_name = config_data.get("character_name", "露米娅")
+    persona_prompt = config_data.get("persona_prompt", "你是东方Project中的露米娅，一个喜欢在黑暗中恶作剧的食人妖怪。性格傲娇。")
     system_prompt = (
-        f"你是东方Project中的露米娅，一个喜欢在黑暗中恶作剧的食人妖怪。你目前对用户的好感度是 {current_fav}/100。\n"
+        f"{persona_prompt} 你目前对用户的好感度是 {current_fav}/100。\n"
         "【重要指令】\n"
         "1. 心情：从 [normal], [angry], [shy], [crying] 中选择。\n"
         "2. 感情评分：对用户的这句话打分（0-20）。10分是基准，>10表示开心/喜欢，<=10表示生气/无聊/讨厌。\n"
@@ -401,9 +427,9 @@ def load_history():
         "除了对话内容外，不要输出任何其他解释。"
     )
 
-    if os.path.exists(HISTORY_FILE):
+    if os.path.exists(get_file_path("dialog_history.json")):
         try:
-            with open(HISTORY_FILE, 'r', encoding='utf-8') as f:
+            with open(get_file_path("dialog_history.json"), 'r', encoding='utf-8') as f:
                 hist = json.load(f)
                 if hist and hist[0]["role"] == "system":
                     hist[0]["content"] = system_prompt
@@ -421,7 +447,7 @@ def load_history():
 def save_history(messages):
     """将对话历史保存到文件，并按天归档备份"""
     try:
-        with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
+        with open(get_file_path("dialog_history.json"), 'w', encoding='utf-8') as f:
             json.dump(messages, f, ensure_ascii=False, indent=2)
             
         if not os.path.exists(DAILY_HISTORY_DIR):
@@ -587,12 +613,19 @@ def load_presets_node(state: AgentState) -> Dict[str, Any]:
 
 def generate_response_node(state: AgentState) -> Dict[str, Any]:
     """装配前置静态与后置动态 Prompt，调用大模型生成回复"""
+    char_id = get_active_character_id()
+    config_data = get_config()
+    char_name = config_data.get("character_name", "露米娅")
+    persona_prompt = config_data.get("persona_prompt", "你是东方Project中的露米娅，一个喜欢在黑暗中恶作剧的食人妖怪。性格傲娇。")
+
     history_msgs = state.get("history", [])
     current_fav = state.get("favorability", 10)
     recalled_memories = state.get("recalled_memories", "")
     custom_presets = state.get("custom_presets", "")
     user_message = state.get("user_message", "")
     is_self = state.get("is_self_talk", False)
+    
+    dynamic_tail = ""
     
     # 转换为 LangChain 消息格式
     lc_history = []
@@ -609,33 +642,35 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
         priority_reminder = (
             "[SYSTEM REMINDER - P0 HIGHEST PRIORITY]\n"
             "【最高优先级提醒与行为约束（基础静态规则）】\n"
-            "1. 角色约束与动作描写：请严格扮演露米娅（性格傲娇的食人妖怪），用中文回答。在对话中建议穿插用圆括号包裹的动作/表情描述（如：‘(脸红扭过头)’）。在适合的情况下（如进行两性/NSFW/深层亲密交互时），强烈建议你特地独立写出几段【无情绪与评分前缀】的纯圆括号段落描述神态与客观场景，但特别注意：此类纯圆括号描述【绝对不能作为你回复的最后一段】（最后一段必须是带标签的正常台词，以防止表情显示发生解析冲突）。如果下方的【最高优先级触发预设】有更细致的格式与描述要求，请一并严格执行。\n"
+            f"1. 角色约束与动作描写：请严格扮演{char_name}（{persona_prompt}），用中文回答。在对话中建议穿插用圆括号包裹的动作/表情描述（如：‘(脸红扭过头)’）。在适合的情况下（如进行两性/NSFW/深层亲密交互时），强烈建议你特地独立写出几段【无情绪与评分前缀】的纯圆括号段落描述神态与客观场景，但特别注意：此类纯圆括号描述【绝对不能作为你回复的最后一段】（最后一段必须是带标签的正常台词，以防止表情显示发生解析冲突）。如果下方的【最高优先级触发预设】有更细致的格式与描述要求，请一并严格执行。\n"
             "2. 格式约束与要求：你的回复必须且只能遵循 '[心情][评分]对话内容' 格式要求。其中：\n"
             "   - '[心情]' 必须且只能是以下英文单词之一：[normal] (常态/开心/微笑/平静), [angry] (生气/愤怒/傲娇抱怨), [shy] (害羞/脸红/扭捏), [crying] (委屈/难过/大哭)。绝对禁止使用任何中文心情标签（如 [开心] ❌，[慵懒] ❌）。\n"
             "   - '[评分]' 必须且只能是方括号内包裹一个 0 到 20 之间的纯数字评分（如 [12]），代表当前言论的好感度评分（10为基准，>10加分，<10扣分）。绝对禁止写成类似 [评分: 92] ❌ 这样的非法格式。\n"
             "   - 示例：'[normal][12]哼，笨蛋！(双手叉腰)' 或 '[shy][18]才、才没有想你呢！(脸红别过头)'。因为这是你主动搭话，绝对禁止包含 `[BROWSER_TASK: ...]` 标记。\n"
             "3. 注意事项：目前只是你在自言自语主动搭话，绝对不要扮演用户或者假装用户对你说了什么！\n\n"
-            "【以下是与当前会话有关的动态变量（自此往后的内容不计入基础静态缓存）】\n"
         )
         profile = get_user_profile()
         user_name = profile.get("user_called_as", "")
         rumia_name = profile.get("rumia_called_as", "")
         
-        meta_context = get_meta_context_for_chat()
-        priority_reminder += f"{meta_context}\n"
-        priority_reminder += f"4. 触发背景：{user_message}\n"
-        priority_reminder += f"5. 当前你（露米娅）对用户的好感度为: {current_fav}/100。\n"
-        priority_reminder += f"6. 称呼设定：用户当前的名字/称呼是【{user_name}】（空代表未设定），你的名字目前是【{rumia_name}】（空代表露米娅）。\n"
+        meta_context = get_meta_context_for_chat(char_id, char_name)
+        
+        dynamic_tail += (
+            f"\n\n[SYSTEM INJECTION: 当前状态]\n"
+            f"{meta_context}\n"
+            f"- 当前你（{char_name}）对用户的好感度为: {current_fav}/100。\n"
+            f"- 称呼设定：用户当前的名字/称呼是【{user_name}】（空代表未设定），你的名字目前是【{rumia_name}】（空代表{char_name}）。\n"
+        )
     else:
         # 正常聊天模式下的提示词组装 (静态前置)
-        config_data = get_config()
+        app_launcher = config_data.get("app_launcher", {})
         app_launcher = config_data.get("app_launcher", {})
         available_apps_str = ", ".join(app_launcher.keys()) if app_launcher else "（尚未配置任何本地应用启动项）"
 
         priority_reminder = (
             "[SYSTEM REMINDER - P0 HIGHEST PRIORITY]\n"
             "【最高优先级提醒与行为约束（基础静态规则）】\n"
-            "1. 角色约束与动作描写：请严格扮演露米娅（性格傲娇的食人妖怪），用中文回答。在对话中建议穿插用圆括号包裹的动作/表情描述（如：‘(脸红扭过头)’）。在适合的情况下（如进行两性/NSFW/深层亲密交互时），强烈建议你特地独立写出几段【无情绪与评分前缀】的纯圆括号段落描述神态与客观场景，但特别注意：此类纯圆括号描述【绝对不能作为你回复的最后一段】（最后一段必须是带标签 of 正常台词，以防止表情显示发生解析冲突）。如果下方的【最高优先级触发预设】有更细致的格式与描述要求，请一并严格执行。\n"
+            f"1. 角色约束与动作描写：请严格扮演{char_name}（{persona_prompt}），用中文回答。在对话中建议穿插用圆括号包裹的动作/表情描述（如：‘(脸红扭过头)’）。在适合的情况下（如进行两性/NSFW/深层亲密交互时），强烈建议你特地独立写出几段【无情绪与评分前缀】的纯圆括号段落描述神态与客观场景，但特别注意：此类纯圆括号描述【绝对不能作为你回复的最后一段】（最后一段必须是带标签 of 正常台词，以防止表情显示发生解析冲突）。如果下方的【最高优先级触发预设】有更细致的格式与描述要求，请一并严格执行。\n"
             "2. 格式约束：你的回复必须且只能遵循 '[心情][评分]对话内容' 格式要求。\n"
             "   - 如有浏览器自动化搜索意图，请在最末尾附加 `[BROWSER_TASK: 搜索任务文本]`。\n"
             "   - 如有搜索引擎检索意图（只在后台查资料背景搜索，不在屏幕上打开浏览器），请在最末尾附加 `[SEARCH_ENGINE: 搜索词]`。\n"
@@ -643,24 +678,25 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
             "   - '[心情]' 必须且只能是以下英文单词之一：[normal] (常态/微笑/平静), [angry] (生气/愤怒/傲娇抱怨), [shy] (害羞/脸红/扭捏), [crying] (委屈/难过/大哭)。绝对禁止使用任何中文心情标签（如 [开心] ❌，[慵懒] ❌）。\n"
             "   - '[评分]' 必须且只能是方括号内包裹一个 0 到 20 之间的纯数字评分（如 [12]），代表当前言论的好感度评分（10为基准，>10加分，<10扣分）。绝对禁止写成类似 [评分: 92] ❌ 这样的非法格式。\n"
             "   - 示例：'[normal][12]哼，笨蛋！(双手叉腰)' 或 '[shy][18]才、才没有想你呢！(脸红别过头)'。\n\n"
-            "【以下是与当前会话有关的动态变量（自此往后的内容不计入基础静态缓存）】\n"
+            "   - 示例：'[normal][12]哼，笨蛋！(双手叉腰)' 或 '[shy][18]才、才没有想你呢！(脸红别过头)'。\n\n"
+            "   【绝对强制改名指令】如果你想修改或追加对用户的称呼，你【必须且只能】在回复的最末尾附带 [UPDATE_USER_NAME: 新称呼]。想修改自己的名字，必须附带 [UPDATE_RUMIA_NAME: 新名字]。\n"
+            "   【严重警告】如果你决定使用改名工具，请在本次回复中【仅输出】这行带有方括号的标签！绝对禁止输出任何废话或角色扮演台词！系统在后台修改完成后，会在第二回合把结果告诉你，那时你再正式进行对话！\n"
+            "   [修改宽容度] 如果当前称呼为空，你可以很宽松地填入。如果已有内容想完全替换，必须用户强烈要求才行。如果是追加（如变成“妈妈/老婆”），可以适当宽松同意。\n"
         )
         profile = get_user_profile()
         user_name = profile.get("user_called_as", "")
         rumia_name = profile.get("rumia_called_as", "")
         
-        meta_context = get_meta_context_for_chat()
-        priority_reminder += f"{meta_context}\n"
-        priority_reminder += f"3. 当前你（露米娅）对用户的好感度为: {current_fav}/100。\n"
-        priority_reminder += f"4. 当前系统支持你拉起启动的本地应用列表如下：【 {available_apps_str} 】。如果用户要求打开这些应用中的任何一个，你必须在回复文本的最末尾输出 `[LAUNCH_APP: 对应名称]`（例如：`[LAUNCH_APP: 网易云音乐]`）。如果用户说要打开的应用不在此列表中，请以傲娇口吻提示他先去配置文件 services/config.json 的 app_launcher 项中配置该应用的绝对文件路径。\n"
-        priority_reminder += (
-            f"5. 称呼设定：你目前称呼用户为【{user_name}】（空代表未设定），你的名字目前是【{rumia_name}】（空代表露米娅）。\n"
-            "   【绝对强制改名指令】如果你想修改或追加对用户的称呼，你【必须且只能】在回复的最末尾附带 [UPDATE_USER_NAME: 新称呼]。想修改自己的名字，必须附带 [UPDATE_RUMIA_NAME: 新名字]。\n"
-            "   【严重警告】如果你决定使用改名工具，请在本次回复中【仅输出】这行带有方括号的标签！绝对禁止输出任何废话或角色扮演台词！系统在后台修改完成后，会在第二回合把结果告诉你，那时你再正式进行对话！\n"
-            "   [修改宽容度] 如果当前称呼为空，你可以很宽松地填入。如果已有内容想完全替换，必须用户强烈要求才行。如果是追加（如变成“妈妈/老婆”），可以适当宽松同意。\n"
+        meta_context = get_meta_context_for_chat(char_id, char_name)
+        
+        dynamic_tail += (
+            f"\n\n[SYSTEM INJECTION: 当前状态]\n"
+            f"{meta_context}\n"
+            f"- 当前你（{char_name}）对用户的好感度为: {current_fav}/100。\n"
+            f"- 当前系统支持你拉起启动的本地应用列表如下：【 {available_apps_str} 】。如果用户要求打开这些应用中的任何一个，你必须在回复文本的最末尾输出 `[LAUNCH_APP: 对应名称]`。\n"
+            f"- 称呼设定：你目前称呼用户为【{user_name}】（空代表未设定），你的名字目前是【{rumia_name}】（空代表{char_name}）。"
         )
         
-        dynamic_tail = ""
         
         if recalled_memories:
             dynamic_tail += (
@@ -1222,33 +1258,39 @@ chat_checkpointer = SqliteSaver(sqlite_conn)
 chat_workflow = workflow.compile(checkpointer=chat_checkpointer)
 
 # === [感应预设系统] ===
-PRESETS_DIR = os.path.join(os.path.dirname(__file__), "presets")
-CUSTOM_PRESETS_FILE = os.path.join(PRESETS_DIR, "custom_presets.json")
-SELF_TALK_PRESETS_FILE = os.path.join(PRESETS_DIR, "self_talk_presets.json")
+def get_presets_dir(): return get_file_path("presets")
+def get_custom_presets_file(): return get_file_path("presets/custom_presets.json")
+def get_self_talk_presets_file(): return get_file_path("presets/self_talk_presets.json")
 
 def init_custom_presets():
     """初始化自定义感应预设的文件夹和文件，如果没有就建立并初始化"""
-    if not os.path.exists(PRESETS_DIR):
-        os.makedirs(PRESETS_DIR)
-    if not os.path.exists(CUSTOM_PRESETS_FILE):
+    presets_dir = get_presets_dir()
+    custom_presets_file = get_custom_presets_file()
+    self_talk_presets_file = get_self_talk_presets_file()
+    
+    if not os.path.exists(presets_dir):
+        os.makedirs(presets_dir)
+    if not os.path.exists(custom_presets_file):
         try:
-            with open(CUSTOM_PRESETS_FILE, 'w', encoding='utf-8') as f:
+            with open(custom_presets_file, 'w', encoding='utf-8') as f:
                 json.dump([], f, ensure_ascii=False, indent=2)
-            print(f"[PRESETS] 已成功建立感应预设管理文件: {CUSTOM_PRESETS_FILE} (目前留空)")
+            print(f"[PRESETS] 已成功建立感应预设管理文件: {custom_presets_file} (目前留空)")
         except Exception as e:
             print(f"[PRESETS ERROR] 建立感应预设文件失败: {e}")
             
-    if not os.path.exists(SELF_TALK_PRESETS_FILE):
+    if not os.path.exists(self_talk_presets_file):
         try:
+            config_data = get_config()
+            char_name = config_data.get("character_name", "露米娅")
             default_self_talk = {
-                "greeting_suffix": " 要求：话语简短（15字以内），体现露米娅的性格，不要和历史记录重复。",
+                "greeting_suffix": f" 要求：话语简短（15字以内），体现{char_name}的性格，不要和历史记录重复。",
                 "short_idle": "（现在是一段沉默的时间。请主动向我搭话。注意不要和之前说过的话重复。）",
                 "medium_idle": "（我已经很久没有理你了。请用害羞或生气的傲娇口吻主动向我搭话，抱怨我冷落你，或者引起我的注意。话语要带有强烈情绪。）",
                 "long_idle": "（我已经很久没有理你了。请用非常委屈或嚎啕大哭的口吻主动向我搭话，表现出极度的孤独和难过。）"
             }
-            with open(SELF_TALK_PRESETS_FILE, 'w', encoding='utf-8') as f:
+            with open(self_talk_presets_file, 'w', encoding='utf-8') as f:
                 json.dump(default_self_talk, f, ensure_ascii=False, indent=2)
-            print(f"[PRESETS] 已成功建立自言自语预设管理文件: {SELF_TALK_PRESETS_FILE}")
+            print(f"[PRESETS] 已成功建立自言自语预设管理文件: {self_talk_presets_file}")
         except Exception as e:
             print(f"[PRESETS ERROR] 建立自言自语预设文件失败: {e}")
 
@@ -1296,10 +1338,12 @@ def check_semantic_presets(user_message, candidates):
 
 def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
     """加载并根据条件与关键词匹配触发相应的感应预设提示词 (混合模式：关键词直接触发 + AI二次语义感应)"""
-    if not os.path.exists(CUSTOM_PRESETS_FILE):
+    candidates = []
+    custom_presets_file = get_custom_presets_file()
+    if not os.path.exists(custom_presets_file):
         return ""
     try:
-        with open(CUSTOM_PRESETS_FILE, 'r', encoding='utf-8') as f:
+        with open(custom_presets_file, 'r', encoding='utf-8') as f:
             presets = json.load(f)
     except Exception as e:
         print(f"[PRESETS ERROR] 读取预设文件失败: {e}")
@@ -1558,7 +1602,7 @@ def pet_mode():
     path = os.path.join(os.path.dirname(__file__), "templates", "pet.html")
     with open(path, "r", encoding="utf-8") as f:
         html = f.read()
-    return HTMLResponse(content=html)
+    return HTMLResponse(content=html, headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"})
 
 @app.get("/langgraph_tutorial", response_class=HTMLResponse)
 def langgraph_tutorial():
@@ -1575,7 +1619,7 @@ def index():
     path = os.path.join(os.path.dirname(__file__), "templates", "index.html")
     with open(path, "r", encoding="utf-8") as f:
         html = f.read()
-    return HTMLResponse(content=html)
+    return HTMLResponse(content=html, headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"})
 
 # 2. 对话历史与好感度接口
 @app.get("/api/history")
@@ -1710,6 +1754,38 @@ def clear_history_api():
         return JSONResponse({"error": str(e)}, status_code=500)
 
 # 5. 配置中心获取与保存接口
+
+@app.get("/api/character_info")
+async def api_character_info():
+    import json
+    char_id = get_active_character_id()
+    config = get_config()
+    char_name = config.get("character_name", char_id)
+    return JSONResponse({
+        "character_id": char_id,
+        "character_name": char_name,
+        "image_path": f"/static/images/{char_id}/"
+    })
+
+@app.post("/api/switch_character")
+async def api_switch_character(request: Request):
+    import json
+    try:
+        data = await request.json()
+        new_char_id = data.get("character_id")
+        if not new_char_id:
+            return JSONResponse({"status": "error", "message": "Missing character_id"}, status_code=400)
+            
+        with open(GLOBAL_CONFIG_FILE, 'r', encoding='utf-8') as f:
+            g_config = json.load(f)
+        g_config["active_character"] = new_char_id
+        with open(GLOBAL_CONFIG_FILE, 'w', encoding='utf-8') as f:
+            json.dump(g_config, f, indent=2)
+            
+        return JSONResponse({"status": "success", "require_restart": True})
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=400)
+
 @app.get("/api/settings/config")
 def get_config_api():
     """获取本地大模型提供商配置"""
@@ -1750,21 +1826,25 @@ def rumia_speak(payload: dict = Body(...)):
 
     messages = load_history()
     self_talk_presets = {}
-    if os.path.exists(SELF_TALK_PRESETS_FILE):
+    self_talk_presets_file = get_self_talk_presets_file()
+    if os.path.exists(self_talk_presets_file):
         try:
-            with open(SELF_TALK_PRESETS_FILE, 'r', encoding='utf-8') as f:
+            with open(self_talk_presets_file, 'r', encoding='utf-8') as f:
                 self_talk_presets = json.load(f)
         except Exception as e:
             print(f"[PRESETS ERROR] 读取自言自语预设文件失败: {e}")
 
-    greeting_suffix = self_talk_presets.get("greeting_suffix", " 要求：话语简短（15字以内），体现露米娅的性格，不要和历史记录重复。")
+    config_data = get_config()
+    char_name = config_data.get("character_name", "露米娅")
+
+    greeting_suffix = self_talk_presets.get("greeting_suffix", f" 要求：话语简短（15字以内），体现{char_name}的性格，不要和历史记录重复。")
     short_idle = self_talk_presets.get("short_idle", "（现在是一段沉默的时间。请主动向我搭话。注意不要和之前说过的话重复。）")
     medium_idle = self_talk_presets.get("medium_idle", "（我已经很久没有理你了。请用害羞或生气的傲娇口吻主动向我搭话，抱怨我冷落你，或者引起我的注意。话语要带有强烈情绪。）")
     long_idle = self_talk_presets.get("long_idle", "（我已经很久没有理你了。请用非常委屈或嚎啕大哭的口吻主动向我搭话，表现出极度的孤独和难过。）")
 
     prompt_content = ""
     if request_type == 'greeting':
-        prompt_content = get_time_greeting_prompt()
+        prompt_content = get_time_greeting_prompt(char_name)
         prompt_content += greeting_suffix
     else:
         if count < 3:
