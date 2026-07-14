@@ -1653,6 +1653,7 @@ def get_history():
 @app.post("/api/chat")
 def chat(payload: dict = Body(...)):
     """发送聊天请求核心业务逻辑 (使用 LangGraph 引擎驱动)"""
+    char_name = get_config().get("character_name", "桌宠")
     user_message = payload.get('message', '').strip()
     if not user_message:
         return JSONResponse({"error": "消息不能为空"}, status_code=400)
