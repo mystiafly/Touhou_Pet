@@ -559,6 +559,7 @@ def recall_memories_node(state: AgentState) -> Dict[str, Any]:
         recent_msgs = dialogue_msgs[-6:]  # 提取最近 6 条历史消息 (3 轮)
         
         query_parts = []
+        char_name = get_config().get("character_name", "桌宠")
         role_map = {"user": "用户", "assistant": char_name}
         for msg in recent_msgs:
             query_parts.append(f"{role_map.get(msg['role'], msg['role'])}: {msg['content']}")
@@ -595,6 +596,7 @@ def load_presets_node(state: AgentState) -> Dict[str, Any]:
         recent_msgs = dialogue_msgs[-2:]  # 提取最近 2 条历史消息 (1 轮)
         
         query_parts = []
+        char_name = get_config().get("character_name", "桌宠")
         role_map = {"user": "用户", "assistant": char_name}
         for msg in recent_msgs:
             query_parts.append(f"{role_map.get(msg['role'], msg['role'])}: {msg['content']}")
@@ -1634,6 +1636,7 @@ def get_history():
     messages = load_history()
     dialogue = []
     for i, msg in enumerate(messages[1:], 1):
+        char_name = get_config().get("character_name", "桌宠")
         role_map = {"user": "你", "assistant": char_name}
         dialogue.append({
             "id": i,
