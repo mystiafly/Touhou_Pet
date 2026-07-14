@@ -396,7 +396,7 @@ def get_user_profile():
                 return json.load(f)
         except:
             pass
-    return {"user_called_as": "", "rumia_called_as": ""}
+    return {"user_called_as": ""}
 
 def update_user_profile_key(key: str, value: str):
     """更新称呼档案中的某个键值"""
@@ -516,7 +516,7 @@ def parse_reply(text):
 
     # 3. 清理除了系统级别工具任务标签以外的所有方括号标签，保障对白内容绝对不泄露格式标签
     # 采用负向先行断言正则，智能跳过各类工具和指令标签的清洗
-    clean_content = re.sub(r'\[(?!BROWSER_TASK|MUSIC_PLAY|LAUNCH_APP|SEARCH_ENGINE|UPDATE_USER_NAME|UPDATE_RUMIA_NAME)[^\]]+\]', '', text).strip()
+    clean_content = re.sub(r'\[(?!BROWSER_TASK|MUSIC_PLAY|LAUNCH_APP|SEARCH_ENGINE|UPDATE_USER_NAME|UPDATE_PET_NAME)[^\]]+\]', '', text).strip()
 
     return emotion, score, clean_content
 
@@ -544,7 +544,7 @@ class AgentState(TypedDict):
     search_task: Optional[str]
     search_result: Optional[str]
     rename_task_user: Optional[str]
-    rename_task_rumia: Optional[str]
+    rename_task_pet: Optional[str]
     rename_result: Optional[str]
     request_type: Optional[str]
 def recall_memories_node(state: AgentState) -> Dict[str, Any]:
@@ -651,7 +651,7 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
         )
         profile = get_user_profile()
         user_name = profile.get("user_called_as", "")
-        rumia_name = profile.get("rumia_called_as", "")
+        pet_name = profile.get(f"{char_id}_called_as", "")
         
         meta_context = get_meta_context_for_chat(char_id, char_name)
         
@@ -659,7 +659,7 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
             f"\n\n[SYSTEM INJECTION: 当前状态]\n"
             f"{meta_context}\n"
             f"- 当前你（{char_name}）对用户的好感度为: {current_fav}/100。\n"
-            f"- 称呼设定：用户当前的名字/称呼是【{user_name}】（空代表未设定），你的名字目前是【{rumia_name}】（空代表{char_name}）。\n"
+            f"- 称呼设定：用户当前的名字/称呼是【{user_name}】（空代表未设定），你的名字目前是【{pet_name}】（空代表{char_name}）。\n"
         )
     else:
         # 正常聊天模式下的提示词组装 (静态前置)
@@ -679,13 +679,13 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
             "   - '[评分]' 必须且只能是方括号内包裹一个 0 到 20 之间的纯数字评分（如 [12]），代表当前言论的好感度评分（10为基准，>10加分，<10扣分）。绝对禁止写成类似 [评分: 92] ❌ 这样的非法格式。\n"
             "   - 示例：'[normal][12]哼，笨蛋！(双手叉腰)' 或 '[shy][18]才、才没有想你呢！(脸红别过头)'。\n\n"
             "   - 示例：'[normal][12]哼，笨蛋！(双手叉腰)' 或 '[shy][18]才、才没有想你呢！(脸红别过头)'。\n\n"
-            "   【绝对强制改名指令】如果你想修改或追加对用户的称呼，你【必须且只能】在回复的最末尾附带 [UPDATE_USER_NAME: 新称呼]。想修改自己的名字，必须附带 [UPDATE_RUMIA_NAME: 新名字]。\n"
+            "   【绝对强制改名指令】如果你想修改或追加对用户的称呼，你【必须且只能】在回复的最末尾附带 [UPDATE_USER_NAME: 新称呼]。想修改自己的名字，必须附带 [UPDATE_PET_NAME: 新名字]。\n"
             "   【严重警告】如果你决定使用改名工具，请在本次回复中【仅输出】这行带有方括号的标签！绝对禁止输出任何废话或角色扮演台词！系统在后台修改完成后，会在第二回合把结果告诉你，那时你再正式进行对话！\n"
             "   [修改宽容度] 如果当前称呼为空，你可以很宽松地填入。如果已有内容想完全替换，必须用户强烈要求才行。如果是追加（如变成“妈妈/老婆”），可以适当宽松同意。\n"
         )
         profile = get_user_profile()
         user_name = profile.get("user_called_as", "")
-        rumia_name = profile.get("rumia_called_as", "")
+        pet_name = profile.get(f"{char_id}_called_as", "")
         
         meta_context = get_meta_context_for_chat(char_id, char_name)
         
@@ -694,7 +694,7 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
             f"{meta_context}\n"
             f"- 当前你（{char_name}）对用户的好感度为: {current_fav}/100。\n"
             f"- 当前系统支持你拉起启动的本地应用列表如下：【 {available_apps_str} 】。如果用户要求打开这些应用中的任何一个，你必须在回复文本的最末尾输出 `[LAUNCH_APP: 对应名称]`。\n"
-            f"- 称呼设定：你目前称呼用户为【{user_name}】（空代表未设定），你的名字目前是【{rumia_name}】（空代表{char_name}）。"
+            f"- 称呼设定：你目前称呼用户为【{user_name}】（空代表未设定），你的名字目前是【{pet_name}】（空代表{char_name}）。"
         )
         
         
@@ -888,11 +888,11 @@ def parse_response_node(state: AgentState) -> Dict[str, Any]:
         rename_task_user = user_name_match.group(1).strip()
         clean_content = re.sub(r'\[UPDATE_USER_NAME:\s*.*?\]', '', clean_content, flags=re.IGNORECASE).strip()
         
-    rename_task_rumia = None
-    rumia_name_match = re.search(r'\[UPDATE_RUMIA_NAME:\s*(.*?)\]', raw_reply, re.IGNORECASE)
-    if rumia_name_match:
-        rename_task_rumia = rumia_name_match.group(1).strip()
-        clean_content = re.sub(r'\[UPDATE_RUMIA_NAME:\s*.*?\]', '', clean_content, flags=re.IGNORECASE).strip()
+    rename_task_pet = None
+    pet_name_match = re.search(r'\[UPDATE_PET_NAME:\s*(.*?)\]', raw_reply, re.IGNORECASE)
+    if pet_name_match:
+        rename_task_pet = pet_name_match.group(1).strip()
+        clean_content = re.sub(r'\[UPDATE_PET_NAME:\s*.*?\]', '', clean_content, flags=re.IGNORECASE).strip()
         
     return {
         "emotion": emotion,
@@ -903,7 +903,7 @@ def parse_response_node(state: AgentState) -> Dict[str, Any]:
         "music_task": music_task,
         "launcher_task": launcher_task,
         "rename_task_user": rename_task_user,
-        "rename_task_rumia": rename_task_rumia
+        "rename_task_pet": rename_task_pet
     }
 
 def execute_music_task_node(state: AgentState) -> Dict[str, Any]:
@@ -1175,23 +1175,24 @@ def update_history_node(state: AgentState) -> Dict[str, Any]:
 def execute_rename_task_node(state: AgentState) -> Dict[str, Any]:
     """💡 ReAct 节点：执行改名指令"""
     new_user = state.get("rename_task_user")
-    new_rumia = state.get("rename_task_rumia")
+    new_pet = state.get("rename_task_pet")
     
     result_msgs = []
     if new_user is not None:
         update_user_profile_key("user_called_as", new_user)
         result_msgs.append(f"用户的名字/称呼已变更为【{new_user}】")
-    if new_rumia is not None:
-        update_user_profile_key("rumia_called_as", new_rumia)
-        result_msgs.append(f"露米娅的名字已变更为【{new_rumia}】")
+    if new_pet is not None:
+        char_id = get_active_character_id()
+        update_user_profile_key(f"{char_id}_called_as", new_pet)
+        result_msgs.append(f"桌宠的名字已变更为【{new_pet}】")
         
     if not result_msgs:
         return {"rename_result": "未能解析到新称呼。"}
-    return {"rename_result": "，".join(result_msgs), "rename_task_user": None, "rename_task_rumia": None}
+    return {"rename_result": "，".join(result_msgs), "rename_task_user": None, "rename_task_pet": None}
 
 def should_continue(state: AgentState) -> str:
     """💡 ReAct 路由逻辑：判断是否需要跳转到工具节点"""
-    if (state.get("rename_task_user") is not None or state.get("rename_task_rumia") is not None) and state.get("rename_result") is None:
+    if (state.get("rename_task_user") is not None or state.get("rename_task_pet") is not None) and state.get("rename_result") is None:
         return "execute_rename_task"
         
     if state.get("music_task") and state.get("music_result") is None:
