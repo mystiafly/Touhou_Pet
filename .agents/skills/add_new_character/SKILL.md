@@ -19,7 +19,7 @@ Inside `services/characters/<char_id>/`, you must create the following files:
   {
     "character_id": "<char_id>",
     "character_name": "Display Name",
-    "priority_reminder": "1. 角色约束与动作描写：请严格扮演..."
+    "persona_prompt": "Brief description of the character's persona and background..."
   }
   ```
 

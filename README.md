@@ -22,7 +22,7 @@
   {
     "character_id": "reimu",
     "character_name": "博丽灵梦",
-    "priority_reminder": "1. 角色约束与动作描写：请严格扮演博丽神社的巫女..."
+    "persona_prompt": "博丽神社的巫女，有点贪财，性格直率..."
   }
   ```
 - **`presets.json`**: 预设自言自语台词库（包含 `eating`, `sleeping`, `waking_up`, `idle`, `angry` 等状态下主动弹出的对话气泡内容）。
