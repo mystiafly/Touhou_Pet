@@ -1684,7 +1684,8 @@ def chat(payload: dict = Body(...)):
         }
 
         # 调用 LangGraph 对话工作流 (ReAct 闭环)，附带持久化 thread_id
-        config = {"configurable": {"thread_id": "rumia_chat_thread"}}
+        char_id = get_active_character_id()
+        config = {"configurable": {"thread_id": f"{char_id}_chat_thread"}}
         final_state = chat_workflow.invoke(initial_state, config)
 
         raw_reply = final_state.get("raw_reply", "")
