@@ -1492,25 +1492,30 @@ def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
         return "\n".join(triggered_prompts)
     return ""
 
-def generate_rumia_diary(date_str, log_content):
-    """根据今日聊天记录，以第一人称生成傲娇日记"""
+def generate_pet_diary(date_str, log_content):
+    """根据今日聊天记录，以第一人称生成专属日记"""
     try:
         client, model_name = get_llm_client_and_model()
         current_fav = get_favorability()
+        config = get_config()
+        char_id = config.get("character_id", "rumia")
+        char_info = load_character_info(char_id)
+        char_name = char_info.get("character_name", "桌宠")
+        char_persona = char_info.get("priority_reminder", "")
         
         prompt = (
-            f"【防截断至高指令】：你必须有始有终地完整写完这篇日记，绝对禁止在句子中途截断、断字或留下未完成的半句话！日记结尾必须以完整的标点符号（如“。”、“！”）完美落笔收尾。此命令具有最高执行优先级。\n\n"
-            f"你是东方Project中的露米娅（一个傲娇、心口不一但内心其实极度依赖和喜欢用户的食人妖怪）。你目前对用户的好感度是 {current_fav}/100。\n"
+            f"【防截断至高指令】：你必须有始有终地完整写完这篇日记，绝对禁止在句子中途截断、断字或留下未完成的半句话！日记结尾必须以完整的标点符号完美落笔收尾。\n\n"
+            f"你现在的角色设定是：\n{char_persona}\n\n"
+            f"你目前对用户的好感度是 {current_fav}/100。\n"
             f"今天的日期是 {date_str}。以下是你今天和用户的对话历史记录：\n"
             f"\"\"\"\n{log_content}\n\"\"\"\n\n"
             f"【任务要求】：\n"
-            f"根据上述相处对话，以你（露米娅）的第一人称视角写一篇极其生动、温馨傲娇的「露米娅的日记」。\n"
-            f"1. 语气：经典的口是心非傲娇口吻（例如：‘今天那家伙居然……哼，我才不是关心他呢！不过……巧克力饼干很好吃。’）。\n"
-            f"2. 篇幅：字数必须在 400 到 800 字之间，写出一天相处的起伏、你的心理动作、纠结细节和情感变化，细节描写要极其详尽、丰富。\n"
+            f"根据上述相处对话，以你（{char_name}）的第一人称视角写一篇极其生动、符合你性格设定的「{char_name}的日记」。\n"
+            f"1. 语气：必须严格符合你的角色性格设定口吻。\n"
+            f"2. 篇幅：字数必须在 400 到 800 字之间，写出一天相处的起伏、你的心理动作、纠结细节和情感变化，细节描写要详尽。\n"
             f"3. 格式：第一行必须是日期与天气/心情标签，第二行开始为日记正文，推荐分段书写以方便阅读。格式示例如下：\n"
-            f"   『{date_str} | 心情：害羞 | 天气：雾之湖的夜色』\n"
-            f"   今天和那家伙聊天了，他居然把巧克力豆留给我吃……哼，以为这样就能讨好食人妖怪吗？\n"
-            f"   其实，他今天摸我头的时候，我心跳得好快。但我绝对不能承认！不过，茶还是挺暖和的，勉强给他打个8分吧！\n"
+            f"   『{date_str} | 心情：[你的心情] | 天气：[符合设定的场景环境]』\n"
+            f"   今天和那家伙聊天了……（正文内容）\n"
             f"4. 必须使用纯中文，严禁使用英文，不要包含任何系统标记。"
         )
         
@@ -1523,7 +1528,7 @@ def generate_rumia_diary(date_str, log_content):
         return response.choices[0].message.content.strip()
     except Exception as e:
         print(f"[DIARY GENERATION] Failed to generate diary: {e}")
-        return f"『{date_str} | 心情：委屈 | 天气：黑漆漆的』\n今天脑子昏昏沉沉的，什么都没写下来……哼，一定是怪那家伙今天没给我买巧克力饼干！"
+        return f"『{date_str} | 心情：委屈 | 天气：阴天』\n今天脑子昏昏沉沉的，什么都没写下来……"
 
 def daily_distillation_worker():
     """自动整理之前几天的历史聊天记录，同步生成日记并写入向量数据库"""
@@ -1968,8 +1973,8 @@ def get_log_content(date: str):
                 diary_content = df.read()
         else:
             # 自动提炼生成今日秘密日记并持久化保存
-            print(f"[DIARY SYSTEM] 正在为 {date} 动态提炼并生成露米娅的傲娇日记...")
-            diary_content = generate_rumia_diary(date, log_content)
+            print(f"[DIARY SYSTEM] 正在为 {date} 动态提炼并生成桌宠的日记...")
+            diary_content = generate_pet_diary(date, log_content)
             try:
                 with open(diary_file, 'w', encoding='utf-8') as df:
                     df.write(diary_content)
@@ -2002,9 +2007,9 @@ def rewrite_log_diary(date: str):
         with open(log_file, 'r', encoding='utf-8') as lf:
             log_content = lf.read()
             
-        print(f"[DIARY SYSTEM] 正在为 {date} 重新提炼并重写露米娅的日记...")
+        print(f"[DIARY SYSTEM] 正在为 {date} 重新提炼并重写桌宠的日记...")
         # 强制重新调用 LLM 生成日记
-        new_diary_content = generate_rumia_diary(date, log_content)
+        new_diary_content = generate_pet_diary(date, log_content)
         
         # 覆写现有的日记文件
         with open(diary_file, 'w', encoding='utf-8') as df:
