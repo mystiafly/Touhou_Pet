@@ -1711,7 +1711,7 @@ def chat(payload: dict = Body(...)):
             
             with open(log_file, 'a', encoding='utf-8') as lf:
                 lf.write(f"[{time_str}] 你: {user_message}\n")
-                lf.write(f"[{time_str}] 露米娅({emotion}): {clean_content}\n")
+                lf.write(f"[{time_str}] {char_name}({emotion}): {clean_content}\n")
                 if browser_task:
                     lf.write(f"           [触发网页操作: {browser_task}]\n")
                 music_res = final_state.get("music_result")
@@ -1912,7 +1912,7 @@ def rumia_speak(payload: dict = Body(...)):
             log_file = os.path.join(DAILY_HISTORY_DIR, f"chat_log_{today_str}.txt")
             
             with open(log_file, 'a', encoding='utf-8') as lf:
-                lf.write(f"[{time_str}] 露米娅({emotion}) (主动): {clean_content}\n\n")
+                lf.write(f"[{time_str}] {char_name}({emotion}) (主动): {clean_content}\n\n")
         except Exception as log_ex:
             print(f"写入每日自言自语日志失败: {log_ex}")
 
