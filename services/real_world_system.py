@@ -30,7 +30,7 @@ def get_meta_context_for_chat(char_id: str = "rumia", char_name: str = "角色")
         return winter_prompt
         
     elif char_id == "rumia" and (hour >= 23 or hour < 6):
-        # 露米娅：深夜模式（23:00 - 06:00）
+        # 深夜模式（23:00 - 06:00）
         midnight_prompt = (
             f"{base_info}"
             "【重点任务提示 - 深夜模式开启】\n"

@@ -389,7 +389,7 @@ def update_favorability(change):
     return new_score
 
 def get_user_profile():
-    """获取用户与露米娅的专属称呼档案"""
+    """获取用户与当前角色的专属称呼档案"""
     if os.path.exists(get_file_path("user_profile.json")):
         try:
             with open(get_file_path("user_profile.json"), 'r', encoding='utf-8') as f:
@@ -413,8 +413,8 @@ def load_history():
     """从文件加载对话历史，如果文件不存在则初始化新的历史"""
     current_fav = get_favorability()
     config_data = get_config()
-    char_name = config_data.get("character_name", "露米娅")
-    persona_prompt = config_data.get("persona_prompt", "你是东方Project中的露米娅，一个喜欢在黑暗中恶作剧的食人妖怪。性格傲娇。")
+    char_name = config_data.get("character_name", "桌宠")
+    persona_prompt = config_data.get("persona_prompt", "你是一个桌面宠物，请根据用户的喜好与他们进行交流。")
     system_prompt = (
         f"{persona_prompt} 你目前对用户的好感度是 {current_fav}/100。\n"
         "【重要指令】\n"
@@ -559,7 +559,7 @@ def recall_memories_node(state: AgentState) -> Dict[str, Any]:
         recent_msgs = dialogue_msgs[-6:]  # 提取最近 6 条历史消息 (3 轮)
         
         query_parts = []
-        role_map = {"user": "用户", "assistant": "露米娅"}
+        role_map = {"user": "用户", "assistant": char_name}
         for msg in recent_msgs:
             query_parts.append(f"{role_map.get(msg['role'], msg['role'])}: {msg['content']}")
         query_parts.append(f"用户: {user_msg}")
@@ -595,7 +595,7 @@ def load_presets_node(state: AgentState) -> Dict[str, Any]:
         recent_msgs = dialogue_msgs[-2:]  # 提取最近 2 条历史消息 (1 轮)
         
         query_parts = []
-        role_map = {"user": "用户", "assistant": "露米娅"}
+        role_map = {"user": "用户", "assistant": char_name}
         for msg in recent_msgs:
             query_parts.append(f"{role_map.get(msg['role'], msg['role'])}: {msg['content']}")
         query_parts.append(f"用户: {user_msg}")
@@ -615,8 +615,8 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
     """装配前置静态与后置动态 Prompt，调用大模型生成回复"""
     char_id = get_active_character_id()
     config_data = get_config()
-    char_name = config_data.get("character_name", "露米娅")
-    persona_prompt = config_data.get("persona_prompt", "你是东方Project中的露米娅，一个喜欢在黑暗中恶作剧的食人妖怪。性格傲娇。")
+    char_name = config_data.get("character_name", "桌宠")
+    persona_prompt = config_data.get("persona_prompt", "你是一个桌面宠物，请根据用户的喜好与他们进行交流。")
 
     history_msgs = state.get("history", [])
     current_fav = state.get("favorability", 10)
@@ -1282,7 +1282,7 @@ def init_custom_presets():
     if not os.path.exists(self_talk_presets_file):
         try:
             config_data = get_config()
-            char_name = config_data.get("character_name", "露米娅")
+            char_name = config_data.get("character_name", "桌宠")
             default_self_talk = {
                 "greeting_suffix": f" 要求：话语简短（15字以内），体现{char_name}的性格，不要和历史记录重复。",
                 "short_idle": "（现在是一段沉默的时间。请主动向我搭话。注意不要和之前说过的话重复。）",
@@ -1634,7 +1634,7 @@ def get_history():
     messages = load_history()
     dialogue = []
     for i, msg in enumerate(messages[1:], 1):
-        role_map = {"user": "你", "assistant": "露米娅"}
+        role_map = {"user": "你", "assistant": char_name}
         dialogue.append({
             "id": i,
             "role": role_map.get(msg["role"], msg["role"]),
@@ -1842,7 +1842,7 @@ def rumia_speak(payload: dict = Body(...)):
             print(f"[PRESETS ERROR] 读取自言自语预设文件失败: {e}")
 
     config_data = get_config()
-    char_name = config_data.get("character_name", "露米娅")
+    char_name = config_data.get("character_name", "桌宠")
 
     greeting_suffix = self_talk_presets.get("greeting_suffix", f" 要求：话语简短（15字以内），体现{char_name}的性格，不要和历史记录重复。")
     short_idle = self_talk_presets.get("short_idle", "（现在是一段沉默的时间。请主动向我搭话。注意不要和之前说过的话重复。）")
@@ -1995,7 +1995,7 @@ def get_log_content(date: str):
 # 8.5. 重新提炼并重写秘密日记接口
 @app.post("/api/settings/logs/{date}/rewrite")
 def rewrite_log_diary(date: str):
-    """重新打包并重写特定日期的露米娅日记"""
+    """重新打包并重写特定日期的角色日记"""
     try:
         if not re.match(r'^\d{4}-\d{2}-\d{2}$', date):
             return JSONResponse({"success": False, "error": "无效的日期格式"}, status_code=400)
@@ -2189,7 +2189,7 @@ def manual_distill_now(payload: dict = Body(default={})):
         log_file_path = os.path.join(DAILY_HISTORY_DIR, f"chat_log_{today_str}.txt")
         
         if not os.path.exists(log_file_path):
-            return JSONResponse({"success": False, "error": "今天还没有聊天记录哦，快去和露米娅聊聊天吧！"})
+            return JSONResponse({"success": False, "error": f"今天还没有聊天记录哦，快去和{char_name}聊聊天吧！"})
             
         with open(log_file_path, 'r', encoding='utf-8') as lf:
             log_content = lf.read().strip()
@@ -2220,7 +2220,7 @@ def manual_distill_now(payload: dict = Body(default={})):
             config_data["distilled_dates"] = distilled_dates
             save_config(config_data)
             
-        return {"success": True, "message": "露米娅非常认真地整理了今天的回忆，并且为您写下了一篇秘密日记哦！"}
+        return {"success": True, "message": f"{char_name}非常认真地整理了今天的回忆，并且为您写下了一篇秘密日记哦！"}
     except Exception as ex:
         print(f"[API ERROR] Manual distill failed: {ex}")
         return JSONResponse({"success": False, "error": str(ex)}, status_code=500)
