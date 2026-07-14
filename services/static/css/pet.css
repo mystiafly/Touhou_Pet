@@ -1,17 +1,17 @@
 
 :root {
-  --theme-main: var(--theme-main);
-  --theme-hover: var(--theme-hover);
-  --theme-glow-02: var(--theme-glow-02);
-  --theme-glow-03: var(--theme-glow-03);
-  --theme-glow-04: var(--theme-glow-04);
-  --theme-glow-05: var(--theme-glow-05);
-  --theme-glow-09: var(--theme-glow-09);
-  --theme-bg-015: var(--theme-bg-015);
-  --theme-bg-035: var(--theme-bg-035);
-  --theme-text-light: var(--theme-text-light);
-  --theme-text-bright: var(--theme-text-bright);
-  --theme-legend-pink: var(--theme-legend-pink);
+  --theme-main: #ff6b8b;
+  --theme-hover: #ff3b68;
+  --theme-glow-02: rgba(255, 107, 139, 0.2);
+  --theme-glow-03: rgba(255, 107, 139, 0.3);
+  --theme-glow-04: rgba(255, 107, 139, 0.4);
+  --theme-glow-05: rgba(255, 107, 139, 0.5);
+  --theme-glow-09: rgba(255, 107, 139, 0.9);
+  --theme-bg-015: rgba(255, 107, 139, 0.15);
+  --theme-bg-035: rgba(255, 107, 139, 0.35);
+  --theme-text-light: #ff8fa4;
+  --theme-text-bright: #ff3366;
+  --theme-legend-pink: #ff8da1;
 }
 
 body.theme-cirno {
@@ -27,6 +27,21 @@ body.theme-cirno {
   --theme-text-light: #a9d4ff;
   --theme-text-bright: #3385ff;
   --theme-legend-pink: #8be9fd;
+}
+
+body.theme-wriggle {
+  --theme-main: #39ff14;
+  --theme-hover: #32cd32;
+  --theme-glow-02: rgba(57, 255, 20, 0.2);
+  --theme-glow-03: rgba(57, 255, 20, 0.3);
+  --theme-glow-04: rgba(57, 255, 20, 0.4);
+  --theme-glow-05: rgba(57, 255, 20, 0.5);
+  --theme-glow-09: rgba(57, 255, 20, 0.9);
+  --theme-bg-015: rgba(57, 255, 20, 0.15);
+  --theme-bg-035: rgba(57, 255, 20, 0.35);
+  --theme-text-light: #7cfc00;
+  --theme-text-bright: #adff2f;
+  --theme-legend-pink: #55ff55;
 }
 /* services/static/css/pet.css */
 
