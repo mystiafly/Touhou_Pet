@@ -55,5 +55,12 @@ body.theme-<char_id> {
 }
 ```
 
-## 6. Verification
-Ensure the character is selectable in the frontend UI (the frontend fetches the list dynamically via `/api/character_info`, but make sure the backend endpoint discovers the folder correctly if it parses the filesystem).
+## 6. Update UI Dropdown (Frontend Registration)
+Open `services/templates/pet.html` and locate the `<select id="character-select">` element.
+Add a new `<option>` for the new character so it becomes selectable in the frontend settings:
+```html
+<option value="<char_id>">Display Name</option>
+```
+
+## 7. Verification
+Ensure the character is selectable in the frontend UI, their theme applies correctly, and their 15 animation frames render without issues.
