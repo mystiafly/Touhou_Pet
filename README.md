@@ -58,5 +58,12 @@ body.theme-reimu {
 ```
 当你在设置中切换角色时，前端会自动将 `body` 挂载 `theme-reimu` 类名，实现 UI 的瞬间重绘。
 
-### 4. 重启应用
-完成以上 3 步后，重启后端 FastAPI 和 Electron 客户端，新角色便会自动出现在设置面板的角色切换列表中了！
+### 4. 注册前端 UI 下拉菜单
+打开 `services/templates/pet.html`，找到 `<select id="character-select">` 标签。
+在里面增加一行新角色的选项，以便用户能够在界面中进行切换：
+```html
+<option value="reimu">灵梦 (Reimu)</option>
+```
+
+### 5. 重启应用
+完成以上 4 步后，重启后端 FastAPI 和 Electron 客户端，新角色便会自动出现在设置面板的角色切换列表中了！
