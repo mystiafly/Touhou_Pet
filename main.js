@@ -8,7 +8,7 @@ function createTray(win) {
     tray = new Tray(path.join(__dirname, 'rumia_tray.png'));
     const contextMenu = Menu.buildFromTemplate([
         {
-            label: '显示露米娅',
+            label: '显示桌宠',
             click: () => {
                 win.show();
                 win.webContents.send('window-state-changed', 'restored');
@@ -21,7 +21,7 @@ function createTray(win) {
             }
         }
     ]);
-    tray.setToolTip('露米娅桌宠');
+    tray.setToolTip('Rumia Engine (多角色桌宠)');
     tray.setContextMenu(contextMenu);
 
     tray.on('double-click', () => {

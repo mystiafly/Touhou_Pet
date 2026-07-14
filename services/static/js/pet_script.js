@@ -427,7 +427,7 @@ class RumiaPet {
             this.mainView.classList.remove('hidden');
             this.settingsContent.classList.remove('wide');
             this.logDateSelect.innerHTML = '<option value="">暂无记录...</option>';
-            this.logContentArea.innerText = '请选择一个日期来查阅你和露米娅的聊天回忆...';
+            this.logContentArea.innerText = `请选择一个日期来查阅你和${this.charName}的聊天回忆...`;
             if (this.rewriteDiaryBtn) this.rewriteDiaryBtn.style.display = 'none';
             
             // [鏂板] 閲嶇疆鏃ュ織瀛愰€夐」鍗＄姸鎬?
@@ -465,7 +465,7 @@ class RumiaPet {
                 this.logDateSelect.innerHTML = html;
             } else {
                 this.logDateSelect.innerHTML = '<option value="">暂无聊天记录</option>';
-                this.logContentArea.innerText = '还没有任何每日回忆记录哦，快去和露米娅多聊聊天吧！';
+                this.logContentArea.innerText = `还没有任何每日回忆记录哦，快去和${this.charName}多聊聊天吧！`;
             }
         } catch (e) {
             console.error("加载日志列表失败:", e);
@@ -477,7 +477,7 @@ class RumiaPet {
     async loadLogContent() {
         const val = this.logDateSelect.value;
         if (!val) {
-            this.logContentArea.innerText = '请选择一个日期来查阅你和露米娅的聊天回忆...';
+            this.logContentArea.innerText = `请选择一个日期来查阅你和${this.charName}的聊天回忆...`;
             if (this.rewriteDiaryBtn) this.rewriteDiaryBtn.style.display = 'none';
             return;
         }
@@ -512,14 +512,14 @@ class RumiaPet {
         const val = this.logDateSelect.value;
         if (!val) return;
 
-        if (!confirm(`确定要让露米娅重新读一遍 ${val} 的对话并重写这天的日记吗？\n(这会消耗API token并需要几秒钟)`)) return;
+        if (!confirm(`确定要让当前角色重新读一遍 ${val} 的对话并重写这天的日记吗？\n(这会消耗API token并需要几秒钟)`)) return;
 
         this.rewriteDiaryBtn.disabled = true;
         const originalText = this.rewriteDiaryBtn.innerHTML;
         this.rewriteDiaryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在重写...';
         
         // 涓存椂灏嗘棩璁板唴瀹规浛鎹负鍔犺浇鎻愮ず骞跺垏鍒版棩璁伴€夐」鍗?
-        this.currentRumiaDiary = "露米娅正在埋头回忆这天的相处，努力重写日记中，这需要几秒钟时间，请稍候...哼！";
+        this.currentRumiaDiary = "正在埋头回忆这天的相处，努力重写日记中，这需要几秒钟时间，请稍候...哼！";
         this.switchLogTab('diary');
 
         try {
@@ -567,7 +567,7 @@ class RumiaPet {
             } else {
                 this.subtabChat.classList.remove('active');
                 this.subtabDiary.classList.add('active');
-                this.logContentArea.innerText = this.currentRumiaDiary || "今天露米娅没有写日记哦……呜，肯定是怪你没有好好理她！";
+                this.logContentArea.innerText = this.currentRumiaDiary || "今天没有写日记哦……呜，肯定是怪你没有好好理她！";
                 
                 // 日记从头阅读，重置滚动位置为0
                 setTimeout(() => {
@@ -790,12 +790,12 @@ class RumiaPet {
         if (this.sleepTimer) clearTimeout(this.sleepTimer);
         // 10 鍒嗛挓 = 10 * 60 * 1000 姣
         const sleepDelay = 10 * 60 * 1000;
-        console.log("露米娅完成了最后一次自言自语，开启 10 分钟闲置睡眠定时器...");
+        console.log("桌宠完成了最后一次自言自语，开启 10 分钟闲置睡眠定时器...");
         this.sleepTimer = setTimeout(() => {
-            console.log("闲置超时，露米娅入睡。");
+            console.log("闲置超时，桌宠入睡。");
             this.isSleeping = true;
             this.setEmotion('sleeping');
-            this.showBubble("（露米娅等累了，已经靠在角落呼呼大睡了……）", 10000);
+            this.showBubble(`（${this.charName}等累了，已经靠在角落呼呼大睡了……）`, 10000);
         }, sleepDelay);
     }
 
@@ -980,7 +980,7 @@ class RumiaPet {
                             contentEl.innerText = node.full_text;
                         } else if (node.type === 'entity') {
                             titleEl.innerHTML = `<i class="fas fa-fingerprint" style="color: #8be9fd;"></i> 鍏宠仈璇?瀹炰綋 (${node.entity_type})`;
-                            contentEl.innerText = `这个词连接了露米娅对您的 "${node.label}" 的记忆碎片。`;
+                            contentEl.innerText = `这个词连接了${this.charName}对您的 "${node.label}" 的记忆碎片。`;
                         }
                         
                         infoCard.classList.remove('hidden');
@@ -1264,7 +1264,7 @@ class RumiaPet {
             this.musicToggleBtn.innerHTML = '<i class="fas fa-play"></i>';
         }
         if (this.liveLyrics) {
-            this.liveLyrics.innerText = "让露米娅唱首歌给你听吧...";
+            this.liveLyrics.innerText = `让${this.charName}唱首歌给你听吧...`;
         }
         if (this.playerBar) {
             this.playerBar.classList.add('hidden');
