@@ -129,11 +129,11 @@ class RumiaPet {
             this.musicToggleBtn.innerHTML = '<i class="fas fa-play"></i>';
         });
 
-        // 鐐瑰嚮韬綋浜掑姩 (濡傛灉姝ｅ湪鐫¤鍒欏敜閱?
+        // 鐐瑰嚮韬綋浜掑姩 (鐜板湪淇敼涓猴細鐐瑰嚮涓嶅敜閱掞紝鍙兘閫氳繃鑱婂ぉ鍞ら啋)
         this.img.addEventListener('click', () => {
-            if (this.isSleeping) {
-                this.wakeUp(false);
-            }
+            // if (this.isSleeping) {
+            //     this.wakeUp(false);
+            // }
         });
 
         this.loadStatus();
@@ -175,9 +175,9 @@ class RumiaPet {
 
             // mousedown handler
             this.img.addEventListener('mousedown', (e) => {
-                if (this.isSleeping) {
-                    this.wakeUp(false);
-                }
+                // if (this.isSleeping) {
+                //     this.wakeUp(false);
+                // }
                 if (e.button === 0) { 
                     isDragging = true;
                     startX = e.screenX;
