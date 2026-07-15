@@ -779,7 +779,7 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
         # 直接拼接在用户消息末尾，防止 API 适配器将 SystemMessage 调整到头部，确保 100% 处于模型生成前的最高注意力区间。
         tail_reminder = (
             "\n\n[SYSTEM REMINDER - FORCED LAUNCH/SEARCH RULE]\n"
-            "1. 如果用户要求你打开、拉起或启动本地应用（当前配置有：记事本, 网易云音乐, 网易云），你【必须】且只能在回复内容的最末尾加上相应的 `[LAUNCH_APP: 应用名称]` 标签（例如：`[LAUNCH_APP: 网易云音乐]`）。\n"
+            "1. 如果用户要求你打开、拉起或启动本地应用（如果上述状态里写了未配置任何应用，请直接告诉用户尚未配置），你【必须】且只能在回复内容的最末尾加上相应的 `[LAUNCH_APP: 应用名称]` 标签（例如：`[LAUNCH_APP: 网易云音乐]`）。\n"
             "2. 如果用户有网页搜索意图，需要拉起浏览器，必须在最末尾加上 `[BROWSER_TASK: 搜索词]` 标签。\n"
             "3. 如果你需要查询实时信息、知识科普或你不确定的内容（仅背景查资料，不拉起浏览器），你【必须】在回复的最末尾加上 `[SEARCH_ENGINE: 搜索词]` 标签。\n"
             "4. 绝对禁止口头上说打开了或查到了但不在最末尾写标签！必须输出方括号标签。"
@@ -1353,6 +1353,17 @@ def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
         return ""
     if not isinstance(presets, list):
         return ""
+
+    global_presets_file = os.path.join(SERVICES_DIR, "global_presets", "global_presets.json")
+    if os.path.exists(global_presets_file):
+        try:
+            with open(global_presets_file, 'r', encoding='utf-8') as f:
+                global_presets = json.load(f)
+            if isinstance(global_presets, list):
+                presets.extend(global_presets)
+        except Exception as e:
+            print(f"[PRESETS ERROR] 读取全局预设失败: {e}")
+
 
     triggered_indices = set()
     semantic_candidates = []
