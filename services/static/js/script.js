@@ -1,5 +1,5 @@
 // static/js/script.js - 前端交互逻辑
-class RumiaChat {
+class DesktopPetChat {
     constructor() {
         this.messageInput = document.getElementById('message-input');
         this.sendButton = document.getElementById('send-btn');
@@ -214,19 +214,19 @@ class RumiaChat {
         console.log(`露米娅将在 ${Math.floor(randomDelay/1000)} 秒后主动说话`);
 
         this.autoSpeakTimer = setTimeout(() => {
-            this.triggerRumiaSpeak();
+            this.triggerPetSpeak();
         }, randomDelay);
     }
 
     // [新增] 触发主动说话请求
     // [修改] 触发主动说话请求
-    async triggerRumiaSpeak() {
+    async triggerPetSpeak() {
         try {
             // 计数器 +1
             this.autoSpeakCount++;
 
             // 发送请求，带上当前的次数 count
-            const response = await fetch('/api/rumia_speak', {
+            const response = await fetch('/api/pet_speak', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json' // 必须加这个头
@@ -251,5 +251,5 @@ class RumiaChat {
 
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', () => {
-    new RumiaChat();
+    new DesktopPetChat();
 });

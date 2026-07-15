@@ -3,7 +3,7 @@
 const { ipcRenderer } = require('electron');
 
 // contextIsolation: false 时，直接挂到 window 即可被页面访问
-window.__rumiaIPC = {
+window.__petIPC = {
     sendSetIgnoreMouseEvents: (ignore, options) => {
         ipcRenderer.send('set-ignore-mouse-events', ignore, options);
     },
@@ -24,4 +24,4 @@ window.__rumiaIPC = {
     }
 };
 
-console.log('[PRELOAD] Rumia IPC bridge ready');
+console.log('[PRELOAD] Pet IPC bridge ready');

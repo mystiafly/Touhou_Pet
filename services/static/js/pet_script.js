@@ -1,9 +1,9 @@
-class RumiaPet {
+class DesktopPet {
     constructor() {
         this.input = document.getElementById('pet-input');
         this.bubble = document.getElementById('speech-bubble');
         this.bubbleContent = document.getElementById('bubble-content');
-        this.img = document.getElementById('rumia-img');
+        this.img = document.getElementById('pet-img');
         this.favScore = document.getElementById('fav-score');
         this.favContainer = document.getElementById('fav-container');
 
@@ -14,7 +14,7 @@ class RumiaPet {
         this.images = {};
         
         this.currentChatLog = "";
-        this.currentRumiaDiary = "";
+        this.currentDiary = "";
         this.activeLogTab = "chat";
         this.isSleeping = false;
         this.isMinimized = false;
@@ -139,7 +139,7 @@ class RumiaPet {
         this.loadStatus();
 
         // [IPC] 动态穿透切换与JS拖拽窗口 — 优先使用 preload.js 注入的 IPC 桥，降级时回退至 window.require('electron')
-        const rumiaIPC = window.__rumiaIPC || (() => {
+        const petIPC = window.__petIPC || (() => {
             try {
                 const { ipcRenderer } = window.require('electron');
                 return {
@@ -150,10 +150,10 @@ class RumiaPet {
                 return null;
             }
         })();
-        if (rumiaIPC) {
+        if (petIPC) {
             // 监听窗口最小化/恢复状态，控制自言自语的暂停与启动
-            if (typeof rumiaIPC.onWindowStateChanged === 'function') {
-                rumiaIPC.onWindowStateChanged((state) => {
+            if (typeof petIPC.onWindowStateChanged === 'function') {
+                petIPC.onWindowStateChanged((state) => {
                     if (state === 'minimized') {
                         this.isMinimized = true;
                         if (this.autoSpeakTimer) {
@@ -182,7 +182,7 @@ class RumiaPet {
                     isDragging = true;
                     startX = e.screenX;
                     startY = e.screenY;
-                    rumiaIPC.sendSetIgnoreMouseEvents(false);
+                    petIPC.sendSetIgnoreMouseEvents(false);
                     isIgnoring = false; // 同步状态
                     this.img.style.cursor = 'grabbing';
                 }
@@ -199,13 +199,13 @@ class RumiaPet {
                     const deltaY = e.screenY - startY;
                     startX = e.screenX;
                     startY = e.screenY;
-                    rumiaIPC.sendWindowDrag(deltaX, deltaY);
+                    petIPC.sendWindowDrag(deltaX, deltaY);
                 }
             });
 
             // 监听系统全局鼠标坐标，用于无死角地进行 hover 和点击穿透判定
-            if (typeof rumiaIPC.onGlobalMouseMove === 'function') {
-                rumiaIPC.onGlobalMouseMove((point) => {
+            if (typeof petIPC.onGlobalMouseMove === 'function') {
+                petIPC.onGlobalMouseMove((point) => {
                     if (isDragging) return;
 
                     let isInteractive = false;
@@ -245,12 +245,12 @@ class RumiaPet {
 
                     if (isInteractive) {
                         if (isIgnoring) {
-                            rumiaIPC.sendSetIgnoreMouseEvents(false);
+                            petIPC.sendSetIgnoreMouseEvents(false);
                             isIgnoring = false;
                         }
                     } else {
                         if (!isIgnoring) {
-                            rumiaIPC.sendSetIgnoreMouseEvents(true, { forward: true });
+                            petIPC.sendSetIgnoreMouseEvents(true, { forward: true });
                             isIgnoring = true;
                         }
                     }
@@ -345,8 +345,8 @@ class RumiaPet {
         if (this.minimizeBtn) {
             this.minimizeBtn.addEventListener('click', () => {
                 this.settingsModal.classList.add('hidden');
-                if (window.__rumiaIPC && typeof window.__rumiaIPC.sendMinimizeToTray === 'function') {
-                    window.__rumiaIPC.sendMinimizeToTray();
+                if (window.__petIPC && typeof window.__petIPC.sendMinimizeToTray === 'function') {
+                    window.__petIPC.sendMinimizeToTray();
                 }
             });
         }
@@ -433,7 +433,7 @@ class RumiaPet {
             // [鏂板] 閲嶇疆鏃ュ織瀛愰€夐」鍗＄姸鎬?
             this.activeLogTab = "chat";
             this.currentChatLog = "";
-            this.currentRumiaDiary = "";
+            this.currentDiary = "";
             if (this.subtabChat) {
                 this.subtabChat.classList.add('active');
             }
@@ -488,14 +488,14 @@ class RumiaPet {
             const data = await response.json();
             if (data.success) {
                 this.currentChatLog = data.chat_content || "";
-                this.currentRumiaDiary = data.diary_content || "";
+                this.currentDiary = data.diary_content || "";
                 // 姣忔鍒囨崲鏂版棩鏈熸椂锛岄粯璁ゆ樉绀鸿亰澶╄褰曞瓙閫夐」鍗?
                 this.switchLogTab('chat');
                 if (this.rewriteDiaryBtn) this.rewriteDiaryBtn.style.display = 'inline-block';
             } else {
                 this.logContentArea.innerText = `读取回忆失败: ${data.error || '未知错误'}`;
                 this.currentChatLog = "";
-                this.currentRumiaDiary = "";
+                this.currentDiary = "";
                 if (this.rewriteDiaryBtn) this.rewriteDiaryBtn.style.display = 'none';
             }
         } catch (e) {
@@ -503,7 +503,7 @@ class RumiaPet {
             this.logContentArea.innerText = '加载回忆失败，请稍后重试。';
             this.currentChatLog = "";
             if (this.rewriteDiaryBtn) this.rewriteDiaryBtn.style.display = 'none';
-            this.currentRumiaDiary = "";
+            this.currentDiary = "";
         }
     }
 
@@ -519,7 +519,7 @@ class RumiaPet {
         this.rewriteDiaryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在重写...';
         
         // 涓存椂灏嗘棩璁板唴瀹规浛鎹负鍔犺浇鎻愮ず骞跺垏鍒版棩璁伴€夐」鍗?
-        this.currentRumiaDiary = "正在埋头回忆这天的相处，努力重写日记中，这需要几秒钟时间，请稍候...哼！";
+        this.currentDiary = "正在埋头回忆这天的相处，努力重写日记中，这需要几秒钟时间，请稍候...哼！";
         this.switchLogTab('diary');
 
         try {
@@ -528,12 +528,12 @@ class RumiaPet {
             });
             const data = await response.json();
             if (data.success) {
-                this.currentRumiaDiary = data.diary_content || "";
+                this.currentDiary = data.diary_content || "";
                 this.switchLogTab('diary');
                 this.showBubble("这天的日记我已经重新写好啦！哼，这次写的可真了，快看看！", 3500);
             } else {
                 alert(`重写日记失败: ${data.error || '未知错误'}`);
-                this.currentRumiaDiary = "重写日记失败了...呜呜。";
+                this.currentDiary = "重写日记失败了...呜呜。";
                 this.switchLogTab('diary');
             }
         } catch (e) {
@@ -567,7 +567,7 @@ class RumiaPet {
             } else {
                 this.subtabChat.classList.remove('active');
                 this.subtabDiary.classList.add('active');
-                this.logContentArea.innerText = this.currentRumiaDiary || "今天没有写日记哦……呜，肯定是怪你没有好好理她！";
+                this.logContentArea.innerText = this.currentDiary || "今天没有写日记哦……呜，肯定是怪你没有好好理她！";
                 
                 // 日记从头阅读，重置滚动位置为0
                 setTimeout(() => {
@@ -640,16 +640,16 @@ class RumiaPet {
             }).catch(() => {});
 
             setTimeout(() => {
-                if (window.__rumiaIPC && typeof window.__rumiaIPC.sendExitApp === 'function') {
-                    window.__rumiaIPC.sendExitApp();
+                if (window.__petIPC && typeof window.__petIPC.sendExitApp === 'function') {
+                    window.__petIPC.sendExitApp();
                 } else {
                     window.close();
                 }
             }, 1000);
         } catch (e) {
             console.error("退出失败:", e);
-            if (window.__rumiaIPC && typeof window.__rumiaIPC.sendExitApp === 'function') {
-                window.__rumiaIPC.sendExitApp();
+            if (window.__petIPC && typeof window.__petIPC.sendExitApp === 'function') {
+                window.__petIPC.sendExitApp();
             } else {
                 window.close();
             }
@@ -782,7 +782,7 @@ class RumiaPet {
         let maxTime = (this.autoSpeakCount < 3) ? 15 * 60 * 1000 : 40 * 60 * 1000;
 
         const delay = Math.floor(Math.random() * (maxTime - minTime + 1)) + minTime;
-        this.autoSpeakTimer = setTimeout(() => this.triggerRumiaSpeak(), delay);
+        this.autoSpeakTimer = setTimeout(() => this.triggerPetSpeak(), delay);
     }
 
     // [鏂板] 杈惧埌鏈€澶ц嚜瑷€鑷娆℃暟鍚庡紑鍚?10 鍒嗛挓鍊掕鏃剁潯鐪?
@@ -824,7 +824,7 @@ class RumiaPet {
         this.showBubble("...", 2000);
 
         try {
-            const response = await fetch('/api/rumia_speak', {
+            const response = await fetch('/api/pet_speak', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 // 浼犲弬 type: 'greeting'
@@ -843,10 +843,10 @@ class RumiaPet {
         }
     }
 
-    async triggerRumiaSpeak() {
+    async triggerPetSpeak() {
         this.autoSpeakCount++;
         try {
-            const response = await fetch('/api/rumia_speak', {
+            const response = await fetch('/api/pet_speak', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ count: this.autoSpeakCount })
@@ -1277,5 +1277,5 @@ class RumiaPet {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    new RumiaPet();
+    new DesktopPet();
 });
