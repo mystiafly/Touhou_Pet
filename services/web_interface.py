@@ -1513,9 +1513,8 @@ def generate_pet_diary(date_str, log_content):
         current_fav = get_favorability()
         config = get_config()
         char_id = config.get("character_id", "rumia")
-        char_info = load_character_info(char_id)
-        char_name = char_info.get("character_name", "桌宠")
-        char_persona = char_info.get("priority_reminder", "")
+        char_name = config.get("character_name", "桌宠")
+        char_persona = config.get("priority_reminder", "")
         
         prompt = (
             f"【防截断至高指令】：你必须有始有终地完整写完这篇日记，绝对禁止在句子中途截断、断字或留下未完成的半句话！日记结尾必须以完整的标点符号完美落笔收尾。\n\n"
@@ -1558,8 +1557,7 @@ def daily_distillation_worker():
         config_data = get_config()
         distilled_dates = config_data.get("distilled_dates", [])
         char_id = config_data.get("character_id", "rumia")
-        char_info = load_character_info(char_id)
-        char_name = char_info.get("character_name", "桌宠")
+        char_name = config_data.get("character_name", "桌宠")
         today_str = datetime.now().strftime("%Y-%m-%d")
         
         if not os.path.exists(DAILY_HISTORY_DIR):
@@ -2209,8 +2207,7 @@ def manual_distill_now(payload: dict = Body(default={})):
             
         config_data = get_config()
         char_id = config_data.get("character_id", "rumia")
-        char_info = load_character_info(char_id)
-        char_name = char_info.get("character_name", "桌宠")
+        char_name = config_data.get("character_name", "桌宠")
         
         today_str = datetime.now().strftime("%Y-%m-%d")
         log_file_path = os.path.join(DAILY_HISTORY_DIR, f"chat_log_{today_str}.txt")
