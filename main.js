@@ -21,7 +21,7 @@ function createTray(win) {
             }
         }
     ]);
-    tray.setToolTip('Rumia Engine (多角色桌宠)');
+    tray.setToolTip('Pet Engine (托盘)');
     tray.setContextMenu(contextMenu);
 
     tray.on('double-click', () => {

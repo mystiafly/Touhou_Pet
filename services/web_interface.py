@@ -39,7 +39,7 @@ import sqlite3
 from typing import TypedDict, List, Optional, Dict, Any
 
 # 初始化 FastAPI
-app = FastAPI(title="Rumia Pet Backend", version="0.3.0")
+app = FastAPI(title="Desktop Pet Backend", version="0.3.0")
 
 # 挂载静态文件目录 (services/static -> /static)
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -955,8 +955,8 @@ def execute_browser_task_node(state: AgentState) -> Dict[str, Any]:
     
     # 获取 browser-use 环境目录
     services_dir = os.path.dirname(os.path.abspath(__file__))
-    rumia_dir = os.path.dirname(services_dir)
-    workspace_dir = os.path.dirname(rumia_dir)
+    project_dir = os.path.dirname(services_dir)
+    workspace_dir = os.path.dirname(project_dir)
     
     candidate_paths = [
         os.path.join(workspace_dir, 'browser-use'),
@@ -1695,7 +1695,7 @@ def chat(payload: dict = Body(...)):
             "search_task": None,
             "search_result": None,
             "rename_task_user": None,
-            "rename_task_rumia": None,
+            "rename_task_active": None,
             "rename_result": None,
             "request_type": "chat"
         }
@@ -1832,9 +1832,10 @@ def post_config_api(payload: dict = Body(...)):
         return JSONResponse({"error": str(e)}, status_code=500)
 
 # 6. 主动说话接口 (自言自语)
-@app.post("/api/rumia_speak")
-def rumia_speak(payload: dict = Body(...)):
-    """主动搭话与情绪递进业务逻辑 (使用 LangGraph 对话引擎驱动)"""
+@app.post("/api/pet_speak")
+def pet_speak(payload: dict = Body(...)):
+    """控制台或系统事件触发的自言自语/打招呼逻辑 (使用 LangGraph 对话)"""
+    char_id = get_active_character_id()
     request_type = payload.get('type', 'idle').strip()
     count_raw = payload.get('count')
     
@@ -1900,13 +1901,13 @@ def rumia_speak(payload: dict = Body(...)):
             "search_task": None,
             "search_result": None,
             "rename_task_user": None,
-            "rename_task_rumia": None,
+            "rename_task_active": None,
             "rename_result": None,
             "request_type": request_type
         }
 
         # 调用 LangGraph 对话工作流，附带持久化 thread_id
-        config = {"configurable": {"thread_id": "rumia_self_talk_thread"}}
+        config = {"configurable": {"thread_id": f"{char_id}_self_talk_thread"}}
         final_state = chat_workflow.invoke(initial_state, config)
 
         emotion = final_state.get("emotion", "normal")
@@ -1944,7 +1945,7 @@ def rumia_speak(payload: dict = Body(...)):
 
     except Exception as e:
         import traceback
-        print("\n" + "="*20 + " [RUMIA SPEAK ERROR BACKTRACE] " + "="*20)
+        print("\n" + "="*20 + " [PET SPEAK ERROR BACKTRACE] " + "="*20)
         traceback.print_exc()
         print("="*70 + "\n")
         return JSONResponse({"error": str(e)}, status_code=500)
