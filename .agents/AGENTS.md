@@ -11,3 +11,9 @@ Before staging and committing any code changes:
 1. Determine the appropriate version increment (MINOR for new features, PATCH for bug fixes).
 2. Edit `package.json` to update the `"version"` field.
 3. Stage both the modified code files and `package.json` together, and commit them.
+
+
+## Versioning and Git Workflow
+Whenever any code updates are made to the project, you must always remember to:
+1. Commit the changes to Git using git add and git commit.
+2. Update the version number appropriately (e.g., in package.json and frontend asset ?v= tags).

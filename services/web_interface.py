@@ -1557,6 +1557,9 @@ def daily_distillation_worker():
     try:
         config_data = get_config()
         distilled_dates = config_data.get("distilled_dates", [])
+        char_id = config_data.get("character_id", "rumia")
+        char_info = load_character_info(char_id)
+        char_name = char_info.get("character_name", "桌宠")
         today_str = datetime.now().strftime("%Y-%m-%d")
         
         if not os.path.exists(DAILY_HISTORY_DIR):
@@ -1592,7 +1595,7 @@ def daily_distillation_worker():
                 if log_content:
                     print(f"[MEMORY DISTILLER] Distilling facts via Mem0 for {date_str}...")
                     agent.add(
-                        f"Here is the dialogue history between user and Rumia on date {date_str}:\n{log_content}",
+                        f"Here is the dialogue history between user and {char_name} on date {date_str}:\n{log_content}",
                         user_id="player_01",
                         metadata={"date": date_str}
                     )
@@ -1976,7 +1979,9 @@ def get_log_content(date: str):
             return JSONResponse({"success": False, "error": "无效的日期格式"}, status_code=400)
             
         log_file = os.path.join(DAILY_HISTORY_DIR, f"chat_log_{date}.txt")
-        diary_file = os.path.join(DAILY_HISTORY_DIR, f"rumia_diary_{date}.txt")
+        config = get_config()
+        char_id = config.get("character_id", "rumia")
+        diary_file = os.path.join(DAILY_HISTORY_DIR, f"{char_id}_diary_{date}.txt")
         
         if not os.path.exists(log_file):
             return JSONResponse({"success": False, "error": "聊天记录文件不存在"}, status_code=404)
@@ -2016,7 +2021,9 @@ def rewrite_log_diary(date: str):
             return JSONResponse({"success": False, "error": "无效的日期格式"}, status_code=400)
             
         log_file = os.path.join(DAILY_HISTORY_DIR, f"chat_log_{date}.txt")
-        diary_file = os.path.join(DAILY_HISTORY_DIR, f"rumia_diary_{date}.txt")
+        config = get_config()
+        char_id = config.get("character_id", "rumia")
+        diary_file = os.path.join(DAILY_HISTORY_DIR, f"{char_id}_diary_{date}.txt")
         
         if not os.path.exists(log_file):
             return JSONResponse({"success": False, "error": "聊天记录文件不存在，无法重写日记"}, status_code=404)
@@ -2200,6 +2207,11 @@ def manual_distill_now(payload: dict = Body(default={})):
             )
             return {"success": True, "message": "成功注入一条关于巧克力饼干和红茶生日的测试回忆！"}
             
+        config_data = get_config()
+        char_id = config_data.get("character_id", "rumia")
+        char_info = load_character_info(char_id)
+        char_name = char_info.get("character_name", "桌宠")
+        
         today_str = datetime.now().strftime("%Y-%m-%d")
         log_file_path = os.path.join(DAILY_HISTORY_DIR, f"chat_log_{today_str}.txt")
         
@@ -2214,21 +2226,20 @@ def manual_distill_now(payload: dict = Body(default={})):
             
         print(f"[MANUAL DISTILL] Distilling today's chat logs ({today_str})...")
         agent.add(
-            f"Here is the dialogue history between user and Rumia on date {today_str}:\n{log_content}",
+            f"Here is the dialogue history between user and {char_name} on date {today_str}:\n{log_content}",
             user_id="player_01",
             metadata={"date": today_str}
         )
         
-        diary_file_path = os.path.join(DAILY_HISTORY_DIR, f"rumia_diary_{today_str}.txt")
-        print(f"[MANUAL DISTILL] Generating today's Rumia Diary ({today_str})...")
-        today_diary = generate_rumia_diary(today_str, log_content)
+        diary_file_path = os.path.join(DAILY_HISTORY_DIR, f"{char_id}_diary_{today_str}.txt")
+        print(f"[MANUAL DISTILL] Generating today's diary for {char_name} ({today_str})...")
+        today_diary = generate_pet_diary(today_str, log_content)
         try:
             with open(diary_file_path, 'w', encoding='utf-8') as df:
                 df.write(today_diary)
         except Exception as df_ex:
             print(f"手动整理时保存日记失败: {df_ex}")
         
-        config_data = get_config()
         distilled_dates = config_data.get("distilled_dates", [])
         if today_str not in distilled_dates:
             distilled_dates.append(today_str)
