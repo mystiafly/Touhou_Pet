@@ -778,11 +778,12 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
         # 尾部强效提醒 (方案 A 增强)：防止长历史上下文导致的注意力衰减，让 Gemini/DeepSeek 强制遵守指令。
         # 直接拼接在用户消息末尾，防止 API 适配器将 SystemMessage 调整到头部，确保 100% 处于模型生成前的最高注意力区间。
         tail_reminder = (
-            "\n\n[SYSTEM REMINDER - FORCED LAUNCH/SEARCH RULE]\n"
+            "\n\n[SYSTEM REMINDER - FORCED LAUNCH/SEARCH/MUSIC RULE]\n"
             "1. 如果用户要求你打开、拉起或启动本地应用（如果上述状态里写了未配置任何应用，请直接告诉用户尚未配置），你【必须】且只能在回复内容的最末尾加上相应的 `[LAUNCH_APP: 应用名称]` 标签（例如：`[LAUNCH_APP: 网易云音乐]`）。\n"
             "2. 如果用户有网页搜索意图，需要拉起浏览器，必须在最末尾加上 `[BROWSER_TASK: 搜索词]` 标签。\n"
             "3. 如果你需要查询实时信息、知识科普或你不确定的内容（仅背景查资料，不拉起浏览器），你【必须】在回复的最末尾加上 `[SEARCH_ENGINE: 搜索词]` 标签。\n"
-            "4. 绝对禁止口头上说打开了或查到了但不在最末尾写标签！必须输出方括号标签。"
+            "4. 如果用户提出想听歌、放音乐、点歌、或者切歌的要求时，你在保持性格回复的同时，你【必须】在最末尾加上 `[MUSIC_PLAY: 歌曲名称 歌手名(可选)]` 标签传递给播放器。\n"
+            "5. 绝对禁止口头上说打开了/查到了/播放了但不在最末尾写标签！必须输出方括号标签。"
         )
         active_messages.append(HumanMessage(content=user_message + dynamic_tail + tail_reminder))
     elif is_self and user_message:
