@@ -249,7 +249,7 @@ def get_memory_agent():
                 "provider": "qdrant",
                 "config": {
                     "path": os.path.join(get_character_dir(), "qdrant_db"),
-                    "collection_name": f"rumia_memory_{embed_suffix}",
+                    "collection_name": f"{get_active_character_id()}_memory_{embed_suffix}",
                     "embedding_model_dims": vector_dims
                 }
             },
@@ -325,8 +325,8 @@ def get_memory_agent():
                 }
                 
         # 自动检查并清理维度冲突的本地 Qdrant 集合 (避免 shapes not aligned 启动错误)
-        qdrant_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "qdrant_db"))
-        collection_name = f"rumia_memory_{embed_suffix}"
+        qdrant_path = os.path.join(get_character_dir(), "qdrant_db")
+        collection_name = f"{get_active_character_id()}_memory_{embed_suffix}"
         try:
             from qdrant_client import QdrantClient
             client = QdrantClient(path=qdrant_path)
