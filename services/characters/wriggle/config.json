@@ -5,10 +5,14 @@
   "api_provider": "deepseek-v4-pro",
   "distilled_dates": [
     "2026-07-14",
-    "2026-07-15"
+    "2026-07-15",
+    "2026-07-16"
   ],
   "app_launcher": {
     "记事本": "notepad.exe",
     "网易云音乐": "H:\\CloudMusic\\cloudmusic.exe"
-  }
+  },
+  "enable_greeting": false,
+  "auto_speak_multiplier": 0.5,
+  "enable_auto_speak": true
 }

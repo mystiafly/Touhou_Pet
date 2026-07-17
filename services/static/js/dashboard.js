@@ -1,0 +1,435 @@
+// dashboard.js - 独立大贤者控制台核心逻辑
+document.addEventListener('DOMContentLoaded', () => {
+    // 导航栏切换
+    const navItems = document.querySelectorAll('.nav-item');
+    const sections = document.querySelectorAll('.content-section');
+
+    navItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = item.getAttribute('data-target');
+            
+            navItems.forEach(nav => nav.classList.remove('active'));
+            item.classList.add('active');
+            
+            sections.forEach(sec => sec.classList.remove('active'));
+            document.getElementById(targetId).classList.add('active');
+
+            // 如果切换到图谱，延迟渲染以保证容器可见
+            if (targetId === 'graph-view' && !window.graphLoaded) {
+                loadMemoryGraph();
+                window.graphLoaded = true;
+            }
+            if (targetId === 'logs-view' && !window.logsLoaded) {
+                loadLogsList();
+                window.logsLoaded = true;
+            }
+        });
+    });
+
+    // ========== 大脑引擎配置 ==========
+    const apiSelect = document.getElementById('api-provider-select');
+    const charSelect = document.getElementById('character-select');
+
+    // 加载基础配置
+    async function loadConfig() {
+        try {
+            const [configRes, charRes] = await Promise.all([
+                fetch('/api/settings/config'),
+                fetch('/api/character_info')
+            ]);
+            const configData = await configRes.json();
+            const charData = await charRes.json();
+
+            if (configData.success) {
+                apiSelect.value = configData.api_provider;
+                
+                const geminiOption = apiSelect.querySelector('option[value="gemini"]');
+                const dsFlashOption = apiSelect.querySelector('option[value="deepseek-v4-flash"]');
+                const dsProOption = apiSelect.querySelector('option[value="deepseek-v4-pro"]');
+                const dsChatOption = apiSelect.querySelector('option[value="deepseek-chat"]');
+                
+                if (geminiOption) geminiOption.innerText = configData.has_gemini ? "Gemini 2.5 (检测到 Key)" : "Gemini 2.5 (未检测到 Key)";
+                if (dsFlashOption) dsFlashOption.innerText = configData.has_deepseek ? "DeepSeek V4 Flash (检测到 Key)" : "DeepSeek V4 Flash (未检测到 Key)";
+                if (dsProOption) dsProOption.innerText = configData.has_deepseek ? "DeepSeek V4 Pro (检测到 Key)" : "DeepSeek V4 Pro (未检测到 Key)";
+                if (dsChatOption) dsChatOption.innerText = configData.has_deepseek ? "DeepSeek V3 标准版 (检测到 Key)" : "DeepSeek V3 标准版 (未检测到 Key)";
+                
+                const greetingToggle = document.getElementById('greeting-toggle');
+                if (greetingToggle) {
+                    greetingToggle.checked = configData.enable_greeting !== false;
+                }
+                
+                const autoSpeakToggle = document.getElementById('auto-speak-toggle');
+                if (autoSpeakToggle) {
+                    autoSpeakToggle.checked = configData.enable_auto_speak !== false;
+                }
+                
+                const autoSpeakMultiplier = document.getElementById('auto-speak-multiplier');
+                if (autoSpeakMultiplier && configData.auto_speak_multiplier) {
+                    autoSpeakMultiplier.value = configData.auto_speak_multiplier.toString();
+                }
+            }
+
+            if (charData.character_id) {
+                charSelect.value = charData.character_id;
+            }
+        } catch (e) {
+            console.error("加载配置失败:", e);
+        }
+    }
+
+    loadConfig();
+
+    apiSelect.addEventListener('change', async () => {
+        try {
+            const response = await fetch('/api/settings/config', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ api_provider: apiSelect.value })
+            });
+            const data = await response.json();
+            if (!data.success) {
+                alert("切换引擎失败: " + data.error);
+            }
+        } catch (e) {
+            alert("切换引擎请求失败！");
+        }
+    });
+
+    const greetingToggle = document.getElementById('greeting-toggle');
+    if (greetingToggle) {
+        greetingToggle.addEventListener('change', async () => {
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ enable_greeting: greetingToggle.checked })
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        });
+    }
+
+    const autoSpeakToggle = document.getElementById('auto-speak-toggle');
+    if (autoSpeakToggle) {
+        autoSpeakToggle.addEventListener('change', async () => {
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ enable_auto_speak: autoSpeakToggle.checked })
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        });
+    }
+
+    const autoSpeakMultiplier = document.getElementById('auto-speak-multiplier');
+    if (autoSpeakMultiplier) {
+        autoSpeakMultiplier.addEventListener('change', async () => {
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ auto_speak_multiplier: parseFloat(autoSpeakMultiplier.value) })
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        });
+    }
+
+    charSelect.addEventListener('change', async (e) => {
+        const confirmSwitch = confirm(`确定要切换灵魂为 ${e.target.options[e.target.selectedIndex].text} 吗？\n为保证记忆环境纯净，这将会自动重启桌宠！`);
+        if (confirmSwitch) {
+            await fetch('/api/switch_character', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ character_id: e.target.value })
+            });
+            // 通知 Electron 关闭 Dashboard 并重启主程序
+            if (typeof require !== 'undefined') {
+                const { ipcRenderer } = require('electron');
+                ipcRenderer.send('exit-app');
+            }
+        } else {
+            // 恢复选择
+            loadConfig();
+        }
+    });
+
+    // ========== 提示词透视 (Prompt Preview) ==========
+    const previewBtn = document.getElementById('preview-prompt-btn');
+    const previewModal = document.getElementById('preview-modal');
+    const closePreviewBtn = document.getElementById('close-preview-btn');
+    const previewLoading = document.getElementById('preview-loading');
+    const previewContentArea = document.getElementById('preview-content-area');
+
+    let currentPreviewMessages = [];
+
+    function renderPreview() {
+        const hideHistory = document.getElementById('hide-history-toggle').checked;
+        let html = "";
+        currentPreviewMessages.forEach(msg => {
+            if (hideHistory && msg.is_history) return;
+            html += `${msg.role_name}\n${msg.content}\n\n=======================================================================\n\n`;
+        });
+        previewContentArea.innerText = html;
+    }
+
+    if (document.getElementById('hide-history-toggle')) {
+        document.getElementById('hide-history-toggle').addEventListener('change', renderPreview);
+    }
+
+    if (previewBtn) {
+        previewBtn.addEventListener('click', async () => {
+            previewModal.classList.remove('hidden');
+            previewContentArea.innerText = '';
+            previewLoading.classList.remove('hidden');
+
+            try {
+                const response = await fetch('/api/settings/preview_prompt');
+                const data = await response.json();
+                previewLoading.classList.add('hidden');
+                
+                if (data.success) {
+                    currentPreviewMessages = data.messages;
+                    renderPreview();
+                } else {
+                    previewContentArea.innerText = `生成失败: ${data.error || '未知错误'}`;
+                }
+            } catch (e) {
+                console.error(e);
+                previewLoading.classList.add('hidden');
+                previewContentArea.innerText = "请求失败，请检查后端运行状态。";
+            }
+        });
+    }
+
+    if (closePreviewBtn) {
+        closePreviewBtn.addEventListener('click', () => {
+            previewModal.classList.add('hidden');
+        });
+    }
+
+    // 点击模态框背景关闭
+    previewModal.addEventListener('click', (e) => {
+        if (e.target === previewModal) {
+            previewModal.classList.add('hidden');
+        }
+    });
+
+    // ========== 重启应用 ==========
+    const restartBtn = document.getElementById('restart-app-btn');
+    if (restartBtn) {
+        restartBtn.addEventListener('click', () => {
+            const confirmRestart = confirm("确定要重新启动大贤者系统吗？\n如果程序没有自动打开，请手动双击启动！");
+            if (confirmRestart) {
+                if (typeof require !== 'undefined') {
+                    const { ipcRenderer } = require('electron');
+                    ipcRenderer.send('restart-app');
+                } else {
+                    alert("当前非 Electron 环境，请手动重启");
+                }
+            }
+        });
+    }
+
+    // ========== 每日回忆 (日记) ==========
+    const logDateSelect = document.getElementById('log-date-select');
+    const logContentArea = document.getElementById('log-content-area');
+    const subtabChat = document.getElementById('subtab-chat');
+    const subtabDiary = document.getElementById('subtab-diary');
+    const rewriteDiaryBtn = document.getElementById('rewrite-diary-btn');
+
+    let currentChatLog = "";
+    let currentDiary = "";
+
+    async function loadLogsList() {
+        logDateSelect.innerHTML = '<option value="">加载中...</option>';
+        try {
+            const response = await fetch('/api/settings/logs');
+            const data = await response.json();
+            if (data.success && data.dates && data.dates.length > 0) {
+                logDateSelect.innerHTML = '';
+                data.dates.forEach(date => {
+                    const opt = document.createElement('option');
+                    opt.value = date;
+                    opt.innerText = date;
+                    logDateSelect.appendChild(opt);
+                });
+            } else {
+                logDateSelect.innerHTML = '<option value="">暂无记录</option>';
+            }
+        } catch (e) {
+            logDateSelect.innerHTML = '<option value="">加载失败</option>';
+        }
+    }
+
+    logDateSelect.addEventListener('change', async () => {
+        const val = logDateSelect.value;
+        if (!val) return;
+
+        logContentArea.innerText = '正在读取回忆中...';
+        try {
+            const response = await fetch(`/api/settings/logs/${val}`);
+            const data = await response.json();
+            if (data.success) {
+                currentChatLog = data.chat_content || "";
+                currentDiary = data.diary_content || "";
+                switchLogTab('chat');
+                rewriteDiaryBtn.style.display = 'inline-flex';
+            } else {
+                logContentArea.innerText = `读取回忆失败: ${data.error || '未知错误'}`;
+                rewriteDiaryBtn.style.display = 'none';
+            }
+        } catch (e) {
+            logContentArea.innerText = '加载回忆失败，请稍后重试。';
+        }
+    });
+
+    function switchLogTab(tab) {
+        if (tab === 'chat') {
+            subtabChat.classList.add('active');
+            subtabDiary.classList.remove('active');
+            logContentArea.innerText = currentChatLog || "今天没有聊天对话记录哦。";
+            logContentArea.scrollTop = logContentArea.scrollHeight;
+        } else {
+            subtabChat.classList.remove('active');
+            subtabDiary.classList.add('active');
+            logContentArea.innerText = currentDiary || "今天没有写日记哦……";
+            logContentArea.scrollTop = 0;
+        }
+    }
+
+    subtabChat.addEventListener('click', () => switchLogTab('chat'));
+    subtabDiary.addEventListener('click', () => switchLogTab('diary'));
+
+    rewriteDiaryBtn.addEventListener('click', async () => {
+        const val = logDateSelect.value;
+        if (!val) return;
+        if (!confirm(`确定要重写 ${val} 的日记吗？`)) return;
+
+        rewriteDiaryBtn.disabled = true;
+        const oldHtml = rewriteDiaryBtn.innerHTML;
+        rewriteDiaryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 重写中...';
+        currentDiary = "正在努力重写日记中，请稍候...";
+        switchLogTab('diary');
+
+        try {
+            const response = await fetch(`/api/settings/logs/${val}/rewrite`, { method: 'POST' });
+            const data = await response.json();
+            if (data.success) {
+                currentDiary = data.diary_content || "";
+                switchLogTab('diary');
+                alert("日记重写完成！");
+            } else {
+                alert(`重写失败: ${data.error}`);
+            }
+        } catch (e) {
+            alert("请求失败！");
+        } finally {
+            rewriteDiaryBtn.disabled = false;
+            rewriteDiaryBtn.innerHTML = oldHtml;
+        }
+    });
+
+    // ========== 记忆图谱 ==========
+    let network = null;
+    const manualDistillBtn = document.getElementById('manual-distill-btn');
+    const seedTestBtn = document.getElementById('seed-test-btn');
+    const infoCard = document.getElementById('graph-info-card');
+    const infoTitle = document.getElementById('info-node-title');
+    const infoContent = document.getElementById('info-node-content');
+
+    async function loadMemoryGraph() {
+        const container = document.getElementById('graph-canvas-container');
+        if (!container) return;
+
+        container.innerHTML = '<div style="color:#aaa; padding: 20px; text-align:center;">正在扫描长短期记忆拓扑，构建图谱中...</div>';
+        
+        try {
+            const response = await fetch('/api/settings/memory_graph');
+            const data = await response.json();
+
+            if (!data.success) {
+                container.innerHTML = `<div style="color:#ff5555; padding: 20px; text-align:center;">图谱构建失败: ${data.error}</div>`;
+                return;
+            }
+
+            const nodes = new vis.DataSet(data.nodes || []);
+            const edges = new vis.DataSet(data.edges || []);
+            const graphData = { nodes: nodes, edges: edges };
+
+            const options = {
+                nodes: {
+                    borderWidth: 2,
+                    font: { face: 'Segoe UI' }
+                },
+                edges: {
+                    width: 2,
+                    smooth: { type: 'continuous' }
+                },
+                physics: {
+                    barnesHut: { gravitationalConstant: -2000, centralGravity: 0.3, springLength: 95, springConstant: 0.04 },
+                    minVelocity: 0.75
+                },
+                interaction: { hover: true, tooltipDelay: 200 }
+            };
+
+            container.innerHTML = '';
+            network = new vis.Network(container, graphData, options);
+
+            network.on("click", function (params) {
+                if (params.nodes.length > 0) {
+                    const nodeId = params.nodes[0];
+                    const node = nodes.get(nodeId);
+                    if (node) {
+                        infoCard.classList.remove('hidden');
+                        infoTitle.innerText = node.label || 'Node';
+                        infoContent.innerText = node.title || 'No detailed memory data available.';
+                    }
+                } else {
+                    infoCard.classList.add('hidden');
+                }
+            });
+
+        } catch (error) {
+            container.innerHTML = `<div style="color:#ff5555; padding: 20px; text-align:center;">网络错误或响应超时，构建失败！</div>`;
+        }
+    }
+
+    async function manualDistill(isTest = false) {
+        if (!isTest && !confirm("这将会消耗部分 API Token 将今天的聊天记录压缩为日记记忆实体，是否继续？")) return;
+        
+        const btn = isTest ? seedTestBtn : manualDistillBtn;
+        const oldHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在处理...';
+        btn.disabled = true;
+
+        try {
+            const res = await fetch('/api/settings/memory_distill_now', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ seed_test: isTest })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert(data.message);
+                loadMemoryGraph(); // 刷新图谱
+            } else {
+                alert("失败: " + data.error);
+            }
+        } catch (e) {
+            alert("请求异常！");
+        } finally {
+            btn.innerHTML = oldHtml;
+            btn.disabled = false;
+        }
+    }
+
+    manualDistillBtn.addEventListener('click', () => manualDistill(false));
+    seedTestBtn.addEventListener('click', () => manualDistill(true));
+});
