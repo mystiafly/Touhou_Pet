@@ -5,6 +5,8 @@ import threading
 import re
 from datetime import datetime
 from fastapi import APIRouter, Request, Body, HTTPException
+from pydantic import BaseModel
+from typing import Dict, Any
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from core.config_manager import get_config, save_config, get_active_character_id, GLOBAL_CONFIG_FILE
 from core.memory_manager import load_history, save_history, DAILY_HISTORY_DIR, get_memory_agent
