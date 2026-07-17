@@ -30,6 +30,9 @@
             <a href="#" class="nav-item" data-target="graph-view">
                 <i class="fas fa-project-diagram"></i> 记忆图谱
             </a>
+            <a href="#" class="nav-item" data-target="create-soul-view">
+                <i class="fas fa-magic"></i> 孕育新灵魂
+            </a>
         </nav>
         
         <div class="sidebar-bottom">
@@ -70,9 +73,7 @@
                     <div class="form-group">
                         <label for="character-select">切换角色灵魂:</label>
                         <select id="character-select" class="modern-select">
-                            <option value="rumia">露米娅 (Rumia)</option>
-                            <option value="cirno">琪露诺 (Cirno)</option>
-                            <option value="wriggle">莉格露 (Wriggle)</option>
+                            <!-- 选项将由 JS 动态生成 -->
                         </select>
                     </div>
                     <p class="help-text text-danger"><i class="fas fa-exclamation-triangle"></i> 切换灵魂后，为确保记忆隔离，应用主程序将会自动重启！</p>
@@ -199,6 +200,34 @@
                     <div class="info-content">
                         <p id="info-node-content">点击图谱中的节点查看...</p>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. 孕育新灵魂视图 -->
+        <section id="create-soul-view" class="content-section">
+            <header class="section-header">
+                <h1>孕育新灵魂</h1>
+                <p>借助大模型将你的零散设定提炼成完美契合底层的角色配置文件</p>
+            </header>
+            
+            <div class="card-container">
+                <div class="settings-card">
+                    <h3><i class="fas fa-dna"></i> 基础设定输入</h3>
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="new-char-name" style="font-weight: 500; font-size: 14px;">期待的中文名字</label>
+                        <input type="text" id="new-char-name" class="modern-input" placeholder="例如：猫娘" style="margin-top: 8px; width: 100%;">
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="new-char-desc" style="font-weight: 500; font-size: 14px;">角色特质描述 (随心所欲地写)</label>
+                        <textarea id="new-char-desc" class="modern-input" rows="5" placeholder="描述越详细，灵魂越饱满。例如：傲娇毒舌的白毛萝莉，喜欢吃鱼，口癖是‘喵’，平时在咖啡厅打工，特别讨厌被摸尾巴..." style="margin-top: 8px; width: 100%; resize: vertical;"></textarea>
+                    </div>
+
+                    <button id="generate-soul-btn" class="action-btn" style="margin-top: 20px; width: 100%; justify-content: center;">
+                        <i class="fas fa-magic"></i> 开始炼丹 (交由大模型处理)
+                    </button>
+                    <p id="generate-status" class="help-text" style="margin-top: 10px; text-align: center; display: none;">正在请求大模型塑魂，请稍候...</p>
                 </div>
             </div>
         </section>

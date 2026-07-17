@@ -70,6 +70,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
+
+
+            // 加载动态角色列表
+            try {
+                const charsResponse = await fetch('/api/characters/list');
+                const charsData = await charsResponse.json();
+                if (charsData.status === "success") {
+                    charSelect.innerHTML = "";
+                    charsData.characters.forEach(c => {
+                        const option = document.createElement("option");
+                        option.value = c.character_id;
+                        option.innerText = `${c.character_name} (${c.character_id})`;
+                        charSelect.appendChild(option);
+                    });
+                }
+            } catch (e) {
+                console.error("加载角色列表失败:", e);
+            }
+
             if (charData.character_id) {
                 charSelect.value = charData.character_id;
             }
@@ -144,23 +163,77 @@ document.addEventListener('DOMContentLoaded', () => {
     charSelect.addEventListener('change', async (e) => {
         const confirmSwitch = confirm(`确定要切换灵魂为 ${e.target.options[e.target.selectedIndex].text} 吗？\n为保证记忆环境纯净，这将会自动重启桌宠！`);
         if (confirmSwitch) {
-            await fetch('/api/switch_character', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ character_id: e.target.value })
-            });
-            // 通知 Electron 关闭 Dashboard 并重启主程序
-            if (typeof require !== 'undefined') {
-                const { ipcRenderer } = require('electron');
-                ipcRenderer.send('exit-app');
+            try {
+                await fetch('/api/switch_character', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ character_id: e.target.value })
+                });
+                
+                // 触发主进程重启
+                if (window.electronAPI) {
+                    window.electronAPI.restartApp();
+                } else {
+                    alert("重启指令已发送，请手动重启程序。");
+                }
+            } catch (e) {
+                alert("切换请求失败！");
             }
         } else {
-            // 恢复选择
+            // 恢复原值
             loadConfig();
         }
     });
 
-    // ========== 提示词透视 (Prompt Preview) ==========
+    // 处理新角色生成
+    const generateBtn = document.getElementById('generate-soul-btn');
+    if (generateBtn) {
+        generateBtn.addEventListener('click', async () => {
+            const nameInput = document.getElementById('new-char-name').value.trim();
+            const descInput = document.getElementById('new-char-desc').value.trim();
+            const statusText = document.getElementById('generate-status');
+            
+            if (!nameInput || !descInput) {
+                alert("请填写角色名字和特质描述！");
+                return;
+            }
+
+            const confirmGen = confirm("将请求大模型提炼设定并创建底层文件，该过程大概需要10-20秒，确认开始吗？");
+            if (!confirmGen) return;
+
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在请求大模型塑魂...';
+            statusText.style.display = 'block';
+
+            try {
+                const response = await fetch('/api/characters/generate', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ name: nameInput, description: descInput })
+                });
+                
+                const data = await response.json();
+                if (data.status === 'success') {
+                    alert(`✨ 灵魂注入成功！\n\n大贤者已在后台为您建好了名为【${data.character_id}】的灵魂容器。\n\n⚠️ 重要最后一步：\n请前往 services/static/images/${data.character_id}/ 目录，放入 15 张对应表情动作的立绘（详情见文档）。\n完成后点击左下角【重启大贤者】，即可在主页切换到您的新角色！`);
+                    // 重新加载列表
+                    loadConfig();
+                    document.getElementById('new-char-name').value = '';
+                    document.getElementById('new-char-desc').value = '';
+                } else {
+                    alert("生成失败: " + data.message);
+                }
+            } catch (e) {
+                console.error(e);
+                alert("请求失败，请检查网络或控制台报错。");
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '<i class="fas fa-magic"></i> 开始炼丹 (交由大模型处理)';
+                statusText.style.display = 'none';
+            }
+        });
+    }
+
+    // ========== 日常模式：图表和聊天记录相关逻辑 ==========
     const previewBtn = document.getElementById('preview-prompt-btn');
     const previewModal = document.getElementById('preview-modal');
     const closePreviewBtn = document.getElementById('close-preview-btn');
