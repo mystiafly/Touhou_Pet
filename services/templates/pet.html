@@ -81,15 +81,10 @@
             <div id="settings-main-view" class="view-panel">
                 <h3>系统设置</h3>
                 <div class="settings-list">
-                    <button id="open-engine-btn" class="menu-btn primary-btn">
-                        <i class="fas fa-brain"></i> 大脑引擎
+                    <button id="open-dashboard-btn" class="menu-btn primary-btn">
+                        <i class="fas fa-sliders-h"></i> 大贤者控制台
                     </button>
-                    <button id="open-logs-btn" class="menu-btn info-btn">
-                        <i class="fas fa-book"></i> 每日回忆 (日记)
-                    </button>
-                    <button id="open-graph-btn" class="menu-btn success-btn">
-                        <i class="fas fa-project-diagram"></i> 记忆图谱
-                    </button>
+
                     <button id="minimize-btn" class="menu-btn warning-btn">
                         <i class="fas fa-minus"></i> 最小化至托盘
                     </button>
@@ -100,96 +95,7 @@
                 <button id="close-settings-btn" class="close-btn">关闭</button>
             </div>
 
-            <!-- 2. 大脑引擎配置视图 (默认隐藏) -->
-            <div id="settings-engine-view" class="view-panel hidden">
-                <h3><i class="fas fa-brain"></i> 大脑引擎配置</h3>
-                <div class="settings-list">
-                    <div class="settings-item">
-                        <label for="api-provider-select">选择AI大脑:</label>
-                        <select id="api-provider-select" class="settings-select">
-                            <option value="gemini">Gemini 2.5 Flash</option>
-                            <option value="deepseek-v4-flash">DeepSeek V4 Flash</option>
-                            <option value="deepseek-v4-pro">DeepSeek V4 Pro</option>
-                            <option value="deepseek-chat">DeepSeek V3 (标准版)</option>
-                        </select>
-                    </div>
-                    <div class="settings-item" style="margin-top: 15px;">
-                        <label for="character-select">切换灵魂 (当前角色):</label>
-                        <select id="character-select" class="settings-select">
-                            <option value="rumia">露米娅 (Rumia)</option>
-                            <option value="cirno">琪露诺 (Cirno)</option>
-                            <option value="wriggle">莉格露 (Wriggle)</option>
-                        </select>
-                    </div>
-                    <p class="settings-desc">⚠️ 切换灵魂后，程序将会自动关闭以重置记忆引擎，请手动重新启动桌宠。</p>
 
-                    <p class="settings-desc">AI 的思考广度与对话情绪特征将会实时发生改变哦！</p>
-                </div>
-                <button id="back-engine-btn" class="menu-btn small-btn">
-                    <i class="fas fa-arrow-left"></i> 返回设置
-                </button>
-            </div>
-
-            <!-- 3. 日记浏览视图 (默认隐藏) -->
-            <div id="settings-logs-view" class="view-panel hidden">
-                <h3><i class="fas fa-book"></i> 每日回忆</h3>
-                <div class="logs-container">
-                    <div class="logs-sidebar">
-                        <label for="log-date-select">选择日期:</label>
-                        <select id="log-date-select" class="settings-select">
-                            <option value="">暂无记录...</option>
-                        </select>
-                    </div>
-                    <div class="log-content-wrapper">
-                        <!-- Sub-tab Switcher -->
-                        <div class="log-subtabs">
-                            <button id="subtab-chat" class="subtab-btn active">聊天对话</button>
-                            <button id="subtab-diary" class="subtab-btn">后台日记</button>
-                        </div>
-                        <div class="log-text-area-wrapper">
-                            <pre id="log-content-area">查阅聊天回忆...</pre>
-                        </div>
-                    </div>
-                </div>
-                <div class="logs-action-bar">
-                    <button id="back-settings-btn" class="menu-btn small-btn" style="margin: 0;">
-                        <i class="fas fa-arrow-left"></i> 返回设置
-                    </button>
-                    <button id="rewrite-diary-btn" class="menu-btn small-btn info-btn" style="margin: 0; display: none;">
-                        <i class="fas fa-sync-alt"></i> 重写这天日记
-                    </button>
-                </div>
-            </div>
-
-            <!-- 4. 记忆图谱视图 (默认隐藏) -->
-            <div id="settings-graph-view" class="view-panel hidden">
-                <h3><i class="fas fa-project-diagram"></i> 记忆关系图谱</h3>
-                <div class="graph-layout">
-                    <div class="graph-controls-bar">
-                        <button id="manual-distill-btn" class="menu-btn small-btn success-btn">
-                            <i class="fas fa-sync-alt"></i> 整理今日记忆
-                        </button>
-                        <button id="seed-test-btn" class="menu-btn small-btn info-btn">
-                            <i class="fas fa-plus"></i> 注入测试记忆
-                        </button>
-                    </div>
-                    <div class="graph-container-wrapper">
-                        <div id="graph-canvas-container"></div>
-                        <!-- Glassmorphic floating legend and info card -->
-                        <div class="graph-legend">
-                            <span class="legend-item"><span class="legend-color pink"></span>回忆事记</span>
-                            <span class="legend-item"><span class="legend-color blue"></span>关联词/实体</span>
-                        </div>
-                        <div id="graph-info-card" class="graph-info-card hidden">
-                            <h4 id="info-node-title">节点详情</h4>
-                            <p id="info-node-content">点击图谱中的节点查看详细的记忆事实和关联信息...</p>
-                        </div>
-                    </div>
-                </div>
-                <button id="back-graph-btn" class="menu-btn small-btn">
-                    <i class="fas fa-arrow-left"></i> 返回设置
-                </button>
-            </div>
         </div>
     </div>
 </div>

@@ -55,6 +55,9 @@ class DesktopPet {
                 'sleeping': [prefix + 'sleeping.png', prefix + 'sleeping_1.png', prefix + 'sleeping_2.png']
             };
             this.img.src = this.images['normal'][0];
+            this.enableGreeting = data.enable_greeting !== false;
+            this.enableAutoSpeak = data.enable_auto_speak !== false;
+            this.autoSpeakMultiplier = data.auto_speak_multiplier || 1.0;
             
             // set select value
             const charSelect = document.getElementById('character-select');
@@ -282,7 +285,9 @@ class DesktopPet {
             });
         }
 
-        setTimeout(() => this.greetUser(), 500);
+        if (this.enableGreeting) {
+            setTimeout(() => this.greetUser(), 500);
+        }
     }
 
     initSettings() {
@@ -291,55 +296,36 @@ class DesktopPet {
         this.closeSettingsBtn = document.getElementById('close-settings-btn');
         this.exitGameBtn = document.getElementById('exit-game-btn');
         this.minimizeBtn = document.getElementById('minimize-btn');
-        this.apiSelect = document.getElementById('api-provider-select');
 
-        // [鏂板] 鏃ュ織涓庡ぇ鑴戝紩鎿庢煡鐪嬮潰鏉?DOM 寮曠敤
-        this.settingsContent = this.settingsModal.querySelector('.settings-content');
-        this.mainView = document.getElementById('settings-main-view');
-        this.engineView = document.getElementById('settings-engine-view');
-        this.logsView = document.getElementById('settings-logs-view');
-        this.graphView = document.getElementById('settings-graph-view'); // [鏂板]
-        
-        this.openEngineBtn = document.getElementById('open-engine-btn');
-        this.backEngineBtn = document.getElementById('back-engine-btn');
-        this.openLogsBtn = document.getElementById('open-logs-btn');
-        this.backSettingsBtn = document.getElementById('back-settings-btn');
-        this.logDateSelect = document.getElementById('log-date-select');
-        this.logContentArea = document.getElementById('log-content-area');
-
-        // [鏂板] 鏃ヨ瀛愭爣绛鹃〉 DOM 寮曠敤
-        this.subtabChat = document.getElementById('subtab-chat');
-        this.subtabDiary = document.getElementById('subtab-diary');
-        
-        this.openGraphBtn = document.getElementById('open-graph-btn'); // [鏂板]
-        this.backGraphBtn = document.getElementById('back-graph-btn'); // [鏂板]
-        this.manualDistillBtn = document.getElementById('manual-distill-btn'); // [鏂板]
-        this.seedTestBtn = document.getElementById('seed-test-btn'); // [鏂板]
-        this.rewriteDiaryBtn = document.getElementById('rewrite-diary-btn'); // [鏂板]
+        // Dashboard 澶х獥浣撻€昏緫
+        this.openDashboardBtn = document.getElementById('open-dashboard-btn');
+        if (this.openDashboardBtn) {
+            this.openDashboardBtn.addEventListener('click', () => {
+                if (window.__petIPC && typeof window.__petIPC.openSettingsWindow === 'function') {
+                    window.__petIPC.openSettingsWindow();
+                }
+                this.closeSettingsModal();
+            });
+        }
 
         // 鎵撳紑鑿滃崟
-        this.settingsBtn.addEventListener('click', async () => {
-            this.settingsModal.classList.remove('hidden');
-            await this.loadConfig();
-        });
+        if (this.settingsBtn) {
+            this.settingsBtn.addEventListener('click', () => {
+                this.settingsModal.classList.remove('hidden');
+            });
+        }
 
         // 鍏抽棴鑿滃崟
-        this.closeSettingsBtn.addEventListener('click', () => {
-            this.closeSettingsModal();
-        });
-
-        // 鐐瑰嚮鑳屾櫙鍏抽棴
-        this.settingsModal.addEventListener('click', (e) => {
-            if (e.target === this.settingsModal) {
+        if (this.closeSettingsBtn) {
+            this.closeSettingsBtn.addEventListener('click', () => {
                 this.closeSettingsModal();
-            }
-        });
-
-        // 鐩戝惉寮曟搸鍒囨崲浜嬩欢
-        this.apiSelect.addEventListener('change', () => this.saveConfig());
+            });
+        }
 
         // 閫€鍑烘父鎴?
-        this.exitGameBtn.addEventListener('click', () => this.exitGame());
+        if (this.exitGameBtn) {
+            this.exitGameBtn.addEventListener('click', () => this.exitGame());
+        }
 
         // 最小化至托盘
         if (this.minimizeBtn) {
@@ -350,105 +336,12 @@ class DesktopPet {
                 }
             });
         }
-
-        // [鏂板] 鍒囨崲鍒板ぇ鑴戝紩鎿庨潰鏉?
-        this.openEngineBtn.addEventListener('click', () => {
-            this.mainView.classList.add('hidden');
-            this.engineView.classList.remove('hidden');
-        });
-
-        // [鏂板] 杩斿洖涓昏缃潰鏉?(澶ц剳寮曟搸)
-        this.backEngineBtn.addEventListener('click', () => {
-            this.engineView.classList.add('hidden');
-            this.mainView.classList.remove('hidden');
-        });
-
-        // [鏂板] 鍒囨崲鍒版棩蹇楅潰鏉?
-        this.openLogsBtn.addEventListener('click', () => {
-            this.mainView.classList.add('hidden');
-            this.logsView.classList.remove('hidden');
-            this.settingsContent.classList.add('wide');
-            this.loadLogsList();
-        });
-
-        // [鏂板] 杩斿洖涓昏缃潰鏉?(鏃ヨ)
-        this.backSettingsBtn.addEventListener('click', () => {
-            this.logsView.classList.add('hidden');
-            this.mainView.classList.remove('hidden');
-            this.settingsContent.classList.remove('wide');
-        });
-
-        // [鏂板] 鍒囨崲鍒板浘璋遍潰鏉?
-        this.openGraphBtn.addEventListener('click', () => {
-            this.mainView.classList.add('hidden');
-            this.graphView.classList.remove('hidden');
-            this.settingsContent.classList.add('wide');
-            this.loadMemoryGraph();
-        });
-
-        // [鏂板] 杩斿洖涓昏缃潰鏉?(鍥捐氨)
-        this.backGraphBtn.addEventListener('click', () => {
-            this.graphView.classList.add('hidden');
-            this.mainView.classList.remove('hidden');
-            this.settingsContent.classList.remove('wide');
-        });
-
-
-
-        // [鏂板] 鎵嬪姩鏁寸悊涓庢祴璇曟敞鍏ヤ簨浠剁洃鍚?
-        this.manualDistillBtn.addEventListener('click', () => this.manualDistill(false));
-        this.seedTestBtn.addEventListener('click', () => this.manualDistill(true));
-
-        // [鏂板] 鏃ユ湡閫夋嫨鍒囨崲
-        this.logDateSelect.addEventListener('change', () => {
-            this.loadLogContent();
-        });
-
-        // [鏂板] 鍒囨崲瀛愰€夐」鍗′簨浠剁粦瀹?
-        if (this.subtabChat) {
-            this.subtabChat.addEventListener('click', () => this.switchLogTab('chat'));
-        }
-        if (this.subtabDiary) {
-            this.subtabDiary.addEventListener('click', () => this.switchLogTab('diary'));
-        }
-        if (this.rewriteDiaryBtn) {
-            this.rewriteDiaryBtn.addEventListener('click', () => this.rewriteDiary());
-        }
     }
 
-    // [鏂板] 杈呭姪鍏抽棴鏂规硶锛岀敤浜庨噸缃姸鎬?
     closeSettingsModal() {
-        this.settingsModal.classList.add('hidden');
-        // 閲嶇疆瑙嗗浘鍥炰富鐣岄潰锛岄槻姝笅娆＄偣寮€鏄ぇ妗?
-        setTimeout(() => {
-            this.logsView.classList.add('hidden');
-            this.engineView.classList.add('hidden');
-            this.graphView.classList.add('hidden'); // [鏂板]
-            this.mainView.classList.remove('hidden');
-            this.settingsContent.classList.remove('wide');
-            this.logDateSelect.innerHTML = '<option value="">暂无记录...</option>';
-            this.logContentArea.innerText = `请选择一个日期来查阅你和${this.charName}的聊天回忆...`;
-            if (this.rewriteDiaryBtn) this.rewriteDiaryBtn.style.display = 'none';
-            
-            // [鏂板] 閲嶇疆鏃ュ織瀛愰€夐」鍗＄姸鎬?
-            this.activeLogTab = "chat";
-            this.currentChatLog = "";
-            this.currentDiary = "";
-            if (this.subtabChat) {
-                this.subtabChat.classList.add('active');
-            }
-            if (this.subtabDiary) {
-                this.subtabDiary.classList.remove('active');
-            }
-
-            // [鏂板] 閿€姣佸浘璋?
-            if (this.network) {
-                this.network.destroy();
-                this.network = null;
-            }
-            const infoCard = document.getElementById('graph-info-card');
-            if (infoCard) infoCard.classList.add('hidden');
-        }, 300);
+        if (this.settingsModal) {
+            this.settingsModal.classList.add('hidden');
+        }
     }
 
     // [鏂板] 鍔犺浇鎵€鏈夊彲鐢ㄧ殑鏃ュ織鏃ユ湡鍒楄〃
@@ -578,54 +471,7 @@ class DesktopPet {
         }
     }
 
-    async loadConfig() {
-        try {
-            const response = await fetch('/api/settings/config');
-            const data = await response.json();
-            if (data.success) {
-                this.apiSelect.value = data.api_provider;
-                
-                // 鍔ㄦ€佺粰涓嬫媺妗嗘坊鍔犲瘑閽ヨ鏄?
-                const geminiOption = this.apiSelect.querySelector('option[value="gemini"]');
-                const dsFlashOption = this.apiSelect.querySelector('option[value="deepseek-v4-flash"]');
-                const dsProOption = this.apiSelect.querySelector('option[value="deepseek-v4-pro"]');
-                const dsChatOption = this.apiSelect.querySelector('option[value="deepseek-chat"]');
-                
-                if (geminiOption) {
-                    geminiOption.innerText = data.has_gemini ? "Gemini 2.5 (检测到 Key)" : "Gemini 2.5 (未检测到 Key)";
-                }
-                if (dsFlashOption) {
-                    dsFlashOption.innerText = data.has_deepseek ? "DeepSeek V4 Flash (检测到 Key)" : "DeepSeek V4 Flash (未检测到 Key)";
-                }
-                if (dsProOption) {
-                    dsProOption.innerText = data.has_deepseek ? "DeepSeek V4 Pro (检测到 Key)" : "DeepSeek V4 Pro (未检测到 Key)";
-                }
-                if (dsChatOption) {
-                    dsChatOption.innerText = data.has_deepseek ? "DeepSeek V3 标准版 (检测到 Key)" : "DeepSeek V3 标准版 (未检测到 Key)";
-                }
-            }
-        } catch (e) {
-            console.error("加载配置失败:", e);
-        }
-    }
 
-    async saveConfig() {
-        const val = this.apiSelect.value;
-        try {
-            const response = await fetch('/api/settings/config', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ api_provider: val })
-            });
-            const data = await response.json();
-            if (data.success) {
-                this.showBubble(`我的大脑已成功切换为 ${val.toUpperCase()} 引擎！`, 2000);
-            }
-        } catch (e) {
-            console.error("保存配置失败:", e);
-            this.showBubble("切换引擎失败...", 2000);
-        }
-    }
 
     async exitGame() {
         if (!confirm(`要让${this.charName}去睡觉吗？`)) return;
@@ -770,7 +616,7 @@ class DesktopPet {
 
     resetAutoSpeakTimer() {
         if (this.autoSpeakTimer) clearTimeout(this.autoSpeakTimer);
-        if (this.isMinimized) return;
+        if (this.isMinimized || !this.enableAutoSpeak) return;
         if (this.autoSpeakCount >= 6) {
             this.scheduleSleepTimer();
             return;
@@ -781,7 +627,11 @@ class DesktopPet {
         let minTime = (this.autoSpeakCount < 3) ? 8 * 60 * 1000 : 30 * 60 * 1000;
         let maxTime = (this.autoSpeakCount < 3) ? 15 * 60 * 1000 : 40 * 60 * 1000;
 
-        const delay = Math.floor(Math.random() * (maxTime - minTime + 1)) + minTime;
+        let delay = Math.floor(Math.random() * (maxTime - minTime + 1)) + minTime;
+        // 应用用户设定的倍率
+        if (this.autoSpeakMultiplier) {
+            delay = Math.floor(delay * this.autoSpeakMultiplier);
+        }
         this.autoSpeakTimer = setTimeout(() => this.triggerPetSpeak(), delay);
     }
 

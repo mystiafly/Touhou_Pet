@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>大贤者控制台 (Dashboard)</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.0.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
+</head>
+<body>
+
+<div class="dashboard-container">
+    <!-- 左侧边栏 -->
+    <aside class="sidebar">
+        <div class="brand">
+            <i class="fas fa-microchip glow-icon"></i>
+            <h2>大贤者系统</h2>
+        </div>
+        
+        <nav class="nav-menu">
+            <a href="#" class="nav-item active" data-target="engine-view">
+                <i class="fas fa-brain"></i> 大脑引擎
+            </a>
+            <a href="#" class="nav-item" data-target="basic-settings-view">
+                <i class="fas fa-cog"></i> 基础设置
+            </a>
+            <a href="#" class="nav-item" data-target="logs-view">
+                <i class="fas fa-book"></i> 每日回忆
+            </a>
+            <a href="#" class="nav-item" data-target="graph-view">
+                <i class="fas fa-project-diagram"></i> 记忆图谱
+            </a>
+        </nav>
+        
+        <div class="sidebar-bottom">
+            <p class="status-text">系统状态: <span class="status-ok">运行中</span></p>
+            <button id="restart-app-btn" class="action-btn outline" style="width: 100%; margin-top: 15px; justify-content: center; border-color: #f77272; color: #f77272;">
+                <i class="fas fa-redo"></i> 重启大贤者
+            </button>
+        </div>
+    </aside>
+
+    <!-- 右侧主内容区 -->
+    <main class="main-content">
+        
+        <!-- 1. 大脑引擎配置视图 -->
+        <section id="engine-view" class="content-section active">
+            <header class="section-header">
+                <h1>大脑引擎配置</h1>
+                <p>调整 AI 驱动核心与性格载体</p>
+            </header>
+            
+            <div class="card-container">
+                <div class="settings-card">
+                    <h3><i class="fas fa-server"></i> API 提供商</h3>
+                    <div class="form-group">
+                        <label for="api-provider-select">选择AI大脑:</label>
+                        <select id="api-provider-select" class="modern-select">
+                            <option value="gemini">Gemini 2.5 Flash</option>
+                            <option value="deepseek-v4-flash">DeepSeek V4 Flash</option>
+                            <option value="deepseek-v4-pro">DeepSeek V4 Pro</option>
+                            <option value="deepseek-chat">DeepSeek V3 (标准版)</option>
+                        </select>
+                    </div>
+                    <p class="help-text">AI 的思考广度与对话情绪特征将会实时发生改变。</p>
+                </div>
+
+                <div class="settings-card danger-card">
+                    <h3><i class="fas fa-user-astronaut"></i> 灵魂载体</h3>
+                    <div class="form-group">
+                        <label for="character-select">切换角色灵魂:</label>
+                        <select id="character-select" class="modern-select">
+                            <option value="rumia">露米娅 (Rumia)</option>
+                            <option value="cirno">琪露诺 (Cirno)</option>
+                            <option value="wriggle">莉格露 (Wriggle)</option>
+                        </select>
+                    </div>
+                    <p class="help-text text-danger"><i class="fas fa-exclamation-triangle"></i> 切换灵魂后，为确保记忆隔离，应用主程序将会自动重启！</p>
+                </div>
+
+                <div class="settings-card">
+                    <h3><i class="fas fa-code"></i> 开发者功能</h3>
+                    <div class="form-group">
+                        <p class="help-text">调试大贤者系统最终喂给大模型的完整上下文。</p>
+                        <button id="preview-prompt-btn" class="action-btn outline">
+                            <i class="fas fa-eye"></i> 提示词透视 (Dry Run)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. 基础设置视图 -->
+        <section id="basic-settings-view" class="content-section">
+            <header class="section-header">
+                <h1>基础设置</h1>
+                <p>调整大贤者与灵魂载体的常规行为偏好</p>
+            </header>
+            
+            <div class="card-container">
+                <div class="settings-card">
+                    <h3><i class="fas fa-comment-dots"></i> 交流行为</h3>
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <label style="font-weight: 500; font-size: 14px;">打招呼开关</label>
+                            <p class="help-text" style="margin-top: 5px;">开启后，桌宠在每次启动时都会主动向你发送第一条消息。</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="greeting-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    
+                    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 15px 0;">
+                    
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <label style="font-weight: 500; font-size: 14px;">自动随时间说话</label>
+                            <p class="help-text" style="margin-top: 5px;">开启后，桌宠在闲置一段时间后会主动自言自语找你搭话。</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="auto-speak-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="auto-speak-multiplier" style="font-weight: 500; font-size: 14px; display: block;">自动说话间隔时间倍率</label>
+                        <select id="auto-speak-multiplier" class="modern-select" style="margin-top: 8px; width: 100%;">
+                            <option value="0.2">0.2x (极短等待)</option>
+                            <option value="0.5">0.5x (较短等待)</option>
+                            <option value="0.7">0.7x (稍短等待)</option>
+                            <option value="1.0">1.0x (默认等待)</option>
+                            <option value="1.5">1.5x (较长等待)</option>
+                        </select>
+                        <p class="help-text">倍率越小，桌宠憋不住找你搭话所需的时间就越短。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. 日记回忆视图 -->
+        <section id="logs-view" class="content-section">
+            <header class="section-header">
+                <h1>每日回忆与日记</h1>
+                <p>翻阅过去的对话与秘密日记</p>
+            </header>
+            
+            <div class="logs-layout">
+                <div class="logs-sidebar-inner">
+                    <h3>归档列表</h3>
+                    <select id="log-date-select" class="modern-select list-style" size="10">
+                        <option value="">加载中...</option>
+                    </select>
+                </div>
+                
+                <div class="logs-main-area">
+                    <div class="log-tabs">
+                        <button id="subtab-chat" class="tab-btn active">聊天对话</button>
+                        <button id="subtab-diary" class="tab-btn">后台日记</button>
+                        <div class="spacer"></div>
+                        <button id="rewrite-diary-btn" class="action-btn primary" style="display: none;">
+                            <i class="fas fa-sync-alt"></i> 重写日记
+                        </button>
+                    </div>
+                    <div class="log-content-box">
+                        <pre id="log-content-area">请从左侧选择一个日期来查阅回忆...</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. 记忆图谱视图 -->
+        <section id="graph-view" class="content-section">
+            <header class="section-header">
+                <h1>记忆关系图谱</h1>
+                <p>向量数据库中的长期认知拓扑可视化</p>
+            </header>
+            
+            <div class="graph-toolbar">
+                <button id="manual-distill-btn" class="action-btn success">
+                    <i class="fas fa-compress-arrows-alt"></i> 整理今日记忆
+                </button>
+                <button id="seed-test-btn" class="action-btn outline">
+                    <i class="fas fa-flask"></i> 注入测试记忆
+                </button>
+            </div>
+            
+            <div class="graph-canvas-wrapper">
+                <div id="graph-canvas-container"></div>
+                
+                <div class="graph-legend">
+                    <span class="legend-item"><span class="legend-dot fact"></span> 回忆事记</span>
+                    <span class="legend-item"><span class="legend-dot entity"></span> 关联实体</span>
+                </div>
+                
+                <div id="graph-info-card" class="graph-info-panel hidden">
+                    <h4 id="info-node-title">节点详情</h4>
+                    <div class="info-content">
+                        <p id="info-node-content">点击图谱中的节点查看...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- 提示词预览 Modal -->
+<div id="preview-modal" class="modal-overlay hidden">
+    <div class="modal-content wide-modal">
+        <div class="modal-header">
+            <h2><i class="fas fa-eye"></i> 提示词透视 (Dry Run)</h2>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <label style="color: #bbb; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                    <input type="checkbox" id="hide-history-toggle" style="cursor: pointer;"> 隐藏中间对话上下文
+                </label>
+                <button id="close-preview-btn" class="close-modal-btn"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div class="modal-body">
+            <div id="preview-loading" class="loading-state hidden">
+                <i class="fas fa-spinner fa-spin"></i> 正在生成完整上下文...
+            </div>
+            <pre id="preview-content-area" class="code-preview"></pre>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/dashboard.js?v=1.0.0"></script>
+</body>
+</html>
