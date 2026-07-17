@@ -208,12 +208,18 @@
         <section id="create-soul-view" class="content-section">
             <header class="section-header">
                 <h1>孕育新灵魂</h1>
-                <p>借助大模型将你的零散设定提炼成完美契合底层的角色配置文件</p>
+                <p>借助大模型提炼，或者直接亲手注入底层配置代码</p>
+                
+                <div class="mode-tabs" style="margin-top: 15px; display: flex; gap: 10px;">
+                    <button id="mode-lazy-btn" class="action-btn active" style="flex: 1; justify-content: center;"><i class="fas fa-magic"></i> 懒人模式</button>
+                    <button id="mode-pro-btn" class="action-btn outline" style="flex: 1; justify-content: center;"><i class="fas fa-code"></i> 高手模式</button>
+                </div>
             </header>
             
             <div class="card-container">
-                <div class="settings-card">
-                    <h3><i class="fas fa-dna"></i> 基础设定输入</h3>
+                <!-- 懒人模式表单 -->
+                <div id="form-lazy-mode" class="settings-card">
+                    <h3><i class="fas fa-dna"></i> 基础设定输入 (懒人)</h3>
                     <div class="form-group" style="margin-top: 15px;">
                         <label for="new-char-name" style="font-weight: 500; font-size: 14px;">期待的中文名字</label>
                         <input type="text" id="new-char-name" class="modern-input" placeholder="例如：猫娘" style="margin-top: 8px; width: 100%;">
@@ -228,6 +234,49 @@
                         <i class="fas fa-magic"></i> 开始炼丹 (交由大模型处理)
                     </button>
                     <p id="generate-status" class="help-text" style="margin-top: 10px; text-align: center; display: none;">正在请求大模型塑魂，请稍候...</p>
+                </div>
+
+                <!-- 高手模式表单 -->
+                <div id="form-pro-mode" class="settings-card hidden" style="display: none;">
+                    <h3><i class="fas fa-microchip"></i> 核心代码注入 (高手)</h3>
+                    
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="pro-char-id" style="font-weight: 500; font-size: 14px;">英文 ID (必填)</label>
+                        <input type="text" id="pro-char-id" class="modern-input" placeholder="例如：neko" style="margin-top: 8px; width: 100%;">
+                        <p class="help-text">仅限小写字母和下划线，作为文件夹名使用。</p>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="pro-char-name" style="font-weight: 500; font-size: 14px;">中文名 (必填)</label>
+                        <input type="text" id="pro-char-name" class="modern-input" placeholder="例如：猫娘" style="margin-top: 8px; width: 100%;">
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="pro-persona-prompt" style="font-weight: 500; font-size: 14px;">核心提示词 (必填)</label>
+                        <textarea id="pro-persona-prompt" class="modern-input" rows="4" placeholder="完全覆盖系统约束的第一排内容" style="margin-top: 8px; width: 100%; resize: vertical;"></textarea>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="pro-theme-color" style="font-weight: 500; font-size: 14px;">主色调 (可选)</label>
+                        <input type="text" id="pro-theme-color" class="modern-input" placeholder="例如：#FFB6C1" style="margin-top: 8px; width: 100%;">
+                        <p class="help-text">填入十六进制色号，系统将自动注入主题 CSS。</p>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="pro-app-launcher" style="font-weight: 500; font-size: 14px;">专属应用白名单 (可选 JSON)</label>
+                        <textarea id="pro-app-launcher" class="modern-input" rows="3" placeholder='{"记事本": "C:\\\\Windows\\\\System32\\\\notepad.exe"}' style="margin-top: 8px; width: 100%; resize: vertical; font-family: monospace;"></textarea>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="pro-env-presets" style="font-weight: 500; font-size: 14px;">环境触发词 (可选 JSON 数组)</label>
+                        <textarea id="pro-env-presets" class="modern-input" rows="4" placeholder='[{"name": "夜间", "condition": {"type": "time", "start_hour": 23, "end_hour": 6}, "prompt": "..."}]' style="margin-top: 8px; width: 100%; resize: vertical; font-family: monospace;"></textarea>
+                        <p class="help-text">符合格式的 JSON 数组将被写入 <code>env_presets.json</code>。</p>
+                    </div>
+
+                    <button id="generate-pro-btn" class="action-btn outline" style="margin-top: 20px; width: 100%; justify-content: center; border-color: #8c8cff; color: #8c8cff;">
+                        <i class="fas fa-bolt"></i> 瞬间注入 (纯 Python 极速写入)
+                    </button>
+                    <p id="generate-pro-status" class="help-text text-success" style="margin-top: 10px; text-align: center; display: none;">配置已物理写入磁盘！</p>
                 </div>
             </div>
         </section>

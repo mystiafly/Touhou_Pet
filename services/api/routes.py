@@ -212,17 +212,53 @@ async def api_characters_list():
     return JSONResponse({"status": "success", "characters": result})
 
 class CharacterGenRequest(BaseModel):
-    name: str
-    description: str
+    mode: str = "lazy"
+    name: str = ""
+    description: str = ""
+    character_id: str = ""
+    character_name: str = ""
+    persona_prompt: str = ""
+    theme_color: str = ""
+    app_launcher: str = ""
+    env_presets: str = ""
 
 @router.post("/api/characters/generate")
 async def api_characters_generate(req: CharacterGenRequest):
     import os, json
-    from core.llm_client import get_langchain_model
-    from langchain_core.messages import SystemMessage, HumanMessage
     from core.config_manager import SERVICES_DIR
 
-    system_prompt = """
+    try:
+        if req.mode == "pro":
+            # 高手模式：直接取用用户输入的数据
+            char_id = req.character_id
+            char_name = req.character_name
+            persona_prompt = req.persona_prompt
+            theme_color = req.theme_color
+            
+            if not char_id or not char_name or not persona_prompt:
+                return JSONResponse({"status": "error", "message": "英文 ID、中文名和核心提示词不能为空。"}, status_code=400)
+                
+            # 解析应用白名单 JSON
+            app_launcher_data = {}
+            if req.app_launcher:
+                try:
+                    app_launcher_data = json.loads(req.app_launcher)
+                except Exception as e:
+                    return JSONResponse({"status": "error", "message": f"应用白名单 JSON 格式错误: {e}"}, status_code=400)
+            
+            # 解析环境触发词 JSON
+            env_presets_data = []
+            if req.env_presets:
+                try:
+                    env_presets_data = json.loads(req.env_presets)
+                except Exception as e:
+                    return JSONResponse({"status": "error", "message": f"环境触发词 JSON 格式错误: {e}"}, status_code=400)
+                    
+        else:
+            # 懒人模式：调用大模型
+            from core.llm_client import get_langchain_model
+            from langchain_core.messages import SystemMessage, HumanMessage
+            system_prompt = """
 你是一个高级桌面宠物角色配置生成器。
 用户的输入将包括角色名字和一段特质描述。
 请将这些零散的设定提炼成严格的 JSON 格式。
@@ -231,52 +267,63 @@ async def api_characters_generate(req: CharacterGenRequest):
 2. "character_name": 角色的中文名
 3. "persona_prompt": 浓缩的系统核心人设（2-3句话，第一人称或客观陈述均可，如"你是东方Project中的xxx，一个喜欢...的妖怪..."）
 """
-    try:
-        llm = get_langchain_model()
-        messages = [
-            SystemMessage(content=system_prompt),
-            HumanMessage(content=f"名字: {req.name}\n特质描述: {req.description}")
-        ]
-        
-        # We explicitly ask the model to return JSON. Some models might wrap it in markdown.
-        response = llm.invoke(messages)
-        res_text = response.content.strip()
-        
-        # Clean markdown code blocks if present
-        if res_text.startswith("```json"):
-            res_text = res_text[7:]
-        elif res_text.startswith("```"):
-            res_text = res_text[3:]
-        if res_text.endswith("```"):
-            res_text = res_text[:-3]
+            llm = get_langchain_model()
+            messages = [
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=f"名字: {req.name}\n特质描述: {req.description}")
+            ]
             
-        data = json.loads(res_text.strip())
-        
-        char_id = data.get("character_id")
-        char_name = data.get("character_name")
-        persona_prompt = data.get("persona_prompt")
-        
-        if not char_id or not char_name:
-            return JSONResponse({"status": "error", "message": "模型生成的 JSON 格式不完整。"}, status_code=500)
+            response = llm.invoke(messages)
+            res_text = response.content.strip()
             
-        # Create directories
+            # Clean markdown code blocks if present
+            if res_text.startswith("```json"):
+                res_text = res_text[7:]
+            elif res_text.startswith("```"):
+                res_text = res_text[3:]
+            if res_text.endswith("```"):
+                res_text = res_text[:-3]
+                
+            data = json.loads(res_text.strip())
+            
+            char_id = data.get("character_id")
+            char_name = data.get("character_name")
+            persona_prompt = data.get("persona_prompt")
+            theme_color = ""
+            app_launcher_data = {
+                "记事本": "C:\\Windows\\System32\\notepad.exe",
+                "网易云音乐": "H:\\\\CloudMusic\\\\cloudmusic.exe"
+            }
+            env_presets_data = []
+            
+            if not char_id or not char_name:
+                return JSONResponse({"status": "error", "message": "模型生成的 JSON 格式不完整。"}, status_code=500)
+            
+        # 通用物理写入逻辑：创建目录
         char_dir = os.path.join(SERVICES_DIR, "characters", char_id)
         img_dir = os.path.join(SERVICES_DIR, "static", "images", char_id)
+        presets_dir = os.path.join(char_dir, "presets")
         os.makedirs(char_dir, exist_ok=True)
         os.makedirs(img_dir, exist_ok=True)
+        os.makedirs(presets_dir, exist_ok=True)
         
-        # Write config.json
+        # 写入 config.json
         config_data = {
             "api_provider": "deepseek-v4-pro",
             "character_name": char_name,
             "persona_prompt": persona_prompt,
-            "app_launcher": {
-                "记事本": "C:\\Windows\\System32\\notepad.exe",
-                "网易云音乐": "H:\\\\CloudMusic\\\\cloudmusic.exe"
-            }
+            "app_launcher": app_launcher_data
         }
+        if theme_color:
+            config_data["theme_color"] = theme_color
+            
         with open(os.path.join(char_dir, "config.json"), "w", encoding="utf-8") as f:
             json.dump(config_data, f, ensure_ascii=False, indent=2)
+            
+        # 写入 env_presets.json
+        if env_presets_data:
+            with open(os.path.join(presets_dir, "env_presets.json"), "w", encoding="utf-8") as f:
+                json.dump(env_presets_data, f, ensure_ascii=False, indent=2)
             
         return JSONResponse({
             "status": "success", 
@@ -295,6 +342,7 @@ async def api_character_info():
     return JSONResponse({
         "character_id": char_id,
         "character_name": char_name,
+        "theme_color": config.get("theme_color", ""),
         "image_path": f"/static/images/{char_id}/",
         "enable_greeting": config.get("enable_greeting", True),
         "enable_auto_speak": config.get("enable_auto_speak", True),
