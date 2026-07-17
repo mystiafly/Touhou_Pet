@@ -44,6 +44,11 @@ class DesktopPet {
             const response = await fetch('/api/character_info');
             const data = await response.json();
             const prefix = data.image_path;
+            
+            if (data.theme_color) {
+                this.applyPetThemeColor(data.theme_color);
+            }
+
             this.charName = data.character_name || "她";
             document.body.className = `theme-${data.character_id}`;
             document.getElementById("pet-input").placeholder = `和${this.charName}说话...`; // e.g. /static/images/rumia/
@@ -85,6 +90,31 @@ class DesktopPet {
         } catch (e) {
             console.error("Failed to load character info", e);
         }
+    }
+
+    applyPetThemeColor(hex) {
+        if (!/^#[0-9A-Fa-f]{6}$/i.test(hex)) return;
+        
+        let r = parseInt(hex.substring(1, 3), 16);
+        let g = parseInt(hex.substring(3, 5), 16);
+        let b = parseInt(hex.substring(5, 7), 16);
+        
+        let hr = Math.max(0, r - 32);
+        let hg = Math.max(0, g - 32);
+        let hb = Math.max(0, b - 32);
+        
+        document.documentElement.style.setProperty('--theme-main', hex);
+        document.documentElement.style.setProperty('--theme-hover', `rgb(${hr}, ${hg}, ${hb})`);
+        document.documentElement.style.setProperty('--theme-glow-02', `rgba(${r}, ${g}, ${b}, 0.2)`);
+        document.documentElement.style.setProperty('--theme-glow-03', `rgba(${r}, ${g}, ${b}, 0.3)`);
+        document.documentElement.style.setProperty('--theme-glow-04', `rgba(${r}, ${g}, ${b}, 0.4)`);
+        document.documentElement.style.setProperty('--theme-glow-05', `rgba(${r}, ${g}, ${b}, 0.5)`);
+        document.documentElement.style.setProperty('--theme-glow-09', `rgba(${r}, ${g}, ${b}, 0.9)`);
+        document.documentElement.style.setProperty('--theme-bg-015', `rgba(${r}, ${g}, ${b}, 0.15)`);
+        document.documentElement.style.setProperty('--theme-bg-035', `rgba(${r}, ${g}, ${b}, 0.35)`);
+        document.documentElement.style.setProperty('--theme-text-light', hex);
+        document.documentElement.style.setProperty('--theme-text-bright', hex);
+        document.documentElement.style.setProperty('--theme-legend-pink', hex);
     }
 
     preloadImages() {

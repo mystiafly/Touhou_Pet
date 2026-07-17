@@ -68,6 +68,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (autoSpeakMultiplier && configData.auto_speak_multiplier) {
                     autoSpeakMultiplier.value = configData.auto_speak_multiplier.toString();
                 }
+
+                if (configData.theme_color) {
+                    applyDashboardThemeColor(configData.theme_color);
+                }
             }
 
 
@@ -185,7 +189,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 处理新角色生成
+    // 处理双模式切换
+    const modeLazyBtn = document.getElementById('mode-lazy-btn');
+    const modeProBtn = document.getElementById('mode-pro-btn');
+    const formLazyMode = document.getElementById('form-lazy-mode');
+    const formProMode = document.getElementById('form-pro-mode');
+
+    if (modeLazyBtn && modeProBtn) {
+        modeLazyBtn.addEventListener('click', () => {
+            modeLazyBtn.classList.add('active');
+            modeLazyBtn.classList.remove('outline');
+            modeProBtn.classList.add('outline');
+            modeProBtn.classList.remove('active');
+            formLazyMode.style.display = 'block';
+            formProMode.style.display = 'none';
+        });
+
+        modeProBtn.addEventListener('click', () => {
+            modeProBtn.classList.add('active');
+            modeProBtn.classList.remove('outline');
+            modeLazyBtn.classList.add('outline');
+            modeLazyBtn.classList.remove('active');
+            formProMode.style.display = 'block';
+            formLazyMode.style.display = 'none';
+        });
+    }
+
+    // 处理新角色生成 (懒人模式)
     const generateBtn = document.getElementById('generate-soul-btn');
     if (generateBtn) {
         generateBtn.addEventListener('click', async () => {
@@ -209,7 +239,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch('/api/characters/generate', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ name: nameInput, description: descInput })
+                    body: JSON.stringify({ 
+                        mode: 'lazy',
+                        name: nameInput, 
+                        description: descInput 
+                    })
                 });
                 
                 const data = await response.json();
@@ -229,6 +263,73 @@ document.addEventListener('DOMContentLoaded', () => {
                 generateBtn.disabled = false;
                 generateBtn.innerHTML = '<i class="fas fa-magic"></i> 开始炼丹 (交由大模型处理)';
                 statusText.style.display = 'none';
+            }
+        });
+    }
+
+    // 处理新角色生成 (高手模式)
+    const generateProBtn = document.getElementById('generate-pro-btn');
+    if (generateProBtn) {
+        generateProBtn.addEventListener('click', async () => {
+            const charId = document.getElementById('pro-char-id').value.trim();
+            const charName = document.getElementById('pro-char-name').value.trim();
+            const personaPrompt = document.getElementById('pro-persona-prompt').value.trim();
+            const themeColor = document.getElementById('pro-theme-color').value.trim();
+            const appLauncher = document.getElementById('pro-app-launcher').value.trim();
+            const envPresets = document.getElementById('pro-env-presets').value.trim();
+            const statusText = document.getElementById('generate-pro-status');
+            
+            if (!charId || !charName || !personaPrompt) {
+                alert("英文 ID、中文名、核心提示词为必填项！");
+                return;
+            }
+
+            // 简单校验 ID 格式
+            if (!/^[a-z_]+$/.test(charId)) {
+                alert("英文 ID 只能包含小写字母和下划线！");
+                return;
+            }
+
+            const confirmGen = confirm(`即将物理写入 ${charId} 的底层配置，确认操作吗？`);
+            if (!confirmGen) return;
+
+            generateProBtn.disabled = true;
+            generateProBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在急速写入...';
+            statusText.style.display = 'block';
+            statusText.innerText = '正在写入...';
+
+            try {
+                const response = await fetch('/api/characters/generate', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ 
+                        mode: 'pro',
+                        character_id: charId,
+                        character_name: charName,
+                        persona_prompt: personaPrompt,
+                        theme_color: themeColor,
+                        app_launcher: appLauncher,
+                        env_presets: envPresets
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.status === 'success') {
+                    statusText.innerText = '配置已物理写入磁盘！';
+                    alert(`✨ 灵魂注入成功！\n\n大贤者已在后台为您建好了名为【${data.character_id}】的灵魂容器。\n\n⚠️ 重要最后一步：\n请前往 services/static/images/${data.character_id}/ 目录，放入 15 张对应表情动作的立绘（详情见文档）。\n完成后点击左下角【重启大贤者】，即可在主页切换到您的新角色！\n\n如果您需要配置更复杂的现实环境逻辑，可以直接编辑生成的 env_presets.json 文件。`);
+                    loadConfig();
+                } else {
+                    statusText.innerText = '写入失败';
+                    alert("生成失败: " + data.message);
+                }
+            } catch (e) {
+                console.error(e);
+                statusText.innerText = '写入失败';
+                alert("请求失败，请检查网络或控制台报错。");
+            } finally {
+                generateProBtn.disabled = false;
+                generateProBtn.innerHTML = '<i class="fas fa-bolt"></i> 瞬间注入 (纯 Python 极速写入)';
+                setTimeout(() => { statusText.style.display = 'none'; }, 3000);
             }
         });
     }
