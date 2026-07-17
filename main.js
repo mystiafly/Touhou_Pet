@@ -52,6 +52,19 @@ ipcMain.on('exit-app', () => {
     app.quit();
 });
 
+// 监听重启事件，脱离当前进程启动脚本后关闭自身
+ipcMain.on('restart-app', () => {
+    const { spawn } = require('child_process');
+    // 使用独立的 VBScript 进行重启，彻底摆脱控制台句柄继承问题
+    const cp = spawn('wscript', ['restart.vbs'], {
+        cwd: path.join(__dirname),
+        detached: true,
+        stdio: 'ignore'
+    });
+    cp.unref();
+    app.quit();
+});
+
 // 监听最小化到系统托盘事件
 ipcMain.on('minimize-to-tray', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
@@ -61,6 +74,35 @@ ipcMain.on('minimize-to-tray', (event) => {
         win.webContents.send('window-state-changed', 'minimized');
     }
 });
+
+let settingsWin = null;
+ipcMain.on('open-settings-window', (event) => {
+    if (settingsWin) {
+        settingsWin.focus();
+        return;
+    }
+    
+    settingsWin = new BrowserWindow({
+        width: 1000,
+        height: 700,
+        title: "大贤者控制台 (Dashboard)",
+        autoHideMenuBar: true,
+        backgroundColor: '#1e1e28',
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false,
+            preload: path.join(__dirname, 'preload.js')
+        }
+    });
+
+    const dashboardUrl = 'http://127.0.0.1:5000/dashboard?t=' + Date.now();
+    settingsWin.loadURL(dashboardUrl);
+    
+    settingsWin.on('closed', () => {
+        settingsWin = null;
+    });
+});
+
 
 function createWindow() {
     const { width, height } = screen.getPrimaryDisplay().workAreaSize;

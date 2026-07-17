@@ -21,6 +21,9 @@ window.__petIPC = {
     },
     onWindowStateChanged: (callback) => {
         ipcRenderer.on('window-state-changed', (event, state) => callback(state));
+    },
+    openSettingsWindow: () => {
+        ipcRenderer.send('open-settings-window');
     }
 };
 
