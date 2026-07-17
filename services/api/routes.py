@@ -187,6 +187,103 @@ def clear_history_api():
         return JSONResponse({"error": str(e)}, status_code=500)
 
 # 5. 配置中心获取与保存接口
+@router.get("/api/characters/list")
+async def api_characters_list():
+    import os, json
+    from core.config_manager import SERVICES_DIR
+    chars_dir = os.path.join(SERVICES_DIR, "characters")
+    result = []
+    if os.path.exists(chars_dir):
+        for item in os.listdir(chars_dir):
+            char_path = os.path.join(chars_dir, item)
+            config_path = os.path.join(char_path, "config.json")
+            if os.path.isdir(char_path) and os.path.exists(config_path):
+                try:
+                    with open(config_path, 'r', encoding='utf-8') as f:
+                        conf = json.load(f)
+                        result.append({
+                            "character_id": conf.get("character_id", item),
+                            "character_name": conf.get("character_name", item)
+                        })
+                except Exception:
+                    pass
+    return JSONResponse({"status": "success", "characters": result})
+
+class CharacterGenRequest(BaseModel):
+    name: str
+    description: str
+
+@router.post("/api/characters/generate")
+async def api_characters_generate(req: CharacterGenRequest):
+    import os, json
+    from core.llm_client import get_langchain_model
+    from langchain_core.messages import SystemMessage, HumanMessage
+    from core.config_manager import SERVICES_DIR
+
+    system_prompt = """
+你是一个高级桌面宠物角色配置生成器。
+用户的输入将包括角色名字和一段特质描述。
+请将这些零散的设定提炼成严格的 JSON 格式。
+输出 JSON 必须只包含以下三个字段，不要输出任何额外的代码块标记或说明文字：
+1. "character_id": 英文短小标识符（仅小写字母和下划线，如 "neko"、"alice"）
+2. "character_name": 角色的中文名
+3. "persona_prompt": 浓缩的系统核心人设（2-3句话，第一人称或客观陈述均可，如"你是东方Project中的xxx，一个喜欢...的妖怪..."）
+"""
+    try:
+        llm = get_langchain_model()
+        messages = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=f"名字: {req.name}\n特质描述: {req.description}")
+        ]
+        
+        # We explicitly ask the model to return JSON. Some models might wrap it in markdown.
+        response = llm.invoke(messages)
+        res_text = response.content.strip()
+        
+        # Clean markdown code blocks if present
+        if res_text.startswith("```json"):
+            res_text = res_text[7:]
+        elif res_text.startswith("```"):
+            res_text = res_text[3:]
+        if res_text.endswith("```"):
+            res_text = res_text[:-3]
+            
+        data = json.loads(res_text.strip())
+        
+        char_id = data.get("character_id")
+        char_name = data.get("character_name")
+        persona_prompt = data.get("persona_prompt")
+        
+        if not char_id or not char_name:
+            return JSONResponse({"status": "error", "message": "模型生成的 JSON 格式不完整。"}, status_code=500)
+            
+        # Create directories
+        char_dir = os.path.join(SERVICES_DIR, "characters", char_id)
+        img_dir = os.path.join(SERVICES_DIR, "static", "images", char_id)
+        os.makedirs(char_dir, exist_ok=True)
+        os.makedirs(img_dir, exist_ok=True)
+        
+        # Write config.json
+        config_data = {
+            "api_provider": "deepseek-v4-pro",
+            "character_name": char_name,
+            "persona_prompt": persona_prompt,
+            "app_launcher": {
+                "记事本": "C:\\Windows\\System32\\notepad.exe",
+                "网易云音乐": "H:\\\\CloudMusic\\\\cloudmusic.exe"
+            }
+        }
+        with open(os.path.join(char_dir, "config.json"), "w", encoding="utf-8") as f:
+            json.dump(config_data, f, ensure_ascii=False, indent=2)
+            
+        return JSONResponse({
+            "status": "success", 
+            "character_id": char_id,
+            "character_name": char_name
+        })
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
 @router.get("/api/character_info")
 async def api_character_info():
     import json
