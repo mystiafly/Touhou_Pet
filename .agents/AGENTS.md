@@ -17,3 +17,9 @@ Before staging and committing any code changes:
 Whenever any code updates are made to the project, you must always remember to:
 1. Commit the changes to Git using git add and git commit.
 2. Update the version number appropriately (e.g., in package.json and frontend asset ?v= tags).
+
+## Safe Deletion Policy
+Whenever you need to delete user files or directories, you MUST use a method that sends them to the Recycle Bin (Trash) instead of permanently deleting them, to prevent accidental permanent data loss. 
+- In PowerShell, you can use the COM object `Shell.Application` to move items to the Recycle Bin: `$sh = New-Object -ComObject Shell.Application; $sh.Namespace(0).ParseName("C:\path\to\file").InvokeVerb("delete")`
+- Alternatively, you can use python's `send2trash` library if available.
+- NEVER use `Remove-Item` or `rm -rf` or `del` directly on user data files (like databases, text logs, or histories) unless the user EXPLICITLY commands a permanent deletion.
