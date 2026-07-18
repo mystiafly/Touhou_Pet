@@ -187,9 +187,13 @@ def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
             print(f"[PRESETS] 关键词(复合)直接命中，触发预设: {preset.get('name', preset.get('comment', f'Preset-{idx}'))}")
         elif (primary_kws or secondary_kws):
             # 包含关键词但没有直接字面命中，作为语义感应候选
-            preset_copy = preset.copy()
-            preset_copy["_original_index"] = idx
-            semantic_candidates.append(preset_copy)
+            # 警告：对于导入的海量世界书条目，禁止进行 AI 语义猜测，否则会导致严重的幻觉和性能灾难
+            if preset.get("worldbook_source"):
+                pass
+            else:
+                preset_copy = preset.copy()
+                preset_copy["_original_index"] = idx
+                semantic_candidates.append(preset_copy)
         else:
             # 没有关键词限制，且非 always_active。
             # 为了防止导入空关键字的世界书导致全量爆发，此处不再直接触发。
