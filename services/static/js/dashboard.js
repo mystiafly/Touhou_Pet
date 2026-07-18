@@ -682,6 +682,40 @@ function renderPresetsList(type, data, containerId) {
     
     container.innerHTML = '';
     data.forEach(preset => {
+
+
+// ==========================================
+// 预设准备 (Presets Manager) 逻辑
+// ==========================================
+
+let globalPresetsData = [];
+let customPresetsData = [];
+
+function loadPresets() {
+    fetch('/api/presets/list')
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                globalPresetsData = data.global || [];
+                customPresetsData = data.custom || [];
+                renderPresetsList('global', globalPresetsData, 'global-presets-list');
+                renderPresetsList('custom', customPresetsData, 'custom-presets-list');
+            }
+        })
+        .catch(err => console.error("Load presets failed:", err));
+}
+
+function renderPresetsList(type, data, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    if (data.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-secondary); padding: 10px;">暂无预设</div>';
+        return;
+    }
+    
+    container.innerHTML = '';
+    data.forEach(preset => {
         const item = document.createElement('div');
         item.className = 'preset-item';
         
@@ -723,20 +757,30 @@ function showPresetModal(type, preset = null) {
         document.getElementById('preset-modal-title').innerHTML = '<i class="fas fa-edit"></i> 编辑预设';
         document.getElementById('preset-original-name').value = preset.name;
         document.getElementById('preset-name').value = preset.name;
-        document.getElementById('preset-keywords').value = (preset.trigger_keywords || []).join(', ');
+        document.getElementById('preset-keywords').value = (preset.trigger_keywords || preset.key || []).join(', ');
+        document.getElementById('preset-secondary-keywords').value = (preset.secondary_keywords || preset.keysecondary || []).join(', ');
         document.getElementById('preset-min-fav').value = preset.min_favorability !== undefined ? preset.min_favorability : '';
         document.getElementById('preset-max-fav').value = preset.max_favorability !== undefined ? preset.max_favorability : '';
-        document.getElementById('preset-always-active').checked = !!preset.always_active;
-        document.getElementById('preset-prompt').value = preset.prompt || '';
+        document.getElementById('preset-position').value = preset.position !== undefined ? preset.position : '1';
+        document.getElementById('preset-order').value = preset.order !== undefined ? preset.order : '100';
+        document.getElementById('preset-always-active').checked = !!(preset.always_active || preset.constant);
+        document.getElementById('preset-disable').checked = !!preset.disable;
+        document.getElementById('preset-prompt').value = preset.prompt || preset.content || '';
+        document.getElementById('preset-source').value = preset.worldbook_source || '原生';
     } else {
         document.getElementById('preset-modal-title').innerHTML = '<i class="fas fa-plus"></i> 新增预设';
         document.getElementById('preset-original-name').value = '';
         document.getElementById('preset-name').value = '';
         document.getElementById('preset-keywords').value = '';
+        document.getElementById('preset-secondary-keywords').value = '';
         document.getElementById('preset-min-fav').value = '';
         document.getElementById('preset-max-fav').value = '';
+        document.getElementById('preset-position').value = '1';
+        document.getElementById('preset-order').value = '100';
         document.getElementById('preset-always-active').checked = false;
+        document.getElementById('preset-disable').checked = false;
         document.getElementById('preset-prompt').value = '';
+        document.getElementById('preset-source').value = '原生';
     }
 }
 
@@ -793,9 +837,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const originalName = document.getElementById('preset-original-name').value;
             const name = document.getElementById('preset-name').value.trim();
             const keywordsStr = document.getElementById('preset-keywords').value.trim();
+            const secKeywordsStr = document.getElementById('preset-secondary-keywords').value.trim();
             const minFav = document.getElementById('preset-min-fav').value;
             const maxFav = document.getElementById('preset-max-fav').value;
+            const position = document.getElementById('preset-position').value;
+            const order = document.getElementById('preset-order').value;
             const alwaysActive = document.getElementById('preset-always-active').checked;
+            const disablePreset = document.getElementById('preset-disable').checked;
+            const source = document.getElementById('preset-source').value;
             const prompt = document.getElementById('preset-prompt').value.trim();
             
             if (!name || !prompt) {
@@ -805,8 +854,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Delete original first if name changed
             if (originalName && originalName !== name) {
-                // To safely rename, we should ideally do it in one atomic transaction, 
-                // but since it's local, we can just delete and then save.
                 fetch('/api/presets/delete', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -817,10 +864,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const presetObj = {
                 name: name,
                 prompt: prompt,
-                always_active: alwaysActive
+                always_active: alwaysActive,
+                disable: disablePreset,
+                worldbook_source: source,
+                position: parseInt(position, 10),
+                order: parseInt(order, 10)
             };
             
             if (keywordsStr) presetObj.trigger_keywords = keywordsStr.split(',').map(s => s.trim()).filter(s => s);
+            if (secKeywordsStr) presetObj.secondary_keywords = secKeywordsStr.split(',').map(s => s.trim()).filter(s => s);
             if (minFav !== '') presetObj.min_favorability = parseInt(minFav, 10);
             if (maxFav !== '') presetObj.max_favorability = parseInt(maxFav, 10);
             
@@ -841,6 +893,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     alert("保存失败：" + data.error);
                 }
+            });
+        });
+    }
+
+    // Worldbook Import Logic
+    const btnImportWorldbook = document.getElementById('btn-import-worldbook');
+    const uploadInput = document.getElementById('worldbook-upload-input');
+    
+    if (btnImportWorldbook && uploadInput) {
+        btnImportWorldbook.addEventListener('click', () => {
+            uploadInput.click();
+        });
+        
+        uploadInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const btnOldHtml = btnImportWorldbook.innerHTML;
+            btnImportWorldbook.disabled = true;
+            btnImportWorldbook.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 导入中...';
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            fetch('/api/worldbook/import', {
+                method: 'POST',
+                body: formData
+            }).then(res => res.json()).then(data => {
+                btnImportWorldbook.disabled = false;
+                btnImportWorldbook.innerHTML = btnOldHtml;
+                uploadInput.value = ''; // clear
+                
+                if (data.success) {
+                    alert(`成功导入 ${data.count} 条世界书设定！`);
+                    loadPresets();
+                } else {
+                    alert("导入失败：" + data.error);
+                }
+            }).catch(err => {
+                btnImportWorldbook.disabled = false;
+                btnImportWorldbook.innerHTML = btnOldHtml;
+                uploadInput.value = '';
+                alert("上传发生错误：" + err);
             });
         });
     }
