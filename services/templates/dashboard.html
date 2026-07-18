@@ -132,8 +132,6 @@
                         </div>
                         <label class="switch">
                             <input type="checkbox" id="auto-speak-toggle">
-                            <span class="slider round"></span>
-                        </label>
                     </div>
 
                     <div class="form-group" style="margin-top: 15px;">
@@ -414,7 +412,7 @@
                     </div>
                 </div>
                 
-                <div style="margin-top: 15px; display: flex; align-items: center; gap: 20px;">
+                <div style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 20px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <input type="checkbox" id="preset-always-active" style="cursor: pointer; width: 16px; height: 16px;">
                         <label for="preset-always-active" style="margin: 0; cursor: pointer;">常驻无视关键词 (Constant)</label>
@@ -422,6 +420,10 @@
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <input type="checkbox" id="preset-disable" style="cursor: pointer; width: 16px; height: 16px;">
                         <label for="preset-disable" style="margin: 0; cursor: pointer; color: #ff4757;">禁用此预设 (Disable)</label>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="preset-prevent-recursion" style="cursor: pointer; width: 16px; height: 16px;">
+                        <label for="preset-prevent-recursion" style="margin: 0; cursor: pointer;">禁止被递归触发 (Prevent Recursion)</label>
                     </div>
                 </div>
                 

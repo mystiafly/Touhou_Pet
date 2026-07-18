@@ -731,6 +731,7 @@ function showPresetModal(type, preset = null) {
         document.getElementById('preset-order').value = preset.order !== undefined ? preset.order : '100';
         document.getElementById('preset-always-active').checked = !!(preset.always_active || preset.constant);
         document.getElementById('preset-disable').checked = !!preset.disable;
+        document.getElementById('preset-prevent-recursion').checked = !!preset.prevent_recursion;
         document.getElementById('preset-prompt').value = preset.prompt || preset.content || '';
         document.getElementById('preset-source').value = preset.worldbook_source || '原生';
     } else {
@@ -745,6 +746,7 @@ function showPresetModal(type, preset = null) {
         document.getElementById('preset-order').value = '100';
         document.getElementById('preset-always-active').checked = false;
         document.getElementById('preset-disable').checked = false;
+        document.getElementById('preset-prevent-recursion').checked = false;
         document.getElementById('preset-prompt').value = '';
         document.getElementById('preset-source').value = '原生';
     }
@@ -810,6 +812,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const order = document.getElementById('preset-order').value;
             const alwaysActive = document.getElementById('preset-always-active').checked;
             const disablePreset = document.getElementById('preset-disable').checked;
+            const preventRecursion = document.getElementById('preset-prevent-recursion').checked;
             const source = document.getElementById('preset-source').value;
             const prompt = document.getElementById('preset-prompt').value.trim();
             
@@ -834,6 +837,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 prompt: prompt,
                 always_active: alwaysActive,
                 disable: disablePreset,
+                prevent_recursion: preventRecursion,
                 worldbook_source: source,
                 position: parseInt(position, 10) || 1,
                 order: parseInt(order, 10) || 100
