@@ -59,8 +59,11 @@ def check_semantic_presets(user_message, candidates):
             "Candidate topics:\n"
         )
         for idx, p in enumerate(candidates):
-            keywords_str = ", ".join(p.get("trigger_keywords", []))
-            prompt += f"- ID: {idx}, Topic Name: \"{p.get('name', '')}\", Keywords/Topic description: \"{keywords_str}\"\n"
+            prim_kws = p.get("trigger_keywords", []) or p.get("key", [])
+            sec_kws = p.get("secondary_keywords", []) or p.get("keysecondary", [])
+            all_kws = prim_kws + sec_kws
+            keywords_str = ", ".join(all_kws)
+            prompt += f"- ID: {idx}, Topic Name: \"{p.get('name', p.get('comment', ''))}\", Keywords/Topic description: \"{keywords_str}\"\n"
             
         prompt += (
             "\nOutput ONLY a JSON list of IDs (integers) that are semantically related to the user's message, e.g., [0, 2]. "
@@ -119,6 +122,10 @@ def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
         if not isinstance(preset, dict):
             continue
             
+        # 检查是否被禁用
+        if preset.get("disable", False):
+            continue
+            
         # 检查好感度范围限制
         min_fav = preset.get("min_favorability")
         max_fav = preset.get("max_favorability")
@@ -139,40 +146,54 @@ def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
         if not fav_ok:
             continue  # 好感度不符，直接不考虑
             
-        # 检查常驻状态 (always_active)
-        if preset.get("always_active", False):
+        # 检查常驻状态 (always_active 或 constant)
+        is_constant = preset.get("always_active", False) or preset.get("constant", False)
+        if is_constant:
             triggered_indices.add(idx)
-            print(f"[PRESETS] 常驻预设直接命中 (Always Active): {preset.get('name', f'Preset-{idx}')}")
+            print(f"[PRESETS] 常驻预设直接命中 (Constant): {preset.get('name', preset.get('comment', f'Preset-{idx}'))}")
             continue
 
         # 如果是自言自语模式，跳过所有非激活/非关键词匹配条目，不做处理
         if is_self_talk:
             continue
 
-        # 检查关键词硬性匹配
-        keywords = preset.get("trigger_keywords", [])
-        keywords_ok = False
-        if keywords and isinstance(keywords, list):
-            user_msg_lower = user_message.lower()
-            for kw in keywords:
+        # 检查关键词复合逻辑匹配 (AND逻辑: 主关键词 OR 命中 且 副关键词 OR 命中)
+        primary_kws = preset.get("trigger_keywords", []) or preset.get("key", [])
+        secondary_kws = preset.get("secondary_keywords", []) or preset.get("keysecondary", [])
+        
+        user_msg_lower = user_message.lower()
+        
+        has_primary = False
+        if not primary_kws:
+            has_primary = True
+        else:
+            for kw in primary_kws:
                 if kw and isinstance(kw, str) and kw.lower() in user_msg_lower:
-                    keywords_ok = True
+                    has_primary = True
                     break
                     
-        if keywords_ok:
+        has_secondary = False
+        if not secondary_kws:
+            has_secondary = True
+        else:
+            for kw in secondary_kws:
+                if kw and isinstance(kw, str) and kw.lower() in user_msg_lower:
+                    has_secondary = True
+                    break
+                    
+        if has_primary and has_secondary and (primary_kws or secondary_kws):
             # 关键词命中，直接确定触发
             triggered_indices.add(idx)
-            print(f"[PRESETS] 关键词直接命中，触发预设: {preset.get('name', f'Preset-{idx}')}")
-        elif keywords:
+            print(f"[PRESETS] 关键词(复合)直接命中，触发预设: {preset.get('name', preset.get('comment', f'Preset-{idx}'))}")
+        elif (primary_kws or secondary_kws):
             # 包含关键词但没有直接字面命中，作为语义感应候选
-            # 复制字典并注入临时原始索引值
             preset_copy = preset.copy()
             preset_copy["_original_index"] = idx
             semantic_candidates.append(preset_copy)
         else:
             # 没有关键词限制，且好感度满足，直接触发
             triggered_indices.add(idx)
-            print(f"[PRESETS] 无关键词限制且好感度满足，直接触发预设: {preset.get('name', f'Preset-{idx}')}")
+            print(f"[PRESETS] 无关键词限制且好感度满足，直接触发预设: {preset.get('name', preset.get('comment', f'Preset-{idx}'))}")
 
     # 第二阶段：对未命中的候选进行二次 AI 语义感应 (自言自语模式下不执行语义感应)
     if not is_self_talk and semantic_candidates:
@@ -222,32 +243,25 @@ def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
                 continue
                 
             # 检查关键词是否匹配当前已触发的提示词文本池
-            keywords = preset.get("trigger_keywords", [])
-            if keywords and isinstance(keywords, list):
-                for kw in keywords:
+            primary_kws = preset.get("trigger_keywords", []) or preset.get("key", [])
+            secondary_kws = preset.get("secondary_keywords", []) or preset.get("keysecondary", [])
+            all_kws = primary_kws + secondary_kws
+            
+            if all_kws and isinstance(all_kws, list):
+                for kw in all_kws:
                     if kw and isinstance(kw, str) and kw.lower() in current_pool_lower:
                         triggered_indices.add(idx)
                         new_triggers = True
-                        print(f"[PRESETS] 递归链式触发命中 (深度={depth+1})，预设: {preset.get('name', f'Preset-{idx}')} (由已触发内容中的关键词 '{kw}' 触发)")
+                        print(f"[PRESETS] 递归链式触发命中 (深度={depth+1})，预设: {preset.get('name', preset.get('comment', f'Preset-{idx}'))} (由已触发内容中的关键词 '{kw}' 触发)")
                         break
                         
         if not new_triggers:
             break
 
-    # 汇总所有被触发的预设，并按优先级 (priority) 从高到低排序 (优先度高的放在对话最前面)
+    # 汇总所有被触发的预设字典
     triggered_presets_list = []
     for idx in triggered_indices:
         triggered_presets_list.append(presets[idx])
-    
-    # 按照 priority 降序排序，若无此字段则默认为 0
-    triggered_presets_list.sort(key=lambda x: x.get("priority", 0), reverse=True)
 
-    triggered_prompts = []
-    for preset in triggered_presets_list:
-        prompt_content = preset.get("prompt", "")
-        if prompt_content:
-            triggered_prompts.append(prompt_content)
-            
-    if triggered_prompts:
-        return "\n".join(triggered_prompts)
-    return ""
+    # 返回所有触发的预设字典列表，不再拼接为字符串，交由 nodes.py 根据 position 和 order 排列
+    return triggered_presets_list
