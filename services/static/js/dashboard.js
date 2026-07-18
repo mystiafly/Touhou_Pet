@@ -682,40 +682,6 @@ function renderPresetsList(type, data, containerId) {
     
     container.innerHTML = '';
     data.forEach(preset => {
-
-
-// ==========================================
-// 预设准备 (Presets Manager) 逻辑
-// ==========================================
-
-let globalPresetsData = [];
-let customPresetsData = [];
-
-function loadPresets() {
-    fetch('/api/presets/list')
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                globalPresetsData = data.global || [];
-                customPresetsData = data.custom || [];
-                renderPresetsList('global', globalPresetsData, 'global-presets-list');
-                renderPresetsList('custom', customPresetsData, 'custom-presets-list');
-            }
-        })
-        .catch(err => console.error("Load presets failed:", err));
-}
-
-function renderPresetsList(type, data, containerId) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-    
-    if (data.length === 0) {
-        container.innerHTML = '<div style="color: var(--text-secondary); padding: 10px;">暂无预设</div>';
-        return;
-    }
-    
-    container.innerHTML = '';
-    data.forEach(preset => {
         const item = document.createElement('div');
         item.className = 'preset-item';
         
@@ -854,6 +820,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Delete original first if name changed
             if (originalName && originalName !== name) {
+                // To safely rename, we should ideally do it in one atomic transaction, 
+                // but since it's local, we can just delete and then save.
                 fetch('/api/presets/delete', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -867,8 +835,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 always_active: alwaysActive,
                 disable: disablePreset,
                 worldbook_source: source,
-                position: parseInt(position, 10),
-                order: parseInt(order, 10)
+                position: parseInt(position, 10) || 1,
+                order: parseInt(order, 10) || 100
             };
             
             if (keywordsStr) presetObj.trigger_keywords = keywordsStr.split(',').map(s => s.trim()).filter(s => s);
