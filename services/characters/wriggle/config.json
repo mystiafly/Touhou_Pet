@@ -7,7 +7,8 @@
     "2026-07-14",
     "2026-07-15",
     "2026-07-16",
-    "2026-07-17"
+    "2026-07-17",
+    "2026-07-18"
   ],
   "app_launcher": {
     "记事本": "notepad.exe",
@@ -15,5 +16,6 @@
   },
   "enable_greeting": false,
   "auto_speak_multiplier": 1.0,
-  "enable_auto_speak": true
+  "enable_auto_speak": true,
+  "user_prompt": "我是一个男生。"
 }
