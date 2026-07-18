@@ -4,7 +4,7 @@ import time
 import threading
 import re
 from datetime import datetime
-from fastapi import APIRouter, Request, Body, HTTPException, UploadFile, File
+from fastapi import APIRouter, Request, Body, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
 from typing import Dict, Any
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
@@ -1015,8 +1015,8 @@ def api_presets_delete(req: PresetDeleteRequest):
         return JSONResponse({"success": False, "error": str(e)})
 
 @router.post("/api/worldbook/import")
-async def import_worldbook(file: UploadFile = File(...)):
-    """接收酒馆格式的世界书 json 文件，解析并合入 custom_presets"""
+async def import_worldbook(file: UploadFile = File(...), type: str = Form("custom")):
+    """接收酒馆格式的世界书 json 文件，解析并合入 custom_presets 或 global_presets"""
     try:
         content = await file.read()
         wb_data = json.loads(content.decode("utf-8"))
@@ -1029,7 +1029,11 @@ async def import_worldbook(file: UploadFile = File(...)):
             return JSONResponse({"success": False, "error": "无效的世界书格式：entries 不是字典"})
             
         from core.config_manager import get_file_path
-        custom_presets_file = get_file_path("presets/custom_presets.json")
+        
+        if type == "global":
+            custom_presets_file = os.path.join(SERVICES_DIR, "global_presets", "global_presets.json")
+        else:
+            custom_presets_file = get_file_path("presets/custom_presets.json")
         
         custom_presets = []
         if os.path.exists(custom_presets_file):
