@@ -85,6 +85,7 @@ def build_active_messages(state: AgentState) -> list:
     config_data = get_config()
     char_name = config_data.get("character_name", "桌宠")
     persona_prompt = config_data.get("persona_prompt", "你是一个桌面宠物，请根据用户的喜好与他们进行交流。")
+    user_prompt = config_data.get("user_prompt", "").strip()
 
     history_msgs = state.get("history", [])
     current_fav = state.get("favorability", 10)
@@ -226,6 +227,10 @@ def build_active_messages(state: AgentState) -> list:
         
     active_messages = []
     is_greeting = state.get("request_type") == 'greeting'
+    
+    if user_prompt:
+        priority_reminder = f"[USER PROMPT (用户/玩家自身设定与偏好)]\n{user_prompt}\n\n" + priority_reminder
+        
     if lc_history and isinstance(lc_history[0], SystemMessage):
         if is_greeting:
             active_messages = [SystemMessage(content=priority_reminder)]
@@ -397,9 +402,18 @@ def update_history_node(state: AgentState) -> Dict[str, Any]:
     new_fav = update_favorability(change)
     
     new_history = [msg.copy() for msg in history_msgs]
+    
     if not is_self and user_message:
         new_history.append({"role": "user", "content": user_message})
-    new_history.append({"role": "assistant", "content": raw_reply})
+        
+    # 如果当前是自言自语，检查倒数第一条是否也是自言自语（连续自言自语）
+    # 如果是，则弹出上一条，只保留最后一次自言自语在上下文里
+    if is_self and len(new_history) > 0:
+        last_msg = new_history[-1]
+        if last_msg.get("role") == "assistant" and last_msg.get("is_self_talk") is True:
+            new_history.pop()
+
+    new_history.append({"role": "assistant", "content": raw_reply, "is_self_talk": is_self})
     
     new_history = trim_history(new_history)
     save_history(new_history)
