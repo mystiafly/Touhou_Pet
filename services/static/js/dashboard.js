@@ -67,9 +67,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const dsChatOption = apiSelect.querySelector('option[value="deepseek-chat"]');
                 
                 if (geminiOption) geminiOption.innerText = configData.has_gemini ? "Gemini 2.5 (检测到 Key)" : "Gemini 2.5 (未检测到 Key)";
-                if (dsFlashOption) dsFlashOption.innerText = configData.has_deepseek ? "DeepSeek V4 Flash (检测到 Key)" : "DeepSeek V4 Flash (未检测到 Key)";
-                if (dsProOption) dsProOption.innerText = configData.has_deepseek ? "DeepSeek V4 Pro (检测到 Key)" : "DeepSeek V4 Pro (未检测到 Key)";
-                if (dsChatOption) dsChatOption.innerText = configData.has_deepseek ? "DeepSeek V3 标准版 (检测到 Key)" : "DeepSeek V3 标准版 (未检测到 Key)";
+                if (dsFlashOption) dsFlashOption.innerText = configData.has_deepseek ? "DeepSeek V4 Flash (已配 Key)" : "DeepSeek V4 Flash (未配 Key)";
+                if (dsProOption) dsProOption.innerText = configData.has_deepseek ? "DeepSeek V4 Pro (已配 Key)" : "DeepSeek V4 Pro (未配 Key)";
+                if (dsChatOption) dsChatOption.innerText = configData.has_deepseek ? "DeepSeek V3 (已配 Key)" : "DeepSeek V3 (未配 Key)";
+                
+                const userPromptArea = document.getElementById('user-prompt');
+                if (userPromptArea && configData.user_prompt !== undefined) {
+                    userPromptArea.value = configData.user_prompt;
+                }
                 
                 const greetingToggle = document.getElementById('greeting-toggle');
                 if (greetingToggle) {
@@ -135,6 +140,25 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("切换引擎请求失败！");
         }
     });
+
+    const userPromptArea = document.getElementById('user-prompt');
+    if (userPromptArea) {
+        userPromptArea.addEventListener('change', async () => {
+            try {
+                const response = await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ user_prompt: userPromptArea.value })
+                });
+                const data = await response.json();
+                if (!data.success) {
+                    alert("保存 User 提示词失败: " + data.error);
+                }
+            } catch (e) {
+                alert("保存失败！");
+            }
+        });
+    }
 
     const greetingToggle = document.getElementById('greeting-toggle');
     if (greetingToggle) {
