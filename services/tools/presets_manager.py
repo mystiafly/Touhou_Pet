@@ -191,9 +191,10 @@ def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
             preset_copy["_original_index"] = idx
             semantic_candidates.append(preset_copy)
         else:
-            # 没有关键词限制，且好感度满足，直接触发
-            triggered_indices.add(idx)
-            print(f"[PRESETS] 无关键词限制且好感度满足，直接触发预设: {preset.get('name', preset.get('comment', f'Preset-{idx}'))}")
+            # 没有关键词限制，且非 always_active。
+            # 为了防止导入空关键字的世界书导致全量爆发，此处不再直接触发。
+            # 如果用户希望常驻，应勾选 always_active。
+            pass
 
     # 第二阶段：对未命中的候选进行二次 AI 语义感应 (自言自语模式下不执行语义感应)
     if not is_self_talk and semantic_candidates:
@@ -242,18 +243,32 @@ def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
             if not fav_ok:
                 continue
                 
-            # 检查关键词是否匹配当前已触发的提示词文本池
+            # 检查关键词是否匹配当前已触发的提示词文本池 (严格遵守复合逻辑 AND)
             primary_kws = preset.get("trigger_keywords", []) or preset.get("key", [])
             secondary_kws = preset.get("secondary_keywords", []) or preset.get("keysecondary", [])
-            all_kws = primary_kws + secondary_kws
             
-            if all_kws and isinstance(all_kws, list):
-                for kw in all_kws:
+            has_primary = False
+            if not primary_kws:
+                has_primary = True
+            else:
+                for kw in primary_kws:
                     if kw and isinstance(kw, str) and kw.lower() in current_pool_lower:
-                        triggered_indices.add(idx)
-                        new_triggers = True
-                        print(f"[PRESETS] 递归链式触发命中 (深度={depth+1})，预设: {preset.get('name', preset.get('comment', f'Preset-{idx}'))} (由已触发内容中的关键词 '{kw}' 触发)")
+                        has_primary = True
                         break
+                        
+            has_secondary = False
+            if not secondary_kws:
+                has_secondary = True
+            else:
+                for kw in secondary_kws:
+                    if kw and isinstance(kw, str) and kw.lower() in current_pool_lower:
+                        has_secondary = True
+                        break
+                        
+            if has_primary and has_secondary and (primary_kws or secondary_kws):
+                triggered_indices.add(idx)
+                new_triggers = True
+                print(f"[PRESETS] 递归链式触发命中 (深度={depth+1})，预设: {preset.get('name', preset.get('comment', f'Preset-{idx}'))}")
                         
         if not new_triggers:
             break
