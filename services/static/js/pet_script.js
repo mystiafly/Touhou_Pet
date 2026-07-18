@@ -561,7 +561,10 @@ class DesktopPet {
             this.searchAndPlayMusic(musicQuery);
         }
 
-        this.bubbleContent.innerText = text;
+        // 转义并解析动作括号
+        const escapedText = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const htmlText = escapedText.replace(/(\(.*?\)|（.*?）)/g, '<span class="action-text">$1</span>');
+        this.bubbleContent.innerHTML = htmlText;
         this.bubbleContent.scrollTop = 0; // 閲嶇疆鏂囧瓧妗嗘粴鍔ㄦ潯浣嶇疆鍒伴《閮紝闃叉涓婁竴鏉¤秴闀挎枃鏈畫鐣欐粴鍔ㄦ潯
         this.bubble.style.opacity = '1';
         this.bubble.style.pointerEvents = 'auto'; // 璇磋瘽鏃跺惎鐢ㄩ紶鏍囦氦浜掞紙鍏佽婊氬姩銆侀€夋嫨鏂囨湰锛?
@@ -647,7 +650,16 @@ class DesktopPet {
     resetAutoSpeakTimer() {
         if (this.autoSpeakTimer) clearTimeout(this.autoSpeakTimer);
         if (this.isMinimized || !this.enableAutoSpeak) return;
-        if (this.autoSpeakCount >= 6) {
+        
+        // [修复] 根据设定的频率倍率动态调整睡眠阈值。
+        // 倍率大于1时（低频），减少需要的次数以保证在一小时左右入睡。
+        // 倍率小于1时（高频），最多只允许6次，防止连续说十几次话太烦人。
+        let requiredCount = 6;
+        if (this.autoSpeakMultiplier > 1.0) {
+            requiredCount = Math.max(1, Math.round(6 / this.autoSpeakMultiplier));
+        }
+        
+        if (this.autoSpeakCount >= requiredCount) {
             this.scheduleSleepTimer();
             return;
         }

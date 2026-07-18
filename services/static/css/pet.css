@@ -135,6 +135,14 @@ body, html {
     max-height: 150px; /* 限制文本段落最高高度 */
     overflow-y: auto;  /* 文本超长时段落内滚动 */
     pointer-events: auto; /* 允许在文本区域进行滚动与文字选择 */
+    white-space: pre-wrap; /* 保持换行符并在需要时换行 */
+}
+
+/* 对话中括号动作描述的特殊样式 */
+.action-text {
+    color: var(--theme-main);
+    opacity: 0.85;
+    font-size: 0.95em;
 }
 
 /* 气泡精致暗粉色滚动条样式移至内层文本 */
