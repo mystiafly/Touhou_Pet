@@ -171,7 +171,34 @@ def build_active_messages(state: AgentState) -> list:
                 "（注：这些是关于用户的长期记忆。请仅在当前对话主题与这些记忆相关时，才自然、适度地提及。如果完全无关，绝对不要强行提及。）"
             )
             
-    if custom_presets:
+    if custom_presets and isinstance(custom_presets, list):
+        # 按照 order 升序排序 (同等 position 下 order 越小越靠前)
+        sorted_presets = sorted(custom_presets, key=lambda x: x.get("order", 100))
+        
+        # 将不同 position 的预设分发
+        # 我们定义: position 0 -> top (系统规则前), position 1/其他 -> bottom (状态后面)
+        presets_top = []
+        presets_bottom = []
+        for p in sorted_presets:
+            content = p.get("content", p.get("prompt", ""))
+            if not content:
+                continue
+            if p.get("position", 1) == 0:
+                presets_top.append(content)
+            else:
+                presets_bottom.append(content)
+                
+        if presets_top:
+            top_str = "\n".join(presets_top)
+            priority_reminder = f"[SYSTEM INJECTION: 核心预设设定]\n{top_str}\n\n" + priority_reminder
+            
+        if presets_bottom:
+            bottom_str = "\n".join(presets_bottom)
+            dynamic_tail += (
+                f"\n\n[SYSTEM INJECTION: 触发预设]\n"
+                f"⚠️ 请在你的本次回复中，结合以下设定：\n{bottom_str}"
+            )
+    elif custom_presets and isinstance(custom_presets, str):
         dynamic_tail += (
             f"\n\n[SYSTEM INJECTION: 触发预设]\n"
             f"⚠️ 请在你的本次回复中，必须并且无条件严格遵循以下注入指令，主动描述预设内容：\n{custom_presets}"
