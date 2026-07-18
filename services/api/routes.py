@@ -4,7 +4,7 @@ import time
 import threading
 import re
 from datetime import datetime
-from fastapi import APIRouter, Request, Body, HTTPException
+from fastapi import APIRouter, Request, Body, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from typing import Dict, Any
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
@@ -1013,3 +1013,63 @@ def api_presets_delete(req: PresetDeleteRequest):
         return JSONResponse({"success": True})
     except Exception as e:
         return JSONResponse({"success": False, "error": str(e)})
+
+@router.post("/api/worldbook/import")
+async def import_worldbook(file: UploadFile = File(...)):
+    """接收酒馆格式的世界书 json 文件，解析并合入 custom_presets"""
+    try:
+        content = await file.read()
+        wb_data = json.loads(content.decode("utf-8"))
+        
+        if "entries" not in wb_data:
+            return JSONResponse({"success": False, "error": "无效的世界书格式：找不到 entries 字段"})
+            
+        entries = wb_data.get("entries", {})
+        if not isinstance(entries, dict):
+            return JSONResponse({"success": False, "error": "无效的世界书格式：entries 不是字典"})
+            
+        from core.config_manager import get_file_path
+        custom_presets_file = get_file_path("presets/custom_presets.json")
+        
+        custom_presets = []
+        if os.path.exists(custom_presets_file):
+            with open(custom_presets_file, 'r', encoding='utf-8') as f:
+                try:
+                    custom_presets = json.load(f)
+                except Exception:
+                    custom_presets = []
+                    
+        source_name = file.filename.replace(".json", "") if file.filename else "Unknown_Worldbook"
+        
+        count = 0
+        for entry_id, entry in entries.items():
+            if not isinstance(entry, dict):
+                continue
+                
+            new_preset = {
+                "name": entry.get("comment", f"wb_entry_{entry_id}"),
+                "prompt": entry.get("content", ""),
+                "trigger_keywords": entry.get("key", []),
+                "secondary_keywords": entry.get("keysecondary", []),
+                "constant": entry.get("constant", False),
+                "disable": entry.get("disable", False),
+                "position": int(entry.get("position", 1)) if entry.get("position") is not None else 1,
+                "order": int(entry.get("order", 100)) if entry.get("order") is not None else 100,
+                "worldbook_source": source_name
+            }
+            
+            # Clean up empty arrays
+            if not new_preset["trigger_keywords"]:
+                del new_preset["trigger_keywords"]
+            if not new_preset["secondary_keywords"]:
+                del new_preset["secondary_keywords"]
+                
+            custom_presets.append(new_preset)
+            count += 1
+            
+        with open(custom_presets_file, 'w', encoding='utf-8') as f:
+            json.dump(custom_presets, f, ensure_ascii=False, indent=2)
+            
+        return JSONResponse({"success": True, "count": count})
+    except Exception as e:
+        return JSONResponse({"success": False, "error": f"解析世界书失败: {str(e)}"})
