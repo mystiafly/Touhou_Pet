@@ -212,11 +212,17 @@ def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
     for depth in range(max_depth):
         new_triggers = False
         
-        # 将当前所有已触发的提示词合并为一个扫描文本池
+        # 将当前所有已触发的预设（排除 always_active/constant，防止系统指令引发大面积交叉污染）合并为一个扫描文本池
         current_pool = ""
         for idx in triggered_indices:
-            current_pool += " " + presets[idx].get("prompt", "")
+            preset_obj = presets[idx]
+            if not (preset_obj.get("always_active", False) or preset_obj.get("constant", False)):
+                current_pool += " " + preset_obj.get("prompt", "")
         current_pool_lower = current_pool.lower()
+        
+        # 如果文本池为空，说明没有可以作为链式触发源的内容，直接结束递归
+        if not current_pool_lower.strip():
+            break
         
         for idx, preset in enumerate(presets):
             if not isinstance(preset, dict) or idx in triggered_indices:
