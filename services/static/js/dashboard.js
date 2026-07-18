@@ -1,5 +1,22 @@
 // dashboard.js - 独立大贤者控制台核心逻辑
 document.addEventListener('DOMContentLoaded', () => {
+
+    function applyDashboardThemeColor(hex) {
+        if (!/^#[0-9A-Fa-f]{6}$/i.test(hex)) return;
+        
+        let r = parseInt(hex.substring(1, 3), 16);
+        let g = parseInt(hex.substring(3, 5), 16);
+        let b = parseInt(hex.substring(5, 7), 16);
+        
+        let hr = Math.max(0, r - 32);
+        let hg = Math.max(0, g - 32);
+        let hb = Math.max(0, b - 32);
+        
+        document.documentElement.style.setProperty('--accent', hex);
+        document.documentElement.style.setProperty('--accent-hover', `rgb(${hr}, ${hg}, ${hb})`);
+        document.documentElement.style.setProperty('--accent-glow', `rgba(${r}, ${g}, ${b}, 0.3)`);
+    }
+
     // 导航栏切换
     const navItems = document.querySelectorAll('.nav-item');
     const sections = document.querySelectorAll('.content-section');
@@ -606,4 +623,201 @@ document.addEventListener('DOMContentLoaded', () => {
 
     manualDistillBtn.addEventListener('click', () => manualDistill(false));
     seedTestBtn.addEventListener('click', () => manualDistill(true));
+});
+
+
+// ==========================================
+// 预设准备 (Presets Manager) 逻辑
+// ==========================================
+
+let globalPresetsData = [];
+let customPresetsData = [];
+
+function loadPresets() {
+    fetch('/api/presets/list')
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                globalPresetsData = data.global || [];
+                customPresetsData = data.custom || [];
+                renderPresetsList('global', globalPresetsData, 'global-presets-list');
+                renderPresetsList('custom', customPresetsData, 'custom-presets-list');
+            }
+        })
+        .catch(err => console.error("Load presets failed:", err));
+}
+
+function renderPresetsList(type, data, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    if (data.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-secondary); padding: 10px;">暂无预设</div>';
+        return;
+    }
+    
+    container.innerHTML = '';
+    data.forEach(preset => {
+        const item = document.createElement('div');
+        item.className = 'preset-item';
+        
+        // Badges
+        let badgesHtml = '';
+        if (preset.always_active) badgesHtml += '<span class="preset-badge active">Always Active</span>';
+        if (preset.min_favorability !== undefined && preset.min_favorability !== null) badgesHtml += `<span class="preset-badge">Fav ≥ ${preset.min_favorability}</span>`;
+        if (preset.max_favorability !== undefined && preset.max_favorability !== null) badgesHtml += `<span class="preset-badge">Fav ≤ ${preset.max_favorability}</span>`;
+        
+        let kwStr = (preset.trigger_keywords && preset.trigger_keywords.length) ? preset.trigger_keywords.join(', ') : '';
+        
+        item.innerHTML = `
+            <div class="preset-header" onclick="this.parentElement.classList.toggle('expanded')">
+                <div>
+                    <div class="preset-title">
+                        ${preset.name}
+                    </div>
+                    <div class="preset-badges" style="margin-top: 5px;">${badgesHtml}</div>
+                </div>
+                <div class="preset-actions" onclick="event.stopPropagation();">
+                    <button class="preset-btn edit" onclick="editPreset('${type}', '${preset.name}')" title="编辑"><i class="fas fa-pen"></i></button>
+                    <button class="preset-btn delete" onclick="deletePreset('${type}', '${preset.name}')" title="删除"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+            <div class="preset-body">
+                ${kwStr ? `<div style="font-size:12px; color:var(--text-secondary); margin-bottom:5px;"><b>关键词:</b> ${kwStr}</div>` : ''}
+                <div class="preset-prompt">${preset.prompt || ''}</div>
+            </div>
+        `;
+        container.appendChild(item);
+    });
+}
+
+function showPresetModal(type, preset = null) {
+    document.getElementById('preset-modal').classList.remove('hidden');
+    document.getElementById('preset-type').value = type;
+    
+    if (preset) {
+        document.getElementById('preset-modal-title').innerHTML = '<i class="fas fa-edit"></i> 编辑预设';
+        document.getElementById('preset-original-name').value = preset.name;
+        document.getElementById('preset-name').value = preset.name;
+        document.getElementById('preset-keywords').value = (preset.trigger_keywords || []).join(', ');
+        document.getElementById('preset-min-fav').value = preset.min_favorability !== undefined ? preset.min_favorability : '';
+        document.getElementById('preset-max-fav').value = preset.max_favorability !== undefined ? preset.max_favorability : '';
+        document.getElementById('preset-always-active').checked = !!preset.always_active;
+        document.getElementById('preset-prompt').value = preset.prompt || '';
+    } else {
+        document.getElementById('preset-modal-title').innerHTML = '<i class="fas fa-plus"></i> 新增预设';
+        document.getElementById('preset-original-name').value = '';
+        document.getElementById('preset-name').value = '';
+        document.getElementById('preset-keywords').value = '';
+        document.getElementById('preset-min-fav').value = '';
+        document.getElementById('preset-max-fav').value = '';
+        document.getElementById('preset-always-active').checked = false;
+        document.getElementById('preset-prompt').value = '';
+    }
+}
+
+function hidePresetModal() {
+    document.getElementById('preset-modal').classList.add('hidden');
+}
+
+function editPreset(type, name) {
+    const list = type === 'global' ? globalPresetsData : customPresetsData;
+    const preset = list.find(p => p.name === name);
+    if (preset) showPresetModal(type, preset);
+}
+
+function deletePreset(type, name) {
+    if (confirm(`确定要删除预设 "${name}" 吗？此操作不可恢复。`)) {
+        fetch('/api/presets/delete', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ type, name })
+        }).then(res => res.json()).then(data => {
+            if (data.success) loadPresets();
+            else alert("删除失败：" + data.error);
+        });
+    }
+}
+
+// Bind Events
+document.addEventListener('DOMContentLoaded', () => {
+    // Hooks for Navigation
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            if (item.getAttribute('data-target') === 'presets-view') {
+                loadPresets();
+            }
+        });
+    });
+
+    const btnAddGlobal = document.getElementById('btn-add-global-preset');
+    if (btnAddGlobal) btnAddGlobal.addEventListener('click', () => showPresetModal('global'));
+    
+    const btnAddCustom = document.getElementById('btn-add-custom-preset');
+    if (btnAddCustom) btnAddCustom.addEventListener('click', () => showPresetModal('custom'));
+    
+    const btnClosePresetModal = document.getElementById('close-preset-modal-btn');
+    if (btnClosePresetModal) btnClosePresetModal.addEventListener('click', hidePresetModal);
+    
+    const btnCancelPreset = document.getElementById('btn-cancel-preset');
+    if (btnCancelPreset) btnCancelPreset.addEventListener('click', hidePresetModal);
+    
+    const btnSavePreset = document.getElementById('btn-save-preset');
+    if (btnSavePreset) {
+        btnSavePreset.addEventListener('click', () => {
+            const type = document.getElementById('preset-type').value;
+            const originalName = document.getElementById('preset-original-name').value;
+            const name = document.getElementById('preset-name').value.trim();
+            const keywordsStr = document.getElementById('preset-keywords').value.trim();
+            const minFav = document.getElementById('preset-min-fav').value;
+            const maxFav = document.getElementById('preset-max-fav').value;
+            const alwaysActive = document.getElementById('preset-always-active').checked;
+            const prompt = document.getElementById('preset-prompt').value.trim();
+            
+            if (!name || !prompt) {
+                alert("预设名称和提示词为必填项！");
+                return;
+            }
+            
+            // Delete original first if name changed
+            if (originalName && originalName !== name) {
+                // To safely rename, we should ideally do it in one atomic transaction, 
+                // but since it's local, we can just delete and then save.
+                fetch('/api/presets/delete', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ type, name: originalName })
+                });
+            }
+            
+            const presetObj = {
+                name: name,
+                prompt: prompt,
+                always_active: alwaysActive
+            };
+            
+            if (keywordsStr) presetObj.trigger_keywords = keywordsStr.split(',').map(s => s.trim()).filter(s => s);
+            if (minFav !== '') presetObj.min_favorability = parseInt(minFav, 10);
+            if (maxFav !== '') presetObj.max_favorability = parseInt(maxFav, 10);
+            
+            btnSavePreset.disabled = true;
+            btnSavePreset.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+            
+            fetch('/api/presets/save', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ type, preset: presetObj })
+            }).then(res => res.json()).then(data => {
+                btnSavePreset.disabled = false;
+                btnSavePreset.innerHTML = '<i class="fas fa-save"></i> 保存';
+                
+                if (data.success) {
+                    hidePresetModal();
+                    loadPresets();
+                } else {
+                    alert("保存失败：" + data.error);
+                }
+            });
+        });
+    }
 });

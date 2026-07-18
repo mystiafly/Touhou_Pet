@@ -296,6 +296,7 @@ input:checked + .slider:before {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
 }
@@ -623,4 +624,99 @@ input:checked + .slider:before {
     line-height: 1.5;
     margin: 0;
     color: #e0e0e0;
+}
+
+
+/* Presets Styles */
+.preset-item {
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    transition: all 0.2s ease;
+}
+
+.preset-item:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.preset-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.preset-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.preset-badges {
+    display: flex;
+    gap: 6px;
+}
+
+.preset-badge {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.1);
+    color: var(--text-secondary);
+}
+
+.preset-badge.active {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+}
+
+.preset-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.preset-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 14px;
+    transition: color 0.2s;
+    padding: 4px;
+}
+
+.preset-btn:hover {
+    color: var(--accent-color);
+}
+
+.preset-btn.delete:hover {
+    color: #dc3545;
+}
+
+.preset-body {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border-color);
+    display: none;
+}
+
+.preset-item.expanded .preset-body {
+    display: block;
+}
+
+.preset-prompt {
+    font-family: monospace;
+    font-size: 12px;
+    color: var(--text-secondary);
+    background: rgba(0,0,0,0.2);
+    padding: 8px;
+    border-radius: 4px;
+    white-space: pre-wrap;
+    max-height: 150px;
+    overflow-y: auto;
 }
