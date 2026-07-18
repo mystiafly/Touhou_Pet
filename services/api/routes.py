@@ -184,7 +184,17 @@ def clear_history_api():
     try:
         messages = load_history()[:1]  # 仅保留首句 system 约束消息
         save_history(messages)
-        return {"success": True, "message": "已清空对话历史。"}
+        
+        # 尝试清理长期记忆 (Mem0 向量库)
+        agent = get_memory_agent()
+        if agent:
+            try:
+                agent.reset()
+                print("[MEMORY] 长期记忆已彻底重置")
+            except Exception as reset_e:
+                print(f"[MEMORY ERROR] 重置长期记忆失败: {reset_e}")
+                
+        return {"success": True, "message": "已彻底清空对话历史与长期记忆。"}
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
 
@@ -376,6 +386,7 @@ def get_config_api():
     config["has_gemini"] = bool(os.getenv("GEMINI_API_KEY"))
     config["enable_auto_speak"] = config.get("enable_auto_speak", True)
     config["auto_speak_multiplier"] = config.get("auto_speak_multiplier", 1.0)
+    config["user_prompt"] = config.get("user_prompt", "")
     config["success"] = True
     return config
 
@@ -392,6 +403,8 @@ def post_config_api(payload: dict = Body(...)):
             config_data["enable_auto_speak"] = bool(payload["enable_auto_speak"])
         if "auto_speak_multiplier" in payload:
             config_data["auto_speak_multiplier"] = float(payload["auto_speak_multiplier"])
+        if "user_prompt" in payload:
+            config_data["user_prompt"] = payload["user_prompt"].strip()
         save_config(config_data)
         return {"success": True, "message": "配置已成功保存"}
     except Exception as e:
