@@ -212,7 +212,8 @@ def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
 
     # 第三阶段：递归/链式触发判定
     # 如果已经触发的预设提示词内容中包含了其他未触发预设的关键词，并且好感度条件满足，则将该预设连锁触发
-    max_depth = 5
+    max_depth = 3
+    MAX_DYNAMIC_PRESETS = 8
     for depth in range(max_depth):
         new_triggers = False
         
@@ -279,11 +280,21 @@ def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
                         break
                         
             if has_primary and has_secondary and (primary_kws or secondary_kws):
+                # 检查动态触发配额
+                dynamic_count = sum(1 for i in triggered_indices if not (presets[i].get("always_active") or presets[i].get("constant")))
+                if dynamic_count >= MAX_DYNAMIC_PRESETS:
+                    print(f"[PRESETS] 动态预设触发数量达到上限 ({MAX_DYNAMIC_PRESETS})，强制终止链式扫描防止上下文爆炸。")
+                    break
+                
                 triggered_indices.add(idx)
                 new_triggers = True
                 print(f"[PRESETS] 递归链式触发命中 (深度={depth+1})，预设: {preset.get('name', preset.get('comment', f'Preset-{idx}'))}")
                         
         if not new_triggers:
+            break
+            
+        dynamic_count = sum(1 for i in triggered_indices if not (presets[i].get("always_active") or presets[i].get("constant")))
+        if dynamic_count >= MAX_DYNAMIC_PRESETS:
             break
 
     # 汇总所有被触发的预设字典
