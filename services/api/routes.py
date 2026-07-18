@@ -832,15 +832,9 @@ def music_url(id: int):
 # 11. 退出游戏接口
 @router.post("/api/settings/exit")
 def exit_game():
-    """安全退出端点，触发后端自杀以及优雅关闭 Electron 窗口"""
-    print("[SYSTEM EXIT] 正在安全让露米娅去睡觉 (自杀式优雅退出程序)...")
-    
-    def kill_server():
-        time.sleep(1)
-        import signal
-        os.kill(os.getpid(), signal.SIGTERM)
-        
-    threading.Thread(target=kill_server, daemon=True).start()
+    """安全退出节点，交由前端稍后关闭 Electron 窗口，run.py 会自动清理后端进程"""
+    print("[SYSTEM EXIT] 准备安全闭眼去睡觉 (由前端控制退出)...")
+    return JSONResponse({"status": "success"})
 
 @router.get("/api/settings/preview_prompt")
 def preview_prompt():
@@ -903,3 +897,106 @@ def preview_prompt():
         })
         
     return {"success": True, "messages": result_data}
+
+
+# 12. 预设管理接口
+@router.get("/api/presets/list")
+def api_presets_list():
+    import json
+    from core.config_manager import SERVICES_DIR, get_character_dir
+    global_file = os.path.join(SERVICES_DIR, "global_presets", "global_presets.json")
+    custom_file = os.path.join(get_character_dir(), "presets", "custom_presets.json")
+    
+    global_presets = []
+    if os.path.exists(global_file):
+        try:
+            with open(global_file, 'r', encoding='utf-8') as f:
+                global_presets = json.load(f)
+        except Exception:
+            pass
+            
+    custom_presets = []
+    if os.path.exists(custom_file):
+        try:
+            with open(custom_file, 'r', encoding='utf-8') as f:
+                custom_presets = json.load(f)
+        except Exception:
+            pass
+            
+    return JSONResponse({"success": True, "global": global_presets, "custom": custom_presets})
+
+class PresetSaveRequest(BaseModel):
+    type: str # 'global' or 'custom'
+    preset: dict
+
+@router.post("/api/presets/save")
+def api_presets_save(req: PresetSaveRequest):
+    import json
+    from core.config_manager import SERVICES_DIR, get_character_dir
+    if req.type == "global":
+        dir_path = os.path.join(SERVICES_DIR, "global_presets")
+        file_path = os.path.join(dir_path, "global_presets.json")
+    else:
+        dir_path = os.path.join(get_character_dir(), "presets")
+        file_path = os.path.join(dir_path, "custom_presets.json")
+        
+    os.makedirs(dir_path, exist_ok=True)
+    
+    presets = []
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                presets = json.load(f)
+        except Exception:
+            presets = []
+            
+    # 如果同名，覆盖
+    new_preset = req.preset
+    name = new_preset.get("name", "").strip()
+    if not name:
+        return JSONResponse({"success": False, "error": "预设名称不能为空"})
+        
+    found = False
+    for i, p in enumerate(presets):
+        if p.get("name") == name:
+            presets[i] = new_preset
+            found = True
+            break
+            
+    if not found:
+        presets.append(new_preset)
+        
+    try:
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(presets, f, ensure_ascii=False, indent=2)
+        return JSONResponse({"success": True})
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)})
+
+class PresetDeleteRequest(BaseModel):
+    type: str
+    name: str
+
+@router.post("/api/presets/delete")
+def api_presets_delete(req: PresetDeleteRequest):
+    import json
+    from core.config_manager import SERVICES_DIR, get_character_dir
+    if req.type == "global":
+        file_path = os.path.join(SERVICES_DIR, "global_presets", "global_presets.json")
+    else:
+        file_path = os.path.join(get_character_dir(), "presets", "custom_presets.json")
+        
+    if not os.path.exists(file_path):
+        return JSONResponse({"success": True})
+        
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            presets = json.load(f)
+            
+        presets = [p for p in presets if p.get("name") != req.name]
+        
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(presets, f, ensure_ascii=False, indent=2)
+        return JSONResponse({"success": True})
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)})

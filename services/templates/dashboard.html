@@ -33,6 +33,9 @@
             <a href="#" class="nav-item" data-target="create-soul-view">
                 <i class="fas fa-magic"></i> 孕育新灵魂
             </a>
+            <a href="#" class="nav-item" data-target="presets-view">
+                <i class="fas fa-list-alt"></i> 预设准备
+            </a>
         </nav>
         
         <div class="sidebar-bottom">
@@ -281,6 +284,41 @@
             </div>
         </section>
 
+    
+        <!-- 6. 预设准备视图 -->
+        <section id="presets-view" class="content-section">
+            <div class="section-header">
+                <h2>预设准备 (Presets)</h2>
+                <p>管理系统的公用预设与当前角色的专属感应预设。</p>
+            </div>
+            
+            <div class="grid-2col" style="gap: 20px; align-items: stretch;">
+                
+                <!-- 公用预设 -->
+                <div class="card" style="display: flex; flex-direction: column;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 class="card-title" style="margin:0;"><i class="fas fa-globe"></i> 公用预设 (Global)</h3>
+                        <button class="action-btn" id="btn-add-global-preset" style="padding: 5px 10px; font-size: 12px;"><i class="fas fa-plus"></i> 新增</button>
+                    </div>
+                    <div id="global-presets-list" style="display: flex; flex-direction: column; gap: 10px; overflow-y: auto; max-height: 500px; flex: 1;">
+                        <div class="loading-state"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>
+                    </div>
+                </div>
+
+                <!-- 角色专属预设 -->
+                <div class="card" style="display: flex; flex-direction: column;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 class="card-title" style="margin:0;"><i class="fas fa-user-tag"></i> 专属预设 (Custom)</h3>
+                        <button class="action-btn" id="btn-add-custom-preset" style="padding: 5px 10px; font-size: 12px;"><i class="fas fa-plus"></i> 新增</button>
+                    </div>
+                    <div id="custom-presets-list" style="display: flex; flex-direction: column; gap: 10px; overflow-y: auto; max-height: 500px; flex: 1;">
+                        <div class="loading-state"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
     </main>
 </div>
 
@@ -306,5 +344,59 @@
 </div>
 
 <script src="/static/js/dashboard.js?v=1.0.0"></script>
+
+<!-- 预设编辑 Modal -->
+<div id="preset-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="preset-modal-title"><i class="fas fa-edit"></i> 编辑预设</h2>
+            <button id="close-preset-modal-btn" class="close-modal-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <form id="preset-form" onsubmit="return false;">
+                <input type="hidden" id="preset-type" value="global">
+                <input type="hidden" id="preset-original-name" value="">
+                
+                <div class="form-group">
+                    <label for="preset-name">预设名称 (Name) <span style="color:red">*</span></label>
+                    <input type="text" id="preset-name" class="modern-input" required placeholder="例如: angry_reaction">
+                </div>
+                
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="preset-keywords">触发关键词 (Trigger Keywords)</label>
+                    <input type="text" id="preset-keywords" class="modern-input" placeholder="逗号分隔，例如: 生气,讨厌,笨蛋">
+                    <p class="help-text">命中关键词时将增加触发概率。</p>
+                </div>
+                
+                <div class="grid-2col" style="gap: 15px; margin-top: 15px;">
+                    <div class="form-group">
+                        <label for="preset-min-fav">好感度下限 (Min Fav)</label>
+                        <input type="number" id="preset-min-fav" class="modern-input" placeholder="例如: 0">
+                    </div>
+                    <div class="form-group">
+                        <label for="preset-max-fav">好感度上限 (Max Fav)</label>
+                        <input type="number" id="preset-max-fav" class="modern-input" placeholder="例如: 100">
+                    </div>
+                </div>
+                
+                <div class="form-group" style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="preset-always-active" style="cursor: pointer; width: 16px; height: 16px;">
+                    <label for="preset-always-active" style="margin: 0; cursor: pointer;">常驻开启 (Always Active)</label>
+                </div>
+                
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="preset-prompt">预设提示词 (Prompt) <span style="color:red">*</span></label>
+                    <textarea id="preset-prompt" class="modern-input" rows="6" required placeholder="在此输入预设的具体提示词..."></textarea>
+                </div>
+                
+                <div class="form-actions" style="margin-top: 25px; display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="action-btn outline" id="btn-cancel-preset">取消</button>
+                    <button type="button" class="action-btn" id="btn-save-preset"><i class="fas fa-save"></i> 保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
