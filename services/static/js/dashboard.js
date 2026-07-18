@@ -866,42 +866,66 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Worldbook Import Logic
-    const btnImportWorldbook = document.getElementById('btn-import-worldbook');
+    const btnImportWorldbookCustom = document.getElementById('btn-import-worldbook');
+    const btnImportWorldbookGlobal = document.getElementById('btn-import-worldbook-global');
     const uploadInput = document.getElementById('worldbook-upload-input');
     
-    if (btnImportWorldbook && uploadInput) {
-        btnImportWorldbook.addEventListener('click', () => {
-            uploadInput.click();
-        });
+    let importTargetType = 'custom';
+    let currentImportBtn = null;
+    let currentImportBtnOldHtml = '';
+    
+    if (uploadInput) {
+        if (btnImportWorldbookCustom) {
+            btnImportWorldbookCustom.addEventListener('click', () => {
+                importTargetType = 'custom';
+                currentImportBtn = btnImportWorldbookCustom;
+                uploadInput.click();
+            });
+        }
+        
+        if (btnImportWorldbookGlobal) {
+            btnImportWorldbookGlobal.addEventListener('click', () => {
+                importTargetType = 'global';
+                currentImportBtn = btnImportWorldbookGlobal;
+                uploadInput.click();
+            });
+        }
         
         uploadInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
             
-            const btnOldHtml = btnImportWorldbook.innerHTML;
-            btnImportWorldbook.disabled = true;
-            btnImportWorldbook.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 导入中...';
+            if (currentImportBtn) {
+                currentImportBtnOldHtml = currentImportBtn.innerHTML;
+                currentImportBtn.disabled = true;
+                currentImportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 导入中...';
+            }
             
             const formData = new FormData();
             formData.append('file', file);
+            formData.append('type', importTargetType);
             
             fetch('/api/worldbook/import', {
                 method: 'POST',
                 body: formData
             }).then(res => res.json()).then(data => {
-                btnImportWorldbook.disabled = false;
-                btnImportWorldbook.innerHTML = btnOldHtml;
+                if (currentImportBtn) {
+                    currentImportBtn.disabled = false;
+                    currentImportBtn.innerHTML = currentImportBtnOldHtml;
+                }
                 uploadInput.value = ''; // clear
                 
                 if (data.success) {
-                    alert(`成功导入 ${data.count} 条世界书设定！`);
+                    alert(`成功导入 ${data.count} 条世界书设定到 ${importTargetType === 'global' ? '公用预设' : '专属预设'}！`);
                     loadPresets();
                 } else {
                     alert("导入失败：" + data.error);
                 }
             }).catch(err => {
-                btnImportWorldbook.disabled = false;
-                btnImportWorldbook.innerHTML = btnOldHtml;
+                if (currentImportBtn) {
+                    currentImportBtn.disabled = false;
+                    currentImportBtn.innerHTML = currentImportBtnOldHtml;
+                }
                 uploadInput.value = '';
                 alert("上传发生错误：" + err);
             });
