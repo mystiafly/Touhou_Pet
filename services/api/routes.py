@@ -1059,6 +1059,7 @@ async def import_worldbook(file: UploadFile = File(...), type: str = Form("custo
                 "disable": entry.get("disable", False),
                 "position": int(entry.get("position", 1)) if entry.get("position") is not None else 1,
                 "order": int(entry.get("order", 100)) if entry.get("order") is not None else 100,
+                "prevent_recursion": entry.get("preventRecursion", False),
                 "worldbook_source": source_name
             }
             

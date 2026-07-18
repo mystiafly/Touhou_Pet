@@ -218,9 +218,12 @@ def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
             current_pool += " " + presets[idx].get("prompt", "")
         current_pool_lower = current_pool.lower()
         
-        # 扫描尚未触发的预设中是否含有好感度符合且关键词在扫描池里的条目
         for idx, preset in enumerate(presets):
             if not isinstance(preset, dict) or idx in triggered_indices:
+                continue
+                
+            # 如果该预设被标记为“禁止递归触发”，则直接跳过
+            if preset.get("prevent_recursion", False):
                 continue
                 
             # 同样需要校验好感度范围限制
