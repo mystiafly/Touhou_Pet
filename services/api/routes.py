@@ -16,7 +16,7 @@ from workers.distillation import generate_pet_diary
 from tools.presets_manager import get_self_talk_presets_file
 from external_api import netease_music
 from time_system import get_time_greeting_prompt
-from core.databank_manager import load_databank
+from core.databank_manager import load_databank, save_databank_state_sheet, save_databank_template_raw, get_databank_paths
 
 router = APIRouter()
 SERVICES_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -82,6 +82,32 @@ def get_databank():
     if databank is None:
         return {"status": "error", "message": "当前角色未配置 DataBank 模板"}
     return {"status": "success", "data": databank}
+
+@router.get("/api/databank/template")
+def get_databank_template():
+    """获取当前角色的原始 DataBank 模板 JSON"""
+    template_path, _ = get_databank_paths()
+    if not template_path or not os.path.exists(template_path):
+        return {"status": "error", "message": "当前角色无 DataBank 模板"}
+    with open(template_path, 'r', encoding='utf-8') as f:
+        return {"status": "success", "data": f.read()}
+
+@router.post("/api/databank/update_content")
+def update_databank_content(payload: dict = Body(...)):
+    sheet_id = payload.get("sheet_id")
+    content = payload.get("content")
+    if not sheet_id or content is None:
+        return {"status": "error", "message": "参数错误"}
+    success, msg = save_databank_state_sheet(sheet_id, content)
+    return {"status": "success" if success else "error", "message": msg}
+
+@router.post("/api/databank/update_template")
+def update_databank_template(payload: dict = Body(...)):
+    raw_json = payload.get("raw_json")
+    if not raw_json:
+        return {"status": "error", "message": "JSON内容为空"}
+    success, msg = save_databank_template_raw(raw_json)
+    return {"status": "success" if success else "error", "message": msg}
 
 # 3. 核心聊天对话接口
 @router.post("/api/chat")
