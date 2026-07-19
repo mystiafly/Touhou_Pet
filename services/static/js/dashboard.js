@@ -1297,9 +1297,25 @@ document.addEventListener('DOMContentLoaded', () => {
         sheet.sourceData.insertNode = document.getElementById('tpl-fld-insertnode').value;
         sheet.sourceData.deleteNode = document.getElementById('tpl-fld-deletenode').value;
         
-        // 读取列名（表头）
-        const colInputs = document.querySelectorAll('.tpl-col-input');
-        const headers = Array.from(colInputs).map(inp => inp.value.trim());
+        // 读取列名（表头）与 列规则
+        sheet.sourceData.columnRules = {};
+        const colItems = document.querySelectorAll('#tpl-columns-list li');
+        const headers = [];
+        
+        colItems.forEach(li => {
+            const nameInput = li.querySelector('.tpl-col-input');
+            const ruleInput = li.querySelector('.tpl-col-rule');
+            if(nameInput) {
+                const cname = nameInput.value.trim();
+                if(cname) {
+                    headers.push(cname);
+                    if(ruleInput && ruleInput.value.trim()) {
+                        sheet.sourceData.columnRules[cname] = ruleInput.value.trim();
+                    }
+                }
+            }
+        });
+        
         if(!sheet.content) sheet.content = [];
         if(sheet.content.length === 0) sheet.content.push(headers);
         else sheet.content[0] = headers;
@@ -1346,57 +1362,68 @@ document.addEventListener('DOMContentLoaded', () => {
             headers = ['row_id']; // 默认初始列
         }
         
+        const columnRules = (sheet.sourceData && sheet.sourceData.columnRules) || {};
+        
         headers.forEach((colName, index) => {
-            const li = document.createElement('li');
-            li.style.display = 'flex';
-            li.style.gap = '10px';
-            li.style.alignItems = 'center';
-            
-            const inp = document.createElement('input');
-            inp.type = 'text';
-            inp.className = 'modern-input tpl-col-input';
-            inp.style.flex = '1';
-            inp.value = colName;
-            if(index === 0 && colName === 'row_id') inp.readOnly = true; // 保护主键
-            
-            const delBtn = document.createElement('button');
-            delBtn.className = 'action-btn danger';
-            delBtn.style.padding = '5px 10px';
-            delBtn.innerHTML = '<i class="fas fa-trash"></i>';
-            delBtn.addEventListener('click', () => {
-                li.remove();
-            });
-            if(index === 0 && colName === 'row_id') delBtn.disabled = true; // 保护主键
-            
-            li.appendChild(inp);
-            li.appendChild(delBtn);
+            const rule = columnRules[colName] || '';
+            const li = createColCard(colName, rule, index === 0 && colName === 'row_id');
             listEl.appendChild(li);
         });
+    }
+
+    function createColCard(colName = '', rule = '', isReadOnlyPK = false) {
+        const li = document.createElement('li');
+        li.style.display = 'flex';
+        li.style.flexDirection = 'column';
+        li.style.gap = '8px';
+        li.style.background = 'var(--bg-secondary)';
+        li.style.padding = '10px';
+        li.style.borderRadius = 'var(--border-radius)';
+        li.style.border = '1px solid var(--border-color)';
+        
+        const topRow = document.createElement('div');
+        topRow.style.display = 'flex';
+        topRow.style.gap = '10px';
+        topRow.style.alignItems = 'center';
+        
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.className = 'modern-input tpl-col-input';
+        inp.style.flex = '1';
+        inp.value = colName;
+        inp.placeholder = "列名 (如: 当前主导情绪)";
+        if(isReadOnlyPK) inp.readOnly = true; // 保护主键
+        
+        const delBtn = document.createElement('button');
+        delBtn.className = 'action-btn danger';
+        delBtn.style.padding = '5px 10px';
+        delBtn.innerHTML = '<i class="fas fa-trash"></i>';
+        delBtn.addEventListener('click', () => { li.remove(); });
+        if(isReadOnlyPK) delBtn.disabled = true; // 保护主键
+        
+        topRow.appendChild(inp);
+        topRow.appendChild(delBtn);
+        
+        const botRow = document.createElement('div');
+        const ruleInp = document.createElement('textarea');
+        ruleInp.className = 'modern-input tpl-col-rule';
+        ruleInp.style.width = '100%';
+        ruleInp.style.height = '40px';
+        ruleInp.style.resize = 'vertical';
+        ruleInp.placeholder = "列级规则约束 (选填，例如：只能使用2个汉字，或者：只读严禁修改)";
+        ruleInp.value = rule;
+        botRow.appendChild(ruleInp);
+        
+        li.appendChild(topRow);
+        li.appendChild(botRow);
+        return li;
     }
 
     const tplAddColBtn = document.getElementById('tpl-add-column-btn');
     if(tplAddColBtn) {
         tplAddColBtn.addEventListener('click', () => {
             const listEl = document.getElementById('tpl-columns-list');
-            const li = document.createElement('li');
-            li.style.display = 'flex';
-            li.style.gap = '10px';
-            li.style.alignItems = 'center';
-            
-            const inp = document.createElement('input');
-            inp.type = 'text';
-            inp.className = 'modern-input tpl-col-input';
-            inp.style.flex = '1';
-            inp.placeholder = "新列名";
-            
-            const delBtn = document.createElement('button');
-            delBtn.className = 'action-btn danger';
-            delBtn.style.padding = '5px 10px';
-            delBtn.innerHTML = '<i class="fas fa-trash"></i>';
-            delBtn.addEventListener('click', () => { li.remove(); });
-            
-            li.appendChild(inp);
-            li.appendChild(delBtn);
+            const li = createColCard('', '', false);
             listEl.appendChild(li);
         });
     }

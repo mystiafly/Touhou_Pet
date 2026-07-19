@@ -183,8 +183,9 @@ def get_databank_rules_for_llm():
         note = source_data.get("note", "")
         update_node = source_data.get("updateNode", "")
         insert_node = source_data.get("insertNode", "")
+        column_rules = source_data.get("columnRules", {})
         
-        if not (update_node or insert_node):
+        if not (update_node or insert_node or column_rules):
             continue
             
         rule = f"- **{sheet.get('name')} (Sheet ID: {key})**:\n"
@@ -194,6 +195,12 @@ def get_databank_rules_for_llm():
             rule += f"  - 新增条件: {insert_node}\n"
         if update_node:
             rule += f"  - 更新条件: {update_node}\n"
+            
+        if column_rules:
+            rule += "  - 【各列控制约束】:\n"
+            for col_name, col_rule in column_rules.items():
+                if col_rule.strip():
+                    rule += f"    - [{col_name}]: {col_rule}\n"
         
         rules_md.append(rule)
         
