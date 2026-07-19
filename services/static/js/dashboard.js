@@ -1323,6 +1323,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // 如果 UID (表标识) 发生了修改，我们需要重命名外层 key
         if(newUid && newUid !== tplCurrentSheetId && newUid.startsWith('sheet_')) {
             currentTemplateRaw[newUid] = currentTemplateRaw[tplCurrentSheetId];
+            if(currentTemplateRaw[tplCurrentSheetId].isSystem) {
+                alert("这是系统默认的核心表，不可删除！");
+                return;
+            }
             delete currentTemplateRaw[tplCurrentSheetId];
             tplCurrentSheetId = newUid; // Update the reference
             renderTplSidebar(); // Re-render sidebar to reflect key change
@@ -1336,7 +1340,32 @@ document.addEventListener('DOMContentLoaded', () => {
         const sheet = currentTemplateRaw[key];
         
         // 填充基础设置
-        document.getElementById('tpl-fld-uid').value = key;
+        const uidInput = document.getElementById('tpl-fld-uid');
+        uidInput.value = key;
+        uidInput.readOnly = sheet.isSystem ? true : false;
+        if(sheet.isSystem) {
+            uidInput.style.background = 'var(--bg-primary)';
+            uidInput.title = "系统保留标识，不可修改";
+        } else {
+            uidInput.style.background = '';
+            uidInput.title = "";
+        }
+        
+        const delBtn = document.getElementById('btn-tpl-delete-sheet');
+        if (delBtn) {
+            if (sheet.isSystem) {
+                delBtn.disabled = true;
+                delBtn.style.opacity = '0.5';
+                delBtn.style.cursor = 'not-allowed';
+                delBtn.title = "系统默认核心表，为防止崩溃不可删除";
+            } else {
+                delBtn.disabled = false;
+                delBtn.style.opacity = '1';
+                delBtn.style.cursor = 'pointer';
+                delBtn.title = "";
+            }
+        }
+        
         document.getElementById('tpl-fld-name').value = sheet.name || '';
         document.getElementById('tpl-fld-entrytype').value = sheet.exportConfig?.entryType || 'constant';
         document.getElementById('tpl-fld-keywords').value = sheet.exportConfig?.keywords || '';
@@ -1451,6 +1480,10 @@ document.addEventListener('DOMContentLoaded', () => {
         delTplSheetBtn.addEventListener('click', () => {
             if(!tplCurrentSheetId || !currentTemplateRaw) return;
             if(!confirm(`确定要彻底删除表 ${tplCurrentSheetId} 吗？`)) return;
+            if(currentTemplateRaw[tplCurrentSheetId].isSystem) {
+                alert("这是系统默认的核心表，不可删除！");
+                return;
+            }
             delete currentTemplateRaw[tplCurrentSheetId];
             tplCurrentSheetId = null;
             renderTplSidebar();

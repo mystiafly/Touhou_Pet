@@ -19,6 +19,7 @@
   "sheet_pet_state": {
     "uid": "sheet_pet_state",
     "name": "实时生活状态表",
+    "isSystem": true,
     "exportConfig": {
       "entryType": "constant",
       "keywords": ""
@@ -26,8 +27,14 @@
     "sourceData": {
       "note": "记录桌宠当下的实时生活状态。此表只能有一行数据，切勿增删。每次时间推移或场景变化时，更新她的虚拟活动和心情。",
       "updateNode": "当时间流逝或产生新的行动时，务必更新：当前时间、当前虚拟活动、当前主导情绪。",
-      "insertNode": "禁止插入新行。",
-      "deleteNode": "禁止删除行。"
+      "insertNode": "完全禁止插入新行。",
+      "deleteNode": "完全禁止删除行。",
+      "columnRules": {
+        "现实当前时间": "只读字段，禁止大模型修改。",
+        "当前虚拟活动": "根据上文的对话或时间流逝，推测桌宠此时正在做什么。",
+        "当前主导情绪": "只能使用两个汉字的情绪词，如：开心、生气、困倦。",
+        "下一步想做的事": "必须符合桌宠当前的性格和状态，字数不超过10个字。"
+      }
     },
     "content": [
       ["row_id", "现实当前时间", "当前虚拟活动", "当前主导情绪", "下一步想做的事"],
@@ -41,6 +48,7 @@
   "sheet_character_status": {
     "uid": "sheet_character_status",
     "name": "角色全息档案",
+    "isSystem": true,
     "exportConfig": {
       "entryType": "constant",
       "keywords": ""
@@ -49,7 +57,11 @@
       "note": "记录核心人物的性格设定与内心真实想法。这能帮助保持人设稳定。第一行始终是桌宠自己，第二行通常是用户(主人)。",
       "updateNode": "当桌宠对某人的看法发生深刻改变，或某人的外貌特征发生变化时，更新对应行的信息。",
       "insertNode": "当对话中出现了全新的重要人物，并且发生了值得记录的互动时，为其插入新行。",
-      "deleteNode": "极少删除。除非角色被彻底遗忘。"
+      "deleteNode": "完全禁止删除行。",
+      "columnRules": {
+        "角色名": "角色的全名或称呼，不可轻易修改。",
+        "内心真实想法": "用细腻的文字描述该角色当下的心理状态或对主人的看法，禁止用数字表示好感度。"
+      }
     },
     "content": [
       ["row_id", "角色名", "当前外貌特征", "核心性格特点", "内心真实想法"],
@@ -60,21 +72,52 @@
       "contextDepth": 4
     }
   },
-  "sheet_memory_log": {
-    "uid": "sheet_memory_log",
-    "name": "羁绊记忆手账",
+  "sheet_diary_index": {
+    "uid": "sheet_diary_index",
+    "name": "日记大纲索引",
+    "isSystem": true,
     "exportConfig": {
-      "entryType": "keyword",
-      "keywords": "记得,以前,上次,约定,回忆,手账,日记"
+      "entryType": "constant",
+      "keywords": ""
     },
     "sourceData": {
-      "note": "这是一本充满羁绊的日记本，记录了桌宠与主人之间发生的有意义的事件、约定或重要的聊天内容。",
-      "updateNode": "当某项约定被完成，或者某段记忆产生了新的后续时，更新该行。",
-      "insertNode": "当发生了一次温馨、有趣或意义深远的互动，或者立下了一个未来约定时，插入一行新的记忆。",
-      "deleteNode": "当某条记忆变得毫无意义或被明确废弃时可以删除。"
+      "note": "这是桌宠记忆的目录。每经过重要的一天，必须新增一行记录大纲。如果你想回忆某天的细节，请在对话中提及对应的【日记编号】（例如：D001），系统就会自动为你加载那天的详细日记。",
+      "updateNode": "大纲一旦写下，尽量不要修改。",
+      "insertNode": "每当发生一次意义重大的事件，或者结束了一天的陪伴，必须插入一行新的日记大纲。必须和详细日记库保持同步。",
+      "deleteNode": "完全禁止删除行。",
+      "columnRules": {
+        "日记编号": "必须是严格的 D+数字 格式，例如 D001, D002",
+        "一句话摘要": "极其简练的十个字以内的概括，不能包含过多细节。"
+      }
     },
     "content": [
-      ["row_id", "记忆事件标题", "发生现实日期", "详细经过", "对角色的长期影响"]
+      ["row_id", "日记编号", "日期", "一句话摘要"]
+    ],
+    "updateConfig": {
+      "batchSize": 4,
+      "contextDepth": 4
+    }
+  },
+  "sheet_diary_detail": {
+    "uid": "sheet_diary_detail",
+    "name": "详细日记库",
+    "isSystem": true,
+    "exportConfig": {
+      "entryType": "keyword",
+      "keywords": "日记编号"
+    },
+    "sourceData": {
+      "note": "这是桌宠完整的记忆库。平时它是隐藏的，只有当你念出【日记编号】时才会激活这一行。当你需要写新日记时，你必须同时更新大纲索引表和本表。",
+      "updateNode": "详细日记一旦写下，尽量不要修改。",
+      "insertNode": "与大纲索引表同步插入。详细记录当天的所有温馨细节和羁绊。必须使用与大纲表相同的日记编号！",
+      "deleteNode": "完全禁止删除行。",
+      "columnRules": {
+        "日记编号": "必须与大纲索引表的编号完全一致！作为检索钥匙。",
+        "详细日记内容": "不受字数限制，尽情发挥，用感性的第一人称或者旁白视角记录。"
+      }
+    },
+    "content": [
+      ["row_id", "日记编号", "详细日记内容", "情感波折"]
     ],
     "updateConfig": {
       "batchSize": 4,
