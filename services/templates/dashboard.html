@@ -406,7 +406,7 @@
                                 <button id="save-databank-content-btn" class="action-btn" style="padding: 5px 10px; font-size: 0.85em; margin-left: 5px;"><i class="fas fa-save"></i> 保存本表修改</button>
                             </div>
                         </div>
-                        <p id="databank-table-desc" style="color: var(--text-secondary); font-size: 0.9em; margin-bottom: 15px; white-space: pre-wrap;">(可在模板模式中修改这里的描述和潜规则)</p>
+                        <p id="databank-table-desc" style="display: none;"></p>
                         <div style="overflow: auto; flex: 1;">
                             <table id="databank-table" class="modern-table" style="min-width: max-content;">
                                 <!-- JS动态填充行列 -->
@@ -417,17 +417,104 @@
                 </div>
             </div>
 
-            <!-- 模式2：模板架构模式 -->
-            <div id="databank-template-mode" class="databank-container" style="display: none; flex-direction: column; height: calc(100vh - 220px); background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 15px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <div>
-                        <h3 style="margin: 0;"><i class="fas fa-code"></i> DataBank Template JSON</h3>
-                        <p style="margin: 5px 0 0 0; font-size: 0.85em; color: var(--text-secondary);">全量掌控：可以直接在这里修改提示词、增删表、甚至设计新的架构。必须符合严格的 JSON 语法。</p>
+            <!-- 模式2：模板架构模式 GUI -->
+            <div id="databank-template-mode" class="databank-container" style="display: none; gap: 20px; height: calc(100vh - 220px);">
+                <!-- 左侧：表名列表 -->
+                <div class="databank-sidebar" style="flex: 0 0 250px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 15px; overflow-y: auto; display: flex; flex-direction: column;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
+                        <h3 style="margin: 0;"><i class="fas fa-sitemap"></i> 模板架构</h3>
                     </div>
-                    <button id="save-databank-template-btn" class="action-btn danger"><i class="fas fa-save"></i> 强制覆写模板文件</button>
+                    <ul id="databank-tpl-sheet-list" style="list-style: none; padding: 0; margin-top: 10px; flex: 1;">
+                        <!-- JS动态填充 -->
+                    </ul>
+                    <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 10px;">
+                        <button id="add-tpl-sheet-btn" class="action-btn outline"><i class="fas fa-plus"></i> 新建一张空表</button>
+                    </div>
                 </div>
-                <textarea id="databank-template-json" class="modern-input" style="flex: 1; font-family: monospace; white-space: pre; overflow: auto; resize: none; background: #1e1e1e; color: #d4d4d4; line-height: 1.5; font-size: 14px;" spellcheck="false"></textarea>
+
+                <!-- 右侧：属性配置器 -->
+                <div class="databank-main" style="flex: 1; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 15px; display: flex; flex-direction: column; overflow-y: auto;">
+                    <div id="tpl-empty-state" style="text-align: center; color: var(--text-secondary); margin-top: 50px;">
+                        <i class="fas fa-hammer" style="font-size: 2em; margin-bottom: 10px;"></i>
+                        <p>请在左侧选择一张表进行架构配置</p>
+                    </div>
+                    
+                    <div id="tpl-editor-container" style="display: none; flex-direction: column; gap: 20px;">
+                        <!-- 顶栏操作 -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                            <h2 style="margin: 0; color: var(--accent-color);">表级属性配置</h2>
+                            <div style="display: flex; gap: 10px;">
+                                <button id="btn-tpl-export" class="action-btn outline" style="font-size: 0.85em;"><i class="fas fa-download"></i> 导出模板</button>
+                                <button id="btn-tpl-delete-sheet" class="action-btn danger" style="font-size: 0.85em;"><i class="fas fa-trash"></i> 删除此表</button>
+                                <button id="save-databank-template-btn" class="action-btn" style="font-size: 0.85em;"><i class="fas fa-save"></i> 保存全部模板结构</button>
+                            </div>
+                        </div>
+                        
+                        <!-- 基础设置 -->
+                        <div style="background: var(--bg-primary); padding: 15px; border-radius: var(--border-radius);">
+                            <h3 style="margin-top: 0;"><i class="fas fa-info-circle"></i> 基础设置</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div>
+                                    <label class="form-label">表名 (Name)</label>
+                                    <input type="text" id="tpl-fld-name" class="modern-input" placeholder="例如: 全局数据表">
+                                </div>
+                                <div>
+                                    <label class="form-label">表标识 (Key/UID)</label>
+                                    <input type="text" id="tpl-fld-uid" class="modern-input" placeholder="例如: sheet_global_data">
+                                </div>
+                                <div>
+                                    <label class="form-label">触发类型</label>
+                                    <select id="tpl-fld-entrytype" class="modern-input">
+                                        <option value="constant">常驻 (始终注入)</option>
+                                        <option value="keyword">关键字触发</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="form-label">触发词 (多词逗号分隔)</label>
+                                    <input type="text" id="tpl-fld-keywords" class="modern-input" placeholder="例如: 灵梦,神社">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 规则提示词 -->
+                        <div style="background: var(--bg-primary); padding: 15px; border-radius: var(--border-radius);">
+                            <h3 style="margin-top: 0;"><i class="fas fa-book"></i> 潜规则与提示词 (Prompts)</h3>
+                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                <div>
+                                    <label class="form-label">表说明 (note)</label>
+                                    <textarea id="tpl-fld-note" class="modern-input" style="height: 60px; resize: vertical;" placeholder="告诉大模型这张表是干什么的..."></textarea>
+                                </div>
+                                <div>
+                                    <label class="form-label">更新条件 (updateNode)</label>
+                                    <textarea id="tpl-fld-updatenode" class="modern-input" style="height: 40px; resize: vertical;" placeholder="告诉大模型什么时候该去修改数据..."></textarea>
+                                </div>
+                                <div>
+                                    <label class="form-label">插入条件 (insertNode)</label>
+                                    <textarea id="tpl-fld-insertnode" class="modern-input" style="height: 40px; resize: vertical;" placeholder="告诉大模型什么时候该去增加新行..."></textarea>
+                                </div>
+                                <div>
+                                    <label class="form-label">删除条件 (deleteNode)</label>
+                                    <textarea id="tpl-fld-deletenode" class="modern-input" style="height: 40px; resize: vertical;" placeholder="告诉大模型什么时候该删行..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 列管理器 -->
+                        <div style="background: var(--bg-primary); padding: 15px; border-radius: var(--border-radius);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <h3 style="margin: 0;"><i class="fas fa-columns"></i> 列(字段)管理器</h3>
+                                <button id="tpl-add-column-btn" class="action-btn outline" style="padding: 2px 8px;"><i class="fas fa-plus"></i> 新增一列</button>
+                            </div>
+                            <p style="font-size: 0.85em; color: var(--text-secondary); margin-top: 0;">在这里定义表的结构。此处定义的列名即为数据表中的表头(第一行)。</p>
+                            
+                            <ul id="tpl-columns-list" style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px;">
+                                <!-- JS动态渲染列 -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
             </div>
+        
         </section>
         
     </main>
@@ -454,7 +541,7 @@
     </div>
 </div>
 
-<script src="/static/js/dashboard.js?v=1.0.3"></script>
+<script src="/static/js/dashboard.js?v=1.0.4"></script>
 
 <!-- 预设编辑 Modal -->
 <div id="preset-modal" class="modal-overlay hidden">
