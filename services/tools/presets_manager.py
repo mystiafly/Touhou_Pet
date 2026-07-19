@@ -88,8 +88,21 @@ def check_semantic_presets(user_message, candidates):
         print(f"[PRESETS] 二次 AI 语义匹配失败: {e}")
     return []
 
+def is_valid_keyword(kw, block_english):
+    if not kw or not isinstance(kw, str):
+        return False
+    if block_english:
+        # 如果屏蔽纯英文，那么只有包含至少一个中文字符或数字的关键字才有效
+        if not re.search(r'[\u4e00-\u9fff0-9]', kw):
+            return False
+    return True
+
 def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
     """加载并根据条件与关键词匹配触发相应的感应预设提示词 (混合模式：关键词直接触发 + AI二次语义感应)"""
+    config = get_config()
+    max_depth = config.get("preset_max_depth", 2)
+    block_english = config.get("preset_block_english", False)
+    
     candidates = []
     custom_presets_file = get_custom_presets_file()
     if not os.path.exists(custom_presets_file):
@@ -168,7 +181,7 @@ def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
             has_primary = True
         else:
             for kw in primary_kws:
-                if kw and isinstance(kw, str) and kw.lower() in user_msg_lower:
+                if is_valid_keyword(kw, block_english) and kw.lower() in user_msg_lower:
                     has_primary = True
                     break
                     
@@ -177,7 +190,7 @@ def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
             has_secondary = True
         else:
             for kw in secondary_kws:
-                if kw and isinstance(kw, str) and kw.lower() in user_msg_lower:
+                if is_valid_keyword(kw, block_english) and kw.lower() in user_msg_lower:
                     has_secondary = True
                     break
                     
@@ -212,7 +225,6 @@ def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
 
     # 第三阶段：递归/链式触发判定
     # 如果已经触发的预设提示词内容中包含了其他未触发预设的关键词，并且好感度条件满足，则将该预设连锁触发
-    max_depth = 2
     MAX_DYNAMIC_PRESETS = 8
     for depth in range(max_depth):
         new_triggers = False
@@ -266,7 +278,7 @@ def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
                 has_primary = True
             else:
                 for kw in primary_kws:
-                    if kw and isinstance(kw, str) and kw.lower() in current_pool_lower:
+                    if is_valid_keyword(kw, block_english) and kw.lower() in current_pool_lower:
                         has_primary = True
                         break
                         
@@ -275,7 +287,7 @@ def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
                 has_secondary = True
             else:
                 for kw in secondary_kws:
-                    if kw and isinstance(kw, str) and kw.lower() in current_pool_lower:
+                    if is_valid_keyword(kw, block_english) and kw.lower() in current_pool_lower:
                         has_secondary = True
                         break
                         

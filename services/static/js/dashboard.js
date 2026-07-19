@@ -91,6 +91,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     autoSpeakMultiplier.value = configData.auto_speak_multiplier.toString();
                 }
 
+                const presetMaxDepth = document.getElementById('preset-max-depth');
+                if (presetMaxDepth && configData.preset_max_depth !== undefined) {
+                    presetMaxDepth.value = configData.preset_max_depth.toString();
+                } else if (presetMaxDepth) {
+                    presetMaxDepth.value = "2";
+                }
+                
+                const blockEnglishToggle = document.getElementById('block-english-toggle');
+                if (blockEnglishToggle) {
+                    blockEnglishToggle.checked = configData.preset_block_english === true;
+                }
+
                 if (configData.theme_color) {
                     applyDashboardThemeColor(configData.theme_color);
                 }
@@ -198,6 +210,36 @@ document.addEventListener('DOMContentLoaded', () => {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ auto_speak_multiplier: parseFloat(autoSpeakMultiplier.value) })
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        });
+    }
+
+    const presetMaxDepth = document.getElementById('preset-max-depth');
+    if (presetMaxDepth) {
+        presetMaxDepth.addEventListener('change', async () => {
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ preset_max_depth: parseInt(presetMaxDepth.value) })
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        });
+    }
+
+    const blockEnglishToggle = document.getElementById('block-english-toggle');
+    if (blockEnglishToggle) {
+        blockEnglishToggle.addEventListener('change', async () => {
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ preset_block_english: blockEnglishToggle.checked })
                 });
             } catch (e) {
                 console.error(e);

@@ -387,6 +387,8 @@ def get_config_api():
     config["enable_auto_speak"] = config.get("enable_auto_speak", True)
     config["auto_speak_multiplier"] = config.get("auto_speak_multiplier", 1.0)
     config["user_prompt"] = config.get("user_prompt", "")
+    config["preset_max_depth"] = config.get("preset_max_depth", 2)
+    config["preset_block_english"] = config.get("preset_block_english", False)
     config["success"] = True
     return config
 
@@ -405,6 +407,10 @@ def post_config_api(payload: dict = Body(...)):
             config_data["auto_speak_multiplier"] = float(payload["auto_speak_multiplier"])
         if "user_prompt" in payload:
             config_data["user_prompt"] = payload["user_prompt"].strip()
+        if "preset_max_depth" in payload:
+            config_data["preset_max_depth"] = int(payload["preset_max_depth"])
+        if "preset_block_english" in payload:
+            config_data["preset_block_english"] = bool(payload["preset_block_english"])
         save_config(config_data)
         return {"success": True, "message": "配置已成功保存"}
     except Exception as e:
