@@ -146,6 +146,35 @@
                         <p class="help-text">倍率越小，桌宠憋不住找你搭话所需的时间就越短。</p>
                     </div>
                 </div>
+
+                <div class="settings-card">
+                    <h3><i class="fas fa-book"></i> 世界书与预设管理</h3>
+                    
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="preset-max-depth" style="font-weight: 500; font-size: 14px; display: block;">递归链式触发最大深度</label>
+                        <select id="preset-max-depth" class="modern-select" style="margin-top: 8px; width: 100%;">
+                            <option value="1">1层 (仅直接命中)</option>
+                            <option value="2">2层 (推荐/默认)</option>
+                            <option value="3">3层 (较深联想)</option>
+                            <option value="4">4层 (深层联想)</option>
+                            <option value="5">5层 (极度扩散)</option>
+                        </select>
+                        <p class="help-text">限制世界书词条相互引用的最大深度，数值越高引申的背景设定越多，但过高可能导致上下文爆炸。</p>
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 15px 0;">
+
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <label style="font-weight: 500; font-size: 14px;">屏蔽纯英文联想 (防误触)</label>
+                            <p class="help-text" style="margin-top: 5px;">开启后，预设触发词如果是纯英文字母将不会被触发。有效防止“Son”等短语被“persona”误触碰。</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="block-english-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
             </div>
         </section>
 
