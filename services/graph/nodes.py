@@ -8,6 +8,7 @@ from core.profile_manager import update_favorability, get_user_profile
 from core.config_manager import get_config, get_active_character_id
 from core.llm_client import get_langchain_model
 from tools.presets_manager import load_and_trigger_presets
+from core.databank_manager import get_active_tables, get_databank_rules_for_llm, parse_and_execute_databank_commands
 from tools.tool_executor import parse_reply
 
 from time_system import get_time_greeting_prompt
@@ -130,6 +131,15 @@ def build_active_messages(state: AgentState) -> list:
             f"- 当前你（{char_name}）对用户的好感度为: {current_fav}/100。\n"
             f"- 称呼设定：用户当前的名字/称呼是【{user_name}】（空代表未设定），你的名字目前是【{pet_name}】（空代表{char_name}）。\n"
         )
+        
+        # DataBank 注入
+        active_tables = get_active_tables(user_message, current_pool="\n".join([msg.get("content", "") for msg in history_msgs[-4:]]))
+        if active_tables:
+            dynamic_tail += f"\n\n[SYSTEM INJECTION: DataBank 全局状态表]\n{active_tables}\n"
+            
+        databank_rules = get_databank_rules_for_llm()
+        if databank_rules:
+            dynamic_tail += f"\n\n{databank_rules}\n"
     else:
         # 正常聊天模式下的提示词组装 (静态前置)
         app_launcher = config_data.get("app_launcher", {})
@@ -164,6 +174,11 @@ def build_active_messages(state: AgentState) -> list:
             f"- 称呼设定：你目前称呼用户为【{user_name}】（空代表未设定），你的名字目前是【{pet_name}】（空代表{char_name}）。"
         )
         
+        # DataBank 注入
+        active_tables = get_active_tables(user_message, current_pool="\n".join([msg.get("content", "") for msg in history_msgs[-4:]]))
+        if active_tables:
+            dynamic_tail += f"\n\n[SYSTEM INJECTION: DataBank 全局状态表]\n{active_tables}\n"
+
         if recalled_memories:
             dynamic_tail += (
                 f"\n\n[SYSTEM INJECTION: 唤醒的长期记忆]\n"
@@ -280,6 +295,11 @@ def build_active_messages(state: AgentState) -> list:
             "4. 如果用户提出想听歌、放音乐、点歌、或者切歌的要求时，你在保持性格回复的同时，你【必须】在最末尾加上 `[MUSIC_PLAY: 歌曲名称 歌手名(可选)]` 标签传递给播放器。\n"
             "5. 绝对禁止口头上说打开了/查到了/播放了但不在最末尾写标签！必须输出方括号标签。"
         )
+        
+        databank_rules = get_databank_rules_for_llm()
+        if databank_rules:
+            tail_reminder += f"\n\n{databank_rules}\n"
+            
         active_messages.append(HumanMessage(content=user_message + dynamic_tail + tail_reminder))
     elif is_self and user_message:
         # 自言自语提示词，作为 SystemMessage 注入，指导模型进行自言自语生成，修复自言自语无响应或重复历史的Bug
@@ -348,6 +368,8 @@ def generate_response_node(state: AgentState) -> Dict[str, Any]:
             
     raw_reply = response.content
     
+    # 解析并执行 DataBank 修改指令
+    raw_reply = parse_and_execute_databank_commands(raw_reply)
     print("\n" + "="*40 + " [AI RESPONSE (LANGCHAIN)] " + "="*40)
     print(raw_reply)
     print("="*95 + "\n")

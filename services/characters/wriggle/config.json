@@ -17,5 +17,6 @@
   "enable_greeting": false,
   "auto_speak_multiplier": 1.0,
   "enable_auto_speak": true,
-  "user_prompt": "我是一个误入幻想乡的男性，在昏迷时被你救助。"
+  "user_prompt": "我是一个误入幻想乡的男性，在昏迷时被你救助。",
+  "preset_block_english": true
 }
