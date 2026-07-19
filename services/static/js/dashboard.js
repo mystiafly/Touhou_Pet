@@ -41,6 +41,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadLogsList();
                 window.logsLoaded = true;
             }
+            if (targetId === 'databank-view') {
+                loadDataBank();
+            }
         });
     });
 

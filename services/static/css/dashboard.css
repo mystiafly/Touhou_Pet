@@ -720,3 +720,33 @@ input:checked + .slider:before {
     max-height: 150px;
     overflow-y: auto;
 }
+
+
+/* DataBank Table Styles */
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    font-size: 0.9em;
+    min-width: 600px;
+}
+.modern-table th, .modern-table td {
+    padding: 12px 15px;
+    border: 1px solid var(--border-color);
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 250px;
+}
+.modern-table th {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+    font-weight: 600;
+}
+.modern-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+.modern-table tbody tr:hover {
+    background-color: var(--bg-hover);
+}
