@@ -16,6 +16,7 @@ from workers.distillation import generate_pet_diary
 from tools.presets_manager import get_self_talk_presets_file
 from external_api import netease_music
 from time_system import get_time_greeting_prompt
+from core.databank_manager import load_databank
 
 router = APIRouter()
 SERVICES_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -72,6 +73,15 @@ def get_history():
         "history": dialogue,
         "favorability": get_favorability()
     }
+
+# 2.5 动态数据库接口
+@router.get("/api/databank")
+def get_databank():
+    """获取当前角色的动态数据库(DataBank)状态"""
+    databank = load_databank()
+    if databank is None:
+        return {"status": "error", "message": "当前角色未配置 DataBank 模板"}
+    return {"status": "success", "data": databank}
 
 # 3. 核心聊天对话接口
 @router.post("/api/chat")

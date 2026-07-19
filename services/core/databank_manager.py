@@ -85,25 +85,53 @@ def get_active_tables(user_message, current_pool=""):
         
         if entry_type == "constant":
             is_active = True
+            active_rows = sheet.get("content", [])
         elif entry_type == "keyword" and keywords_str:
-            # 简单按照逗号分割关键字，如果包含就命中
-            kws = [k.strip().lower() for k in keywords_str.split(',') if k.strip()]
-            for kw in kws:
-                if kw in search_text:
-                    is_active = True
-                    break
-                    
-        if is_active:
             content = sheet.get("content", [])
-            if not content:
+            if not content or len(content) < 1:
                 continue
+            
+            headers = content[0]
+            kws = [k.strip() for k in keywords_str.split(',') if k.strip()]
+            
+            # 检查 keywords 是否是指向某几列的列名
+            target_col_indices = []
+            for kw in kws:
+                if kw in headers:
+                    target_col_indices.append(headers.index(kw))
+            
+            if target_col_indices:
+                # 按列值去匹配
+                active_rows = [headers]
+                for row in content[1:]:
+                    row_matched = False
+                    for col_idx in target_col_indices:
+                        if col_idx < len(row):
+                            cell_val = str(row[col_idx]).strip().lower()
+                            if cell_val and cell_val in search_text:
+                                row_matched = True
+                                break
+                    if row_matched:
+                        active_rows.append(row)
                 
+                if len(active_rows) > 1:
+                    is_active = True
+            else:
+                # 兼容普通关键字触发（如果关键字不是列名）
+                lower_kws = [k.lower() for k in kws]
+                for kw in lower_kws:
+                    if kw in search_text:
+                        is_active = True
+                        active_rows = content
+                        break
+                        
+        if is_active and active_rows:
             # 将二维数组转为 Markdown Table
             md_table = f"### DataBank Table: {sheet.get('name')}\n"
-            md_table += "|" + "|".join([str(x).replace('|', '\\|') for x in content[0]]) + "|\n"
-            md_table += "|" + "|".join(["---"] * len(content[0])) + "|\n"
+            md_table += "|" + "|".join([str(x).replace('|', '\\|') for x in active_rows[0]]) + "|\n"
+            md_table += "|" + "|".join(["---"] * len(active_rows[0])) + "|\n"
             
-            for row in content[1:]:
+            for row in active_rows[1:]:
                 md_table += "|" + "|".join([str(x).replace('|', '\\|') for x in row]) + "|\n"
                 
             active_tables_md.append(md_table)
