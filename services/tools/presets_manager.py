@@ -212,7 +212,7 @@ def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
 
     # 第三阶段：递归/链式触发判定
     # 如果已经触发的预设提示词内容中包含了其他未触发预设的关键词，并且好感度条件满足，则将该预设连锁触发
-    max_depth = 3
+    max_depth = 2
     MAX_DYNAMIC_PRESETS = 8
     for depth in range(max_depth):
         new_triggers = False
