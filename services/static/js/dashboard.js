@@ -980,4 +980,116 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+    // ================== DataBank 渲染逻辑 ==================
+    let currentDataBank = null;
+    
+    function loadDataBank() {
+        fetch('/api/databank')
+            .then(res => res.json())
+            .then(res => {
+                if(res.status === 'success') {
+                    currentDataBank = res.data;
+                    renderDataBankSidebar(currentDataBank);
+                } else {
+                    document.getElementById('databank-empty-state').innerHTML = `<p style="color:red"><i class="fas fa-exclamation-triangle"></i> ${res.message}</p>`;
+                }
+            })
+            .catch(err => {
+                console.error("加载DataBank失败", err);
+                document.getElementById('databank-empty-state').innerHTML = `<p style="color:red"><i class="fas fa-times-circle"></i> 请求失败</p>`;
+            });
+    }
+
+    const refreshBtn = document.getElementById('refresh-databank-btn');
+    if(refreshBtn) {
+        refreshBtn.addEventListener('click', loadDataBank);
+    }
+
+    function renderDataBankSidebar(data) {
+        const listEl = document.getElementById('databank-sheet-list');
+        listEl.innerHTML = '';
+        const keys = Object.keys(data).filter(k => k.startsWith('sheet_'));
+        
+        if (keys.length === 0) {
+            listEl.innerHTML = '<li style="color:var(--text-secondary); text-align:center;">暂无数据表</li>';
+            return;
+        }
+
+        keys.forEach((key, index) => {
+            const sheet = data[key];
+            const li = document.createElement('li');
+            li.style.padding = '10px';
+            li.style.margin = '5px 0';
+            li.style.background = 'var(--bg-primary)';
+            li.style.borderRadius = 'var(--border-radius)';
+            li.style.cursor = 'pointer';
+            li.style.transition = 'all 0.2s';
+            li.innerHTML = `<strong>${sheet.name}</strong> <span style="font-size:0.8em; color:var(--text-secondary); display:block;">${sheet.exportConfig?.entryType || 'constant'}</span>`;
+            
+            li.addEventListener('mouseenter', () => li.style.transform = 'translateX(5px)');
+            li.addEventListener('mouseleave', () => li.style.transform = 'none');
+            
+            li.addEventListener('click', () => {
+                document.querySelectorAll('#databank-sheet-list li').forEach(el => el.style.borderLeft = 'none');
+                li.style.borderLeft = '3px solid var(--accent-color)';
+                renderDataBankTable(sheet);
+            });
+            listEl.appendChild(li);
+            
+            // 默认渲染第一个表
+            if (index === 0) {
+                li.click();
+            }
+        });
+    }
+
+    function renderDataBankTable(sheet) {
+        document.getElementById('databank-empty-state').style.display = 'none';
+        document.getElementById('databank-table-container').style.display = 'block';
+        
+        document.getElementById('databank-table-title').textContent = sheet.name;
+        
+        let desc = "";
+        if (sheet.sourceData?.note) {
+            desc += `说明: ${sheet.sourceData.note}\n`;
+        }
+        if (sheet.sourceData?.updateNode) {
+            desc += `更新条件: ${sheet.sourceData.updateNode}\n`;
+        }
+        document.getElementById('databank-table-desc').textContent = desc.trim() || '无详细说明';
+        
+        const tableEl = document.getElementById('databank-table');
+        tableEl.innerHTML = '';
+        
+        const content = sheet.content || [];
+        if (content.length === 0) {
+            tableEl.innerHTML = '<tr><td>暂无数据</td></tr>';
+            return;
+        }
+        
+        // 渲染表头
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        content[0].forEach(cellText => {
+            const th = document.createElement('th');
+            th.textContent = cellText;
+            headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        tableEl.appendChild(thead);
+        
+        // 渲染数据体
+        const tbody = document.createElement('tbody');
+        for (let i = 1; i < content.length; i++) {
+            const tr = document.createElement('tr');
+            content[i].forEach(cellText => {
+                const td = document.createElement('td');
+                td.textContent = cellText;
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        }
+        tableEl.appendChild(tbody);
+    }
 });
