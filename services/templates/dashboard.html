@@ -368,35 +368,65 @@
         <section id="databank-view" class="content-section">
             <header class="section-header">
                 <h1>动态数据库 (DataBank)</h1>
-                <p>实时查看与监控角色动态记忆表</p>
-                <button id="refresh-databank-btn" class="action-btn outline" style="margin-top: 10px;">
-                    <i class="fas fa-sync-alt"></i> 刷新数据
-                </button>
+                <p>管理角色的底层架构与实时动态记忆</p>
+                <div style="margin-top: 15px; display: flex; gap: 10px;">
+                    <button id="mode-data-btn" class="action-btn active" style="flex:1;">
+                        <i class="fas fa-table"></i> 数据编辑模式
+                    </button>
+                    <button id="mode-template-btn" class="action-btn outline" style="flex:1;">
+                        <i class="fas fa-code"></i> 模板架构模式 (JSON)
+                    </button>
+                    <button id="refresh-databank-btn" class="action-btn outline" style="flex:0.5;" title="刷新数据">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
             </header>
             
-            <div class="databank-container" style="display: flex; gap: 20px; height: calc(100vh - 200px);">
+            <!-- 模式1：数据编辑模式 -->
+            <div id="databank-data-mode" class="databank-container" style="display: flex; gap: 20px; height: calc(100vh - 220px);">
                 <!-- 左侧：表名列表 -->
                 <div class="databank-sidebar" style="flex: 0 0 250px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 15px; overflow-y: auto;">
-                    <h3 style="margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);"><i class="fas fa-table"></i> 数据表列表</h3>
+                    <h3 style="margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);"><i class="fas fa-list"></i> 现有数据表</h3>
                     <ul id="databank-sheet-list" style="list-style: none; padding: 0; margin-top: 10px;">
                         <!-- JS动态填充表名 -->
                     </ul>
                 </div>
                 
                 <!-- 右侧：表格详情展示 -->
-                <div class="databank-main" style="flex: 1; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 15px; overflow-y: auto; overflow-x: auto;">
+                <div class="databank-main" style="flex: 1; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 15px; display: flex; flex-direction: column;">
                     <div id="databank-empty-state" style="text-align: center; color: var(--text-secondary); margin-top: 50px;">
                         <i class="fas fa-info-circle" style="font-size: 2em; margin-bottom: 10px;"></i>
-                        <p>请在左侧选择一个数据表进行查看</p>
+                        <p>请在左侧选择一个数据表进行查看或修改</p>
                     </div>
-                    <div id="databank-table-container" style="display: none;">
-                        <h3 id="databank-table-title" style="margin-top: 0; color: var(--accent-color);">表名</h3>
-                        <p id="databank-table-desc" style="color: var(--text-secondary); font-size: 0.9em; margin-bottom: 15px; white-space: pre-wrap;">说明</p>
-                        <table id="databank-table" class="modern-table">
-                            <!-- JS动态填充行列 -->
-                        </table>
+                    <div id="databank-table-container" style="display: none; flex: 1; flex-direction: column;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h3 id="databank-table-title" style="margin-top: 0; color: var(--accent-color);">表名</h3>
+                            <div>
+                                <button id="add-databank-row-btn" class="action-btn outline" style="padding: 5px 10px; font-size: 0.85em;"><i class="fas fa-plus"></i> 新增行</button>
+                                <button id="save-databank-content-btn" class="action-btn" style="padding: 5px 10px; font-size: 0.85em; margin-left: 5px;"><i class="fas fa-save"></i> 保存本表修改</button>
+                            </div>
+                        </div>
+                        <p id="databank-table-desc" style="color: var(--text-secondary); font-size: 0.9em; margin-bottom: 15px; white-space: pre-wrap;">(可在模板模式中修改这里的描述和潜规则)</p>
+                        <div style="overflow: auto; flex: 1;">
+                            <table id="databank-table" class="modern-table" style="min-width: max-content;">
+                                <!-- JS动态填充行列 -->
+                            </table>
+                            <p style="color: var(--text-secondary); font-size: 0.8em; margin-top: 10px;"><i class="fas fa-hand-pointer"></i> 提示：双击单元格即可直接修改文字；右键行可删除该行。</p>
+                        </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- 模式2：模板架构模式 -->
+            <div id="databank-template-mode" class="databank-container" style="display: none; flex-direction: column; height: calc(100vh - 220px); background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <div>
+                        <h3 style="margin: 0;"><i class="fas fa-code"></i> DataBank Template JSON</h3>
+                        <p style="margin: 5px 0 0 0; font-size: 0.85em; color: var(--text-secondary);">全量掌控：可以直接在这里修改提示词、增删表、甚至设计新的架构。必须符合严格的 JSON 语法。</p>
+                    </div>
+                    <button id="save-databank-template-btn" class="action-btn danger"><i class="fas fa-save"></i> 强制覆写模板文件</button>
+                </div>
+                <textarea id="databank-template-json" class="modern-input" style="flex: 1; font-family: monospace; white-space: pre; overflow: auto; resize: none; background: #1e1e1e; color: #d4d4d4; line-height: 1.5; font-size: 14px;" spellcheck="false"></textarea>
             </div>
         </section>
         
@@ -424,7 +454,7 @@
     </div>
 </div>
 
-<script src="/static/js/dashboard.js?v=1.0.2"></script>
+<script src="/static/js/dashboard.js?v=1.0.3"></script>
 
 <!-- 预设编辑 Modal -->
 <div id="preset-modal" class="modal-overlay hidden">

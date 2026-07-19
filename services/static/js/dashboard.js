@@ -983,7 +983,86 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ================== DataBank 渲染逻辑 ==================
     let currentDataBank = null;
+    let currentSheetId = null;
     
+    // Toggle Logic
+    const modeDataBtn = document.getElementById('mode-data-btn');
+    const modeTemplateBtn = document.getElementById('mode-template-btn');
+    const dataModeContainer = document.getElementById('databank-data-mode');
+    const templateModeContainer = document.getElementById('databank-template-mode');
+    const templateJsonArea = document.getElementById('databank-template-json');
+
+    if(modeDataBtn && modeTemplateBtn) {
+        modeDataBtn.addEventListener('click', () => {
+            modeDataBtn.classList.add('active');
+            modeDataBtn.classList.remove('outline');
+            modeTemplateBtn.classList.remove('active');
+            modeTemplateBtn.classList.add('outline');
+            dataModeContainer.style.display = 'flex';
+            templateModeContainer.style.display = 'none';
+        });
+
+        modeTemplateBtn.addEventListener('click', () => {
+            modeTemplateBtn.classList.add('active');
+            modeTemplateBtn.classList.remove('outline');
+            modeDataBtn.classList.remove('active');
+            modeDataBtn.classList.add('outline');
+            dataModeContainer.style.display = 'none';
+            templateModeContainer.style.display = 'flex';
+            loadTemplateRaw();
+        });
+    }
+
+    function loadTemplateRaw() {
+        fetch('/api/databank/template')
+            .then(res => res.json())
+            .then(res => {
+                if(res.status === 'success') {
+                    // Try to format it if possible
+                    try {
+                        const parsed = JSON.parse(res.data);
+                        templateJsonArea.value = JSON.stringify(parsed, null, 4);
+                    } catch(e) {
+                        templateJsonArea.value = res.data;
+                    }
+                } else {
+                    templateJsonArea.value = "加载失败: " + res.message;
+                }
+            });
+    }
+
+    const saveTemplateBtn = document.getElementById('save-databank-template-btn');
+    if(saveTemplateBtn) {
+        saveTemplateBtn.addEventListener('click', () => {
+            const rawJson = templateJsonArea.value;
+            try {
+                JSON.parse(rawJson); // pre-validate
+            } catch(e) {
+                alert("JSON语法错误, 请检查格式:\n" + e.message);
+                return;
+            }
+            if(!confirm("警告：修改模板架构可能会导致数据丢失或大模型报错。确定要强制覆写吗？")) return;
+            
+            saveTemplateBtn.disabled = true;
+            fetch('/api/databank/update_template', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ raw_json: rawJson })
+            }).then(res => res.json()).then(data => {
+                saveTemplateBtn.disabled = false;
+                if(data.status === 'success') {
+                    alert("模板覆写成功！");
+                    loadDataBank(); // reload the data view
+                } else {
+                    alert("保存失败: " + data.message);
+                }
+            }).catch(err => {
+                saveTemplateBtn.disabled = false;
+                alert("请求出错: " + err);
+            });
+        });
+    }
+
     function loadDataBank() {
         fetch('/api/databank')
             .then(res => res.json())
@@ -1003,7 +1082,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const refreshBtn = document.getElementById('refresh-databank-btn');
     if(refreshBtn) {
-        refreshBtn.addEventListener('click', loadDataBank);
+        refreshBtn.addEventListener('click', () => {
+            loadDataBank();
+            if (templateModeContainer && templateModeContainer.style.display !== 'none') {
+                loadTemplateRaw();
+            }
+        });
     }
 
     function renderDataBankSidebar(data) {
@@ -1013,8 +1097,14 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (keys.length === 0) {
             listEl.innerHTML = '<li style="color:var(--text-secondary); text-align:center;">暂无数据表</li>';
+            document.getElementById('databank-empty-state').style.display = 'block';
+            document.getElementById('databank-table-container').style.display = 'none';
+            currentSheetId = null;
             return;
         }
+
+        let firstLi = null;
+        let selectedLi = null;
 
         keys.forEach((key, index) => {
             const sheet = data[key];
@@ -1033,38 +1123,41 @@ document.addEventListener('DOMContentLoaded', () => {
             li.addEventListener('click', () => {
                 document.querySelectorAll('#databank-sheet-list li').forEach(el => el.style.borderLeft = 'none');
                 li.style.borderLeft = '3px solid var(--accent-color)';
+                currentSheetId = key;
                 renderDataBankTable(sheet);
             });
             listEl.appendChild(li);
             
-            // 默认渲染第一个表
-            if (index === 0) {
-                li.click();
-            }
+            if (index === 0) firstLi = li;
+            if (key === currentSheetId) selectedLi = li;
         });
+
+        // 恢复选中状态
+        if (selectedLi) {
+            selectedLi.click();
+        } else if (firstLi) {
+            firstLi.click();
+        }
     }
 
     function renderDataBankTable(sheet) {
         document.getElementById('databank-empty-state').style.display = 'none';
-        document.getElementById('databank-table-container').style.display = 'block';
+        document.getElementById('databank-table-container').style.display = 'flex';
         
         document.getElementById('databank-table-title').textContent = sheet.name;
         
         let desc = "";
-        if (sheet.sourceData?.note) {
-            desc += `说明: ${sheet.sourceData.note}\n`;
-        }
-        if (sheet.sourceData?.updateNode) {
-            desc += `更新条件: ${sheet.sourceData.updateNode}\n`;
-        }
-        document.getElementById('databank-table-desc').textContent = desc.trim() || '无详细说明';
+        if (sheet.sourceData?.note) desc += `说明: ${sheet.sourceData.note}\n`;
+        if (sheet.sourceData?.updateNode) desc += `更新规则: ${sheet.sourceData.updateNode}\n`;
+        if (sheet.exportConfig?.keywords) desc += `触发词: ${sheet.exportConfig.keywords}\n`;
+        document.getElementById('databank-table-desc').textContent = desc.trim() || '可在模板模式中配置说明规则';
         
         const tableEl = document.getElementById('databank-table');
         tableEl.innerHTML = '';
         
         const content = sheet.content || [];
         if (content.length === 0) {
-            tableEl.innerHTML = '<tr><td>暂无数据</td></tr>';
+            tableEl.innerHTML = '<tr><td colspan="100%" style="text-align:center;">此表暂无数据(包含表头)</td></tr>';
             return;
         }
         
@@ -1076,20 +1169,113 @@ document.addEventListener('DOMContentLoaded', () => {
             th.textContent = cellText;
             headerRow.appendChild(th);
         });
+        // 额外加一列操作列
+        const opTh = document.createElement('th');
+        opTh.textContent = "操作";
+        opTh.style.width = "80px";
+        opTh.style.textAlign = "center";
+        headerRow.appendChild(opTh);
         thead.appendChild(headerRow);
         tableEl.appendChild(thead);
         
         // 渲染数据体
         const tbody = document.createElement('tbody');
         for (let i = 1; i < content.length; i++) {
-            const tr = document.createElement('tr');
-            content[i].forEach(cellText => {
-                const td = document.createElement('td');
-                td.textContent = cellText;
-                tr.appendChild(td);
-            });
+            const tr = createDataRow(content[i]);
             tbody.appendChild(tr);
         }
         tableEl.appendChild(tbody);
     }
+
+    function createDataRow(rowData) {
+        const tr = document.createElement('tr');
+        rowData.forEach(cellText => {
+            const td = document.createElement('td');
+            td.textContent = cellText;
+            td.setAttribute('contenteditable', 'true');
+            td.style.cursor = 'text';
+            td.style.outline = 'none';
+            // focus highlight
+            td.addEventListener('focus', () => td.style.background = 'var(--bg-primary)');
+            td.addEventListener('blur', () => td.style.background = 'transparent');
+            tr.appendChild(td);
+        });
+        
+        // 删除按钮列
+        const opTd = document.createElement('td');
+        opTd.style.textAlign = 'center';
+        opTd.innerHTML = `<button class="action-btn danger" style="padding:2px 5px; min-width:unset;"><i class="fas fa-trash"></i></button>`;
+        opTd.querySelector('button').addEventListener('click', () => {
+            if(confirm("确认删除此行?")) tr.remove();
+        });
+        tr.appendChild(opTd);
+        return tr;
+    }
+
+    const addRowBtn = document.getElementById('add-databank-row-btn');
+    if (addRowBtn) {
+        addRowBtn.addEventListener('click', () => {
+            if(!currentSheetId || !currentDataBank || !currentDataBank[currentSheetId]) return;
+            const content = currentDataBank[currentSheetId].content;
+            if(!content || content.length === 0) return alert("该表没有表头，无法添加行");
+            
+            const tableEl = document.getElementById('databank-table');
+            const tbody = tableEl.querySelector('tbody');
+            if(!tbody) return;
+            
+            // 构造空数据行
+            const colCount = content[0].length;
+            const emptyRow = new Array(colCount).fill('');
+            tbody.appendChild(createDataRow(emptyRow));
+        });
+    }
+
+    const saveContentBtn = document.getElementById('save-databank-content-btn');
+    if (saveContentBtn) {
+        saveContentBtn.addEventListener('click', () => {
+            if(!currentSheetId) return;
+            
+            const tableEl = document.getElementById('databank-table');
+            const thead = tableEl.querySelector('thead');
+            const tbody = tableEl.querySelector('tbody');
+            if(!thead || !tbody) return;
+            
+            const newContent = [];
+            // 获取表头
+            const headers = Array.from(thead.querySelectorAll('th')).slice(0, -1).map(th => th.textContent.trim());
+            newContent.push(headers);
+            
+            // 获取数据行
+            Array.from(tbody.querySelectorAll('tr')).forEach(tr => {
+                const rowData = Array.from(tr.querySelectorAll('td')).slice(0, -1).map(td => td.textContent.trim());
+                newContent.push(rowData);
+            });
+            
+            saveContentBtn.disabled = true;
+            saveContentBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+            
+            fetch('/api/databank/update_content', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ sheet_id: currentSheetId, content: newContent })
+            }).then(res => res.json()).then(data => {
+                saveContentBtn.disabled = false;
+                saveContentBtn.innerHTML = '<i class="fas fa-save"></i> 保存本表修改';
+                if(data.status === 'success') {
+                    // Update local state smoothly
+                    if(currentDataBank && currentDataBank[currentSheetId]) {
+                        currentDataBank[currentSheetId].content = newContent;
+                    }
+                    alert("数据行保存成功！");
+                } else {
+                    alert("保存失败: " + data.message);
+                }
+            }).catch(err => {
+                saveContentBtn.disabled = false;
+                saveContentBtn.innerHTML = '<i class="fas fa-save"></i> 保存本表修改';
+                alert("请求出错: " + err);
+            });
+        });
+    }
+
 });

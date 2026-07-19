@@ -63,6 +63,35 @@ def save_databank_state(merged_data):
     except Exception as e:
         print(f"[DataBank] 保存状态失败: {e}")
 
+def save_databank_state_sheet(sheet_id, content):
+    """单独更新某一张表的数据行并保存"""
+    merged = load_databank()
+    if not merged:
+        return False, "未能加载DataBank"
+    if sheet_id not in merged:
+        return False, f"表 {sheet_id} 不存在"
+        
+    merged[sheet_id]["content"] = content
+    save_databank_state(merged)
+    return True, "保存成功"
+
+def save_databank_template_raw(raw_json_str):
+    """全量覆盖写入模板文件"""
+    try:
+        # 先校验是否是合法JSON
+        data = json.loads(raw_json_str)
+        template_path, _ = get_databank_paths()
+        if not template_path:
+            return False, "当前角色无 DataBank 模板，无法保存"
+            
+        with open(template_path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+        return True, "模板保存成功"
+    except json.JSONDecodeError as e:
+        return False, f"JSON 语法错误: {e}"
+    except Exception as e:
+        return False, f"保存模板失败: {e}"
+
 def get_active_tables(user_message, current_pool=""):
     """
     根据当前消息和上下文触发词，筛选并格式化当前应该注入的 DataBank 表格
