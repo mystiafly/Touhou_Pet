@@ -7,6 +7,32 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
+import io
+
+# 解决 PyInstaller --windowed 模式下 sys.stdout / sys.stderr 丢失的问题，并将日志重定向到文件
+class LoggerWriter:
+    def __init__(self, filename):
+        self.file = open(filename, "a", encoding="utf-8")
+    def write(self, message):
+        self.file.write(message)
+        self.file.flush()
+    def flush(self):
+        self.file.flush()
+    def isatty(self):
+        return False
+    def reconfigure(self, **kwargs):
+        pass
+
+import platform
+appdata_dir = os.environ.get('APPDATA') if platform.system() == 'Windows' else os.path.expanduser('~')
+log_dir = os.path.join(appdata_dir, "RumiaPet", "data")
+os.makedirs(log_dir, exist_ok=True)
+log_file = os.path.join(log_dir, "backend_error.log")
+
+if sys.stdout is None or not hasattr(sys.stdout, 'isatty') or not sys.stdout.isatty():
+    sys.stdout = LoggerWriter(log_file)
+    sys.stderr = sys.stdout
+
 # 重新配置 stdout/stderr 编码为 utf-8，防止 Windows 环境下打印 Emoji ⚠️ 触发 UnicodeEncodeError
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')

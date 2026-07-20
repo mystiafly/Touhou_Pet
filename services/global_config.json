@@ -1,0 +1,12 @@
+{
+  "active_character": "wriggle",
+  "custom_engines": [
+    {
+      "id": "custom_801a15f1",
+      "name": "deep",
+      "model_name": "deepseek-v4-pro",
+      "base_url": "https://api.deepseek.com/v1",
+      "api_key": "sk-15551f9c627143a494b26000c1387f9a"
+    }
+  ]
+}
