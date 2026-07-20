@@ -222,10 +222,15 @@ def build_active_messages(state: AgentState) -> list:
     # 合并尾部并注入
     tail_block = "\n\n=======================================================================\n\n".join(tail_parts)
     
-    if is_self and user_message:
-        active_messages.append(SystemMessage(content=user_message + "\n\n" + tail_block))
-    elif not is_self and user_message:
-        active_messages.append(HumanMessage(content=user_message + "\n\n" + tail_block))
+    # 组合最新消息
+    if is_self:
+        content = "[SELF TALK TRIGGER: 此刻你正在自言自语，请主动寻找话题发散。]\n\n" + tail_block
+        content += "\n\n(请严格遵守 '[心情][评分]对白内容' 的回复格式！如果需要更新DataBank，请将 ```databank 块附加在回复最末尾，除此之外不要输出多余解释)"
+        active_messages.append(HumanMessage(content=content))
+    else:
+        content = user_message + "\n\n" + tail_block
+        content += "\n\n(请严格遵守 '[心情][评分]对白内容' 的回复格式！如果需要更新DataBank，请将 ```databank 块附加在回复最末尾，除此之外不要输出多余解释)"
+        active_messages.append(HumanMessage(content=content))
 
     return active_messages
 
