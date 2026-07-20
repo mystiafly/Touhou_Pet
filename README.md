@@ -1,69 +1,77 @@
-# 多角色 AI 桌面宠物引擎 (Multi-Character AI Desktop Pet Engine)
+# 🌟 Rumia Desktop Pet - 次世代 AI 虚拟伴侣引擎
 
-这是一个基于 FastAPI、LangGraph、Qdrant 向量数据库，并采用前端 Electron + HTML/JS 渲染的工业级高级 AI 桌面宠物项目。
+这是一个基于 **FastAPI、LangChain、Qdrant 向量数据库**，并采用前端 **Electron + HTML/JS** 渲染的工业级高级 AI 桌面宠物项目。
 
-相比传统的桌面宠物（如 VPet），本项目的核心突破在于 **“强 AI 灵魂注入”与“深度的本地环境感知”**：
-- **深层持久化记忆**：内置的 LangGraph 记忆网络不仅保存了聊天历史，还能在后台动态提炼你的个人喜好（User Profile）与每日专属傲娇日记。
-- **跨应用感知**：深度读取本地系统环境（例如能监听网易云音乐当前正在播放的曲目与歌词），真正做到“陪你用电脑”。
-- **多角色隔离架构**：可以瞬间在不同角色之间切换。不仅立绘与 UI 色调会无缝变化，底层的 AI 大脑人格、好感度系统和记忆存档也完全隔离！
+相比传统的桌面宠物（如 VPet），本项目的核心突破在于 **“强 AI 灵魂注入”、“深度的本地环境感知”与“极其自由的模型/数据掌控权”**。你的桌宠不再是简单的按键反馈器，而是一个拥有长记忆、懂你喜好、并且可以连接任何最强大脑的“赛博生命”。
 
 ---
 
-## 🛠️ 如何添加一个新角色 (How to Add a New Character)
+## 🔥 核心特性 (Core Features)
 
-本项目的设计极度模块化，如果你想为桌宠添加一个全新的角色（例如：`reimu` 灵梦），请严格按照以下步骤操作：
+### 1. 🧠 彻底自由的“自定义大脑引擎” (Custom Brain Engine)
+拒绝被官方 API 绑定！内置了高度自由的 LLM 引擎管理器：
+- **本地零成本运行**：完美支持 Ollama、LM Studio、vLLM 等本地大模型部署。对话数据 100% 留在本地，极致隐私安全，适合高强度 RP（角色扮演）甚至 NSFW 场景。
+- **拥抱开源生态**：支持 DeepSeek、Kimi、硅基流动 (SiliconFlow)、智谱、通义千问等所有兼容 OpenAI 格式的第三方接口。
+- **一键智能拉取**：内置一键拉取模型列表功能，自动检测代理服务器可用的模型，告别手动查文档配参数的痛苦。
 
-### 1. 建立角色大脑配置区
-在 `services/characters/` 目录下创建一个以角色英文全小写命名的文件夹，例如 `services/characters/reimu/`。
-在该文件夹内，你需要准备 4 个配置文件：
+### 2. 📖 全面兼容“酒馆”世界书 (Tavern Worldbook)
+如果你是从 SillyTavern（酒馆）转来的硬核玩家，这里将是你的新家。
+- **完美解析**：支持直接在前端界面导入 Tavern `*.json` 世界书文件。
+- **动态预设引擎**：采用递归链式触发，精准提取环境上下文或特定词汇。桌宠在与你聊天时，会自动从数据库中调取相关的世界设定，绝不“出戏”。
+- **防爆脑保护**：支持自定义触发深度，并内置纯英文误触屏蔽，精准把控上下文窗口。
 
-- **`config.json`**: 核心配置项
-  ```json
-  {
-    "character_id": "reimu",
-    "character_name": "博丽灵梦",
-    "persona_prompt": "博丽神社的巫女，有点贪财，性格直率..."
-  }
-  ```
-- **`presets.json`**: 预设自言自语台词库（包含 `eating`, `sleeping`, `waking_up`, `idle`, `angry` 等状态下主动弹出的对话气泡内容）。
-- **`base_prompt.txt`**: 喂给大模型的静态全局 System Prompt，用于确立世界观和严格的 JSON 输出结构。
-- **`dynamic_tail.txt`**: 动态后缀 Prompt，包含系统变量占位符（如 `{time_of_day}`, `{music_info}`），会在每次对话前动态注入。
+### 3. 📅 双表日记 RAG 架构 (Dual-Table Diary & RAG)
+你的桌宠不仅会和你聊天，还会**在深夜写日记**。
+- **记忆图谱与知识库**：采用 Qdrant 向量数据库，构建了一个拥有短期工作记忆（缓存）与长期深度记忆（节点化图谱）的双轨制大脑。
+- **夜间自动批处理**：桌宠会定期总结你们的对话，生成带有傲娇/呆萌等性格色彩的专属回忆日记，并通过 RAG (检索增强生成) 在未来的对话中向你提起以前的事。
 
-### 2. 准备角色动态立绘
-在 `services/static/images/` 目录下创建一个与角色 ID 同名的文件夹，例如 `services/static/images/reimu/`。
-引擎的动画状态机要求这里必须 **严格存在 15 张透明底的 `.png` 图片**，对应 5 种基础心情及其 2 帧差分动画：
-- `normal.png` (基准), `normal_1.png` (半闭眼), `normal_2.png` (全闭眼)
-- `angry.png`, `angry_1.png`, `angry_2.png`
-- `shy.png`, `shy_1.png`, `shy_2.png`
-- `crying.png`, `crying_1.png`, `crying_2.png`
-- `sleeping.png`, `sleeping_1.png`, `sleeping_2.png`
+### 4. 🛠️ 纯前端 GUI 控制台 (Dashboard GUI)
+彻底告别繁琐的配置文件！内置一个功能极其强大的可视化 Dashboard：
+- **数据银行 (DataBank) 编辑器**：支持双模切换（可视化表单 与 原生 JSON）。
+- **字段级约束规则**：轻松配置模板，打造任何你想要的结构化设定库。
+- **记忆图谱可视化**：像看神经元一样，实时俯瞰桌宠脑海里的所有词条与关系网。
 
-*(提示：可以通过修改本项目内的自动化 Python 抠图脚本，批量对 AI 生成的立绘进行差分拆解与处理。)*
+### 5. 🎭 多角色无缝切换机制
+- 瞬间在不同角色之间切换。
+- 不仅桌宠的透明立绘、UI 主题色调会无缝变化，**底层的 AI 大脑人格、好感度系统和记忆存档也完全物理隔离！** 你可以同时养无数个性格迥异的宠物。
 
-### 3. 配置角色的专属 UI 主题色调
-本项目支持基于 CSS 变量的全局主题无缝热切换。
-打开 `services/static/css/pet.css`，在文件中添加一个新的 `.theme-<char_id>` CSS 类，用于覆盖默认的 `:root` 变量。
-例如：
-```css
-body.theme-reimu {
-  --theme-main: #ff4500;  /* 灵梦红 */
-  --theme-hover: #cc3700;
-  --theme-glow-05: rgba(255, 69, 0, 0.5);
-  --theme-bg-015: rgba(255, 69, 0, 0.15);
-  --theme-bg-035: rgba(255, 69, 0, 0.35);
-  --theme-text-light: #ff8c66;
-  --theme-text-bright: #ff3300;
-  --theme-legend-pink: #ffd700; /* 可以修改为金黄色搭配 */
-}
-```
-当你在设置中切换角色时，前端会自动将 `body` 挂载 `theme-reimu` 类名，实现 UI 的瞬间重绘。
+---
 
-### 4. 注册前端 UI 下拉菜单
-打开 `services/templates/pet.html`，找到 `<select id="character-select">` 标签。
-在里面增加一行新角色的选项，以便用户能够在界面中进行切换：
-```html
-<option value="reimu">灵梦 (Reimu)</option>
-```
+## 🚀 快速开始 (Quick Start)
 
-### 5. 重启应用
-完成以上 4 步后，重启后端 FastAPI 和 Electron 客户端，新角色便会自动出现在设置面板的角色切换列表中了！
+### 环境依赖
+- **Python 3.10+**
+- **Node.js 18+** 
+
+### 启动步骤
+1. **克隆项目并安装后端依赖**
+   ```bash
+   git clone <你的仓库地址>
+   cd rumia
+   pip install -r requirements.txt
+   ```
+2. **安装前端 Electron 依赖**
+   ```bash
+   npm install
+   ```
+3. **启动引擎**
+   ```bash
+   npm start
+   ```
+
+启动后，右键点击桌面上的宠物，选择 **“打开设置控制台 (Dashboard)”**，在“自定义大脑引擎”中填入你的 API Key 或本地模型地址，即可让灵魂苏醒！
+
+---
+
+## 🧩 如何孕育新角色 (How to Add a New Character)
+
+本项目的设计极度模块化。进入控制台的 **“孕育新灵魂”** 页面：
+1. **懒人模式**：只需告诉大模型你想要的中文名和特质（如：傲娇毒舌白毛萝莉），系统会自动生成其底层 Prompt 并在后台完成代码注入。
+2. **高手模式**：硬核玩家可以直接手动配置英文 ID、主色调 CSS、应用拦截白名单和核心提示词，一键物理写入磁盘。
+
+对于新角色，你只需要在 `services/static/images/角色ID/` 目录下准备 15 张透明底的 `.png` 差分表情包（对应 5 种基础心情及其 2 帧眨眼动画），即可完成完全体。
+
+---
+
+## 📄 许可证 (License)
+MIT License. 自由地修改、打包和分享属于你自己的桌面伴侣吧！
