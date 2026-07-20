@@ -81,7 +81,7 @@ def load_presets_node(state: AgentState) -> Dict[str, Any]:
     return {"custom_presets": presets}
 
 def build_active_messages(state: AgentState) -> list:
-    """根据 AgentState 组装完整的 LangChain Prompt 消息列表"""
+    """根据 AgentState 组装完整的 LangChain Prompt 消息列表 (15234架构)"""
     char_id = get_active_character_id()
     config_data = get_config()
     char_name = config_data.get("character_name", "桌宠")
@@ -94,10 +94,56 @@ def build_active_messages(state: AgentState) -> list:
     custom_presets = state.get("custom_presets", "")
     user_message = state.get("user_message", "")
     is_self = state.get("is_self_talk", False)
+    is_greeting = state.get("request_type") == 'greeting'
     
-    dynamic_tail = ""
+    # ---------------------------------------------------------
+    # 1. 静态常驻规则 (Category 1)
+    # ---------------------------------------------------------
+    cat1_parts = []
+    if user_prompt:
+        cat1_parts.append(f"[USER PROMPT (用户/玩家自身设定与偏好)]\n{user_prompt}")
+        
+    base_rules = (
+        "[SYSTEM REMINDER - P0 HIGHEST PRIORITY]\n"
+        "【最高优先级提醒与行为约束（基础静态规则）】\n"
+        f"1. 角色约束与动作描写：请严格扮演{char_name}（{persona_prompt}），用中文回答。在对话中建议穿插用圆括号包裹的动作/表情描述（如：‘(脸红扭过头)’）。在适合的情况下（如进行两性/NSFW/深层亲密交互时），强烈建议你特地独立写出几段【无情绪与评分前缀】的纯圆括号段落描述神态与客观场景，但特别注意：此类纯圆括号描述【绝对不能作为你回复的最后一段】（最后一段必须是带标签的正常台词，以防止表情显示发生解析冲突）。如果下方的【最高优先级触发预设】有更细致的格式与描述要求，请一并严格执行。\n"
+        "2. 格式约束：你的回复必须且只能遵循 '[心情][评分]对话内容' 格式要求。\n"
+        "   - 如有浏览器自动化搜索意图，请在最末尾附加 `[BROWSER_TASK: 搜索任务文本]`。\n"
+        "   - 如有搜索引擎检索意图（只在后台查资料背景搜索，不在屏幕上打开浏览器），请在最末尾附加 `[SEARCH_ENGINE: 搜索词]`。\n"
+        "   - 【重要应用启动指令】如果用户让你打开、拉起或启动已配置的本地应用，你【必须】在回复的最末尾附加 `[LAUNCH_APP: 精确匹配的应用名称]`。这是物理启动应用的唯一硬件信号，如果你口头上说打开了但没有输出该标签，那就是在欺骗用户，请绝对避免假装打开而不输出标签！\n"
+        "   - '[心情]' 必须且只能是以下英文单词之一：[normal] (常态/微笑/平静), [angry] (生气/愤怒/傲娇抱怨), [shy] (害羞/脸红/扭捏), [crying] (委屈/难过/大哭)。绝对禁止使用任何中文心情标签（如 [开心] ❌，[慵懒] ❌）。\n"
+        "   - '[评分]' 必须且只能是方括号内包裹一个 0 到 20 之间的纯数字评分（如 [12]），代表当前言论的好感度评分（10为基准，>10加分，<10扣分）。绝对禁止写成类似 [评分: 92] ❌ 这样的非法格式。\n"
+        "   - 示例：'[normal][12]哼，笨蛋！(双手叉腰)' 或 '[shy][18]才、才没有想你呢！(脸红别过头)'。\n\n"
+        "   【绝对强制改名指令】如果你想修改或追加对用户的称呼，你【必须且只能】在回复的最末尾附带 [UPDATE_USER_NAME: 新称呼]。想修改自己的名字，必须附带 [UPDATE_PET_NAME: 新名字]。\n"
+        "   【严重警告】如果你决定使用改名工具，请在本次回复中【仅输出】这行带有方括号的标签！绝对禁止输出任何废话或角色扮演台词！系统在后台修改完成后，会在第二回合把结果告诉你，那时你再正式进行对话！\n"
+        "   [修改宽容度] 如果当前称呼为空，你可以很宽松地填入。如果已有内容想完全替换，必须用户强烈要求才行。如果是追加（如变成“妈妈/老婆”），可以适当宽松同意。\n"
+    )
+    if is_self:
+        base_rules += "3. 注意事项：目前只是你在自言自语主动搭话，绝对不要扮演用户或者假装用户对你说了什么！绝对禁止在此模式包含浏览器标签。\n"
+        
+    cat1_parts.append(base_rules)
     
-    # 转换为 LangChain 消息格式
+    # 强制工具规则
+    forced_rules = (
+        "[SYSTEM REMINDER - FORCED LAUNCH/SEARCH/MUSIC RULE]\n"
+        "1. 如果用户要求你打开、拉起或启动本地应用（如果上述状态里写了未配置任何应用，请直接告诉用户尚未配置），你【必须】且只能在回复内容的最末尾加上相应的 `[LAUNCH_APP: 应用名称]` 标签（例如：`[LAUNCH_APP: 网易云音乐]`）。\n"
+        "2. 如果用户有网页搜索意图，需要拉起浏览器，必须在最末尾加上 `[BROWSER_TASK: 搜索词]` 标签。\n"
+        "3. 如果你需要查询实时信息、知识科普或你不确定的内容（仅背景查资料，不拉起浏览器），你【必须】在回复的最末尾加上 `[SEARCH_ENGINE: 搜索词]` 标签。\n"
+        "4. 如果用户提出想听歌、放音乐、点歌、或者切歌的要求时，你在保持性格回复的同时，你【必须】在最末尾加上 `[MUSIC_PLAY: 歌曲名称 歌手名(可选)]` 标签传递给播放器。\n"
+        "5. 绝对禁止口头上说打开了/查到了/播放了但不在最末尾写标签！必须输出方括号标签。"
+    )
+    cat1_parts.append(forced_rules)
+    
+    # Databank 规则
+    databank_rules = get_databank_rules_for_llm()
+    if databank_rules:
+        cat1_parts.append(databank_rules)
+        
+    system_prompt_top = "\n\n=======================================================================\n\n".join(cat1_parts)
+
+    # ---------------------------------------------------------
+    # 2. 转换历史记录 (Category 5)
+    # ---------------------------------------------------------
     lc_history = []
     for msg in history_msgs:
         if msg["role"] == "system":
@@ -107,204 +153,80 @@ def build_active_messages(state: AgentState) -> list:
         elif msg["role"] == "assistant":
             lc_history.append(AIMessage(content=msg["content"]))
             
-    if is_self:
-        # 自言自语模式下的提示词组装 (保持静态规则前置优化缓存)
-        priority_reminder = (
-            "[SYSTEM REMINDER - P0 HIGHEST PRIORITY]\n"
-            "【最高优先级提醒与行为约束（基础静态规则）】\n"
-            f"1. 角色约束与动作描写：请严格扮演{char_name}（{persona_prompt}），用中文回答。在对话中建议穿插用圆括号包裹的动作/表情描述（如：‘(脸红扭过头)’）。在适合的情况下（如进行两性/NSFW/深层亲密交互时），强烈建议你特地独立写出几段【无情绪与评分前缀】的纯圆括号段落描述神态与客观场景，但特别注意：此类纯圆括号描述【绝对不能作为你回复的最后一段】（最后一段必须是带标签的正常台词，以防止表情显示发生解析冲突）。如果下方的【最高优先级触发预设】有更细致的格式与描述要求，请一并严格执行。\n"
-            "2. 格式约束与要求：你的回复必须且只能遵循 '[心情][评分]对话内容' 格式要求。其中：\n"
-            "   - '[心情]' 必须且只能是以下英文单词之一：[normal] (常态/开心/微笑/平静), [angry] (生气/愤怒/傲娇抱怨), [shy] (害羞/脸红/扭捏), [crying] (委屈/难过/大哭)。绝对禁止使用任何中文心情标签（如 [开心] ❌，[慵懒] ❌）。\n"
-            "   - '[评分]' 必须且只能是方括号内包裹一个 0 到 20 之间的纯数字评分（如 [12]），代表当前言论的好感度评分（10为基准，>10加分，<10扣分）。绝对禁止写成类似 [评分: 92] ❌ 这样的非法格式。\n"
-            "   - 示例：'[normal][12]哼，笨蛋！(双手叉腰)' 或 '[shy][18]才、才没有想你呢！(脸红别过头)'。因为这是你主动搭话，绝对禁止包含 `[BROWSER_TASK: ...]` 标记。\n"
-            "3. 注意事项：目前只是你在自言自语主动搭话，绝对不要扮演用户或者假装用户对你说了什么！\n\n"
-        )
-        profile = get_user_profile()
-        user_name = profile.get("user_called_as", "")
-        pet_name = profile.get(f"{char_id}_called_as", "")
-        
-        meta_context = get_meta_context_for_chat(char_id, char_name)
-        
-        dynamic_tail += (
-            f"\n\n[SYSTEM INJECTION: 当前状态]\n"
-            f"{meta_context}\n"
-            f"- 当前你（{char_name}）对用户的好感度为: {current_fav}/100。\n"
-            f"- 称呼设定：用户当前的名字/称呼是【{user_name}】（空代表未设定），你的名字目前是【{pet_name}】（空代表{char_name}）。\n"
-        )
-        
-        # DataBank 注入
-        active_tables = get_active_tables(user_message, current_pool="\n".join([msg.get("content", "") for msg in history_msgs[-4:]]))
-        if active_tables:
-            dynamic_tail += f"\n\n[SYSTEM INJECTION: DataBank 全局状态表]\n{active_tables}\n"
-            
-        databank_rules = get_databank_rules_for_llm()
-        if databank_rules:
-            dynamic_tail += f"\n\n{databank_rules}\n"
-    else:
-        # 正常聊天模式下的提示词组装 (静态前置)
-        app_launcher = config_data.get("app_launcher", {})
-        available_apps_str = ", ".join(app_launcher.keys()) if app_launcher else "（尚未配置任何本地应用启动项）"
-
-        priority_reminder = (
-            "[SYSTEM REMINDER - P0 HIGHEST PRIORITY]\n"
-            "【最高优先级提醒与行为约束（基础静态规则）】\n"
-            f"1. 角色约束与动作描写：请严格扮演{char_name}（{persona_prompt}），用中文回答。在对话中建议穿插用圆括号包裹的动作/表情描述（如：‘(脸红扭过头)’）。在适合的情况下（如进行两性/NSFW/深层亲密交互时），强烈建议你特地独立写出几段【无情绪与评分前缀】的纯圆括号段落描述神态与客观场景，但特别注意：此类纯圆括号描述【绝对不能作为你回复的最后一段】（最后一段必须是带标签 of 正常台词，以防止表情显示发生解析冲突）。如果下方的【最高优先级触发预设】有更细致的格式与描述要求，请一并严格执行。\n"
-            "2. 格式约束：你的回复必须且只能遵循 '[心情][评分]对话内容' 格式要求。\n"
-            "   - 如有浏览器自动化搜索意图，请在最末尾附加 `[BROWSER_TASK: 搜索任务文本]`。\n"
-            "   - 如有搜索引擎检索意图（只在后台查资料背景搜索，不在屏幕上打开浏览器），请在最末尾附加 `[SEARCH_ENGINE: 搜索词]`。\n"
-            "   - 【重要应用启动指令】如果用户让你打开、拉起或启动已配置的本地应用，你【必须】在回复的最末尾附加 `[LAUNCH_APP: 精确匹配的应用名称]`。这是物理启动应用的唯一硬件信号，如果你口头上说打开了但没有输出该标签，那就是在欺骗用户，请绝对避免假装打开而不输出标签！\n"
-            "   - '[心情]' 必须且只能是以下英文单词之一：[normal] (常态/微笑/平静), [angry] (生气/愤怒/傲娇抱怨), [shy] (害羞/脸红/扭捏), [crying] (委屈/难过/大哭)。绝对禁止使用任何中文心情标签（如 [开心] ❌，[慵懒] ❌）。\n"
-            "   - '[评分]' 必须且只能是方括号内包裹一个 0 到 20 之间的纯数字评分（如 [12]），代表当前言论的好感度评分（10为基准，>10加分，<10扣分）。绝对禁止写成类似 [评分: 92] ❌ 这样的非法格式。\n"
-            "   - 示例：'[normal][12]哼，笨蛋！(双手叉腰)' 或 '[shy][18]才、才没有想你呢！(脸红别过头)'。\n\n"
-            "   【绝对强制改名指令】如果你想修改或追加对用户的称呼，你【必须且只能】在回复的最末尾附带 [UPDATE_USER_NAME: 新称呼]。想修改自己的名字，必须附带 [UPDATE_PET_NAME: 新名字]。\n"
-            "   【严重警告】如果你决定使用改名工具，请在本次回复中【仅输出】这行带有方括号的标签！绝对禁止输出任何废话或角色扮演台词！系统在后台修改完成后，会在第二回合把结果告诉你，那时你再正式进行对话！\n"
-            "   [修改宽容度] 如果当前称呼为空，你可以很宽松地填入。如果已有内容想完全替换，必须用户强烈要求才行。如果是追加（如变成“妈妈/老婆”），可以适当宽松同意。\n"
-        )
-        profile = get_user_profile()
-        user_name = profile.get("user_called_as", "")
-        pet_name = profile.get(f"{char_id}_called_as", "")
-        
-        meta_context = get_meta_context_for_chat(char_id, char_name)
-        
-        dynamic_tail += (
-            f"\n\n[SYSTEM INJECTION: 当前状态]\n"
-            f"{meta_context}\n"
-            f"- 当前你（{char_name}）对用户的好感度为: {current_fav}/100。\n"
-            f"- 当前系统支持你拉起启动的本地应用列表如下：【 {available_apps_str} 】。如果用户要求打开这些应用中的任何一个，你必须在回复文本的最末尾输出 `[LAUNCH_APP: 对应名称]`。\n"
-            f"- 称呼设定：你目前称呼用户为【{user_name}】（空代表未设定），你的名字目前是【{pet_name}】（空代表{char_name}）。"
-        )
-        
-        # DataBank 注入
-        active_tables = get_active_tables(user_message, current_pool="\n".join([msg.get("content", "") for msg in history_msgs[-4:]]))
-        if active_tables:
-            dynamic_tail += f"\n\n[SYSTEM INJECTION: DataBank 全局状态表]\n{active_tables}\n"
-
-        if recalled_memories:
-            dynamic_tail += (
-                f"\n\n[SYSTEM INJECTION: 唤醒的长期记忆]\n"
-                f"{recalled_memories}\n"
-                "（注：这些是关于用户的长期记忆。请仅在当前对话主题与这些记忆相关时，才自然、适度地提及。如果完全无关，绝对不要强行提及。）"
-            )
-            
-    if custom_presets and isinstance(custom_presets, list):
-        # 按照 order 升序排序 (同等 position 下 order 越小越靠前)
-        sorted_presets = sorted(custom_presets, key=lambda x: x.get("order", 100))
-        
-        # 将不同 position 的预设分发
-        # 我们定义: position 0 -> top (系统规则前), position 1/其他 -> bottom (状态后面)
-        presets_top = []
-        presets_bottom = []
-        for p in sorted_presets:
-            content = p.get("content", p.get("prompt", ""))
-            if not content:
-                continue
-            if p.get("position", 1) == 0:
-                presets_top.append(content)
-            else:
-                presets_bottom.append(content)
-                
-        if presets_top:
-            top_str = "\n".join(presets_top)
-            priority_reminder = f"[SYSTEM INJECTION: 核心预设设定]\n{top_str}\n\n" + priority_reminder
-            
-        if presets_bottom:
-            bottom_str = "\n".join(presets_bottom)
-            dynamic_tail += (
-                f"\n\n[SYSTEM INJECTION: 触发预设]\n"
-                f"⚠️ 请在你的本次回复中，结合以下设定：\n{bottom_str}"
-            )
-    elif custom_presets and isinstance(custom_presets, str):
-        dynamic_tail += (
-            f"\n\n[SYSTEM INJECTION: 触发预设]\n"
-            f"⚠️ 请在你的本次回复中，必须并且无条件严格遵循以下注入指令，主动描述预设内容：\n{custom_presets}"
-        )
-        
-    # [ReAct 架构] 注入工具执行结果反馈给大模型作为决策依据
-    music_result = state.get("music_result")
-    if music_result:
-        if "error" in music_result:
-            dynamic_tail += (
-                f"\n\n[SYSTEM INJECTION: 工具反馈 - 点歌检索失败]\n"
-                f"错误信息：{music_result['error']}。\n"
-                f"请以傲娇抱怨语气明确告诉用户没搜到，并绝对禁止再次输出 `[MUSIC_PLAY]` 标签。"
-            )
-        else:
-            dynamic_tail += (
-                f"\n\n[SYSTEM INJECTION: 工具反馈 - 点歌检索成功]\n"
-                f"已播放歌曲：《{music_result['name']}》（歌手: {music_result['artists']}）。\n"
-                f"请以傲娇开心口吻告诉用户正在播放，绝对禁止再次输出 `[MUSIC_PLAY]` 标签。"
-            )
-            
-    browser_result = state.get("browser_result")
-    if browser_result:
-        dynamic_tail += (
-            f"\n\n[SYSTEM INJECTION: 工具反馈 - 网页浏览器]\n"
-            f"{browser_result}\n"
-            f"请仔细提炼上述信息傲娇地回答用户，绝对禁止再次输出 `[BROWSER_TASK]` 标签。"
-        )
-        
-    search_result = state.get("search_result")
-    if search_result:
-        dynamic_tail += (
-            f"\n\n[SYSTEM INJECTION: 工具反馈 - 搜索引擎]\n"
-            f"{search_result}\n"
-            f"请结合上述搜索数据傲娇地回答用户，绝对禁止再次输出 `[SEARCH_ENGINE]` 标签。"
-        )
-        
-    launcher_result = state.get("launcher_result")
-    if launcher_result:
-        dynamic_tail += (
-            f"\n\n[SYSTEM INJECTION: 工具反馈 - 本地应用]\n"
-            f"{launcher_result}\n"
-            f"请说明启动情况，绝对禁止再次输出 `[LAUNCH_APP]` 标签。"
-        )
-        
-    rename_result = state.get("rename_result")
-    if rename_result:
-        dynamic_tail += (
-            f"\n\n[SYSTEM INJECTION: 工具反馈 - 称呼设定已更新]\n"
-            f"{rename_result}\n"
-            f"你现在已经知道了新设定，请立刻对用户之前的改名要求进行回应，禁止再次输出改名标签。"
-        )
-        
+    # 组合最初始的消息列表
     active_messages = []
-    is_greeting = state.get("request_type") == 'greeting'
-    
-    if user_prompt:
-        priority_reminder = f"[USER PROMPT (用户/玩家自身设定与偏好)]\n{user_prompt}\n\n" + priority_reminder
-        
     if lc_history and isinstance(lc_history[0], SystemMessage):
-        if is_greeting:
-            active_messages = [SystemMessage(content=priority_reminder)]
-        else:
-            active_messages = [SystemMessage(content=priority_reminder)] + lc_history[1:]
+        active_messages = [SystemMessage(content=system_prompt_top)] + (lc_history[1:] if not is_greeting else [])
     else:
-        if is_greeting:
-            active_messages = [SystemMessage(content=priority_reminder)]
+        active_messages = [SystemMessage(content=system_prompt_top)] + (lc_history if not is_greeting else [])
+
+    # ---------------------------------------------------------
+    # 3. 构建尾部动态区块 (Category 3, 4, 2)
+    # ---------------------------------------------------------
+    tail_parts = []
+    
+    # Cat 3: 常驻变动 (状态与数据表)
+    profile = get_user_profile()
+    user_name = profile.get("user_called_as", "")
+    pet_name = profile.get(f"{char_id}_called_as", "")
+    meta_context = get_meta_context_for_chat(char_id, char_name)
+    app_launcher = config_data.get("app_launcher", {})
+    available_apps_str = ", ".join(app_launcher.keys()) if app_launcher else "（尚未配置任何本地应用启动项）"
+    
+    state_str = (
+        f"[SYSTEM INJECTION: 当前状态]\n"
+        f"{meta_context}\n"
+        f"- 当前你（{char_name}）对用户的好感度为: {current_fav}/100。\n"
+        f"- 当前系统支持你拉起启动的本地应用列表如下：【 {available_apps_str} 】。如果用户要求打开这些应用中的任何一个，你必须在回复文本的最末尾输出 `[LAUNCH_APP: 对应名称]`。\n"
+        f"- 称呼设定：用户当前名字是【{user_name}】（空代表未设定），你的名字目前是【{pet_name}】（空代表{char_name}）。"
+    )
+    tail_parts.append(state_str)
+    
+    active_tables = get_active_tables(user_message, current_pool="\n".join([msg.get("content", "") for msg in history_msgs[-4:]]))
+    if active_tables:
+        tail_parts.append(f"[SYSTEM INJECTION: DataBank 全局状态表]\n{active_tables}")
+        
+    # Cat 4: 触发变动 (记忆与反馈)
+    if recalled_memories:
+        tail_parts.append(f"[SYSTEM INJECTION: 唤醒的长期记忆]\n{recalled_memories}\n（注：这些是关于用户的长期记忆。请仅在当前对话主题与这些记忆相关时，才自然、适度地提及。如果完全无关，绝对不要强行提及。）")
+        
+    tool_feedback = []
+    if state.get("music_result"):
+        music_result = state.get("music_result")
+        if "error" in music_result:
+            tool_feedback.append(f"点歌检索失败：{music_result['error']}。请以傲娇抱怨语气明确告诉用户没搜到，并绝对禁止再次输出 `[MUSIC_PLAY]` 标签。")
         else:
-            active_messages = [SystemMessage(content=priority_reminder)] + lc_history
+            tool_feedback.append(f"点歌检索成功：已播放歌曲：《{music_result['name']}》（歌手: {music_result['artists']}）。请以傲娇开心口吻告诉用户正在播放，绝对禁止再次输出 `[MUSIC_PLAY]` 标签。")
+    if state.get("browser_result"): tool_feedback.append(f"网页反馈：\n{state['browser_result']}\n请仔细提炼上述信息傲娇地回答用户，绝对禁止再次输出 `[BROWSER_TASK]` 标签。")
+    if state.get("search_result"): tool_feedback.append(f"搜索反馈：\n{state['search_result']}\n请结合上述搜索数据傲娇地回答用户，绝对禁止再次输出 `[SEARCH_ENGINE]` 标签。")
+    if state.get("launcher_result"): tool_feedback.append(f"应用启动反馈：\n{state['launcher_result']}\n请说明启动情况，绝对禁止再次输出 `[LAUNCH_APP]` 标签。")
+    if state.get("rename_result"): tool_feedback.append(f"改名反馈：\n{state['rename_result']}\n你现在已经知道了新设定，请立刻对用户之前的改名要求进行回应，禁止再次输出改名标签。")
+    
+    if tool_feedback:
+        tail_parts.append(f"[SYSTEM INJECTION: 工具反馈]\n" + "\n\n".join(tool_feedback))
         
-    if not is_self and user_message:
-        # 尾部强效提醒 (方案 A 增强)：防止长历史上下文导致的注意力衰减，让 Gemini/DeepSeek 强制遵守指令。
-        # 直接拼接在用户消息末尾，防止 API 适配器将 SystemMessage 调整到头部，确保 100% 处于模型生成前的最高注意力区间。
-        tail_reminder = (
-            "\n\n[SYSTEM REMINDER - FORCED LAUNCH/SEARCH/MUSIC RULE]\n"
-            "1. 如果用户要求你打开、拉起或启动本地应用（如果上述状态里写了未配置任何应用，请直接告诉用户尚未配置），你【必须】且只能在回复内容的最末尾加上相应的 `[LAUNCH_APP: 应用名称]` 标签（例如：`[LAUNCH_APP: 网易云音乐]`）。\n"
-            "2. 如果用户有网页搜索意图，需要拉起浏览器，必须在最末尾加上 `[BROWSER_TASK: 搜索词]` 标签。\n"
-            "3. 如果你需要查询实时信息、知识科普或你不确定的内容（仅背景查资料，不拉起浏览器），你【必须】在回复的最末尾加上 `[SEARCH_ENGINE: 搜索词]` 标签。\n"
-            "4. 如果用户提出想听歌、放音乐、点歌、或者切歌的要求时，你在保持性格回复的同时，你【必须】在最末尾加上 `[MUSIC_PLAY: 歌曲名称 歌手名(可选)]` 标签传递给播放器。\n"
-            "5. 绝对禁止口头上说打开了/查到了/播放了但不在最末尾写标签！必须输出方括号标签。"
-        )
-        
-        databank_rules = get_databank_rules_for_llm()
-        if databank_rules:
-            tail_reminder += f"\n\n{databank_rules}\n"
+    # Cat 2: 触发不变动 (世界书预设)
+    if custom_presets:
+        preset_content = []
+        if isinstance(custom_presets, list):
+            sorted_presets = sorted(custom_presets, key=lambda x: x.get("order", 100))
+            for p in sorted_presets:
+                if p.get("content", p.get("prompt", "")):
+                    preset_content.append(p.get("content", p.get("prompt", "")))
+        else:
+            preset_content.append(str(custom_presets))
             
-        active_messages.append(HumanMessage(content=user_message + dynamic_tail + tail_reminder))
-    elif is_self and user_message:
-        # 自言自语提示词，作为 SystemMessage 注入，指导模型进行自言自语生成，修复自言自语无响应或重复历史的Bug
-        active_messages.append(SystemMessage(content=user_message + dynamic_tail))
-        
+        if preset_content:
+            tail_parts.append(f"[SYSTEM INJECTION: 触发预设]\n⚠️ 请在你的本次回复中，结合以下设定：\n" + "\n\n".join(preset_content))
+
+    # 合并尾部并注入
+    tail_block = "\n\n=======================================================================\n\n".join(tail_parts)
+    
+    if is_self and user_message:
+        active_messages.append(SystemMessage(content=user_message + "\n\n" + tail_block))
+    elif not is_self and user_message:
+        active_messages.append(HumanMessage(content=user_message + "\n\n" + tail_block))
+
     return active_messages
 
 def generate_response_node(state: AgentState) -> Dict[str, Any]:

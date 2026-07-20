@@ -64,12 +64,15 @@
                     <h3><i class="fas fa-server"></i> API 提供商</h3>
                     <div class="form-group">
                         <label for="api-provider-select">选择AI大脑:</label>
-                        <select id="api-provider-select" class="modern-select">
-                            <option value="gemini">Gemini 2.5 Flash</option>
-                            <option value="deepseek-v4-flash">DeepSeek V4 Flash</option>
-                            <option value="deepseek-v4-pro">DeepSeek V4 Pro</option>
-                            <option value="deepseek-chat">DeepSeek V3 (标准版)</option>
-                        </select>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="api-provider-select" class="modern-select" style="flex: 1;">
+                                <option value="gemini">Gemini 2.5 Flash</option>
+                                <option value="deepseek-v4-flash">DeepSeek V4 Flash</option>
+                                <option value="deepseek-v4-pro">DeepSeek V4 Pro</option>
+                                <option value="deepseek-chat">DeepSeek V3 (标准版)</option>
+                            </select>
+                            <button id="manage-engines-btn" class="action-btn outline"><i class="fas fa-plus"></i> 自定义引擎</button>
+                        </div>
                     </div>
                     <p class="help-text">AI 的思考广度与对话情绪特征将会实时发生改变。</p>
                 </div>
@@ -626,6 +629,79 @@
                     <button type="button" class="action-btn outline" id="btn-cancel-preset">取消</button>
                     <button type="button" class="action-btn" id="btn-save-preset"><i class="fas fa-save"></i> 保存</button>
                 </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 引擎管理 Modal -->
+<div id="engine-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><i class="fas fa-brain"></i> 管理自定义大脑引擎</h2>
+            <button id="close-engine-modal-btn" class="close-modal-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <div id="custom-engines-list" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px;">
+                <!-- JS 动态注入已保存的引擎 -->
+            </div>
+            
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0;">
+            <h3><i class="fas fa-plus-circle"></i> 添加/编辑引擎</h3>
+            
+            <form id="engine-form" onsubmit="return false;">
+                <input type="hidden" id="engine-id" value="">
+                
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="engine-name">引擎别名 (Name) <span style="color:red">*</span></label>
+                    <input type="text" id="engine-name" class="modern-input" required placeholder="例如: 本地 Qwen-72B">
+                </div>
+                
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="engine-quick-preset">快速填入知名厂商 (可选)</label>
+                    <select id="engine-quick-preset" class="modern-select">
+                        <option value="">-- 懒人一键选择 --</option>
+                        <option value="http://127.0.0.1:11434/v1">本地 Ollama (127.0.0.1:11434)</option>
+                        <option value="http://127.0.0.1:1234/v1">本地 LM Studio (127.0.0.1:1234)</option>
+                        <option value="https://api.deepseek.com/v1">DeepSeek</option>
+                        <option value="https://api.siliconflow.cn/v1">硅基流动 (SiliconFlow)</option>
+                        <option value="https://api.moonshot.cn/v1">月之暗面 (Kimi)</option>
+                        <option value="https://dashscope.aliyuncs.com/compatible-mode/v1">阿里云百炼 (通义千问)</option>
+                        <option value="https://open.bigmodel.cn/api/paas/v4">智谱清言 (GLM)</option>
+                        <option value="https://spark-api-open.xf-yun.com/v1">科大讯飞 (星火)</option>
+                        <option value="https://api.openai.com/v1">OpenAI</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="engine-base-url">API Base URL <span style="color:red">*</span></label>
+                    <input type="text" id="engine-base-url" class="modern-input" required placeholder="例如: http://127.0.0.1:11434/v1">
+                </div>
+                
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="engine-api-key">API Key (本地可留空)</label>
+                    <input type="text" id="engine-api-key" class="modern-input" placeholder="例如: sk-xxxxxx">
+                </div>
+
+                <div class="form-group" style="margin-top: 15px;">
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" class="action-btn outline" id="btn-fetch-models" style="flex: 1;"><i class="fas fa-cloud-download-alt"></i> 拉取模型列表</button>
+                    </div>
+                </div>
+                
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="engine-model-name">模型名称 (Model Name) <span style="color:red">*</span></label>
+                    <div style="display: flex; gap: 10px;">
+                        <select id="engine-model-select" class="modern-select" style="flex: 1; display: none;"></select>
+                        <input type="text" id="engine-model-name" class="modern-input" required placeholder="例如: qwen2.5:72b" style="flex: 1;">
+                    </div>
+                </div>
+                
+                <div class="form-actions" style="margin-top: 25px; display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="action-btn outline" id="btn-test-engine" style="border-color: #8be9fd; color: #8be9fd;"><i class="fas fa-plug"></i> 测试连接</button>
+                    <button type="button" class="action-btn" id="btn-save-engine" disabled><i class="fas fa-save"></i> 保存引擎</button>
+                </div>
+                <p id="engine-test-status" class="help-text" style="margin-top: 10px; text-align: right; display: none;"></p>
             </form>
         </div>
     </div>

@@ -1,7 +1,7 @@
 import os
 from openai import OpenAI
 from langchain_openai import ChatOpenAI
-from core.config_manager import get_config
+from core.config_manager import get_config, get_custom_engines
 
 def get_llm_client_and_model():
     """根据配置动态获取大模型客户端和模型名称"""
@@ -10,6 +10,20 @@ def get_llm_client_and_model():
     
     deepseek_key = os.getenv("DEEPSEEK_API_KEY")
     gemini_key = os.getenv("GEMINI_API_KEY")
+    
+    # Check custom engine
+    if provider.startswith("custom_"):
+        custom_engines = get_custom_engines()
+        for engine in custom_engines:
+            if engine.get("id") == provider:
+                api_key = engine.get("api_key", "sk-local")
+                if not api_key:
+                    api_key = "sk-local"
+                model_name = engine.get("model_name", "custom-model")
+                return OpenAI(
+                    api_key=api_key,
+                    base_url=engine.get("base_url")
+                ), model_name
     
     if provider == "gemini" and gemini_key:
         return OpenAI(
@@ -67,30 +81,43 @@ def get_langchain_model():
     base_url = None
     model_name = None
     
-    if provider == "gemini" and gemini_key:
-        api_key = gemini_key
-        base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
-        model_name = "gemini-2.5-flash"
-    elif provider == "deepseek-v4-pro" and deepseek_key:
-        api_key = deepseek_key
-        base_url = "https://api.deepseek.com"
-        model_name = "deepseek-v4-pro"
-    elif provider == "deepseek-v4-flash" and deepseek_key:
-        api_key = deepseek_key
-        base_url = "https://api.deepseek.com"
-        model_name = "deepseek-v4-flash"
-    elif provider in ["deepseek-chat", "deepseek"] and deepseek_key:
-        api_key = deepseek_key
-        base_url = "https://api.deepseek.com"
-        model_name = "deepseek-chat"
-    elif gemini_key:
-        api_key = gemini_key
-        base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
-        model_name = "gemini-2.5-flash"
-    elif deepseek_key:
-        api_key = deepseek_key
-        base_url = "https://api.deepseek.com"
-        model_name = "deepseek-chat"
+    # Check custom engine
+    if provider.startswith("custom_"):
+        custom_engines = get_custom_engines()
+        for engine in custom_engines:
+            if engine.get("id") == provider:
+                api_key = engine.get("api_key", "sk-local")
+                if not api_key:
+                    api_key = "sk-local"
+                base_url = engine.get("base_url")
+                model_name = engine.get("model_name", "custom-model")
+                break
+    
+    if not api_key:
+        if provider == "gemini" and gemini_key:
+            api_key = gemini_key
+            base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
+            model_name = "gemini-2.5-flash"
+        elif provider == "deepseek-v4-pro" and deepseek_key:
+            api_key = deepseek_key
+            base_url = "https://api.deepseek.com"
+            model_name = "deepseek-v4-pro"
+        elif provider == "deepseek-v4-flash" and deepseek_key:
+            api_key = deepseek_key
+            base_url = "https://api.deepseek.com"
+            model_name = "deepseek-v4-flash"
+        elif provider in ["deepseek-chat", "deepseek"] and deepseek_key:
+            api_key = deepseek_key
+            base_url = "https://api.deepseek.com"
+            model_name = "deepseek-chat"
+        elif gemini_key:
+            api_key = gemini_key
+            base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
+            model_name = "gemini-2.5-flash"
+        elif deepseek_key:
+            api_key = deepseek_key
+            base_url = "https://api.deepseek.com"
+            model_name = "deepseek-chat"
         
     if not api_key:
         raise ValueError("未检测到有效的 API 密钥环境，请检查 .env 文件。")

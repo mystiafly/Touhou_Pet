@@ -1124,3 +1124,113 @@ async def import_worldbook(file: UploadFile = File(...), type: str = Form("custo
         return JSONResponse({"success": True, "count": count})
     except Exception as e:
         return JSONResponse({"success": False, "error": f"解析世界书失败: {str(e)}"})
+
+# 13. 自定义大脑引擎接口
+@router.get("/api/engines")
+def api_get_engines():
+    """获取所有自定义引擎列表"""
+    from core.config_manager import get_custom_engines
+    engines = get_custom_engines()
+    return JSONResponse({"success": True, "engines": engines})
+
+class EngineTestRequest(BaseModel):
+    base_url: str
+    api_key: str
+    model_name: str = "test-model"
+
+@router.post("/api/engines/fetch_models")
+def api_engines_fetch_models(req: EngineTestRequest):
+    """从给定的 base_url 拉取模型列表 (/models 路由)"""
+    import requests
+    try:
+        url = req.base_url.rstrip("/")
+        if not url.endswith("/v1"):
+            # 如果用户没填/v1，很多兼容接口也需要/v1/models，我们先直接尝试 /models
+            pass
+            
+        models_url = f"{url}/models"
+        headers = {}
+        if req.api_key and req.api_key != "sk-local":
+            headers["Authorization"] = f"Bearer {req.api_key}"
+            
+        response = requests.get(models_url, headers=headers, timeout=5)
+        response.raise_for_status()
+        
+        data = response.json()
+        models = []
+        if isinstance(data, dict) and "data" in data:
+            models = [m.get("id") for m in data["data"] if isinstance(m, dict) and "id" in m]
+        elif isinstance(data, list):
+            models = [m.get("id") if isinstance(m, dict) else str(m) for m in data]
+            
+        if not models:
+            return JSONResponse({"success": False, "error": "获取成功，但模型列表为空"})
+            
+        return JSONResponse({"success": True, "models": models})
+    except Exception as e:
+        return JSONResponse({"success": False, "error": f"拉取模型列表失败: {str(e)}"})
+
+@router.post("/api/engines/test")
+def api_engines_test(req: EngineTestRequest):
+    """测试连接 (发送一条空闲问候)"""
+    from langchain_openai import ChatOpenAI
+    from langchain_core.messages import HumanMessage
+    try:
+        api_key = req.api_key
+        if not api_key:
+            api_key = "sk-local"
+            
+        llm = ChatOpenAI(
+            api_key=api_key,
+            base_url=req.base_url,
+            model=req.model_name,
+            max_retries=0,
+            timeout=10
+        )
+        # 有些严格的后端可能会校验模型名，这里用一个很简单的提示词
+        res = llm.invoke([HumanMessage(content="Hi, please reply 'ok' only.")])
+        return JSONResponse({"success": True, "reply": res.content})
+    except Exception as e:
+        return JSONResponse({"success": False, "error": f"测试连接失败: {str(e)}"})
+
+class EngineSaveRequest(BaseModel):
+    id: str = ""
+    name: str
+    model_name: str
+    base_url: str
+    api_key: str
+
+@router.post("/api/engines/save")
+def api_engines_save(req: EngineSaveRequest):
+    """保存自定义引擎"""
+    from core.config_manager import save_custom_engine
+    import uuid
+    
+    engine_id = req.id
+    if not engine_id:
+        engine_id = f"custom_{uuid.uuid4().hex[:8]}"
+        
+    engine_data = {
+        "id": engine_id,
+        "name": req.name.strip(),
+        "model_name": req.model_name.strip(),
+        "base_url": req.base_url.strip(),
+        "api_key": req.api_key.strip()
+    }
+    
+    success = save_custom_engine(engine_data)
+    if success:
+        return JSONResponse({"success": True, "engine": engine_data})
+    else:
+        return JSONResponse({"success": False, "error": "保存失败"})
+
+@router.delete("/api/engines/{engine_id}")
+def api_engines_delete(engine_id: str):
+    """删除引擎"""
+    from core.config_manager import delete_custom_engine
+    success = delete_custom_engine(engine_id)
+    if success:
+        return JSONResponse({"success": True})
+    else:
+        return JSONResponse({"success": False, "error": "删除失败或引擎不存在"})
+
