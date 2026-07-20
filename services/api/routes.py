@@ -113,6 +113,10 @@ def update_databank_template(payload: dict = Body(...)):
 @router.post("/api/chat")
 def chat(payload: dict = Body(...)):
     """发送聊天请求核心业务逻辑 (使用 LangGraph 引擎驱动)"""
+    from core.diary_batch import check_and_generate_diaries_async
+    # 异步对账：检查前天或更早之前是否有没写完的日记
+    check_and_generate_diaries_async()
+    
     char_name = get_config().get("character_name", "桌宠")
     user_message = payload.get('message', '').strip()
     if not user_message:
