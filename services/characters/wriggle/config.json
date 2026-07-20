@@ -16,9 +16,9 @@
     "记事本": "notepad.exe",
     "网易云音乐": "H:\\CloudMusic\\cloudmusic.exe"
   },
-  "enable_greeting": false,
+  "enable_greeting": true,
   "auto_speak_multiplier": 1.0,
   "enable_auto_speak": true,
-  "user_prompt": "我是一个误入幻想乡的男性，在昏迷时被你救助。",
+  "user_prompt": "我是一个神隐到幻想乡的外界男性，对这里一无所知，被你从昏迷中救了过来。",
   "preset_block_english": true
 }
