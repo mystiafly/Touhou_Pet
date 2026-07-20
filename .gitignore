@@ -24,7 +24,7 @@ services/*.log
 services/qdrant_db/
 services/qdrant_db_temp/
 services/characters/*/qdrant_db/
-
+.cache/
 
 # === 临时与测试文件 ===
 scratch/
