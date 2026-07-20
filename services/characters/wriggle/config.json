@@ -18,7 +18,7 @@
   },
   "enable_greeting": true,
   "auto_speak_multiplier": 1.0,
-  "enable_auto_speak": true,
+  "enable_auto_speak": false,
   "user_prompt": "我是一个神隐到幻想乡的外界男性，对这里一无所知，被你从昏迷中救了过来。",
   "preset_block_english": true
 }
