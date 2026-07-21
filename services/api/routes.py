@@ -396,7 +396,8 @@ async def api_character_info():
         "image_path": f"/static/images/{char_id}/",
         "enable_greeting": config.get("enable_greeting", True),
         "enable_auto_speak": config.get("enable_auto_speak", True),
-        "auto_speak_multiplier": config.get("auto_speak_multiplier", 1.0)
+        "auto_speak_multiplier": config.get("auto_speak_multiplier", 1.0),
+        "bubble_duration_multiplier": config.get("bubble_duration_multiplier", 1.0)
     })
 
 @router.post("/api/switch_character")
@@ -426,9 +427,12 @@ def get_config_api():
     config["has_gemini"] = bool(os.getenv("GEMINI_API_KEY"))
     config["enable_auto_speak"] = config.get("enable_auto_speak", True)
     config["auto_speak_multiplier"] = config.get("auto_speak_multiplier", 1.0)
+    config["bubble_duration_multiplier"] = config.get("bubble_duration_multiplier", 1.0)
     config["user_prompt"] = config.get("user_prompt", "")
     config["preset_max_depth"] = config.get("preset_max_depth", 2)
     config["preset_block_english"] = config.get("preset_block_english", False)
+    config["pre_api_provider"] = config.get("pre_api_provider", "inherit")
+    config["post_api_provider"] = config.get("post_api_provider", "inherit")
     config["success"] = True
     return config
 
@@ -439,12 +443,18 @@ def post_config_api(payload: dict = Body(...)):
         config_data = get_config()
         if "api_provider" in payload:
             config_data["api_provider"] = payload["api_provider"].strip()
+        if "pre_api_provider" in payload:
+            config_data["pre_api_provider"] = payload["pre_api_provider"].strip()
+        if "post_api_provider" in payload:
+            config_data["post_api_provider"] = payload["post_api_provider"].strip()
         if "enable_greeting" in payload:
             config_data["enable_greeting"] = bool(payload["enable_greeting"])
         if "enable_auto_speak" in payload:
             config_data["enable_auto_speak"] = bool(payload["enable_auto_speak"])
         if "auto_speak_multiplier" in payload:
             config_data["auto_speak_multiplier"] = float(payload["auto_speak_multiplier"])
+        if "bubble_duration_multiplier" in payload:
+            config_data["bubble_duration_multiplier"] = float(payload["bubble_duration_multiplier"])
         if "user_prompt" in payload:
             config_data["user_prompt"] = payload["user_prompt"].strip()
         if "preset_max_depth" in payload:
@@ -898,7 +908,7 @@ def exit_game():
 @router.get("/api/settings/preview_prompt")
 def preview_prompt():
     """模拟运行一次查询，并返回即将送给大模型的上下文 Prompt (Dry Run)"""
-    from graph.nodes import recall_memories_node, load_presets_node, build_active_messages
+    from graph.nodes import recall_memories_node, load_presets_node, build_pre_messages, build_main_messages, build_post_messages
     
     test_message = "你好"
     
@@ -910,6 +920,10 @@ def preview_prompt():
         "favorability": get_favorability(),
         "recalled_memories": "",
         "custom_presets": "",
+        "pre_llm_reply": "",
+        "tool_feedback_context": "",
+        "main_llm_reply": "你好呀！",
+        "post_llm_reply": "",
         "raw_reply": "",
         "emotion": "normal",
         "score": 10,
@@ -936,26 +950,32 @@ def preview_prompt():
     preset_result = load_presets_node(state)
     state.update(preset_result)
     
-    # 组装完整的 Prompt
-    active_messages = build_active_messages(state)
+    def format_msgs(active_messages):
+        result_data = []
+        total = len(active_messages)
+        for i, msg in enumerate(active_messages):
+            role_type = "system" if msg.type == "system" else "human" if msg.type == "human" else "assistant"
+            role_name = "【系统指令 System】" if msg.type == "system" else "【用户输入 Human】" if msg.type == "human" else "【AI回复 Assistant】"
+            
+            is_history = (i > 0 and i < total - 1)
+            result_data.append({
+                "role_type": role_type,
+                "role_name": role_name,
+                "content": msg.content,
+                "is_history": is_history
+            })
+        return result_data
+        
+    pre_msgs = build_pre_messages(state)
+    main_msgs = build_main_messages(state)
+    post_msgs = build_post_messages(state)
     
-    result_data = []
-    total = len(active_messages)
-    for i, msg in enumerate(active_messages):
-        role_type = "system" if msg.type == "system" else "human" if msg.type == "human" else "assistant"
-        role_name = "【系统指令 System】" if msg.type == "system" else "【用户输入 Human】" if msg.type == "human" else "【AI回复 Assistant】"
-        
-        # 认为中间的所有消息（除了首尾）都是历史记录
-        is_history = (i > 0 and i < total - 1)
-        
-        result_data.append({
-            "role": role_type,
-            "role_name": role_name,
-            "content": msg.content,
-            "is_history": is_history
-        })
-        
-    return {"success": True, "messages": result_data}
+    return {
+        "success": True, 
+        "pre_messages": format_msgs(pre_msgs),
+        "main_messages": format_msgs(main_msgs),
+        "post_messages": format_msgs(post_msgs)
+    }
 
 
 # 12. 预设管理接口
