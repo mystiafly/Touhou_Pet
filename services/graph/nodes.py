@@ -160,11 +160,30 @@ def build_main_messages(state: AgentState) -> list:
     pet_name = profile.get(f"{char_id}_called_as", "")
     meta_context = get_meta_context_for_chat(char_id, char_name)
     
+    time_gap_str = ""
+    if not is_self:
+        import time
+        last_user_time = None
+        for msg in reversed(history_msgs):
+            if msg.get("role") == "user" and "timestamp" in msg:
+                last_user_time = msg.get("timestamp")
+                break
+        
+        if last_user_time:
+            diff_seconds = time.time() - float(last_user_time)
+            if diff_seconds > 30 * 60:
+                diff_minutes = int(diff_seconds // 60)
+                if diff_minutes >= 60:
+                    time_gap_str = f"\n- ⚠️ 注意：用户隔了 {diff_minutes // 60} 小时 {diff_minutes % 60} 分钟 后才再次和你说话！"
+                else:
+                    time_gap_str = f"\n- ⚠️ 注意：用户隔了 {diff_minutes} 分钟 后才再次和你说话！"
+
     state_str = (
         f"[SYSTEM INJECTION: 当前状态]\n"
         f"{meta_context}\n"
         f"- 当前你（{char_name}）对用户的好感度为: {current_fav}/100。\n"
         f"- 称呼设定：用户当前名字是【{user_name}】，你的名字目前是【{pet_name}】。"
+        f"{time_gap_str}"
     )
     tail_parts.append(state_str)
     
@@ -191,7 +210,10 @@ def build_main_messages(state: AgentState) -> list:
     tail_block = "\n\n=======================================================================\n\n".join(tail_parts)
     
     if is_self:
-        content = "[SELF TALK TRIGGER: 此刻你正在自言自语，请主动寻找话题发散。]\n\n" + tail_block
+        content = "[SELF TALK TRIGGER: 此刻你正在自言自语，请主动寻找话题发散。]\n\n"
+        if user_message:
+            content += f"[闲置状态提示: {user_message}]\n\n"
+        content += tail_block
         content += "\n\n(请严格遵守 '[心情][评分]对白内容' 的回复格式！)"
         active_messages.append(HumanMessage(content=content))
     else:
@@ -364,7 +386,8 @@ def update_history_node(state: AgentState) -> Dict[str, Any]:
     new_history = [msg.copy() for msg in history_msgs]
     
     if not is_self and user_message:
-        new_history.append({"role": "user", "content": user_message})
+        import time
+        new_history.append({"role": "user", "content": user_message, "timestamp": time.time()})
         
     if is_self and len(new_history) > 0:
         last_msg = new_history[-1]
