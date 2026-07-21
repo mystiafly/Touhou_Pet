@@ -1647,20 +1647,27 @@ async function loadCustomEngines() {
 }
 
 function renderCustomEnginesDropdown() {
-    const apiSelect = document.getElementById('api-provider-select');
-    if (!apiSelect) return;
+    const selects = [
+        document.getElementById('api-provider-select'),
+        document.getElementById('pre-api-provider-select'),
+        document.getElementById('post-api-provider-select')
+    ];
     
-    // 移除已有的自定义选项
-    Array.from(apiSelect.options).forEach(opt => {
-        if (opt.value.startsWith('custom_')) opt.remove();
-    });
-    
-    // 添加新的自定义选项
-    customEnginesData.forEach(engine => {
-        const opt = document.createElement('option');
-        opt.value = engine.id;
-        opt.innerText = `[自定义] ${engine.name} (${engine.model_name})`;
-        apiSelect.appendChild(opt);
+    selects.forEach(select => {
+        if (!select) return;
+        
+        // 移除已有的自定义选项
+        Array.from(select.options).forEach(opt => {
+            if (opt.value.startsWith('custom_')) opt.remove();
+        });
+        
+        // 添加新的自定义选项
+        customEnginesData.forEach(engine => {
+            const opt = document.createElement('option');
+            opt.value = engine.id;
+            opt.innerText = `[自定义] ${engine.name} (${engine.model_name})`;
+            select.appendChild(opt);
+        });
     });
 }
 
