@@ -21,6 +21,9 @@
             <a href="#" class="nav-item active" data-target="engine-view">
                 <i class="fas fa-brain"></i> 大脑引擎
             </a>
+            <a href="#" class="nav-item" data-target="allocation-view">
+                <i class="fas fa-network-wired"></i> 大模型分配
+            </a>
             <a href="#" class="nav-item" data-target="basic-settings-view">
                 <i class="fas fa-cog"></i> 基础设置
             </a>
@@ -96,12 +99,50 @@
                     <p class="help-text text-danger"><i class="fas fa-exclamation-triangle"></i> 切换灵魂后，为确保记忆隔离，应用主程序将会自动重启！</p>
                 </div>
 
+        </section>
+
+        <!-- 大模型分配视图 -->
+        <section id="allocation-view" class="content-section">
+            <header class="section-header">
+                <h1>大模型分配 (LLM Allocation)</h1>
+                <p>为三段式智能体架构独立分配最适合的大脑引擎</p>
+            </header>
+            
+            <div class="card-container">
                 <div class="settings-card">
-                    <h3><i class="fas fa-code"></i> 开发者功能</h3>
+                    <h3><i class="fas fa-network-wired"></i> 阶段引擎分配</h3>
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label for="pre-api-provider-select">前置辅助模型 (Pre-LLM): <span class="help-text" style="display:inline; margin-left:10px;">负责工具调用、意图识别（建议: 快速/廉价模型）</span></label>
+                        <select id="pre-api-provider-select" class="modern-select">
+                            <option value="inherit">=== 继承主对话模型 ===</option>
+                            <option value="gemini">Gemini 2.5 Flash</option>
+                            <option value="deepseek-v4-flash">DeepSeek V4 Flash</option>
+                            <option value="deepseek-v4-pro">DeepSeek V4 Pro</option>
+                            <option value="deepseek-chat">DeepSeek V3 (标准版)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label>主对话模型 (Main-LLM): <span class="help-text" style="display:inline; margin-left:10px;">请在“大脑引擎”面板配置</span></label>
+                        <input type="text" class="modern-input" id="main-api-provider-display" disabled style="background-color: var(--card-bg);" value="前往[大脑引擎]面板修改">
+                    </div>
                     <div class="form-group">
-                        <p class="help-text">调试大贤者系统最终喂给大模型的完整上下文。</p>
+                        <label for="post-api-provider-select">后置填表模型 (Post-LLM): <span class="help-text" style="display:inline; margin-left:10px;">负责读取对话总结并更新 DataBank（建议: 快速/廉价模型）</span></label>
+                        <select id="post-api-provider-select" class="modern-select">
+                            <option value="inherit">=== 继承主对话模型 ===</option>
+                            <option value="gemini">Gemini 2.5 Flash</option>
+                            <option value="deepseek-v4-flash">DeepSeek V4 Flash</option>
+                            <option value="deepseek-v4-pro">DeepSeek V4 Pro</option>
+                            <option value="deepseek-chat">DeepSeek V3 (标准版)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <h3><i class="fas fa-eye"></i> 多阶段提示词透视</h3>
+                    <div class="form-group">
+                        <p class="help-text">在不同阶段，大模型看到的 Prompt 是不同的。点击透视，对比三个阶段实际接收到的上下文。</p>
                         <button id="preview-prompt-btn" class="action-btn outline">
-                            <i class="fas fa-eye"></i> 提示词透视 (Dry Run)
+                            <i class="fas fa-eye"></i> 三段式提示词透视 (X-Ray)
                         </button>
                     </div>
                 </div>
@@ -150,6 +191,18 @@
                             <option value="1.5">1.5x (较长等待)</option>
                         </select>
                         <p class="help-text">倍率越小，桌宠憋不住找你搭话所需的时间就越短。</p>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="bubble-duration-multiplier" style="font-weight: 500; font-size: 14px; display: block;">气泡持续时间倍率</label>
+                        <select id="bubble-duration-multiplier" class="modern-select" style="margin-top: 8px; width: 100%;">
+                            <option value="1.0">1.0x (默认时长)</option>
+                            <option value="2.0">2.0x (较长显示)</option>
+                            <option value="3.0">3.0x (长久显示)</option>
+                            <option value="5.0">5.0x (超长显示)</option>
+                            <option value="10.0">10.0x (极长显示)</option>
+                        </select>
+                        <p class="help-text">控制桌宠说话时文字气泡停留的时间，如果阅读速度较慢可以适当调大。</p>
                     </div>
                 </div>
 
@@ -527,7 +580,7 @@
 <div id="preview-modal" class="modal-overlay hidden">
     <div class="modal-content wide-modal">
         <div class="modal-header">
-            <h2><i class="fas fa-eye"></i> 提示词透视 (Dry Run)</h2>
+            <h2><i class="fas fa-eye"></i> 三段式提示词透视 (X-Ray)</h2>
             <div style="display: flex; align-items: center; gap: 15px;">
                 <label style="color: #bbb; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
                     <input type="checkbox" id="hide-history-toggle" style="cursor: pointer;"> 隐藏中间对话上下文
@@ -536,15 +589,35 @@
             </div>
         </div>
         <div class="modal-body">
-            <div id="preview-loading" class="loading-state hidden">
-                <i class="fas fa-spinner fa-spin"></i> 正在生成完整上下文...
+            <div class="tabs-header">
+                <button class="tab-btn active" data-target="preview-pre">前置模型 (Pre-LLM)</button>
+                <button class="tab-btn" data-target="preview-main">主模型 (Main-LLM)</button>
+                <button class="tab-btn" data-target="preview-post">后置模型 (Post-LLM)</button>
             </div>
-            <pre id="preview-content-area" class="code-preview"></pre>
+            
+            <div id="preview-loading" class="loading-state hidden">
+                <i class="fas fa-spinner fa-spin"></i> 正在生成三段式上下文...
+            </div>
+            
+            <div id="preview-pre" class="tab-content active">
+                <p class="help-text">负责执行意图识别和工具调用，包含指令规范。不应该包含角色扮演细节。</p>
+                <pre id="preview-content-area-pre" class="code-preview"></pre>
+            </div>
+            
+            <div id="preview-main" class="tab-content">
+                <p class="help-text">纯净的扮演模型上下文，包含世界状态数据但没有任何工具调用指令。</p>
+                <pre id="preview-content-area-main" class="code-preview"></pre>
+            </div>
+
+            <div id="preview-post" class="tab-content">
+                <p class="help-text">后台异步执行的数据表更新上下文，包含长篇填表规则。</p>
+                <pre id="preview-content-area-post" class="code-preview"></pre>
+            </div>
         </div>
     </div>
 </div>
 
-<script src="/static/js/dashboard.js?v=1.6.0"></script>
+<script src="/static/js/dashboard.js?v=1.7.0"></script>
 
 <!-- 预设编辑 Modal -->
 <div id="preset-modal" class="modal-overlay hidden">
