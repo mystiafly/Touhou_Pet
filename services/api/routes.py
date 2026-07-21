@@ -417,7 +417,44 @@ async def api_switch_character(request: Request):
             
         return JSONResponse({"status": "success", "require_restart": True})
     except Exception as e:
-        return JSONResponse({"status": "error", "message": str(e)}, status_code=400)
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+@router.get("/api/tools")
+async def api_tools():
+    """获取当前系统支持的大模型工具列表"""
+    tools = [
+        {
+            "name": "启动应用",
+            "command": "[LAUNCH_APP: 应用名称]",
+            "description": "启动系统中已配置的本地应用，如记事本或网易云音乐等。",
+            "icon": "fas fa-rocket"
+        },
+        {
+            "name": "网页搜索",
+            "command": "[BROWSER_TASK: 关键词] 或 [SEARCH_ENGINE: 关键词]",
+            "description": "进行互联网搜索、查资料、获取实时新闻或热点信息。",
+            "icon": "fas fa-globe"
+        },
+        {
+            "name": "播放音乐",
+            "command": "[MUSIC_PLAY: 歌曲名称 歌手名]",
+            "description": "自动在网易云音乐后台点播并播放指定的歌曲。",
+            "icon": "fas fa-music"
+        },
+        {
+            "name": "更改用户称呼",
+            "command": "[UPDATE_USER_NAME: 新称呼]",
+            "description": "如果用户要求改变对他的称呼，可以调用此工具进行修改。",
+            "icon": "fas fa-user-tag"
+        },
+        {
+            "name": "更改桌宠名字",
+            "command": "[UPDATE_PET_NAME: 新名字]",
+            "description": "如果用户要求改变桌宠自己的名字，调用此工具生效。",
+            "icon": "fas fa-id-badge"
+        }
+    ]
+    return JSONResponse({"status": "success", "tools": tools})
 
 @router.get("/api/settings/config")
 def get_config_api():
