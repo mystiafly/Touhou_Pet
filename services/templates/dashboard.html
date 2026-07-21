@@ -42,6 +42,9 @@
             <a href="#" class="nav-item" data-target="databank-view">
                 <i class="fas fa-database"></i> 动态数据库
             </a>
+            <a href="#" class="nav-item" data-target="tools-view">
+                <i class="fas fa-tools"></i> 工具情况
+            </a>
         </nav>
         
         <div class="sidebar-bottom">
@@ -573,6 +576,22 @@
                 </div>
             </div>
         
+        </section>
+
+        <!-- 9. 工具情况视图 -->
+        <section id="tools-view" class="content-section">
+            <header class="section-header">
+                <h1>工具情况</h1>
+                <p>当前 Chain 状态机中已注册且支持的大模型工具一览</p>
+            </header>
+            
+            <div id="tools-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; padding-bottom: 30px;">
+                <!-- Tools will be rendered here dynamically -->
+                <div style="text-align: center; color: var(--text-color); grid-column: 1 / -1; padding: 40px;">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <p style="margin-top: 15px;">正在加载工具列表...</p>
+                </div>
+            </div>
         </section>
         
     </main>

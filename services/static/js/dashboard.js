@@ -44,6 +44,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (targetId === 'databank-view') {
                 loadDataBank();
             }
+            if (targetId === 'tools-view' && !window.toolsLoaded) {
+                loadToolsList();
+                window.toolsLoaded = true;
+            }
         });
     });
 
@@ -1623,6 +1627,69 @@ document.addEventListener('DOMContentLoaded', () => {
             a.click();
             URL.revokeObjectURL(url);
         });
+    }
+
+    // ========== 工具情况加载 ==========
+    async function loadToolsList() {
+        const container = document.getElementById('tools-container');
+        if (!container) return;
+
+        try {
+            const response = await fetch('/api/tools');
+            const data = await response.json();
+
+            if (data.status === 'success' && data.tools) {
+                container.innerHTML = ''; // 清空
+
+                data.tools.forEach(tool => {
+                    const card = document.createElement('div');
+                    card.className = 'tool-card';
+                    card.style.cssText = `
+                        background: rgba(30, 32, 40, 0.6);
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        border-radius: 12px;
+                        padding: 20px;
+                        display: flex;
+                        flex-direction: column;
+                        transition: all 0.3s ease;
+                        backdrop-filter: blur(10px);
+                        position: relative;
+                        overflow: hidden;
+                    `;
+
+                    // Hover effect (inline setup since we lack external CSS definition for .tool-card hover easily here)
+                    card.onmouseenter = () => {
+                        card.style.transform = 'translateY(-5px)';
+                        card.style.borderColor = 'var(--accent-color)';
+                        card.style.boxShadow = '0 10px 20px rgba(0,0,0,0.3)';
+                    };
+                    card.onmouseleave = () => {
+                        card.style.transform = 'translateY(0)';
+                        card.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                        card.style.boxShadow = 'none';
+                    };
+
+                    card.innerHTML = `
+                        <div style="display: flex; align-items: center; margin-bottom: 12px; color: var(--accent-color);">
+                            <i class="${tool.icon} fa-fw" style="font-size: 24px; margin-right: 12px;"></i>
+                            <h3 style="margin: 0; font-size: 18px; font-weight: 600;">${tool.name}</h3>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 6px; margin-bottom: 15px; font-family: monospace; font-size: 13px; color: #4ade80; border-left: 3px solid #4ade80;">
+                            ${tool.command}
+                        </div>
+                        <p style="color: #a0a0a0; font-size: 14px; line-height: 1.5; margin: 0; flex-grow: 1;">
+                            ${tool.description}
+                        </p>
+                    `;
+                    container.appendChild(card);
+                });
+            } else {
+                container.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #ff6b8b;">获取工具列表失败。</div>';
+            }
+        } catch (e) {
+            console.error('加载工具列表报错:', e);
+            container.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #ff6b8b;">网络或系统错误，加载失败。</div>';
+        }
     }
 
 });
