@@ -63,6 +63,7 @@ class DesktopPet {
             this.enableGreeting = data.enable_greeting !== false;
             this.enableAutoSpeak = data.enable_auto_speak !== false;
             this.autoSpeakMultiplier = data.auto_speak_multiplier || 1.0;
+            this.bubbleDurationMultiplier = data.bubble_duration_multiplier || 1.0;
             
             // set select value
             const charSelect = document.getElementById('character-select');
@@ -571,24 +572,29 @@ class DesktopPet {
 
         if (this.bubbleTimer) clearTimeout(this.bubbleTimer);
 
-        // [鏂板] 鏅鸿兘鏃堕暱璁＄畻閫昏緫
+        // [新增] 智能时长计算逻辑
         let showTime = duration;
         if (!showTime) {
-            // 鍩虹鏃堕棿 3绉?+ 姣忎釜瀛?0.3绉?
-            // 渚嬪锛?0涓瓧 = 3+3 = 6绉?
-            // 50涓瓧 = 3+15 = 18绉?
+            // 基础时间 3秒 + 每个字 0.3秒
             const calcTime = 3000 + (text.length * 300);
-
-            // 闄愬埗鏈€闀夸笉瓒呰繃 30绉?(闃叉鏄剧ず澶箙鎸¤矾)
-            showTime = Math.min(calcTime, 30000);
+            
+            // 应用用户设定的倍率
+            const multiplier = this.bubbleDurationMultiplier || 1.0;
+            const finalTime = calcTime * multiplier;
+            
+            // 限制最长不超过 30秒 (防止显示太久挡路) (如果倍率很高，上限也相应拉高一点点)
+            const maxLimit = 30000 * Math.max(1.0, multiplier * 0.5); 
+            showTime = Math.min(finalTime, maxLimit);
         }
 
         console.log(`气泡显示时长: ${showTime/1000}秒 (字数: ${text.length})`);
 
-        this.bubbleTimer = setTimeout(() => {
-            this.bubble.style.opacity = '0';
-            this.bubble.style.pointerEvents = 'none'; // 闅愯棌鏃跺畬鍏ㄧ┛閫忛紶鏍囷紝闃叉鎸′綇鍚庨潰鐨勪笢瑗?
-        }, showTime);
+        if (showTime > 0) {
+            this.bubbleTimer = setTimeout(() => {
+                this.bubble.style.opacity = '0';
+                this.bubble.style.pointerEvents = 'none'; // 隐藏时完全穿透鼠标，防止挡住后面的东西
+            }, showTime);
+        }
     }
 
     async sendMessage() {
@@ -600,7 +606,7 @@ class DesktopPet {
         this.wakeUp(true); // 闈欓粯鍞ら啋 (鎺ヤ笅鏉ョ殑澶фā鍨嬪洖澶嶄細灞曠ず琛ㄦ儏涓庢皵娉?
         this.resetAutoSpeakTimer();
 
-        this.showBubble("hmm...");
+        this.showBubble("hmm...", -1); // 传入 -1 让气泡持续显示直到新消息覆盖
 
         try {
             const response = await fetch('/api/chat', {
@@ -704,16 +710,16 @@ class DesktopPet {
             if (!quiet) {
                 this.showBubble("呜...干嘛吵醒人家，人家刚才梦见超好吃的巧克力饼干了呢！", 3500);
             }
-            this.autoSpeakCount = 0;
             this.resetAutoSpeakTimer();
         }
     }
 
-    // [鏂板] 鍚姩鏃舵墦鎷涘懠
+    // [新增] 启动时打招呼
     async greetUser() {
-            console.log("正在尝试打招呼...");
-        // 鍏堟樉绀虹瓑寰咃紝鎻愬崌浣撻獙
-        this.showBubble("...", 2000);
+        if (this.isSleeping) return; // 睡觉时被打招呼不回应，因为刚启动
+        console.log("正在请求开机问候...");
+        // 先显示等待，提升体验，设置为-1持续显示直到后端返回覆盖
+        this.showBubble("...", -1);
 
         try {
             const response = await fetch('/api/pet_speak', {

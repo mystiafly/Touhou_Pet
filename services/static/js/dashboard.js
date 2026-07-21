@@ -96,6 +96,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     autoSpeakMultiplier.value = configData.auto_speak_multiplier.toString();
                 }
 
+                const bubbleDurationMultiplier = document.getElementById('bubble-duration-multiplier');
+                if (bubbleDurationMultiplier && configData.bubble_duration_multiplier) {
+                    bubbleDurationMultiplier.value = configData.bubble_duration_multiplier.toString();
+                } else if (bubbleDurationMultiplier) {
+                    bubbleDurationMultiplier.value = "1.0";
+                }
+
                 const presetMaxDepth = document.getElementById('preset-max-depth');
                 if (presetMaxDepth && configData.preset_max_depth !== undefined) {
                     presetMaxDepth.value = configData.preset_max_depth.toString();
@@ -152,11 +159,46 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             if (!data.success) {
                 alert("切换引擎失败: " + data.error);
+            } else {
+                const mainDisplay = document.getElementById('main-api-provider-display');
+                if (mainDisplay) {
+                    mainDisplay.value = apiSelect.value;
+                }
             }
         } catch (e) {
             alert("切换引擎请求失败！");
         }
     });
+
+    const preApiSelect = document.getElementById('pre-api-provider-select');
+    if (preApiSelect) {
+        preApiSelect.addEventListener('change', async () => {
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ pre_api_provider: preApiSelect.value })
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        });
+    }
+
+    const postApiSelect = document.getElementById('post-api-provider-select');
+    if (postApiSelect) {
+        postApiSelect.addEventListener('change', async () => {
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ post_api_provider: postApiSelect.value })
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        });
+    }
 
     const userPromptArea = document.getElementById('user-prompt');
     if (userPromptArea) {
@@ -215,6 +257,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ auto_speak_multiplier: parseFloat(autoSpeakMultiplier.value) })
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        });
+    }
+
+    const bubbleDurationMultiplier = document.getElementById('bubble-duration-multiplier');
+    if (bubbleDurationMultiplier) {
+        bubbleDurationMultiplier.addEventListener('change', async () => {
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ bubble_duration_multiplier: parseFloat(bubbleDurationMultiplier.value) })
                 });
             } catch (e) {
                 console.error(e);
@@ -427,18 +484,46 @@ document.addEventListener('DOMContentLoaded', () => {
     const previewModal = document.getElementById('preview-modal');
     const closePreviewBtn = document.getElementById('close-preview-btn');
     const previewLoading = document.getElementById('preview-loading');
-    const previewContentArea = document.getElementById('preview-content-area');
+    
+    // Tab contents
+    const previewContentPre = document.getElementById('preview-content-area-pre');
+    const previewContentMain = document.getElementById('preview-content-area-main');
+    const previewContentPost = document.getElementById('preview-content-area-post');
+    const tabBtns = document.querySelectorAll('#preview-modal .tab-btn');
+    const tabContents = document.querySelectorAll('#preview-modal .tab-content');
 
-    let currentPreviewMessages = [];
+    let currentPreviewData = null;
 
-    function renderPreview() {
-        const hideHistory = document.getElementById('hide-history-toggle').checked;
+    // Tab switching logic
+    if (tabBtns) {
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                const targetId = btn.getAttribute('data-target');
+                document.getElementById(targetId).classList.add('active');
+            });
+        });
+    }
+
+    function formatMessages(messages, hideHistory) {
+        if (!messages) return "";
         let html = "";
-        currentPreviewMessages.forEach(msg => {
+        messages.forEach(msg => {
             if (hideHistory && msg.is_history) return;
             html += `${msg.role_name}\n${msg.content}\n\n=======================================================================\n\n`;
         });
-        previewContentArea.innerText = html;
+        return html;
+    }
+
+    function renderPreview() {
+        const hideHistory = document.getElementById('hide-history-toggle') ? document.getElementById('hide-history-toggle').checked : false;
+        if (!currentPreviewData) return;
+        
+        if (previewContentPre) previewContentPre.innerText = formatMessages(currentPreviewData.pre_messages, hideHistory);
+        if (previewContentMain) previewContentMain.innerText = formatMessages(currentPreviewData.main_messages, hideHistory);
+        if (previewContentPost) previewContentPost.innerText = formatMessages(currentPreviewData.post_messages, hideHistory);
     }
 
     if (document.getElementById('hide-history-toggle')) {
@@ -448,7 +533,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (previewBtn) {
         previewBtn.addEventListener('click', async () => {
             previewModal.classList.remove('hidden');
-            previewContentArea.innerText = '';
+            if (previewContentPre) previewContentPre.innerText = '';
+            if (previewContentMain) previewContentMain.innerText = '';
+            if (previewContentPost) previewContentPost.innerText = '';
             previewLoading.classList.remove('hidden');
 
             try {
@@ -457,15 +544,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 previewLoading.classList.add('hidden');
                 
                 if (data.success) {
-                    currentPreviewMessages = data.messages;
+                    currentPreviewData = data;
                     renderPreview();
                 } else {
-                    previewContentArea.innerText = `生成失败: ${data.error || '未知错误'}`;
+                    if (previewContentMain) previewContentMain.innerText = `生成失败: ${data.error || '未知错误'}`;
                 }
             } catch (e) {
                 console.error(e);
                 previewLoading.classList.add('hidden');
-                previewContentArea.innerText = "请求失败，请检查后端运行状态。";
+                if (previewContentMain) previewContentMain.innerText = "请求失败，请检查后端运行状态。";
             }
         });
     }
