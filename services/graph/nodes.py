@@ -263,8 +263,9 @@ def call_model_with_fallback(active_messages, provider_override, node_name="LLM"
             raise primary_ex
 
 def pre_llm_node(state: AgentState) -> Dict[str, Any]:
-    messages = build_pre_messages(state)
-    active_messages = messages
+    active_messages = build_pre_messages(state)
+    if not active_messages:
+        return {"pre_llm_reply": "[NO_TOOLS_NEEDED]"}
     
     response = call_model_with_fallback(active_messages, provider_override=get_config().get("pre_api_provider", "inherit"), node_name="PRE-LLM")
     return {"pre_llm_reply": response.content}
