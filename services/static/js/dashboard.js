@@ -93,12 +93,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const autoSpeakMultiplier = document.getElementById('auto-speak-multiplier');
                 if (autoSpeakMultiplier && configData.auto_speak_multiplier) {
-                    autoSpeakMultiplier.value = configData.auto_speak_multiplier.toString();
+                    autoSpeakMultiplier.value = Number(configData.auto_speak_multiplier).toFixed(1);
                 }
 
                 const bubbleDurationMultiplier = document.getElementById('bubble-duration-multiplier');
                 if (bubbleDurationMultiplier && configData.bubble_duration_multiplier) {
-                    bubbleDurationMultiplier.value = configData.bubble_duration_multiplier.toString();
+                    bubbleDurationMultiplier.value = Number(configData.bubble_duration_multiplier).toFixed(1);
                 } else if (bubbleDurationMultiplier) {
                     bubbleDurationMultiplier.value = "1.0";
                 }
