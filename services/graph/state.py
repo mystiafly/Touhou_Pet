@@ -8,6 +8,10 @@ class AgentState(TypedDict):
     recalled_memories: str
     custom_presets: str
     raw_reply: str
+    pre_llm_reply: str
+    tool_feedback_context: str
+    main_llm_reply: str
+    post_llm_reply: str
     emotion: str
     score: int
     clean_content: str

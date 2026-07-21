@@ -3,10 +3,11 @@ from openai import OpenAI
 from langchain_openai import ChatOpenAI
 from core.config_manager import get_config, get_custom_engines
 
-def get_llm_client_and_model():
+def get_llm_client_and_model(provider_override: str = None):
     """根据配置动态获取大模型客户端和模型名称"""
     config_data = get_config()
-    provider = config_data.get("api_provider", os.getenv("API_PROVIDER", "gemini")).lower()
+    provider = provider_override if provider_override and provider_override != "inherit" else config_data.get("api_provider", os.getenv("API_PROVIDER", "gemini"))
+    provider = provider.lower()
     
     deepseek_key = os.getenv("DEEPSEEK_API_KEY")
     gemini_key = os.getenv("GEMINI_API_KEY")
@@ -69,10 +70,11 @@ def get_llm_client_and_model():
         
     raise ValueError("未检测到有效的 API 密钥环境，请检查 .env 文件。")
 
-def get_langchain_model():
+def get_langchain_model(provider_override: str = None):
     """根据配置动态获取 LangChain ChatModel 包装实例"""
     config_data = get_config()
-    provider = config_data.get("api_provider", os.getenv("API_PROVIDER", "gemini")).lower()
+    provider = provider_override if provider_override and provider_override != "inherit" else config_data.get("api_provider", os.getenv("API_PROVIDER", "gemini"))
+    provider = provider.lower()
     
     deepseek_key = os.getenv("DEEPSEEK_API_KEY")
     gemini_key = os.getenv("GEMINI_API_KEY")
