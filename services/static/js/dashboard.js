@@ -1728,7 +1728,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </p>
                     `;
                     
-                    if (tool.command === '[LAUNCH_APP]') {
+                    if (tool.command.startsWith('[LAUNCH_APP')) {
                         card.style.cursor = 'pointer';
                         card.title = '点击配置应用启动白名单';
                         card.addEventListener('click', async () => {
@@ -1742,6 +1742,24 @@ document.addEventListener('DOMContentLoaded', () => {
                                 }
                             } catch (e) {
                                 alert('获取配置失败：' + e);
+                            }
+                        });
+                    } else if (tool.command.startsWith('[ANALYZE_SCREEN')) {
+                        card.style.cursor = 'pointer';
+                        card.title = '点击配置视觉识别引擎';
+                        card.addEventListener('click', () => {
+                            const settingsBtn = document.querySelector('.nav-btn[data-view="settings-view"]');
+                            if (settingsBtn) {
+                                settingsBtn.click();
+                                setTimeout(() => {
+                                    const select = document.getElementById('vision-engine-select');
+                                    if (select) {
+                                        select.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                        const originalShadow = select.style.boxShadow;
+                                        select.style.boxShadow = '0 0 15px var(--accent-color)';
+                                        setTimeout(() => select.style.boxShadow = originalShadow, 2000);
+                                    }
+                                }, 300);
                             }
                         });
                     }
