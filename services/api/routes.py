@@ -452,6 +452,12 @@ async def api_tools():
             "command": "[UPDATE_PET_NAME: 新名字]",
             "description": "如果用户要求改变桌宠自己的名字，调用此工具生效。",
             "icon": "fas fa-id-badge"
+        },
+        {
+            "name": "视觉识图",
+            "command": "[ANALYZE_SCREEN]",
+            "description": "截取当前电脑屏幕并调用视觉多模态大模型进行分析，以实现看屏幕的功能。",
+            "icon": "fas fa-eye"
         }
     ]
     return JSONResponse({"status": "success", "tools": tools})
@@ -470,6 +476,7 @@ def get_config_api():
     config["preset_block_english"] = config.get("preset_block_english", False)
     config["pre_api_provider"] = config.get("pre_api_provider", "inherit")
     config["post_api_provider"] = config.get("post_api_provider", "inherit")
+    config["vision_engine"] = config.get("vision_engine", "gemini")
     config["success"] = True
     return config
 
@@ -484,6 +491,8 @@ def post_config_api(payload: dict = Body(...)):
             config_data["pre_api_provider"] = payload["pre_api_provider"].strip()
         if "post_api_provider" in payload:
             config_data["post_api_provider"] = payload["post_api_provider"].strip()
+        if "vision_engine" in payload:
+            config_data["vision_engine"] = payload["vision_engine"].strip()
         if "enable_greeting" in payload:
             config_data["enable_greeting"] = bool(payload["enable_greeting"])
         if "enable_auto_speak" in payload:
@@ -498,10 +507,40 @@ def post_config_api(payload: dict = Body(...)):
             config_data["preset_max_depth"] = int(payload["preset_max_depth"])
         if "preset_block_english" in payload:
             config_data["preset_block_english"] = bool(payload["preset_block_english"])
+        if "app_launcher" in payload:
+            config_data["app_launcher"] = payload["app_launcher"]
         save_config(config_data)
         return {"success": True, "message": "配置已成功保存"}
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
+
+@router.post("/api/settings/test_vision")
+def post_test_vision(payload: dict = Body(...)):
+    """测试视觉引擎的识图能力"""
+    try:
+        from tools.tool_executor import execute_vision_task_node
+        engine = payload.get("engine", "gemini")
+        
+        # 临时覆盖配置以进行测试
+        config_data = get_config()
+        original_engine = config_data.get("vision_engine")
+        config_data["vision_engine"] = engine
+        save_config(config_data)
+        
+        # 构造虚假 state 执行节点
+        fake_state = {"vision_task": "test"}
+        result = execute_vision_task_node(fake_state)
+        
+        # 恢复原有配置
+        if original_engine:
+            config_data["vision_engine"] = original_engine
+        else:
+            del config_data["vision_engine"]
+        save_config(config_data)
+        
+        return {"status": "success", "result": result.get("vision_result", "未返回结果")}
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
 # 6. 主动说话接口 (自言自语)
 @router.post("/api/pet_speak")
@@ -1291,3 +1330,51 @@ def api_engines_delete(engine_id: str):
     else:
         return JSONResponse({"success": False, "error": "删除失败或引擎不存在"})
 
+# 12. 桌面宠物点击反应库接口
+@router.get("/api/pet_reactions")
+def api_pet_reactions():
+    """获取桌宠5x5点击反应词库"""
+    from core.reaction_manager import load_reactions, trigger_initial_generation_async, DEFAULT_EMOTIONS
+    char_id = get_active_character_id()
+    data = load_reactions(char_id)
+    
+    if not data:
+        # 触发后台生成
+        trigger_initial_generation_async(char_id)
+        # 返回临时保底数据防止前端报错
+        fallback = {e: ["嗯？"] for e in DEFAULT_EMOTIONS}
+        fallback["angry"] = ["别碰我！"]
+        fallback["crying"] = ["呜呜..."]
+        fallback["shy"] = ["哎呀..."]
+        fallback["sleeping"] = ["Zzz..."]
+        return JSONResponse({"success": True, "reactions": fallback, "is_generating": True})
+        
+    return JSONResponse({"success": True, "reactions": data, "is_generating": False})
+
+# 13. 静默记忆注入接口
+@router.post("/api/action_sync")
+def api_action_sync(payload: dict = Body(...)):
+    """将桌宠物理动作注入对话历史（不唤醒大模型）"""
+    try:
+        action_text = payload.get("action")
+        if not action_text:
+            return JSONResponse({"success": False, "error": "No action provided"}, status_code=400)
+            
+        messages = load_history()
+        char_name = get_config().get("character_name", "桌宠")
+        
+        # 将用户动作以特殊的人类日志形式注入，避免被视作真正的聊天意图
+        sync_msg = f"（用户刚刚做了物理动作，你的下意识反应是：{action_text}）"
+        messages.append({"role": "human", "content": sync_msg})
+        save_history(messages)
+        
+        # 同步记录到当天的日志文本中，供日记使用
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        time_str = datetime.now().strftime("%H:%M:%S")
+        log_file = os.path.join(DAILY_HISTORY_DIR, f"chat_log_{today_str}.txt")
+        with open(log_file, 'a', encoding='utf-8') as lf:
+            lf.write(f"[{time_str}] [物理互动] {sync_msg}\n\n")
+            
+        return {"success": True}
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)

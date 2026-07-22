@@ -86,7 +86,8 @@ def build_pre_messages(state: AgentState) -> list:
         "2. 网页搜索/浏览器: 如果用户有搜索网页、查资料、看新闻等意图，输出 `[BROWSER_TASK: 搜索关键词]` 或 `[SEARCH_ENGINE: 搜索词]` (不弹窗只在后台查)。\n"
         "3. 播放音乐: 如果用户想听歌、放音乐、点歌，输出 `[MUSIC_PLAY: 歌曲名称 歌手名(可选)]`。\n"
         "4. 更改称呼: 如果用户要求改变你对他的称呼，输出 `[UPDATE_USER_NAME: 新称呼]`。\n"
-        "5. 更改自己的名字: 如果用户要求你改名，输出 `[UPDATE_PET_NAME: 新名字]`。\n\n"
+        "5. 更改自己的名字: 如果用户要求你改名，输出 `[UPDATE_PET_NAME: 新名字]`。\n"
+        "6. 视觉识图: 如果用户要求你看看屏幕上有什么，或者让你识图，输出 `[ANALYZE_SCREEN]`。\n\n"
         "【规则】\n"
         "1. 如果检测到工具意图，请仅输出上述的一个或多个标签，不需要任何多余解释！绝对禁止进行角色扮演！\n"
         "2. 如果未检测到任何需要工具协助的意图，请仅输出 `[NO_TOOLS_NEEDED]`。\n"
@@ -205,7 +206,7 @@ def build_main_messages(state: AgentState) -> list:
             preset_content.append(str(custom_presets))
             
         if preset_content:
-            tail_parts.append(f"[SYSTEM INJECTION: 触发预设]\n⚠️ 请在你的本次回复中，结合以下设定：\n" + "\n\n".join(preset_content))
+            tail_parts.append(f"[SYSTEM INJECTION: 触发预设]\n⚠️ 仅当以下预设内容与当前剧情/对话上下文相关时，才在你的回复中自然地结合或提及它；如果毫无关联，请直接忽略该预设，不要强行提及：\n" + "\n\n".join(preset_content))
 
     tail_block = "\n\n=======================================================================\n\n".join(tail_parts)
     
@@ -319,13 +320,18 @@ def parse_pre_response_node(state: AgentState) -> Dict[str, Any]:
     pet_name_match = re.search(r'\[UPDATE_PET_NAME:\s*(.*?)\]', raw_reply, re.IGNORECASE)
     if pet_name_match: rename_task_pet = pet_name_match.group(1).strip()
         
+    vision_task = None
+    vision_match = re.search(r'\[ANALYZE_SCREEN\]', raw_reply, re.IGNORECASE)
+    if vision_match: vision_task = "analyze_screen"
+
     return {
         "browser_task": browser_task,
         "search_task": search_task,
         "music_task": music_task,
         "launcher_task": launcher_task,
         "rename_task_user": rename_task_user,
-        "rename_task_pet": rename_task_pet
+        "rename_task_pet": rename_task_pet,
+        "vision_task": vision_task
     }
 
 def collect_tool_feedback_node(state: AgentState) -> Dict[str, Any]:
@@ -338,6 +344,7 @@ def collect_tool_feedback_node(state: AgentState) -> Dict[str, Any]:
     if state.get("search_result"): tool_feedback.append(f"搜索反馈：\n{state['search_result']}")
     if state.get("launcher_result"): tool_feedback.append(f"应用启动反馈：\n{state['launcher_result']}")
     if state.get("rename_result"): tool_feedback.append(f"改名反馈：\n{state['rename_result']}")
+    if state.get("vision_result"): tool_feedback.append(f"视觉识图反馈：\n{state['vision_result']}")
     
     return {"tool_feedback_context": "\n".join(tool_feedback) if tool_feedback else ""}
 
@@ -414,4 +421,6 @@ def should_execute_tools(state: AgentState) -> str:
         return "execute_search_task"
     if state.get("launcher_task") and state.get("launcher_result") is None:
         return "execute_launcher_task"
+    if state.get("vision_task") and state.get("vision_result") is None:
+        return "execute_vision_task"
     return "collect_tool_feedback"

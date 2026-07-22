@@ -310,3 +310,106 @@ def execute_rename_task_node(state: AgentState) -> Dict[str, Any]:
     if not result_msgs:
         return {"rename_result": "未能解析到新称呼。"}
     return {"rename_result": "，".join(result_msgs), "rename_task_user": None, "rename_task_pet": None}
+
+def execute_vision_task_node(state: AgentState) -> Dict[str, Any]:
+    """工具节点：屏幕视觉识别"""
+    vision_task = state.get("vision_task")
+    if not vision_task:
+        return {"vision_result": None}
+
+    print("\n" + "="*20 + " [VISION NODE MONITOR] " + "="*20)
+    print(f"[MONITOR] 收到大模型发起的屏幕识图任务...")
+
+    try:
+        from PIL import ImageGrab
+        import base64
+        from io import BytesIO
+        import requests
+        import json
+
+        # 截取全屏
+        img = ImageGrab.grab()
+        # 压缩图像大小以适应 API
+        img.thumbnail((1024, 1024))
+        
+        buffered = BytesIO()
+        # 转换为 RGB (去掉 alpha 通道，以兼容 jpeg)
+        if img.mode != "RGB":
+            img = img.convert("RGB")
+        img.save(buffered, format="JPEG", quality=80)
+        img_b64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+        config_data = get_config()
+        vision_engine = config_data.get("vision_engine", "gemini")
+        
+        prompt = "这是当前电脑屏幕的截图。请仔细观察并简要描述屏幕上正在显示的内容、活跃的窗口，以及用户可能正在进行什么工作。不要超过150字。"
+
+        description = ""
+
+        if vision_engine == "gemini":
+            gemini_key = os.getenv("GEMINI_API_KEY")
+            if not gemini_key:
+                return {"vision_result": "未配置 GEMINI_API_KEY，无法使用默认的 Gemini 视觉引擎。"}
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+            payload = {
+                "contents": [{
+                    "parts": [
+                        {"text": prompt},
+                        {"inlineData": {"mimeType": "image/jpeg", "data": img_b64}}
+                    ]
+                }]
+            }
+            resp = requests.post(url, json=payload, timeout=20)
+            if resp.status_code == 200:
+                data = resp.json()
+                description = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+            else:
+                return {"vision_result": f"Gemini API 请求失败: HTTP {resp.status_code}"}
+        else:
+            # 自定义引擎处理 (兼容 OpenAI 格式的 Vision API)
+            custom_engines = config_data.get("custom_engines", [])
+            engine_conf = next((e for e in custom_engines if e["id"] == vision_engine), None)
+            if not engine_conf:
+                return {"vision_result": f"找不到所选的视觉引擎配置: {vision_engine}"}
+                
+            base_url = engine_conf["base_url"].rstrip("/")
+            api_key = engine_conf.get("api_key", "")
+            model_name = engine_conf["model_name"]
+            
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key}"
+            }
+            payload = {
+                "model": model_name,
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_b64}"}}
+                        ]
+                    }
+                ],
+                "max_tokens": 300
+            }
+            
+            # 使用 /chat/completions 兼容端点
+            endpoint = f"{base_url}/chat/completions"
+            resp = requests.post(endpoint, headers=headers, json=payload, timeout=20)
+            if resp.status_code == 200:
+                data = resp.json()
+                description = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+            else:
+                return {"vision_result": f"视觉 API 请求失败: HTTP {resp.status_code}, {resp.text}"}
+
+        if not description:
+            return {"vision_result": "未能从视觉模型获取到有效描述。"}
+
+        print(f"[MONITOR] 屏幕识别成功: {description[:100]}...")
+        return {"vision_result": f"屏幕画面分析结果：\n{description}"}
+
+    except Exception as e:
+        err_msg = f"执行屏幕截取或请求 API 时出错: {str(e)}"
+        print(f"[MONITOR] {err_msg}")
+        return {"vision_result": err_msg}
