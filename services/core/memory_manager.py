@@ -41,7 +41,7 @@ def get_memory_agent():
         else:
             if gemini_key:
                 embed_suffix = "gemini"
-                vector_dims = 1536
+                vector_dims = 384
             elif deepseek_key:
                 embed_suffix = "deepseek"
                 vector_dims = 384
@@ -103,11 +103,9 @@ def get_memory_agent():
                     }
                 }
                 mem0_config["embedder"] = {
-                    "provider": "openai",
+                    "provider": "huggingface",
                     "config": {
-                        "api_key": gemini_key,
-                        "model": "text-embedding-004",
-                        "openai_base_url": "https://generativelanguage.googleapis.com/v1beta/openai/"
+                        "model": "sentence-transformers/all-MiniLM-L6-v2"
                     }
                 }
             elif deepseek_key:
@@ -136,11 +134,22 @@ def get_memory_agent():
             # 检查并修复主集合
             try:
                 col_info = client.get_collection(collection_name)
-                existing_dims = col_info.config.params.vectors.size
-                if existing_dims != vector_dims:
+                vectors_config = col_info.config.params.vectors
+                existing_dims = None
+                
+                # Qdrant vectors config can be an object or a dict of objects
+                if hasattr(vectors_config, 'size'):
+                    existing_dims = vectors_config.size
+                elif isinstance(vectors_config, dict) and len(vectors_config) > 0:
+                    # Get the size of the first named vector
+                    first_val = list(vectors_config.values())[0]
+                    if hasattr(first_val, 'size'):
+                        existing_dims = first_val.size
+                
+                if existing_dims is None or existing_dims != vector_dims:
                     print(f"[QDRANT AUTO-HEAL] 检测到主集合 '{collection_name}' 维度冲突: 期望 {vector_dims} 维，实际 {existing_dims} 维。正在自动删除重建...")
                     client.delete_collection(collection_name)
-            except Exception:
+            except Exception as e:
                 pass
 
             # 检查并修复 entities 集合

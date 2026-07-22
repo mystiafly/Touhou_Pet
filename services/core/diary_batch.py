@@ -44,43 +44,17 @@ def generate_diary_for_date(date_str, chat_content):
         print(f"[DiaryBatch] 大模型生成日记失败: {e}")
         return "回想失败", f"发生了错误，无法回想当天的细节: {e}"
 
+# Import the updated generate_pet_diary that handles reaction appending
+from workers.distillation import generate_pet_diary
+
 def _process_missing_diaries():
-    """后台处理缺失日记的核心逻辑"""
+    """后台处理缺失日记的核心逻辑，改为纯文本对账"""
     if not os.path.exists(DAILY_HISTORY_DIR):
         return
         
-    databank = load_databank()
-    if not databank or "sheet_diary_index" not in databank or "sheet_diary_detail" not in databank:
-        print("[DiaryBatch] 未找到日记系统表，跳过补写。")
-        return
-        
-    index_sheet = databank["sheet_diary_index"]
-    detail_sheet = databank["sheet_diary_detail"]
-    
-    index_content = index_sheet.get("content", [])
-    if len(index_content) == 0:
-        index_content.append(["row_id", "日记编号", "日期", "一句话摘要"])
-        
-    detail_content = detail_sheet.get("content", [])
-    if len(detail_content) == 0:
-        detail_content.append(["row_id", "日记编号", "详细日记内容", "情感波折"])
-        
-    # 获取已有的所有日期集合
-    existing_dates = set()
-    date_col_idx = -1
-    if "日期" in index_content[0]:
-        date_col_idx = index_content[0].index("日期")
-        for row in index_content[1:]:
-            if len(row) > date_col_idx:
-                existing_dates.add(row[date_col_idx])
-                
-    if date_col_idx == -1:
-        print("[DiaryBatch] sheet_diary_index 缺少 '日期' 列，无法对账！")
-        return
-        
+    config = get_config()
+    char_id = config.get("character_id", "rumia")
     today_str = datetime.now().strftime("%Y-%m-%d")
-    
-    modified = False
     
     for filename in sorted(os.listdir(DAILY_HISTORY_DIR)):
         if filename.startswith("chat_log_") and filename.endswith(".txt"):
@@ -90,8 +64,11 @@ def _process_missing_diaries():
             if date_str >= today_str:
                 continue
                 
-            # 如果这天的日记已经写过，跳过
-            if date_str in existing_dates:
+            # 检查对应的日记文本是否存在
+            diary_filename = f"{char_id}_diary_{date_str}.txt"
+            diary_path = os.path.join(DAILY_HISTORY_DIR, diary_filename)
+            
+            if os.path.exists(diary_path):
                 continue
                 
             log_path = os.path.join(DAILY_HISTORY_DIR, filename)
@@ -101,41 +78,17 @@ def _process_missing_diaries():
             if not chat_content:
                 continue
                 
-            print(f"[DiaryBatch] 发现缺失日记，正在补写 {date_str} ...")
+            print(f"[DiaryBatch] 发现缺失日记，正在补写 {date_str} 并顺带进化词库...")
             
-            # 生成日记内容
-            summary, detail = generate_diary_for_date(date_str, chat_content)
+            # 使用带反应词生成的新版日记函数
+            new_diary_content = generate_pet_diary(date_str, chat_content)
             
-            # 计算新编号
-            max_num = 0
-            id_col_idx = index_content[0].index("日记编号") if "日记编号" in index_content[0] else 1
-            for row in index_content[1:]:
-                try:
-                    if len(row) > id_col_idx:
-                        num = int(str(row[id_col_idx]).replace('D', ''))
-                        if num > max_num: max_num = num
-                except:
-                    pass
-            new_id = f"D{max_num+1:03d}"
-            
-            # 插入新行
-            # index: ["row_id", "日记编号", "日期", "一句话摘要"]
-            new_row_id = str(len(index_content))
-            index_content.append([new_row_id, new_id, date_str, summary])
-            
-            # detail: ["row_id", "日记编号", "详细日记内容", "情感波折"]
-            new_detail_row_id = str(len(detail_content))
-            detail_content.append([new_detail_row_id, new_id, detail, summary])
-            
-            existing_dates.add(date_str)
-            modified = True
-            print(f"[DiaryBatch] {date_str} 日记补写完成，编号 {new_id}。")
-            
-    if modified:
-        databank["sheet_diary_index"]["content"] = index_content
-        databank["sheet_diary_detail"]["content"] = detail_content
-        save_databank_state(databank)
-        print("[DiaryBatch] 批处理完成，DataBank已保存。")
+            try:
+                with open(diary_path, 'w', encoding='utf-8') as df:
+                    df.write(new_diary_content)
+                print(f"[DiaryBatch] {date_str} 日记补写完成。")
+            except Exception as e:
+                print(f"[DiaryBatch] 保存日记失败: {e}")
 
 def check_and_generate_diaries_async():
     """启动一个异步后台线程进行对账，防止阻塞主程序"""

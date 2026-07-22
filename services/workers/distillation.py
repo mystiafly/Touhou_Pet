@@ -30,7 +30,12 @@ def generate_pet_diary(date_str, log_content):
             f"3. 格式：第一行必须是日期与天气/心情标签，第二行开始为日记正文，推荐分段书写以方便阅读。格式示例如下：\n"
             f"   『{date_str} | 心情：[你的心情] | 天气：[符合设定的场景环境]』\n"
             f"   今天和那家伙聊天了……（正文内容）\n"
-            f"4. 必须使用纯中文，严禁使用英文，不要包含任何系统标记。"
+            f"4. 必须使用纯中文，严禁使用英文，不要包含任何系统标记。\n"
+            f"5. 【极其重要】：在写完日记后，另起一行，必须严格以以下 JSON 格式输出一句你结合今天日记内容，为你设计的特定心情的简短“应付词”（用于用户点击你身体时的反馈对话）：\n"
+            f"   ```json\n"
+            f"   {{\"new_reaction\": {{\"emotion\": \"angry\", \"text\": \"别老戳我，小心我咬你！\"}}}}\n"
+            f"   ```\n"
+            f"   emotion 必须是以下五个之一：normal, angry, shy, crying, sleeping。不要输出任何其他说明文字。"
         )
         
         response = client.chat.completions.create(
@@ -39,7 +44,36 @@ def generate_pet_diary(date_str, log_content):
             temperature=0.7,
             max_tokens=5000
         )
-        return response.choices[0].message.content.strip()
+        
+        full_content = response.choices[0].message.content.strip()
+        
+        # 尝试提取并保存 new_reaction
+        diary_content = full_content
+        try:
+            import json, re
+            match = re.search(r'```json\s*(\{.*?\})\s*```', full_content, re.DOTALL)
+            if not match:
+                # 尝试没有 markdown 代码块的匹配
+                match = re.search(r'\{.*"new_reaction".*\}', full_content, re.DOTALL)
+                
+            if match:
+                json_str = match.group(1) if '```json' in match.group(0) else match.group(0)
+                data = json.loads(json_str)
+                if "new_reaction" in data:
+                    new_reaction = data["new_reaction"]
+                    emotion = new_reaction.get("emotion")
+                    text = new_reaction.get("text")
+                    if emotion and text:
+                        from core.reaction_manager import append_reaction
+                        append_reaction(char_id, emotion, text)
+                        print(f"[DIARY GENERATION] 提取到新的应付词并保存: [{emotion}] {text}")
+                
+                # 从日记正文中移除这个 JSON 块
+                diary_content = full_content.replace(match.group(0), "").strip()
+        except Exception as parse_ex:
+            print(f"[DIARY GENERATION] 提取 new_reaction 失败: {parse_ex}")
+            
+        return diary_content
     except Exception as e:
         print(f"[DIARY GENERATION] Failed to generate diary: {e}")
         return f"『{date_str} | 心情：委屈 | 天气：阴天』\n今天脑子昏昏沉沉的，什么都没写下来……"
