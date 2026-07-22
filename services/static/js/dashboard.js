@@ -1735,8 +1735,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             try {
                                 const cfgRes = await fetch('/api/settings/config');
                                 const cfgData = await cfgRes.json();
-                                if (cfgData.status === 'success') {
-                                    const appLauncher = cfgData.config.app_launcher || {};
+                                if (cfgData.success) {
+                                    const appLauncher = cfgData.app_launcher || {};
                                     document.getElementById('edit-app-launcher-json').value = JSON.stringify(appLauncher, null, 2);
                                     document.getElementById('app-launcher-modal').classList.remove('hidden');
                                 }
