@@ -327,8 +327,8 @@ def execute_vision_task_node(state: AgentState) -> Dict[str, Any]:
         import requests
         import json
 
-        # 截取全屏
-        img = ImageGrab.grab()
+        # 截取全屏 (支持多显示器)
+        img = ImageGrab.grab(all_screens=True)
         # 压缩图像大小以适应 API
         img.thumbnail((1024, 1024))
         
@@ -342,7 +342,8 @@ def execute_vision_task_node(state: AgentState) -> Dict[str, Any]:
         config_data = get_config()
         vision_engine = config_data.get("vision_engine", "gemini")
         
-        prompt = "这是当前电脑屏幕的截图。请仔细观察并简要描述屏幕上正在显示的内容、活跃的窗口，以及用户可能正在进行什么工作。不要超过150字。"
+        import time
+        prompt = f"这是当前电脑屏幕的截图（当前时间: {time.strftime('%Y-%m-%d %H:%M:%S')}）。请仔细观察并简要描述屏幕上正在显示的内容、活跃的窗口，以及用户可能正在进行什么工作。如果多次看到类似的画面，请尽可能捕捉新的细节或变化。不要超过150字。"
 
         description = ""
 
@@ -357,7 +358,10 @@ def execute_vision_task_node(state: AgentState) -> Dict[str, Any]:
                         {"text": prompt},
                         {"inlineData": {"mimeType": "image/jpeg", "data": img_b64}}
                     ]
-                }]
+                }],
+                "generationConfig": {
+                    "temperature": 0.7
+                }
             }
             resp = requests.post(url, json=payload, timeout=20)
             if resp.status_code == 200:
@@ -395,7 +399,8 @@ def execute_vision_task_node(state: AgentState) -> Dict[str, Any]:
                         ]
                     }
                 ],
-                "max_tokens": 300
+                "max_tokens": 300,
+                "temperature": 0.7
             }
             
             # 使用 /chat/completions 兼容端点
