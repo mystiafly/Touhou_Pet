@@ -4,7 +4,7 @@ import sys
 import subprocess
 import threading
 from typing import Dict, Any
-from core.config_manager import get_config, get_active_character_id
+from core.config_manager import get_config, get_active_character_id, get_custom_engines
 from core.profile_manager import update_user_profile_key
 from graph.state import AgentState
 
@@ -367,8 +367,12 @@ def execute_vision_task_node(state: AgentState) -> Dict[str, Any]:
                 return {"vision_result": f"Gemini API 请求失败: HTTP {resp.status_code}"}
         else:
             # 自定义引擎处理 (兼容 OpenAI 格式的 Vision API)
-            custom_engines = config_data.get("custom_engines", [])
-            engine_conf = next((e for e in custom_engines if e["id"] == vision_engine), None)
+            if vision_engine.startswith("custom_"):
+                custom_engines = get_custom_engines()
+                engine_conf = next((e for e in custom_engines if e["id"] == vision_engine), None)
+            else:
+                engine_conf = None
+
             if not engine_conf:
                 return {"vision_result": f"找不到所选的视觉引擎配置: {vision_engine}"}
                 
