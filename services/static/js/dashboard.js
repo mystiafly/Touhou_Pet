@@ -1748,19 +1748,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         card.style.cursor = 'pointer';
                         card.title = '点击配置视觉识别引擎';
                         card.addEventListener('click', () => {
-                            const settingsBtn = document.querySelector('.nav-item[data-target="engine-view"]');
-                            if (settingsBtn) {
-                                settingsBtn.click();
-                                setTimeout(() => {
-                                    const select = document.getElementById('vision-engine-select');
-                                    if (select) {
-                                        select.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                        const originalShadow = select.style.boxShadow;
-                                        select.style.boxShadow = '0 0 15px var(--accent-color)';
-                                        setTimeout(() => select.style.boxShadow = originalShadow, 2000);
-                                    }
-                                }, 300);
-                            }
+                            document.getElementById('vision-tool-modal').classList.remove('hidden');
                         });
                     }
 
@@ -1805,6 +1793,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         } catch (e) {
                             alert('JSON 格式不正确或保存失败：' + e);
                         }
+                    });
+                }
+                
+                // 绑定 Vision Tool Modal 关闭事件
+                const btnCloseVisionTool = document.getElementById('close-vision-tool-modal-btn');
+                if (btnCloseVisionTool && !btnCloseVisionTool.dataset.bound) {
+                    btnCloseVisionTool.dataset.bound = 'true';
+                    btnCloseVisionTool.addEventListener('click', () => {
+                        document.getElementById('vision-tool-modal').classList.add('hidden');
                     });
                 }
             } else {
