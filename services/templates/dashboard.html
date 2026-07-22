@@ -138,6 +138,16 @@
                             <option value="deepseek-chat">DeepSeek V3 (标准版)</option>
                         </select>
                     </div>
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="vision-engine-select">视觉识别引擎 (Vision Engine): <span class="help-text" style="display:inline; margin-left:10px;">用于工具链中的屏幕识图（必须支持多模态）</span></label>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="vision-engine-select" class="modern-select" style="flex: 1;">
+                                <option value="gemini">Gemini (内置多模态)</option>
+                                <!-- Custom engines will be appended here via JS -->
+                            </select>
+                            <button id="btn-test-vision" class="action-btn outline" style="white-space: nowrap;"><i class="fas fa-eye"></i> 测试识图</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="settings-card">
@@ -638,7 +648,27 @@
     </div>
 </div>
 
-<script src="/static/js/dashboard.js?v=1.7.0"></script>
+<script src="/static/js/dashboard.js?v=1.7.1"></script>
+
+<!-- 应用启动配置 Modal -->
+<div id="app-launcher-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><i class="fas fa-rocket"></i> 应用启动白名单配置</h2>
+            <button id="close-app-launcher-modal-btn" class="close-modal-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="edit-app-launcher-json" style="font-weight: 500; font-size: 14px;">编辑 JSON 配置</label>
+                <textarea id="edit-app-launcher-json" class="modern-input" rows="8" placeholder='{"记事本": "C:\\\\Windows\\\\System32\\\\notepad.exe"}' style="margin-top: 8px; width: 100%; resize: vertical; font-family: monospace;"></textarea>
+                <p class="help-text">请确保格式为合法的 JSON 对象，键名为唤醒应用的别名，键值为可执行文件的绝对路径。</p>
+            </div>
+            <button id="save-app-launcher-btn" class="action-btn" style="margin-top: 20px; width: 100%; justify-content: center;">
+                <i class="fas fa-save"></i> 保存并生效
+            </button>
+        </div>
+    </div>
+</div>
 
 <!-- 预设编辑 Modal -->
 <div id="preset-modal" class="modal-overlay hidden">

@@ -10,8 +10,20 @@ window.__petIPC = {
     sendWindowDrag: (deltaX, deltaY) => {
         ipcRenderer.send('window-drag', { deltaX, deltaY });
     },
+    sendWindowDragEnd: () => {
+        ipcRenderer.send('window-drag-end');
+    },
     onGlobalMouseMove: (callback) => {
         ipcRenderer.on('global-mouse-move', (event, point) => callback(point));
+    },
+    onPetHideEdge: (callback) => {
+        ipcRenderer.on('pet-hide-edge', (event, side) => callback(side));
+    },
+    onPetRestore: (callback) => {
+        ipcRenderer.on('pet-restore', () => callback());
+    },
+    sendPetRestore: () => {
+        ipcRenderer.send('pet-click-restore');
     },
     sendExitApp: () => {
         ipcRenderer.send('exit-app');

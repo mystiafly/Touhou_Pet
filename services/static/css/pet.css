@@ -1083,3 +1083,17 @@ body, html {
     border-color: rgba(255, 50, 50, 0.5);
     box-shadow: 0 0 8px rgba(255, 50, 50, 0.4);
 }
+
+/* =========================================================
+   Peeking Mode
+   ========================================================= */
+body.peeking-mode .input-bar,
+body.peeking-mode .bubble,
+body.peeking-mode .fav-container,
+body.peeking-mode .music-player-bar,
+body.peeking-mode #settings-modal,
+body.peeking-mode #presets-popup,
+body.peeking-mode .log-container {
+    display: none !important;
+}
+

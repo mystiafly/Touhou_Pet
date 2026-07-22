@@ -42,10 +42,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.logsLoaded = true;
             }
             if (targetId === 'databank-view') {
-                loadDataBank();
+                if(window.loadDataBank) window.loadDataBank();
             }
             if (targetId === 'tools-view' && !window.toolsLoaded) {
-                loadToolsList();
+                if(window.loadToolsList) window.loadToolsList();
                 window.toolsLoaded = true;
             }
         });
@@ -69,6 +69,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (configData.success) {
                 apiSelect.value = configData.api_provider;
+                
+                const visionEngineSelect = document.getElementById('vision-engine-select');
+                if (visionEngineSelect && configData.vision_engine) {
+                    visionEngineSelect.value = configData.vision_engine;
+                }
                 
                 const geminiOption = apiSelect.querySelector('option[value="gemini"]');
                 const dsFlashOption = apiSelect.querySelector('option[value="deepseek-v4-flash"]');
@@ -200,6 +205,47 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             } catch (e) {
                 console.error(e);
+            }
+        });
+    }
+
+    const visionEngineSelect = document.getElementById('vision-engine-select');
+    if (visionEngineSelect) {
+        visionEngineSelect.addEventListener('change', async () => {
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ vision_engine: visionEngineSelect.value })
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        });
+    }
+
+    const btnTestVision = document.getElementById('btn-test-vision');
+    if (btnTestVision && visionEngineSelect) {
+        btnTestVision.addEventListener('click', async () => {
+            btnTestVision.disabled = true;
+            btnTestVision.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 测试中...';
+            try {
+                const response = await fetch('/api/settings/test_vision', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ engine: visionEngineSelect.value })
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    alert('识图成功！返回内容：\n' + data.result);
+                } else {
+                    alert('识图失败：\n' + data.message);
+                }
+            } catch (e) {
+                alert('识图请求异常：\n' + e.toString());
+            } finally {
+                btnTestVision.disabled = false;
+                btnTestVision.innerHTML = '<i class="fas fa-eye"></i> 测试识图';
             }
         });
     }
@@ -1112,7 +1158,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // DATA MODE (数据编辑模式)
     // ==========================================
-    function loadDataBank() {
+    window.loadDataBank = function() {
         fetch('/api/databank')
             .then(res => res.json())
             .then(res => {
@@ -1132,7 +1178,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const refreshBtn = document.getElementById('refresh-databank-btn');
     if(refreshBtn) {
         refreshBtn.addEventListener('click', () => {
-            loadDataBank();
+            if(window.loadDataBank) window.loadDataBank();
             if (templateModeContainer && templateModeContainer.style.display !== 'none') {
                 loadTemplateRaw();
             }
@@ -1630,7 +1676,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ========== 工具情况加载 ==========
-    async function loadToolsList() {
+    window.loadToolsList = async function() {
         const container = document.getElementById('tools-container');
         if (!container) return;
 
@@ -1681,8 +1727,68 @@ document.addEventListener('DOMContentLoaded', () => {
                             ${tool.description}
                         </p>
                     `;
+                    
+                    if (tool.command === '[LAUNCH_APP]') {
+                        card.style.cursor = 'pointer';
+                        card.title = '点击配置应用启动白名单';
+                        card.addEventListener('click', async () => {
+                            try {
+                                const cfgRes = await fetch('/api/settings/config');
+                                const cfgData = await cfgRes.json();
+                                if (cfgData.status === 'success') {
+                                    const appLauncher = cfgData.config.app_launcher || {};
+                                    document.getElementById('edit-app-launcher-json').value = JSON.stringify(appLauncher, null, 2);
+                                    document.getElementById('app-launcher-modal').classList.remove('hidden');
+                                }
+                            } catch (e) {
+                                alert('获取配置失败：' + e);
+                            }
+                        });
+                    }
+
                     container.appendChild(card);
                 });
+
+                // 绑定 App Launcher Modal 事件
+                const btnCloseAppLauncher = document.getElementById('close-app-launcher-modal-btn');
+                const btnSaveAppLauncher = document.getElementById('save-app-launcher-btn');
+                
+                if (btnCloseAppLauncher && !btnCloseAppLauncher.dataset.bound) {
+                    btnCloseAppLauncher.dataset.bound = 'true';
+                    btnCloseAppLauncher.addEventListener('click', () => {
+                        document.getElementById('app-launcher-modal').classList.add('hidden');
+                    });
+                }
+                
+                if (btnSaveAppLauncher && !btnSaveAppLauncher.dataset.bound) {
+                    btnSaveAppLauncher.dataset.bound = 'true';
+                    btnSaveAppLauncher.addEventListener('click', async () => {
+                        try {
+                            const val = document.getElementById('edit-app-launcher-json').value.trim();
+                            const parsed = val ? JSON.parse(val) : {};
+                            
+                            const btn = btnSaveAppLauncher;
+                            const originalHTML = btn.innerHTML;
+                            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+                            
+                            const res = await fetch('/api/settings/config', {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify({ app_launcher: parsed })
+                            });
+                            const data = await res.json();
+                            if (data.status === 'success') {
+                                alert('应用启动白名单已保存！');
+                                document.getElementById('app-launcher-modal').classList.add('hidden');
+                            } else {
+                                alert('保存失败：' + data.message);
+                            }
+                            btn.innerHTML = originalHTML;
+                        } catch (e) {
+                            alert('JSON 格式不正确或保存失败：' + e);
+                        }
+                    });
+                }
             } else {
                 container.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #ff6b8b;">获取工具列表失败。</div>';
             }
@@ -1717,7 +1823,8 @@ function renderCustomEnginesDropdown() {
     const selects = [
         document.getElementById('api-provider-select'),
         document.getElementById('pre-api-provider-select'),
-        document.getElementById('post-api-provider-select')
+        document.getElementById('post-api-provider-select'),
+        document.getElementById('vision-engine-select')
     ];
     
     selects.forEach(select => {
