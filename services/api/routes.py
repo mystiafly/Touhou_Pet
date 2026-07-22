@@ -148,6 +148,8 @@ def chat(payload: dict = Body(...)):
             "rename_task_user": None,
             "rename_task_pet": None,
             "rename_result": None,
+            "vision_task": None,
+            "vision_result": None,
             "request_type": "chat"
         }
 
@@ -614,6 +616,8 @@ def pet_speak(payload: dict = Body(...)):
             "rename_task_user": None,
             "rename_task_pet": None,
             "rename_result": None,
+            "vision_task": None,
+            "vision_result": None,
             "request_type": request_type
         }
 
