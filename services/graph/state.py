@@ -26,4 +26,6 @@ class AgentState(TypedDict):
     rename_task_user: Optional[str]
     rename_task_pet: Optional[str]
     rename_result: Optional[str]
+    vision_task: Optional[str]
+    vision_result: Optional[str]
     request_type: Optional[str]
