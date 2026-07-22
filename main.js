@@ -1,6 +1,16 @@
 const { app, BrowserWindow, screen, ipcMain, Tray, Menu } = require('electron');
 const path = require('path');
+const fs = require('fs');
 
+// 关闭不必要的安全警告输出，保持控制台整洁
+process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
+
+function logDebug(msg) {
+    fs.appendFileSync(path.join(__dirname, 'edge_debug.log'), `[${new Date().toISOString()}] ${msg}\n`);
+}
+
+// 保持对 window 对象的全局引用
+let mainWindow;
 let tray = null;
 
 function createTray(win) {
@@ -42,8 +52,83 @@ ipcMain.on('set-ignore-mouse-events', (event, ignore, options) => {
 ipcMain.on('window-drag', (event, { deltaX, deltaY }) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) {
+        if (win.petIsHidden) {
+            win.petIsHidden = false; // 用户主动拖动时，解除隐藏状态
+            win.webContents.send('pet-restore');
+        }
         const [x, y] = win.getPosition();
         win.setPosition(Math.round(x + deltaX), Math.round(y + deltaY));
+    }
+});
+
+
+
+// 监听由点击触发的恢复事件（点出来）
+ipcMain.on('pet-click-restore', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win) return;
+    if (win.petIsHidden) {
+        win.petIsHidden = false;
+        win.setPosition(win.petRestoreX, win.petRestoreY);
+        win.webContents.send('pet-restore');
+    }
+});
+
+ipcMain.on('window-drag-end', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win) return;
+    
+    const bounds = win.getBounds();
+    const workArea = screen.getDisplayMatching(bounds).workArea;
+    const snapDistance = -150; // 距离边缘多少像素触发吸附（负数表示需要把窗口拖出屏幕该像素值，实现“压入身子”再触发）
+    const exposedPixels = 140; // 吸附后露出的宽度（保证“暗中观察”图能看清）
+    
+    let newX = bounds.x;
+    let newY = bounds.y;
+    let hidden = false;
+    let side = '';
+    
+    // 如果拖到了最上方（因为窗口高600且宠物在底部，增加容错，只有大半个窗口都出去了才算拖到顶部）
+    if (bounds.y <= workArea.y - 450) {
+        const center = bounds.x + bounds.width / 2;
+        const workAreaCenter = workArea.x + workArea.width / 2;
+        if (center < workAreaCenter) {
+            // 滑向左边
+            newX = workArea.x - bounds.width + exposedPixels;
+            side = 'left';
+        } else {
+            // 滑向右边
+            newX = workArea.x + workArea.width - exposedPixels;
+            side = 'right';
+        }
+        win.petRestoreX = (side === 'left') ? workArea.x : (workArea.x + workArea.width - bounds.width);
+        win.petRestoreY = bounds.y; // 保持原有高度
+        hidden = true;
+    } 
+    // 正常的左右吸附
+    else if (bounds.x <= workArea.x + snapDistance) {
+        newX = workArea.x - bounds.width + exposedPixels;
+        win.petRestoreX = workArea.x;
+        win.petRestoreY = bounds.y;
+        hidden = true;
+        side = 'left';
+    } else if (bounds.x + bounds.width >= workArea.x + workArea.width - snapDistance) {
+        newX = workArea.x + workArea.width - exposedPixels;
+        win.petRestoreX = workArea.x + workArea.width - bounds.width;
+        win.petRestoreY = bounds.y;
+        hidden = true;
+        side = 'right';
+    }
+    
+    if (hidden) {
+        win.petIsHidden = true;
+        win.petMouseLeft = false; // 必须等鼠标先离开，才能触发悬浮弹回
+        win.petHideSide = side; // 记录隐藏在哪一侧
+        win.setPosition(newX, newY);
+        // 通知前端切换探头素材
+        win.webContents.send('pet-hide-edge', side);
+        
+        logDebug(`HIDDEN on ${side}. newX=${newX}, bounds=${JSON.stringify(win.getBounds())}, cursor=${JSON.stringify(screen.getCursorScreenPoint())}`);
     }
 });
 
@@ -78,6 +163,10 @@ ipcMain.on('minimize-to-tray', (event) => {
 let settingsWin = null;
 ipcMain.on('open-settings-window', (event) => {
     if (settingsWin) {
+        if (settingsWin.isMinimized()) {
+            settingsWin.restore();
+        }
+        settingsWin.show(); // 确保窗口不仅focus，还能正确置顶显示
         settingsWin.focus();
         return;
     }
@@ -144,6 +233,8 @@ function createWindow() {
         if (win && !win.isDestroyed()) {
             const point = screen.getCursorScreenPoint();
             win.webContents.send('global-mouse-move', point);
+            
+            // 悬浮弹回逻辑已根据用户要求移除，现在只能通过点击或拖拽出来
         }
     }, 50);
 

@@ -7,11 +7,11 @@ class DesktopPet {
         this.favScore = document.getElementById('fav-score');
         this.favContainer = document.getElementById('fav-container');
 
-
-
-
-
         this.images = {};
+        this.currentEmotion = 'normal';
+        this.reactionLines = null;
+        this.isPeeking = false; // [状态追踪] 边缘探头锁定
+        
         
         this.currentChatLog = "";
         this.currentDiary = "";
@@ -43,6 +43,7 @@ class DesktopPet {
         try {
             const response = await fetch('/api/character_info');
             const data = await response.json();
+            this.characterId = data.character_id;
             const prefix = data.image_path;
             
             if (data.theme_color) {
@@ -59,7 +60,7 @@ class DesktopPet {
                 'crying': [prefix + 'crying.png', prefix + 'crying_1.png', prefix + 'crying_2.png'],
                 'sleeping': [prefix + 'sleeping.png', prefix + 'sleeping_1.png', prefix + 'sleeping_2.png']
             };
-            this.img.src = this.images['normal'][0];
+            this.img.src = prefix + 'normal.png';
             this.enableGreeting = data.enable_greeting !== false;
             this.enableAutoSpeak = data.enable_auto_speak !== false;
             this.autoSpeakMultiplier = data.auto_speak_multiplier || 1.0;
@@ -87,6 +88,17 @@ class DesktopPet {
                         e.target.value = data.character_id; // revert
                     }
                 });
+            }
+            
+            // Load reaction lines
+            try {
+                const reactionRes = await fetch('/api/pet_reactions');
+                const reactionData = await reactionRes.json();
+                if (reactionData.success) {
+                    this.reactionLines = reactionData.reactions;
+                }
+            } catch(e) {
+                console.error("Failed to load reaction lines", e);
             }
         } catch (e) {
             console.error("Failed to load character info", e);
@@ -205,6 +217,7 @@ class DesktopPet {
 
             let isDragging = false;
             let startX = 0, startY = 0;
+            let mousedownX = 0, mousedownY = 0;
             let isIgnoring = false; // [状态追踪] 避免重复且无意义的高频 IPC 通信导致界面卡死
 
             // mousedown handler
@@ -216,6 +229,8 @@ class DesktopPet {
                     isDragging = true;
                     startX = e.screenX;
                     startY = e.screenY;
+                    mousedownX = e.screenX;
+                    mousedownY = e.screenY;
                     petIPC.sendSetIgnoreMouseEvents(false);
                     isIgnoring = false; // 同步状态
                     this.img.style.cursor = 'grabbing';
@@ -308,12 +323,60 @@ class DesktopPet {
             }
 
             // 全局监听 mouseup 停止拖动
-            window.addEventListener('mouseup', () => {
+            window.addEventListener('mouseup', (e) => {
                 if (isDragging) {
                     isDragging = false;
                     this.img.style.cursor = 'grab';
+                    
+                    if (typeof petIPC.sendWindowDragEnd === 'function') {
+                        petIPC.sendWindowDragEnd();
+                    }
+                    
+                    let moveDist = Math.abs(e.screenX - mousedownX) + Math.abs(e.screenY - mousedownY);
+                    if (moveDist < 5) { 
+                        this.handlePetClick();
+                    }
                 }
             });
+            
+            // 监听探头事件 (V2 边缘吸附)
+            if (typeof petIPC !== 'undefined') {
+                if (petIPC.onPetHideEdge) {
+                    petIPC.onPetHideEdge((side) => {
+                        this.isPeeking = true;
+                        const peekKey = side === 'left' ? 'peeking_left' : 'peeking_right';
+                        this.img.src = `/static/images/${this.characterId}/${peekKey}.png`;
+                        
+                        document.body.classList.add('peeking-mode');
+                        const petContainer = document.querySelector('.pet-container');
+                        if (petContainer) {
+                            petContainer.style.alignItems = side === 'left' ? 'flex-end' : 'flex-start';
+                            // 往屏幕内偏移，让她更露出来一点（原本弄反了，导致藏得更深）
+                            this.img.style.transform = side === 'left' ? 'translateX(50px)' : 'translateX(-50px)';
+                        }
+                    });
+                }
+                if (petIPC.onPetRestore) {
+                    petIPC.onPetRestore(() => {
+                        if (this.isPeeking) {
+                            this.isPeeking = false;
+                            
+                            document.body.classList.remove('peeking-mode');
+                            const petContainer = document.querySelector('.pet-container');
+                            if (petContainer) {
+                                petContainer.style.alignItems = '';
+                            }
+                            this.img.style.transform = ''; // 恢复偏移
+
+                            // 强制解除锁定并恢复
+                            const list = this.images[this.currentEmotion] || this.images['normal'];
+                            if (list && list.length > 0) {
+                                this.img.src = list[Math.floor(Math.random() * list.length)];
+                            }
+                        }
+                    });
+                }
+            }
         }
 
         if (this.enableGreeting) {
@@ -532,12 +595,15 @@ class DesktopPet {
             }
         }
     }
-    // [淇敼] 鍒囨崲琛ㄦ儏鐨勬牳蹇冨嚱鏁帮紙鍦?寮犲樊鍒嗕腑闅忔満閫夋嫨涓€涓級
+    // [修改] 切换表情的核心函数（在同种差分中随机选择一个）
     setEmotion(emotion) {
+        this.currentEmotion = emotion;
+        if (this.isPeeking) return; // 如果正在边缘暗中观察，锁定换图逻辑
+        
         const list = this.images[emotion] || this.images['normal'];
         const targetSrc = list[Math.floor(Math.random() * list.length)];
 
-        // 濡傛灉褰撳墠宸茬粡鏄繖寮犲浘锛屽氨涓嶆搷浣滀簡锛岄伩鍏嶉棯鐑?
+        // 如果当前已经是这张图，就不操作了，避免闪烁
         if (this.img.src.includes(targetSrc)) return;
 
         console.log(`切换心情: ${emotion} -> 随机差分: ${targetSrc}`);
@@ -739,6 +805,36 @@ class DesktopPet {
         } catch (e) {
             console.error("打招呼失败:", e);
         }
+    }
+
+    // [新增] 处理本地快速点击互动
+    handlePetClick() {
+        if (this.isPeeking) {
+            this.isPeeking = false;
+            if (typeof petIPC !== 'undefined' && typeof petIPC.sendPetRestore === 'function') {
+                petIPC.sendPetRestore();
+            }
+        }
+        if (!this.reactionLines) return;
+        if (this.isSleeping) {
+            this.wakeUp(false); // 强制唤醒
+        }
+        
+        let emotion = this.currentEmotion || 'normal';
+        let lines = this.reactionLines[emotion] || this.reactionLines['normal'] || ["哼！"];
+        let randomLine = lines[Math.floor(Math.random() * lines.length)];
+        
+        // 极速弹出气泡（1.5秒）
+        this.showBubble(randomLine, 1500);
+        // 随机切换差分动作
+        this.setEmotion(emotion);
+        
+        // 后台静默注入状态机记忆流，不唤醒大模型
+        fetch('/api/action_sync', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ action: randomLine })
+        }).catch(e => console.error("静默同步失败", e));
     }
 
     async triggerPetSpeak() {
