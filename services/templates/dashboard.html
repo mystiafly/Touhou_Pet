@@ -138,16 +138,7 @@
                             <option value="deepseek-chat">DeepSeek V3 (标准版)</option>
                         </select>
                     </div>
-                    <div class="form-group" style="margin-top: 15px;">
-                        <label for="vision-engine-select">视觉识别引擎 (Vision Engine): <span class="help-text" style="display:inline; margin-left:10px;">用于工具链中的屏幕识图（必须支持多模态）</span></label>
-                        <div style="display: flex; gap: 10px;">
-                            <select id="vision-engine-select" class="modern-select" style="flex: 1;">
-                                <option value="gemini">Gemini (内置多模态)</option>
-                                <!-- Custom engines will be appended here via JS -->
-                            </select>
-                            <button id="btn-test-vision" class="action-btn outline" style="white-space: nowrap;"><i class="fas fa-eye"></i> 测试识图</button>
-                        </div>
-                    </div>
+
                 </div>
 
                 <div class="settings-card">
@@ -649,6 +640,36 @@
 </div>
 
 <script src="/static/js/dashboard.js?v=1.7.1"></script>
+
+<!-- 视觉识图配置 Modal -->
+<div id="vision-tool-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><i class="fas fa-eye"></i> 视觉识图大模型配置</h2>
+            <button id="close-vision-tool-modal-btn" class="close-modal-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <div style="background: rgba(40, 42, 54, 0.5); padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 3px solid #bd93f9;">
+                <h4 style="margin-top:0; color:#bd93f9;"><i class="fas fa-info-circle"></i> 为什么需要独立配置？</h4>
+                <p style="margin:8px 0 0 0; font-size:13px; color:#c0c0c0; line-height:1.5;">
+                    视觉识图是一项独立的工具技能。当桌宠决定看屏幕时，它会触发此工具。
+                    系统将截取屏幕并发送给下方指定的<strong>识图专用大模型</strong>，提取文本和内容后，
+                    再将纯文本结果返回给<strong>主对话大模型</strong>进行最终回复。这让你可以在文字对话和识图任务上使用不同的大模型！
+                </p>
+            </div>
+            <div class="form-group">
+                <label for="vision-engine-select">选择视觉识别引擎 (必须支持多模态):</label>
+                <div style="display: flex; gap: 10px; margin-top: 8px;">
+                    <select id="vision-engine-select" class="modern-select" style="flex: 1;">
+                        <option value="gemini">Gemini (内置多模态)</option>
+                        <!-- Custom engines will be appended here via JS -->
+                    </select>
+                    <button id="btn-test-vision" class="action-btn outline" style="white-space: nowrap;"><i class="fas fa-plug"></i> 测试识图</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- 应用启动配置 Modal -->
 <div id="app-launcher-modal" class="modal-overlay hidden">
