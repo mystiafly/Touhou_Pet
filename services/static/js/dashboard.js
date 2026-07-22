@@ -1748,7 +1748,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         card.style.cursor = 'pointer';
                         card.title = '点击配置视觉识别引擎';
                         card.addEventListener('click', () => {
-                            const settingsBtn = document.querySelector('.nav-btn[data-view="settings-view"]');
+                            const settingsBtn = document.querySelector('.nav-item[data-target="basic-settings-view"]');
                             if (settingsBtn) {
                                 settingsBtn.click();
                                 setTimeout(() => {
