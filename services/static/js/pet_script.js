@@ -30,6 +30,69 @@ window.alert = function(msg) {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 };
+
+
+// --- Global Async Confirm Override ---
+window.asyncConfirm = function(message) {
+    return new Promise(resolve => {
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100vw';
+        overlay.style.height = '100vh';
+        overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        overlay.style.zIndex = '99999';
+        overlay.style.display = 'flex';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+        overlay.style.backdropFilter = 'blur(4px)';
+
+        const box = document.createElement('div');
+        box.style.backgroundColor = 'var(--bg-secondary, #2a2a35)';
+        box.style.padding = '30px';
+        box.style.borderRadius = '12px';
+        box.style.minWidth = '300px';
+        box.style.maxWidth = '400px';
+        box.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+        box.style.border = '1px solid rgba(255,255,255,0.1)';
+        box.style.textAlign = 'center';
+        box.style.fontFamily = 'system-ui, sans-serif';
+
+        const msgEl = document.createElement('p');
+        msgEl.style.color = '#fff';
+        msgEl.style.fontSize = '16px';
+        msgEl.style.marginBottom = '25px';
+        msgEl.style.lineHeight = '1.5';
+        msgEl.style.whiteSpace = 'pre-wrap';
+        msgEl.textContent = message;
+
+        const btnContainer = document.createElement('div');
+        btnContainer.style.display = 'flex';
+        btnContainer.style.justifyContent = 'center';
+        btnContainer.style.gap = '15px';
+
+        const btnNo = document.createElement('button');
+        btnNo.textContent = '取消';
+        btnNo.className = 'action-btn';
+        btnNo.style.padding = '8px 20px';
+
+        const btnYes = document.createElement('button');
+        btnYes.textContent = '确认';
+        btnYes.className = 'action-btn danger';
+        btnYes.style.padding = '8px 20px';
+
+        btnYes.onclick = () => { overlay.remove(); resolve(true); };
+        btnNo.onclick = () => { overlay.remove(); resolve(false); };
+
+        btnContainer.appendChild(btnNo);
+        btnContainer.appendChild(btnYes);
+        box.appendChild(msgEl);
+        box.appendChild(btnContainer);
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+    });
+};
 // -----------------------------------------------------------
 
 class DesktopPet {
@@ -105,7 +168,7 @@ class DesktopPet {
             if (charSelect) {
                 charSelect.value = data.character_id;
                 charSelect.addEventListener('change', async (e) => {
-                    const confirmSwitch = confirm(`确定要切换灵魂为 ${e.target.options[e.target.selectedIndex].text} 吗？\n这将导致程序退出，您需要手动重新打开！`);
+                    const confirmSwitch = await window.asyncConfirm(`确定要切换灵魂为 ${e.target.options[e.target.selectedIndex].text} 吗？\n这将导致程序退出，您需要手动重新打开！`);
                     if (confirmSwitch) {
                         await fetch('/api/switch_character', {
                             method: 'POST',
@@ -533,7 +596,7 @@ class DesktopPet {
         const val = this.logDateSelect.value;
         if (!val) return;
 
-        if (!confirm(`确定要让当前角色重新读一遍 ${val} 的对话并重写这天的日记吗？\n(这会消耗API token并需要几秒钟)`)) return;
+        if (!await window.asyncConfirm(`确定要让当前角色重新读一遍 ${val} 的对话并重写这天的日记吗？\n(这会消耗API token并需要几秒钟)`)) return;
 
         this.rewriteDiaryBtn.disabled = true;
         const originalText = this.rewriteDiaryBtn.innerHTML;
@@ -602,7 +665,7 @@ class DesktopPet {
 
 
     async exitGame() {
-        if (!confirm(`要让${this.charName}去睡觉吗？`)) return;
+        if (!await window.asyncConfirm(`要让${this.charName}去睡觉吗？`)) return;
 
         this.showBubble("那...晚安啦...", 2000);
         this.setEmotion('normal'); 

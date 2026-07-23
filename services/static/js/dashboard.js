@@ -30,6 +30,69 @@ window.alert = function(msg) {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 };
+
+
+// --- Global Async Confirm Override ---
+window.asyncConfirm = function(message) {
+    return new Promise(resolve => {
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100vw';
+        overlay.style.height = '100vh';
+        overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        overlay.style.zIndex = '99999';
+        overlay.style.display = 'flex';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+        overlay.style.backdropFilter = 'blur(4px)';
+
+        const box = document.createElement('div');
+        box.style.backgroundColor = 'var(--bg-secondary, #2a2a35)';
+        box.style.padding = '30px';
+        box.style.borderRadius = '12px';
+        box.style.minWidth = '300px';
+        box.style.maxWidth = '400px';
+        box.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+        box.style.border = '1px solid rgba(255,255,255,0.1)';
+        box.style.textAlign = 'center';
+        box.style.fontFamily = 'system-ui, sans-serif';
+
+        const msgEl = document.createElement('p');
+        msgEl.style.color = '#fff';
+        msgEl.style.fontSize = '16px';
+        msgEl.style.marginBottom = '25px';
+        msgEl.style.lineHeight = '1.5';
+        msgEl.style.whiteSpace = 'pre-wrap';
+        msgEl.textContent = message;
+
+        const btnContainer = document.createElement('div');
+        btnContainer.style.display = 'flex';
+        btnContainer.style.justifyContent = 'center';
+        btnContainer.style.gap = '15px';
+
+        const btnNo = document.createElement('button');
+        btnNo.textContent = '取消';
+        btnNo.className = 'action-btn';
+        btnNo.style.padding = '8px 20px';
+
+        const btnYes = document.createElement('button');
+        btnYes.textContent = '确认';
+        btnYes.className = 'action-btn danger';
+        btnYes.style.padding = '8px 20px';
+
+        btnYes.onclick = () => { overlay.remove(); resolve(true); };
+        btnNo.onclick = () => { overlay.remove(); resolve(false); };
+
+        btnContainer.appendChild(btnNo);
+        btnContainer.appendChild(btnYes);
+        box.appendChild(msgEl);
+        box.appendChild(btnContainer);
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+    });
+};
 // -----------------------------------------------------------
 
 // dashboard.js - 独立大贤者控制台核心逻辑
@@ -394,7 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     charSelect.addEventListener('change', async (e) => {
-        const confirmSwitch = confirm(`确定要切换灵魂为 ${e.target.options[e.target.selectedIndex].text} 吗？\n为保证记忆环境纯净，这将会自动重启桌宠！`);
+        const confirmSwitch = await window.asyncConfirm(`确定要切换灵魂为 ${e.target.options[e.target.selectedIndex].text} 吗？\n为保证记忆环境纯净，这将会自动重启桌宠！`);
         if (confirmSwitch) {
             try {
                 await fetch('/api/switch_character', {
@@ -457,7 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const confirmGen = confirm("将请求大模型提炼设定并创建底层文件，该过程大概需要10-20秒，确认开始吗？");
+            const confirmGen = await window.asyncConfirm("将请求大模型提炼设定并创建底层文件，该过程大概需要10-20秒，确认开始吗？");
             if (!confirmGen) return;
 
             generateBtn.disabled = true;
@@ -519,7 +582,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const confirmGen = confirm(`即将物理写入 ${charId} 的底层配置，确认操作吗？`);
+            const confirmGen = await window.asyncConfirm(`即将物理写入 ${charId} 的底层配置，确认操作吗？`);
             if (!confirmGen) return;
 
             generateProBtn.disabled = true;
@@ -657,8 +720,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // ========== 重启应用 ==========
     const restartBtn = document.getElementById('restart-app-btn');
     if (restartBtn) {
-        restartBtn.addEventListener('click', () => {
-            const confirmRestart = confirm("确定要重新启动大贤者系统吗？\n如果程序没有自动打开，请手动双击启动！");
+        restartBtn.addEventListener('click', async () => {
+            const confirmRestart = await window.asyncConfirm("确定要重新启动大贤者系统吗？\n如果程序没有自动打开，请手动双击启动！");
             if (confirmRestart) {
                 if (typeof require !== 'undefined') {
                     const { ipcRenderer } = require('electron');
@@ -743,7 +806,7 @@ document.addEventListener('DOMContentLoaded', () => {
     rewriteDiaryBtn.addEventListener('click', async () => {
         const val = logDateSelect.value;
         if (!val) return;
-        if (!confirm(`确定要重写 ${val} 的日记吗？`)) return;
+        if (!await window.asyncConfirm(`确定要重写 ${val} 的日记吗？`)) return;
 
         rewriteDiaryBtn.disabled = true;
         const oldHtml = rewriteDiaryBtn.innerHTML;
@@ -835,7 +898,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function manualDistill(isTest = false) {
-        if (!isTest && !confirm("这将会消耗部分 API Token 将今天的聊天记录压缩为日记记忆实体，是否继续？")) return;
+        if (!isTest && !await window.asyncConfirm("这将会消耗部分 API Token 将今天的聊天记录压缩为日记记忆实体，是否继续？")) return;
         
         const btn = isTest ? seedTestBtn : manualDistillBtn;
         const oldHtml = btn.innerHTML;
@@ -980,8 +1043,8 @@ function editPreset(type, name) {
     if (preset) showPresetModal(type, preset);
 }
 
-function deletePreset(type, name) {
-    if (confirm(`确定要删除预设 "${name}" 吗？此操作不可恢复。`)) {
+async function deletePreset(type, name) {
+    if (await window.asyncConfirm(`确定要删除预设 "${name}" 吗？此操作不可恢复。`)) {
         fetch('/api/presets/delete', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -1329,9 +1392,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const opTd = document.createElement('td');
         opTd.style.textAlign = 'center';
         opTd.innerHTML = `<button class="action-btn danger" style="padding:2px 5px; min-width:unset;" title="删除此行"><i class="fas fa-trash"></i></button>`;
-        opTd.querySelector('button').addEventListener('click', (e) => {
+        opTd.querySelector('button').addEventListener('click', async (e) => {
             e.stopPropagation();
-            if(confirm("确认删除此行?")) tr.remove();
+            if(await window.asyncConfirm("确认删除此行?")) tr.remove();
         });
         tr.appendChild(opTd);
         return tr;
@@ -1659,9 +1722,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const delTplSheetBtn = document.getElementById('btn-tpl-delete-sheet');
     if(delTplSheetBtn) {
-        delTplSheetBtn.addEventListener('click', () => {
+        delTplSheetBtn.addEventListener('click', async () => {
             if(!tplCurrentSheetId || !currentTemplateRaw) return;
-            if(!confirm(`确定要彻底删除表 ${tplCurrentSheetId} 吗？`)) return;
+            if(!await window.asyncConfirm(`确定要彻底删除表 ${tplCurrentSheetId} 吗？`)) return;
             if(currentTemplateRaw[tplCurrentSheetId].isSystem) {
                 alert("这是系统默认的核心表，不可删除！");
                 return;
@@ -1674,11 +1737,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const saveTplBtn = document.getElementById('save-databank-template-btn');
     if(saveTplBtn) {
-        saveTplBtn.addEventListener('click', () => {
+        saveTplBtn.addEventListener('click', async () => {
             // 同步当前表单数据
             syncTplFormToMemory();
             
-            if(!confirm("确定要将当前所有的架构和提示词保存到模板文件中吗？")) return;
+            if(!await window.asyncConfirm("确定要将当前所有的架构和提示词保存到模板文件中吗？")) return;
             
             saveTplBtn.disabled = true;
             saveTplBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
@@ -1953,7 +2016,7 @@ window.editCustomEngine = function(id) {
 };
 
 window.deleteCustomEngine = async function(id) {
-    if(!confirm("确定要删除此引擎配置吗？")) return;
+    if(!await window.asyncConfirm("确定要删除此引擎配置吗？")) return;
     try {
         const res = await fetch(`/api/engines/${id}`, { method: 'DELETE' });
         const data = await res.json();
