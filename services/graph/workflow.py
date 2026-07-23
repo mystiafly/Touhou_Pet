@@ -10,8 +10,6 @@ from graph.nodes import (
     parse_pre_response_node,
     collect_tool_feedback_node,
     main_llm_node,
-    post_llm_node,
-    update_history_node,
     should_execute_tools
 )
 from tools.tool_executor import (
@@ -37,8 +35,6 @@ workflow.add_node("execute_rename_task", execute_rename_task_node)
 workflow.add_node("execute_vision_task", execute_vision_task_node)
 workflow.add_node("collect_tool_feedback", collect_tool_feedback_node)
 workflow.add_node("main_llm", main_llm_node)
-workflow.add_node("post_llm", post_llm_node)
-workflow.add_node("update_history", update_history_node)
 
 workflow.set_entry_point("recall_memories")
 
@@ -69,9 +65,7 @@ workflow.add_edge("execute_search_task", "collect_tool_feedback")
 workflow.add_edge("execute_vision_task", "collect_tool_feedback")
 
 workflow.add_edge("collect_tool_feedback", "main_llm")
-workflow.add_edge("main_llm", "post_llm")
-workflow.add_edge("post_llm", "update_history")
-workflow.add_edge("update_history", END)
+workflow.add_edge("main_llm", END)
 
 checkpoint_db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "rumia_checkpoints.db")
 sqlite_conn = sqlite3.connect(checkpoint_db_path, check_same_thread=False)
