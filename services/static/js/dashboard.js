@@ -1304,48 +1304,49 @@ document.addEventListener('DOMContentLoaded', () => {
         tableEl.appendChild(tbody);
     }
 
+    window.createDataRowGlobal = function(rowData) { return createDataRow(rowData); };
+
     function createDataRow(rowData) {
         const tr = document.createElement('tr');
+        tr.style.cursor = 'pointer';
+        tr.style.transition = 'background-color 0.2s';
+        tr.addEventListener('mouseenter', () => tr.style.backgroundColor = 'rgba(255,255,255,0.05)');
+        tr.addEventListener('mouseleave', () => tr.style.backgroundColor = 'transparent');
+        
+        tr.addEventListener('click', (e) => {
+            if (e.target.closest('button')) return; // Ignore if clicking action buttons
+            if (typeof openDataRowModal === 'function') {
+                openDataRowModal(tr);
+            }
+        });
+
         rowData.forEach(cellText => {
             const td = document.createElement('td');
             td.textContent = cellText;
-            td.setAttribute('contenteditable', 'true');
-            td.style.cursor = 'text';
-            td.style.outline = 'none';
-            td.style.userSelect = 'text';
-            td.style.webkitUserSelect = 'text';
-            td.addEventListener('focus', () => td.style.background = 'var(--bg-primary)');
-            td.addEventListener('blur', () => td.style.background = 'transparent');
             tr.appendChild(td);
         });
         
         const opTd = document.createElement('td');
         opTd.style.textAlign = 'center';
-        opTd.innerHTML = `<button class="action-btn danger" style="padding:2px 5px; min-width:unset;"><i class="fas fa-trash"></i></button>`;
-        opTd.querySelector('button').addEventListener('click', () => {
+        opTd.innerHTML = `<button class="action-btn danger" style="padding:2px 5px; min-width:unset;" title="删除此行"><i class="fas fa-trash"></i></button>`;
+        opTd.querySelector('button').addEventListener('click', (e) => {
+            e.stopPropagation();
             if(confirm("确认删除此行?")) tr.remove();
         });
         tr.appendChild(opTd);
         return tr;
     }
 
-    const addRowBtn = document.getElementById('add-databank-row-btn');
+        const addRowBtn = document.getElementById('add-databank-row-btn');
     if (addRowBtn) {
         addRowBtn.addEventListener('click', () => {
             if(!currentSheetId || !currentDataBank || !currentDataBank[currentSheetId]) return;
             const content = currentDataBank[currentSheetId].content;
-            if(!content || content.length === 0) return alert("该表没有表头，无法添加行");
+            if(!content || content.length === 0) return alert("该表没有表头，无法添加");
             
-            const tableEl = document.getElementById('databank-table');
-            const tbody = tableEl.querySelector('tbody');
-            if(!tbody) return;
-            
-            const colCount = content[0].length;
-            const emptyRow = new Array(colCount).fill('');
-            if (content[0] && content[0][0] === 'row_id') {
-                emptyRow[0] = 'row_' + Math.random().toString(16).substring(2, 10);
+            if (typeof window.openDataRowModal === 'function') {
+                window.openDataRowModal(null);
             }
-            tbody.appendChild(createDataRow(emptyRow));
         });
     }
 
@@ -2164,6 +2165,181 @@ document.addEventListener('DOMContentLoaded', () => {
                 btnSave.disabled = false;
                 btnSave.innerHTML = '<i class="fas fa-save"></i> 保存引擎';
             }
+        });
+
+// --- DataBank Modal Editor Logic ---
+let currentRowElement = null;
+
+window.openDataRowModal = function(trElement) {
+    const databankRowModal = document.getElementById('databank-row-modal');
+    const databankRowForm = document.getElementById('databank-row-form');
+    currentRowElement = trElement;
+    
+    const tableEl = document.getElementById('databank-table');
+    const thead = tableEl.querySelector('thead');
+    if(!thead) return;
+    
+    const headers = Array.from(thead.querySelectorAll('th')).slice(0, -1).map(th => th.textContent.trim());
+    const cells = trElement ? Array.from(trElement.querySelectorAll('td')).slice(0, -1).map(td => td.textContent) : [];
+    
+    databankRowForm.innerHTML = '';
+    
+    headers.forEach((header, index) => {
+        let val = cells[index] || '';
+        if (!trElement && header === 'row_id') {
+            val = 'row_' + Math.random().toString(16).substring(2, 10);
+        }
+        
+        const group = document.createElement('div');
+        group.className = 'form-group';
+        group.style.marginBottom = '15px';
+        
+        const label = document.createElement('label');
+        label.textContent = header;
+        label.style.display = 'block';
+        label.style.marginBottom = '5px';
+        
+        const input = document.createElement('textarea');
+        input.className = 'modern-input';
+        input.style.width = '100%';
+        input.style.resize = 'vertical';
+        input.style.minHeight = '40px';
+        input.style.fontFamily = 'monospace';
+        input.value = val;
+        
+        if (header === 'row_id') {
+            input.style.backgroundColor = 'var(--bg-secondary)';
+            input.placeholder = "通常由系统自动生成";
+        }
+        
+        group.appendChild(label);
+        group.appendChild(input);
+        databankRowForm.appendChild(group);
+    });
+    
+    databankRowModal.classList.remove('hidden');
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    const closeDatabankRowModalBtn = document.getElementById('close-databank-row-modal-btn');
+    if (closeDatabankRowModalBtn) {
+        closeDatabankRowModalBtn.addEventListener('click', () => {
+            document.getElementById('databank-row-modal').classList.add('hidden');
+        });
+    }
+
+    const saveDatabankRowBtn = document.getElementById('save-databank-row-btn');
+    if (saveDatabankRowBtn) {
+        saveDatabankRowBtn.addEventListener('click', () => {
+            const databankRowForm = document.getElementById('databank-row-form');
+            const inputs = Array.from(databankRowForm.querySelectorAll('textarea'));
+            const newValues = inputs.map(input => input.value);
+            
+            if (currentRowElement) {
+                // Update existing row
+                const tds = currentRowElement.querySelectorAll('td');
+                newValues.forEach((val, index) => {
+                    if (tds[index]) tds[index].textContent = val;
+                });
+            } else {
+                // Add new row (Need to access createDataRow via some scope, or rewrite it here)
+                // wait, createDataRow is scoped inside DOMContentLoaded in dashboard.js.
+                // We must expose createDataRow globally, or use a custom event, or reconstruct the row.
+                const tbody = document.getElementById('databank-table').querySelector('tbody');
+                if (tbody) {
+                    if (window.createDataRowGlobal) {
+                        tbody.appendChild(window.createDataRowGlobal(newValues));
+                    }
+                }
+            }
+            document.getElementById('databank-row-modal').classList.add('hidden');
+        });
+    }
+});
+    }
+});
+
+// --- DataBank Modal Editor Logic ---
+let currentRowElement = null;
+
+window.openDataRowModal = function(trElement) {
+    const databankRowModal = document.getElementById('databank-row-modal');
+    const databankRowForm = document.getElementById('databank-row-form');
+    currentRowElement = trElement;
+    
+    const tableEl = document.getElementById('databank-table');
+    const thead = tableEl.querySelector('thead');
+    if(!thead) return;
+    
+    const headers = Array.from(thead.querySelectorAll('th')).slice(0, -1).map(th => th.textContent.trim());
+    const cells = trElement ? Array.from(trElement.querySelectorAll('td')).slice(0, -1).map(td => td.textContent) : [];
+    
+    databankRowForm.innerHTML = '';
+    
+    headers.forEach((header, index) => {
+        let val = cells[index] || '';
+        if (!trElement && header === 'row_id') {
+            val = 'row_' + Math.random().toString(16).substring(2, 10);
+        }
+        
+        const group = document.createElement('div');
+        group.className = 'form-group';
+        group.style.marginBottom = '15px';
+        
+        const label = document.createElement('label');
+        label.textContent = header;
+        label.style.display = 'block';
+        label.style.marginBottom = '5px';
+        
+        const input = document.createElement('textarea');
+        input.className = 'modern-input';
+        input.style.width = '100%';
+        input.style.resize = 'vertical';
+        input.style.minHeight = '40px';
+        input.style.fontFamily = 'monospace';
+        input.value = val;
+        
+        if (header === 'row_id') {
+            input.style.backgroundColor = 'var(--bg-secondary)';
+            input.placeholder = "通常由系统自动生成";
+        }
+        
+        group.appendChild(label);
+        group.appendChild(input);
+        databankRowForm.appendChild(group);
+    });
+    
+    databankRowModal.classList.remove('hidden');
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    const closeDatabankRowModalBtn = document.getElementById('close-databank-row-modal-btn');
+    if (closeDatabankRowModalBtn) {
+        closeDatabankRowModalBtn.addEventListener('click', () => {
+            document.getElementById('databank-row-modal').classList.add('hidden');
+        });
+    }
+
+    const saveDatabankRowBtn = document.getElementById('save-databank-row-btn');
+    if (saveDatabankRowBtn) {
+        saveDatabankRowBtn.addEventListener('click', () => {
+            const databankRowForm = document.getElementById('databank-row-form');
+            const inputs = Array.from(databankRowForm.querySelectorAll('textarea'));
+            const newValues = inputs.map(input => input.value);
+            
+            if (currentRowElement) {
+                // Update existing row
+                const tds = currentRowElement.querySelectorAll('td');
+                newValues.forEach((val, index) => {
+                    if (tds[index]) tds[index].textContent = val;
+                });
+            } else {
+                const tbody = document.getElementById('databank-table').querySelector('tbody');
+                if (tbody && window.createDataRowGlobal) {
+                    tbody.appendChild(window.createDataRowGlobal(newValues));
+                }
+            }
+            document.getElementById('databank-row-modal').classList.add('hidden');
         });
     }
 });
