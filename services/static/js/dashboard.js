@@ -1278,6 +1278,8 @@ document.addEventListener('DOMContentLoaded', () => {
             td.setAttribute('contenteditable', 'true');
             td.style.cursor = 'text';
             td.style.outline = 'none';
+            td.style.userSelect = 'text';
+            td.style.webkitUserSelect = 'text';
             td.addEventListener('focus', () => td.style.background = 'var(--bg-primary)');
             td.addEventListener('blur', () => td.style.background = 'transparent');
             tr.appendChild(td);
