@@ -410,15 +410,15 @@ def execute_vision_task_node(state: AgentState) -> Dict[str, Any]:
                 data = resp.json()
                 description = data.get("choices", [{}])[0].get("message", {}).get("content", "")
             else:
-                return {"vision_result": f"视觉 API 请求失败: HTTP {resp.status_code}, {resp.text}"}
+                return {"vision_result": f"视觉 API 请求失败: HTTP {resp.status_code}, {resp.text}。由于识图失败，你什么都没看到。"}
 
         if not description:
-            return {"vision_result": "未能从视觉模型获取到有效描述。"}
+            return {"vision_result": "未能从视觉模型获取有效响应。由于识图失败，你什么都没看到。"}
 
         print(f"[MONITOR] 屏幕识别成功: {description[:100]}...")
         return {"vision_result": f"屏幕画面分析结果：\n{description}"}
 
     except Exception as e:
-        err_msg = f"执行屏幕截取或请求 API 时出错: {str(e)}"
+        err_msg = f"执行屏幕截取或请求 API 时出错: {str(e)}。由于识图失败，你什么都没看到。"
         print(f"[MONITOR] {err_msg}")
         return {"vision_result": err_msg}
