@@ -220,7 +220,7 @@ def get_databank_rules_for_llm():
         "如果你要更新表格，请在回复的最后面附加上格式如下的指令，不要解释指令：\n"
         "格式：\n"
         "```databank\n"
-        "UPDATE_TABLE: sheet_id, 行号(第一行为1), 列号(第一列为0), 新值\n"
+        "UPDATE_TABLE: sheet_id, 行号(如为1)或row_id, 列号(第一列为0), 新值\n"
         "INSERT_ROW: sheet_id, [\"值1\", \"值2\", ...]\n"
         "```\n"
         "例如更新全局数据表的当前时间（假设时间在第6列）: UPDATE_TABLE: sheet_global_data, 1, 6, 2024-01-01 10:00"
@@ -250,12 +250,21 @@ def parse_and_execute_databank_commands(llm_output):
                 # UPDATE_TABLE: sheet_id, row_idx, col_idx, new_value
                 parts = [x.strip() for x in line[len("UPDATE_TABLE:"):].split(',', 3)]
                 if len(parts) == 4:
-                    sheet_id, row_idx, col_idx, new_value = parts
-                    row_idx, col_idx = int(row_idx), int(col_idx)
+                    sheet_id, row_idx_str, col_idx_str, new_value = parts
+                    col_idx = int(col_idx_str)
                     
                     if sheet_id in merged:
                         content = merged[sheet_id]["content"]
-                        # row_idx=1 代表第二行(也就是数据第一行)，因为 header=0
+                        
+                        row_idx = -1
+                        try:
+                            row_idx = int(row_idx_str)
+                        except ValueError:
+                            for i, row in enumerate(content):
+                                if row and str(row[0]).strip() == row_idx_str:
+                                    row_idx = i
+                                    break
+                                    
                         if 0 <= row_idx < len(content) and 0 <= col_idx < len(content[0]):
                             content[row_idx][col_idx] = new_value
                             modified = True
