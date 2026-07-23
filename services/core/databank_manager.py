@@ -197,8 +197,9 @@ def get_databank_rules_for_llm():
             rule += f"  - 更新规则: {update_node}\n"
             
         columns = sheet.get("content", [[]])[0] if sheet.get("content") else []
-        if columns:
-            rule += f"  - 表头字段(严格注意！INSERT_ROW提供的数组必须与此表头顺序完全一致且长度相同): [{', '.join(columns)}]\n"
+        llm_columns = columns[1:] if columns and columns[0] == "row_id" else columns
+        if llm_columns:
+            rule += f"  - 表头字段(严格注意！INSERT_ROW提供的数组必须与此表头顺序完全一致且长度相同): [{', '.join(llm_columns)}]\n"
             
         if column_rules:
             rule += "  - 字段格式要求:\n"
@@ -272,9 +273,18 @@ def parse_and_execute_databank_commands(llm_output):
                             row_data_str = row_data_str.replace("'", '"')
                             row_data = json.loads(row_data_str)
                             if isinstance(row_data, list):
+                                actual_cols = merged[sheet_id].get("content", [[]])[0]
+                                if actual_cols and actual_cols[0] == "row_id":
+                                    import uuid
+                                    new_id = "row_" + uuid.uuid4().hex[:8]
+                                    row_data.insert(0, new_id)
+                                    
+                                while len(row_data) < len(actual_cols):
+                                    row_data.append("")
+                                    
                                 merged[sheet_id]["content"].append(row_data)
                                 modified = True
-                                print(f"[DataBank] 插入: {sheet_id} -> {row_data}")
+                                print(f"[DataBank] 新增行: {sheet_id} -> {row_data}")
                         except:
                             pass
         except Exception as e:
