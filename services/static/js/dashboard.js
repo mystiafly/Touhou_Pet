@@ -1306,6 +1306,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const colCount = content[0].length;
             const emptyRow = new Array(colCount).fill('');
+            if (content[0] && content[0][0] === 'row_id') {
+                emptyRow[0] = 'row_' + Math.random().toString(16).substring(2, 10);
+            }
             tbody.appendChild(createDataRow(emptyRow));
         });
     }
