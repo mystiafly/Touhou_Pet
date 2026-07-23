@@ -40,7 +40,12 @@ def recall_memories_node(state: AgentState) -> Dict[str, Any]:
                     recalled = "\n".join([f"- {r['memory']}" for r in results_list if isinstance(r, dict) and 'memory' in r])
             except Exception as me:
                 pass
-    return {"recalled_memories": recalled}
+                
+    active_tables = get_active_tables(user_msg, current_pool="\n".join([msg.get("content", "") for msg in history[-4:]]))
+    if active_tables:
+        recalled += f"\n\n[DataBank 动态数据库内容]\n{active_tables}"
+        
+    return {"recalled_memories": recalled.strip()}
 
 def load_presets_node(state: AgentState) -> Dict[str, Any]:
     user_msg = state.get("user_message", "")
