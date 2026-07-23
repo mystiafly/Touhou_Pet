@@ -1343,13 +1343,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ sheet_id: currentSheetId, content: newContent })
             }).then(res => res.json()).then(data => {
                 saveContentBtn.disabled = false;
-                saveContentBtn.innerHTML = '<i class="fas fa-save"></i> 保存本表修改';
                 if(data.status === 'success') {
                     if(currentDataBank && currentDataBank[currentSheetId]) {
                         currentDataBank[currentSheetId].content = newContent;
                     }
-                    alert("数据行保存成功！");
+                    saveContentBtn.innerHTML = '<i class="fas fa-check"></i> 保存成功！';
+                    setTimeout(() => {
+                        saveContentBtn.innerHTML = '<i class="fas fa-save"></i> 保存本表修改';
+                    }, 2000);
                 } else {
+                    saveContentBtn.innerHTML = '<i class="fas fa-save"></i> 保存本表修改';
                     alert("保存失败: " + data.message);
                 }
             }).catch(err => {
