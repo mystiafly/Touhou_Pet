@@ -2165,7 +2165,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 btnSave.disabled = false;
                 btnSave.innerHTML = '<i class="fas fa-save"></i> 保存引擎';
             }
-        });// --- DataBank Modal Editor Logic ---
+        });
+    }
+});
+
+// --- DataBank Modal Editor Logic ---
 let currentRowElement = null;
 
 window.openDataRowModal = function(trElement) {
