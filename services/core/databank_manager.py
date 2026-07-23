@@ -199,7 +199,8 @@ def get_databank_rules_for_llm():
         columns = sheet.get("content", [[]])[0] if sheet.get("content") else []
         llm_columns = columns[1:] if columns and columns[0] == "row_id" else columns
         if llm_columns:
-            rule += f"  - 表头字段(严格注意！INSERT_ROW提供的数组必须与此表头顺序完全一致且长度相同): [{', '.join(llm_columns)}]\n"
+            import json
+            rule += f"  - 表头字段(严格注意！INSERT_ROW提供的数组必须与此表头顺序完全一致且长度相同，且必须是合法的JSON数组，所有字符串用双引号包裹): {json.dumps(llm_columns, ensure_ascii=False)}\n"
             
         if column_rules:
             rule += "  - 字段格式要求:\n"
@@ -219,8 +220,8 @@ def get_databank_rules_for_llm():
         "如果你要更新表格，请在回复的最后面附加上格式如下的指令，不要解释指令：\n"
         "格式：\n"
         "```databank\n"
-        "UPDATE_TABLE: sheet_id, 行号(第一行数据为1), 列号(第一列为0), 新值\n"
-        "INSERT_ROW: sheet_id, [新值1, 新值2, ...]\n"
+        "UPDATE_TABLE: sheet_id, 行号(第一行为1), 列号(第一列为0), 新值\n"
+        "INSERT_ROW: sheet_id, [\"值1\", \"值2\", ...]\n"
         "```\n"
         "例如更新全局数据表的当前时间（假设时间在第6列）: UPDATE_TABLE: sheet_global_data, 1, 6, 2024-01-01 10:00"
     )
