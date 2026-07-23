@@ -4,7 +4,7 @@ import time
 import threading
 import re
 from datetime import datetime
-from fastapi import APIRouter, Request, Body, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Request, Body, HTTPException, UploadFile, File, Form, BackgroundTasks
 from pydantic import BaseModel
 from typing import Dict, Any
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
@@ -12,6 +12,7 @@ from core.config_manager import get_config, save_config, get_active_character_id
 from core.memory_manager import load_history, save_history, DAILY_HISTORY_DIR, get_memory_agent
 from core.profile_manager import get_favorability
 from graph.workflow import chat_workflow
+from graph.nodes import post_llm_node, update_history_node
 from workers.distillation import generate_pet_diary
 from tools.presets_manager import get_self_talk_presets_file
 from external_api import netease_music
@@ -109,9 +110,17 @@ def update_databank_template(payload: dict = Body(...)):
     success, msg = save_databank_template_raw(raw_json)
     return {"status": "success" if success else "error", "message": msg}
 
+# --- 后台任务包装器 ---
+def run_post_and_history(state: dict):
+    try:
+        state_after_post = post_llm_node(state)
+        update_history_node(state_after_post)
+    except Exception as e:
+        print(f"后台任务 (post_llm & update_history) 执行异常: {e}")
+
 # 3. 核心聊天对话接口
 @router.post("/api/chat")
-def chat(payload: dict = Body(...)):
+def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = BackgroundTasks()):
     """发送聊天请求核心业务逻辑 (使用 LangGraph 引擎驱动)"""
     from core.diary_batch import check_and_generate_diaries_async
     # 异步对账：检查前天或更早之前是否有没写完的日记
@@ -165,6 +174,9 @@ def chat(payload: dict = Body(...)):
         browser_task = final_state.get("browser_task", None)
         current_fav = final_state.get("favorability", 10)
         updated_history = final_state.get("history", [])
+
+        # 将费时的副模型节点和数据库写入放入后台执行，立刻向前端返回 JSON 响应
+        background_tasks.add_task(run_post_and_history, final_state)
 
         # 好感度增减评定
         change = 0
@@ -546,7 +558,7 @@ def post_test_vision(payload: dict = Body(...)):
 
 # 6. 主动说话接口 (自言自语)
 @router.post("/api/pet_speak")
-def pet_speak(payload: dict = Body(...)):
+def pet_speak(payload: dict = Body(...), background_tasks: BackgroundTasks = BackgroundTasks()):
     """控制台或系统事件触发的自言自语/打招呼逻辑 (使用 LangGraph 对话)"""
     char_id = get_active_character_id()
     request_type = payload.get('type', 'idle').strip()
@@ -629,6 +641,8 @@ def pet_speak(payload: dict = Body(...)):
         clean_content = final_state.get("clean_content", "")
         current_fav = final_state.get("favorability", 10)
         updated_history = final_state.get("history", [])
+
+        background_tasks.add_task(run_post_and_history, final_state)
 
         change = 0
         if score > 15:
