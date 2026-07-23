@@ -363,7 +363,7 @@ def execute_vision_task_node(state: AgentState) -> Dict[str, Any]:
                     "temperature": 0.7
                 }
             }
-            resp = requests.post(url, json=payload, timeout=20)
+            resp = requests.post(url, json=payload, timeout=60)
             if resp.status_code == 200:
                 data = resp.json()
                 description = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
@@ -405,7 +405,7 @@ def execute_vision_task_node(state: AgentState) -> Dict[str, Any]:
             
             # 使用 /chat/completions 兼容端点
             endpoint = f"{base_url}/chat/completions"
-            resp = requests.post(endpoint, headers=headers, json=payload, timeout=20)
+            resp = requests.post(endpoint, headers=headers, json=payload, timeout=60)
             if resp.status_code == 200:
                 data = resp.json()
                 description = data.get("choices", [{}])[0].get("message", {}).get("content", "")
