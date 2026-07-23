@@ -1,3 +1,37 @@
+
+// --- GLOBAL ALERT OVERRIDE TO PREVENT ELECTRON FOCUS BUG ---
+window.alert = function(msg) {
+    const toast = document.createElement('div');
+    toast.textContent = msg;
+    toast.style.position = 'fixed';
+    toast.style.bottom = '20px';
+    toast.style.right = '20px';
+    toast.style.backgroundColor = 'rgba(0,0,0,0.85)';
+    toast.style.color = '#fff';
+    toast.style.padding = '12px 24px';
+    toast.style.borderRadius = '8px';
+    toast.style.zIndex = '9999999';
+    toast.style.transition = 'opacity 0.3s ease-in-out, transform 0.3s ease';
+    toast.style.transform = 'translateY(10px)';
+    toast.style.opacity = '0';
+    toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+    toast.style.fontFamily = 'sans-serif';
+    toast.style.fontSize = '14px';
+    document.body.appendChild(toast);
+    
+    // trigger reflow
+    void toast.offsetWidth;
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateY(0)';
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+};
+// -----------------------------------------------------------
+
 // dashboard.js - 独立大贤者控制台核心逻辑
 document.addEventListener('DOMContentLoaded', () => {
 
