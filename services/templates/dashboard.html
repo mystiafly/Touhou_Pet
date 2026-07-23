@@ -639,6 +639,24 @@
     </div>
 </div>
 
+<!-- DataBank 行编辑 Modal -->
+<div id="databank-row-modal" class="modal-overlay hidden">
+    <div class="modal-content wide-modal">
+        <div class="modal-header">
+            <h2><i class="fas fa-edit"></i> 编辑数据行</h2>
+            <button id="close-databank-row-modal-btn" class="close-modal-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body" style="max-height: 65vh; overflow-y: auto;">
+            <form id="databank-row-form" onsubmit="return false;">
+                <!-- JS dynamically generates form fields here -->
+            </form>
+            <button id="save-databank-row-btn" class="action-btn" style="margin-top: 20px; width: 100%; justify-content: center;">
+                <i class="fas fa-check"></i> 确认保存
+            </button>
+        </div>
+    </div>
+</div>
+
 <script src="/static/js/dashboard.js?v=1.7.1"></script>
 
 <!-- 视觉识图配置 Modal -->
