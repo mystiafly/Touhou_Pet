@@ -194,10 +194,14 @@ def get_databank_rules_for_llm():
         if insert_node:
             rule += f"  - 新增条件: {insert_node}\n"
         if update_node:
-            rule += f"  - 更新条件: {update_node}\n"
+            rule += f"  - 更新规则: {update_node}\n"
+            
+        columns = sheet.get("content", [[]])[0] if sheet.get("content") else []
+        if columns:
+            rule += f"  - 表头字段(严格注意！INSERT_ROW提供的数组必须与此表头顺序完全一致且长度相同): [{', '.join(columns)}]\n"
             
         if column_rules:
-            rule += "  - 【各列控制约束】:\n"
+            rule += "  - 字段格式要求:\n"
             for col_name, col_rule in column_rules.items():
                 if col_rule.strip():
                     rule += f"    - [{col_name}]: {col_rule}\n"
