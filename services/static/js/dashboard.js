@@ -792,66 +792,90 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const lines = logText.split('\n');
         let lastTime = '';
+        let currentMsg = null;
+
+        const flushMsg = () => {
+            if (!currentMsg) return;
+            const timeStr = currentMsg.time.substring(0, 5); // HH:MM
+            if (timeStr !== lastTime) {
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'wechat-timestamp';
+                timeDiv.textContent = timeStr;
+                container.appendChild(timeDiv);
+                lastTime = timeStr;
+            }
+            
+            const isUser = currentMsg.sender.toLowerCase() === 'you' || currentMsg.sender.toLowerCase().includes('you ') || currentMsg.sender === '你' || currentMsg.sender.toLowerCase() === 'user';
+            
+            const row = document.createElement('div');
+            row.className = 'wechat-msg-row ' + (isUser ? 'is-user' : 'is-bot');
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'wechat-avatar';
+            if (isUser) {
+                avatar.innerHTML = '<i class="fas fa-user" style="color:#282a36; font-size:20px; line-height:36px; text-align:center; width:100%;"></i>';
+                avatar.style.background = '#50fa7b';
+            } else {
+                avatar.innerHTML = '<i class="fas fa-robot" style="color:#f8f8f2; font-size:20px; line-height:36px; text-align:center; width:100%;"></i>';
+                avatar.style.background = '#6272a4';
+            }
+            
+            const msgContent = document.createElement('div');
+            msgContent.className = 'wechat-msg-content';
+            
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'wechat-sender-name';
+            nameDiv.textContent = isUser ? '你' : currentMsg.sender.replace(/\(.*?\)/g, '').trim();
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'wechat-bubble';
+            bubble.innerHTML = currentMsg.content.replace(/\n/g, '<br>');
+            
+            msgContent.appendChild(nameDiv);
+            msgContent.appendChild(bubble);
+            
+            row.appendChild(avatar);
+            row.appendChild(msgContent);
+            
+            container.appendChild(row);
+            currentMsg = null;
+        };
         
         for (let line of lines) {
             line = line.trim();
             if (!line) continue;
             
-            const match = line.match(/^\[(.*?)\]\s+(.*?):\s+(.*)$/);
-            if (match) {
-                const time = match[1];
-                let sender = match[2];
-                const content = match[3];
+            const isNewEntry = /^\[\d{2}:\d{2}:\d{2}\]/.test(line);
+            
+            if (isNewEntry) {
+                flushMsg();
                 
-                const timeStr = time.substring(0, 5); // HH:MM
-                if (timeStr !== lastTime) {
-                    const timeDiv = document.createElement('div');
-                    timeDiv.className = 'wechat-timestamp';
-                    timeDiv.textContent = timeStr;
-                    container.appendChild(timeDiv);
-                    lastTime = timeStr;
-                }
-                
-                const isUser = sender.toLowerCase() === 'you' || sender.toLowerCase().includes('you ');
-                
-                const row = document.createElement('div');
-                row.className = 'wechat-msg-row ' + (isUser ? 'is-user' : 'is-bot');
-                
-                const avatar = document.createElement('div');
-                avatar.className = 'wechat-avatar';
-                if (isUser) {
-                    avatar.innerHTML = '<i class="fas fa-user" style="color:#282a36; font-size:20px; line-height:36px; text-align:center; width:100%;"></i>';
-                    avatar.style.background = '#50fa7b';
+                const match = line.match(/^\[(.*?)\]\s+(.*?)(?::|：)\s*(.*)$/);
+                if (match && !match[2].includes('[物理互动]') && !match[2].includes('[系统]')) {
+                    currentMsg = {
+                        time: match[1],
+                        sender: match[2].trim(),
+                        content: match[3]
+                    };
                 } else {
-                    avatar.innerHTML = '<i class="fas fa-robot" style="color:#f8f8f2; font-size:20px; line-height:36px; text-align:center; width:100%;"></i>';
-                    avatar.style.background = '#6272a4';
+                    const sysMsg = document.createElement('div');
+                    sysMsg.className = 'wechat-timestamp';
+                    sysMsg.textContent = line;
+                    container.appendChild(sysMsg);
                 }
-                
-                const msgContent = document.createElement('div');
-                msgContent.className = 'wechat-msg-content';
-                
-                const nameDiv = document.createElement('div');
-                nameDiv.className = 'wechat-sender-name';
-                nameDiv.textContent = isUser ? '你' : sender.replace(/\(.*?\)/g, '').trim();
-                
-                const bubble = document.createElement('div');
-                bubble.className = 'wechat-bubble';
-                bubble.textContent = content;
-                
-                msgContent.appendChild(nameDiv);
-                msgContent.appendChild(bubble);
-                
-                row.appendChild(avatar);
-                row.appendChild(msgContent);
-                
-                container.appendChild(row);
             } else {
-                const sysMsg = document.createElement('div');
-                sysMsg.className = 'wechat-timestamp';
-                sysMsg.textContent = line;
-                container.appendChild(sysMsg);
+                if (currentMsg) {
+                    currentMsg.content += '\n' + line;
+                } else {
+                    const sysMsg = document.createElement('div');
+                    sysMsg.className = 'wechat-timestamp';
+                    sysMsg.textContent = line;
+                    container.appendChild(sysMsg);
+                }
             }
         }
+        flushMsg();
+        
         return container;
     }
 
