@@ -112,10 +112,21 @@ def update_databank_template(payload: dict = Body(...)):
 
 # --- 后台任务包装器 ---
 def run_post_and_history(state: dict):
+    with open("g:/code/rumia/data/bg_task_log.txt", "a", encoding="utf-8") as f:
+        f.write(f"\\n--- BG Task Started ---\\n")
+        f.write(f"User Message: {state.get('user_message')}\\n")
+        f.write(f"Main LLM Reply: {state.get('main_llm_reply')}\\n")
     try:
-        state_after_post = post_llm_node(state)
-        update_history_node(state_after_post)
+        post_delta = post_llm_node(state)
+        state.update(post_delta)
+        update_history_node(state)
+        with open("g:/code/rumia/data/bg_task_log.txt", "a", encoding="utf-8") as f:
+            f.write(f"BG Task Success. Post Delta: {post_delta}\\n")
     except Exception as e:
+        import traceback
+        err_str = traceback.format_exc()
+        with open("g:/code/rumia/data/bg_task_log.txt", "a", encoding="utf-8") as f:
+            f.write(f"BG Task Error: {e}\\n{err_str}\\n")
         print(f"后台任务 (post_llm & update_history) 执行异常: {e}")
 
 # 3. 核心聊天对话接口
@@ -779,7 +790,7 @@ def get_memory_graph():
         if not agent:
             return JSONResponse({"success": False, "error": "记忆系统未初始化"}, status_code=500)
         
-        memories_data = agent.get_all(filters={"user_id": "player_01"})
+        memories_data = agent.get_all(user_id="player_01")
         memories_list = []
         if isinstance(memories_data, dict) and "results" in memories_data:
             memories_list = memories_data["results"]
@@ -966,7 +977,20 @@ def manual_distill_now(payload: dict = Body(default={})):
             config_data["distilled_dates"] = distilled_dates
             save_config(config_data)
             
-        return {"success": True, "message": f"{char_name}非常认真地整理了今天的回忆，并且为您写下了一篇秘密日记哦！"}
+        return {"success": True, "message": f"{char_name}开始绞尽脑汁回想，为您写下一篇日记哦！"}
+
+@router.get("/api/debug_qdrant")
+def debug_qdrant():
+    agent = get_memory_agent()
+    if not agent:
+        return {"error": "no agent"}
+    try:
+        res1 = agent.get_all(user_id="player_01")
+        res2 = agent.get_all()
+        res3 = agent.get_all(filters={"user_id": "player_01"})
+        return {"user_id": res1, "all": res2, "filters": res3}
+    except Exception as e:
+        return {"error": str(e)}
     except Exception as ex:
         print(f"[API ERROR] Manual distill failed: {ex}")
         return JSONResponse({"success": False, "error": str(ex)}, status_code=500)
