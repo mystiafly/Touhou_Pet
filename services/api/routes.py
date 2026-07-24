@@ -935,7 +935,8 @@ def manual_distill_now(payload: dict = Body(default={})):
             agent.add(
                 test_fact,
                 user_id="player_01",
-                metadata={"date": datetime.now().strftime("%Y-%m-%d"), "test": True}
+                metadata={"date": datetime.now().strftime("%Y-%m-%d"), "test": True},
+                prompt="You must strictly output a valid JSON object. The JSON object must contain exactly one key named 'memory', whose value is a list of dictionaries. Each dictionary must have a 'text' key (the extracted fact) and an 'event' key (set to 'ADD'). Do not output any markdown formatting."
             )
             return {"success": True, "message": "成功注入一条关于巧克力饼干和红茶生日的测试回忆！"}
             
