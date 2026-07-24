@@ -790,7 +790,7 @@ def get_memory_graph():
         if not agent:
             return JSONResponse({"success": False, "error": "记忆系统未初始化"}, status_code=500)
         
-        memories_data = agent.get_all()
+        memories_data = agent.get_all(filters={"user_id": "player_01"})
         memories_list = []
         if isinstance(memories_data, dict) and "results" in memories_data:
             memories_list = memories_data["results"]

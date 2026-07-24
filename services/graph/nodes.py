@@ -34,7 +34,7 @@ def recall_memories_node(state: AgentState) -> Dict[str, Any]:
         agent = get_memory_agent()
         if agent:
             try:
-                results = agent.search(compiled_query, limit=3, threshold=0.45)
+                results = agent.search(compiled_query, filters={"user_id": "player_01"}, limit=3, threshold=0.45)
                 results_list = results.get("results", []) if isinstance(results, dict) else (results if isinstance(results, list) else [])
                 if results_list:
                     recalled = "\n".join([f"- {r['memory']}" for r in results_list if isinstance(r, dict) and 'memory' in r])
