@@ -790,7 +790,7 @@ def get_memory_graph():
         if not agent:
             return JSONResponse({"success": False, "error": "记忆系统未初始化"}, status_code=500)
         
-        memories_data = agent.get_all(user_id="player_01")
+        memories_data = agent.get_all()
         memories_list = []
         if isinstance(memories_data, dict) and "results" in memories_data:
             memories_list = memories_data["results"]
@@ -977,20 +977,7 @@ def manual_distill_now(payload: dict = Body(default={})):
             config_data["distilled_dates"] = distilled_dates
             save_config(config_data)
             
-        return {"success": True, "message": f"{char_name}开始绞尽脑汁回想，为您写下一篇日记哦！"}
-
-@router.get("/api/debug_qdrant")
-def debug_qdrant():
-    agent = get_memory_agent()
-    if not agent:
-        return {"error": "no agent"}
-    try:
-        res1 = agent.get_all(user_id="player_01")
-        res2 = agent.get_all()
-        res3 = agent.get_all(filters={"user_id": "player_01"})
-        return {"user_id": res1, "all": res2, "filters": res3}
-    except Exception as e:
-        return {"error": str(e)}
+        return {"success": True, "message": f"{char_name}非常认真地整理了今天的回忆，并且为您写下了一篇秘密日记哦！"}
     except Exception as ex:
         print(f"[API ERROR] Manual distill failed: {ex}")
         return JSONResponse({"success": False, "error": str(ex)}, status_code=500)
