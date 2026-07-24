@@ -116,6 +116,7 @@ class DesktopPet {
         this.isSleeping = false;
         this.isMinimized = false;
         this.sleepTimer = null;
+        this.autoSpeakCount = 0;
 
         this.playerBar = document.getElementById('music-player-bar');
         this.inputBar = document.querySelector('.input-bar');
@@ -860,7 +861,6 @@ class DesktopPet {
         }, sleepDelay);
     }
 
-    // [鏂板] 鍞ら啋鍑芥暟
     wakeUp(quiet = false) {
         if (this.sleepTimer) {
             clearTimeout(this.sleepTimer);
@@ -868,6 +868,7 @@ class DesktopPet {
         }
         if (this.isSleeping) {
             this.isSleeping = false;
+            this.autoSpeakCount = 0;
             console.log("宠物被成功唤醒。");
             this.setEmotion('normal');
             if (!quiet) {
