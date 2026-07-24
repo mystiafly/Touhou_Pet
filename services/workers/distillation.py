@@ -126,14 +126,26 @@ def daily_distillation_worker():
                     log_content = lf.read().strip()
                     
                 if log_content:
-                    print(f"[MEMORY DISTILLER] Distilling facts via Mem0 for {date_str}...")
+                    
+                    # Generate the diary FIRST to get a summary
+                    print(f"[MEMORY DISTILLER] Generating today's diary for {char_name} ({date_str})...")
+                    today_diary = generate_pet_diary(date_str, log_content)
+                    
+                    print(f"[MEMORY DISTILLER] Saving facts to vector db via Mem0 for {date_str}...")
+                    # BYPASS Mem0's broken LLM JSON parsing by storing the diary directly as a memory with infer=False
                     agent.add(
-                        f"下面是用户与{char_name}在{date_str}这一天的聊天记录。请务必严格使用简体中文（Simplified Chinese）来提取和总结所有的记忆事实、个人偏好和关联实体信息，绝对不要输出任何英文！\n聊天记录如下：\n{log_content}",
+                        today_diary,
                         user_id="player_01",
                         metadata={"date": date_str},
-                        prompt="You must strictly output a valid JSON object. The JSON object must contain exactly one key named 'memory', whose value is a list of dictionaries. Each dictionary must have a 'text' key (the extracted fact) and an 'event' key (set to 'ADD'). Do not output any markdown formatting."
+                        infer=False
                     )
-                    print(f"[MEMORY DISTILLER] Distillation completed successfully for {date_str}!")
+                    
+                    diary_file_path = os.path.join(DAILY_HISTORY_DIR, f"{char_id}_diary_{date_str}.txt")
+                    try:
+                        with open(diary_file_path, 'w', encoding='utf-8') as df:
+                            df.write(today_diary)
+                    except Exception as df_ex:
+                        print(f"[MEMORY DISTILLER] Failed to save diary: {df_ex}")
                 else:
                     print(f"[MEMORY DISTILLER] Log for {date_str} is empty. Skipping.")
                     

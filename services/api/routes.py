@@ -936,7 +936,7 @@ def manual_distill_now(payload: dict = Body(default={})):
                 test_fact,
                 user_id="player_01",
                 metadata={"date": datetime.now().strftime("%Y-%m-%d"), "test": True},
-                prompt="You must strictly output a valid JSON object. The JSON object must contain exactly one key named 'memory', whose value is a list of dictionaries. Each dictionary must have a 'text' key (the extracted fact) and an 'event' key (set to 'ADD'). Do not output any markdown formatting."
+                infer=False
             )
             return {"success": True, "message": "成功注入一条关于巧克力饼干和红茶生日的测试回忆！"}
             
@@ -956,13 +956,6 @@ def manual_distill_now(payload: dict = Body(default={})):
         if not log_content:
             return JSONResponse({"success": False, "error": "今日聊天记录为空！"})
             
-        print(f"[MANUAL DISTILL] Distilling today's chat logs ({today_str})...")
-        agent.add(
-            f"下面是用户与{char_name}在{today_str}这一天的聊天记录。请务必严格使用简体中文（Simplified Chinese）来提取和总结所有的记忆事实、个人偏好和关联实体信息，绝对不要输出任何英文！\n聊天记录如下：\n{log_content}",
-            user_id="player_01",
-            metadata={"date": today_str}
-        )
-        
         diary_file_path = os.path.join(DAILY_HISTORY_DIR, f"{char_id}_diary_{today_str}.txt")
         print(f"[MANUAL DISTILL] Generating today's diary for {char_name} ({today_str})...")
         today_diary = generate_pet_diary(today_str, log_content)
@@ -971,6 +964,14 @@ def manual_distill_now(payload: dict = Body(default={})):
                 df.write(today_diary)
         except Exception as df_ex:
             print(f"手动整理时保存日记失败: {df_ex}")
+
+        print(f"[MANUAL DISTILL] Distilling today's chat logs ({today_str})...")
+        agent.add(
+            today_diary,
+            user_id="player_01",
+            metadata={"date": today_str},
+            infer=False
+        )
         
         distilled_dates = config_data.get("distilled_dates", [])
         if today_str not in distilled_dates:
