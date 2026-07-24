@@ -603,7 +603,7 @@ class DesktopPet {
         const originalText = this.rewriteDiaryBtn.innerHTML;
         this.rewriteDiaryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在重写...';
         
-        // 涓存椂灏嗘棩璁板唴瀹规浛鎹负鍔犺浇鎻愮ず骞跺垏鍒版棩璁伴€夐」鍗?
+        // 临时将日记内容替换为加载提示并切换到日记选项卡
         this.currentDiary = "正在埋头回忆这天的相处，努力重写日记中，这需要几秒钟时间，请稍候...哼！";
         this.switchLogTab('diary');
 
@@ -642,7 +642,13 @@ class DesktopPet {
             if (tab === 'chat') {
                 this.subtabChat.classList.add('active');
                 this.subtabDiary.classList.remove('active');
-                this.logContentArea.innerText = this.currentChatLog || "今天没有聊天对话记录哦。";
+                
+                if (!this.currentChatLog) {
+                    this.logContentArea.innerText = "今天没有聊天对话记录哦。";
+                } else {
+                    this.logContentArea.innerHTML = '';
+                    this.logContentArea.appendChild(this.renderWechatStyleLog(this.currentChatLog));
+                }
                 
                 // 滚动到底部，方便查看当天的最新聊天
                 setTimeout(() => {
@@ -663,7 +669,75 @@ class DesktopPet {
         }
     }
 
-
+    renderWechatStyleLog(logText) {
+        const container = document.createElement('div');
+        container.className = 'wechat-chat-container';
+        
+        const lines = logText.split('\n');
+        let lastTime = '';
+        
+        for (let line of lines) {
+            line = line.trim();
+            if (!line) continue;
+            
+            const match = line.match(/^\[(.*?)\]\s+(.*?):\s+(.*)$/);
+            if (match) {
+                const time = match[1];
+                let sender = match[2];
+                const content = match[3];
+                
+                const timeStr = time.substring(0, 5); // HH:MM
+                if (timeStr !== lastTime) {
+                    const timeDiv = document.createElement('div');
+                    timeDiv.className = 'wechat-timestamp';
+                    timeDiv.textContent = timeStr;
+                    container.appendChild(timeDiv);
+                    lastTime = timeStr;
+                }
+                
+                const isUser = sender.toLowerCase() === 'you' || sender.toLowerCase().includes('you ');
+                
+                const row = document.createElement('div');
+                row.className = 'wechat-msg-row ' + (isUser ? 'is-user' : 'is-bot');
+                
+                const avatar = document.createElement('div');
+                avatar.className = 'wechat-avatar';
+                if (isUser) {
+                    avatar.innerHTML = '<i class="fas fa-user" style="color:#fff; font-size:20px; line-height:36px; text-align:center; width:100%;"></i>';
+                    avatar.style.background = '#009688';
+                } else {
+                    avatar.style.backgroundImage = `url('${this.images['normal'] || ''}')`;
+                    avatar.style.backgroundSize = 'cover';
+                    avatar.style.backgroundPosition = 'top center';
+                }
+                
+                const msgContent = document.createElement('div');
+                msgContent.className = 'wechat-msg-content';
+                
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'wechat-sender-name';
+                nameDiv.textContent = isUser ? '你' : sender.replace(/\(.*?\)/g, '').trim();
+                
+                const bubble = document.createElement('div');
+                bubble.className = 'wechat-bubble';
+                bubble.textContent = content;
+                
+                msgContent.appendChild(nameDiv);
+                msgContent.appendChild(bubble);
+                
+                row.appendChild(avatar);
+                row.appendChild(msgContent);
+                
+                container.appendChild(row);
+            } else {
+                const sysMsg = document.createElement('div');
+                sysMsg.className = 'wechat-timestamp';
+                sysMsg.textContent = line;
+                container.appendChild(sysMsg);
+            }
+        }
+        return container;
+    }
 
     async exitGame() {
         if (!await window.asyncConfirm(`要让${this.charName}去睡觉吗？`)) return;
