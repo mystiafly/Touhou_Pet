@@ -36,13 +36,38 @@ def load_databank():
     for key, sheet in template.items():
         if not key.startswith("sheet_"):
             continue
+        state_content = state.get(key)
+        template_content = sheet.get("content", [])
+        
+        final_content = template_content
+        if state_content and len(state_content) > 0 and len(template_content) > 0:
+            state_headers = state_content[0]
+            template_headers = template_content[0]
+            
+            if state_headers != template_headers:
+                # Re-align state_content to match template_headers
+                realigned_content = [template_headers]
+                for row in state_content[1:]:
+                    new_row = []
+                    for h in template_headers:
+                        if h in state_headers:
+                            idx = state_headers.index(h)
+                            val = row[idx] if idx < len(row) else ""
+                            new_row.append(val)
+                        else:
+                            new_row.append("")
+                    realigned_content.append(new_row)
+                final_content = realigned_content
+            else:
+                final_content = state_content
+        elif state_content:
+            final_content = state_content
             
         merged[key] = {
             "name": sheet.get("name", key),
             "exportConfig": sheet.get("exportConfig", {}),
             "sourceData": sheet.get("sourceData", {}),
-            # 如果状态文件里有保存过这个表的行数据，优先用状态里的，否则用模板默认的
-            "content": state.get(key, sheet.get("content", []))
+            "content": final_content
         }
         
     return merged
