@@ -28,7 +28,19 @@ def get_config():
     if os.path.exists(config_file):
         try:
             with open(config_file, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                config = json.load(f)
+                
+            # --- 兼容与兜底：如果 config.json 丢失了 user_prompt 字段，从 txt 补齐 ---
+            if "user_prompt" not in config:
+                user_prompt_path = get_file_path("user_prompt.txt")
+                if os.path.exists(user_prompt_path):
+                    try:
+                        with open(user_prompt_path, 'r', encoding='utf-8') as pf:
+                            config["user_prompt"] = pf.read()
+                    except:
+                        pass
+            
+            return config
         except:
             pass
     return {"api_provider": "gemini"}
