@@ -261,7 +261,7 @@ def build_post_messages(state: AgentState) -> list:
 def call_model_with_fallback(active_messages, provider_override, node_name="LLM"):
     print(f"\n{'='*20} [{node_name}] 发送给大模型的上下文 {'='*20}")
     for m in active_messages:
-        content_preview = m.content[:1000] + "..." if len(m.content) > 1000 else m.content
+        content_preview = m.content
         print(f"[{m.type.upper()}]:\n{content_preview}\n")
     print("="*60 + "\n")
 
