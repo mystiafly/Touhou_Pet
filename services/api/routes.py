@@ -408,6 +408,9 @@ async def api_characters_generate(req: CharacterGenRequest):
     except Exception as e:
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
+@router.post("/api/characters/import")
+async def api_characters_import(
+    char_id: str = Form(...),
     file: UploadFile = File(...)
 ):
     import os, json, shutil, zipfile
