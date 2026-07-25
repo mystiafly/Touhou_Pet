@@ -408,6 +408,116 @@ async def api_characters_generate(req: CharacterGenRequest):
     except Exception as e:
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
+    file: UploadFile = File(...)
+):
+    import os, json, shutil, zipfile
+    from tempfile import mkdtemp
+    from core.config_manager import SERVICES_DIR
+
+    char_dir = os.path.join(SERVICES_DIR, "characters", char_id)
+    img_dir = os.path.join(SERVICES_DIR, "static", "images", char_id)
+    
+    if os.path.exists(char_dir):
+        return JSONResponse({"status": "error", "message": "该 ID 已存在，请更换！"}, status_code=400)
+        
+    temp_dir = mkdtemp()
+    try:
+        zip_path = os.path.join(temp_dir, "upload.zip")
+        
+        with open(zip_path, "wb") as f:
+            shutil.copyfileobj(file.file, f)
+            
+        extract_dir = os.path.join(temp_dir, "extract")
+        os.makedirs(extract_dir, exist_ok=True)
+        
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(extract_dir)
+            
+        # 智能查找包裹根目录（即 manifest.json 所在的目录）
+        found_root = None
+        for root, dirs, files in os.walk(extract_dir):
+            if "manifest.json" in files:
+                found_root = root
+                break
+                
+        if not found_root:
+            shutil.rmtree(temp_dir)
+            return JSONResponse({"status": "error", "message": "压缩包内未找到 manifest.json"}, status_code=400)
+            
+        extract_dir = found_root
+        manifest_path = os.path.join(extract_dir, "manifest.json")
+            
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            manifest = json.load(f)
+            
+        char_name = manifest.get("name", char_id)
+        persona_prompt = manifest.get("core_prompt", "")
+        theme_color = manifest.get("theme_color", "")
+        
+        os.makedirs(char_dir, exist_ok=True)
+        os.makedirs(img_dir, exist_ok=True)
+        
+        assets_dir = os.path.join(extract_dir, "assets")
+        if os.path.exists(assets_dir):
+            for sub in ["main_sprites", "side_sprites"]:
+                sub_dir = os.path.join(assets_dir, sub)
+                if os.path.exists(sub_dir):
+                    for item in os.listdir(sub_dir):
+                        s = os.path.join(sub_dir, item)
+                        d = os.path.join(img_dir, item)
+                        if os.path.isfile(s):
+                            shutil.copy2(s, d)
+                            
+        prompts_dir = os.path.join(extract_dir, "prompts")
+        if os.path.exists(prompts_dir):
+            for item in os.listdir(prompts_dir):
+                s = os.path.join(prompts_dir, item)
+                d = os.path.join(char_dir, item)
+                if os.path.isfile(s):
+                    shutil.copy2(s, d)
+                    
+        presets_dir = os.path.join(extract_dir, "presets")
+        if os.path.exists(presets_dir):
+            shutil.copytree(presets_dir, os.path.join(char_dir, "presets"), dirs_exist_ok=True)
+            
+        databank_template = os.path.join(extract_dir, "databank", "template.json")
+        if os.path.exists(databank_template):
+            shutil.copy2(databank_template, os.path.join(char_dir, "databank_template.json"))
+            
+        databank_state = os.path.join(extract_dir, "databank", "state.json")
+        if os.path.exists(databank_state):
+            shutil.copy2(databank_state, os.path.join(char_dir, "databank_state.json"))
+            
+        # load user_prompt if exists
+        user_prompt_val = ""
+        user_prompt_file = os.path.join(extract_dir, "prompts", "user_prompt.txt")
+        if os.path.exists(user_prompt_file):
+            try:
+                with open(user_prompt_file, "r", encoding="utf-8") as f:
+                    user_prompt_val = f.read()
+            except:
+                pass
+                
+        config_data = {
+            "api_provider": "gemini",
+            "model_name": "gemini-2.5-pro",
+            "character_name": char_name,
+            "persona_prompt": persona_prompt,
+            "user_prompt": user_prompt_val,
+            "app_launcher": {}
+        }
+        if theme_color:
+            config_data["theme_color"] = theme_color
+            
+        with open(os.path.join(char_dir, "config.json"), "w", encoding="utf-8") as f:
+            json.dump(config_data, f, ensure_ascii=False, indent=2)
+            
+        return JSONResponse({"status": "success", "message": "导入成功！"})
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
 @router.get("/api/character_info")
 async def api_character_info():
     import json
