@@ -1069,6 +1069,7 @@ function renderPresetsList(type, data, containerId) {
         if (preset.always_active) badgesHtml += '<span class="preset-badge active">Always Active</span>';
         if (preset.min_favorability !== undefined && preset.min_favorability !== null) badgesHtml += `<span class="preset-badge">Fav ≥ ${preset.min_favorability}</span>`;
         if (preset.max_favorability !== undefined && preset.max_favorability !== null) badgesHtml += `<span class="preset-badge">Fav ≤ ${preset.max_favorability}</span>`;
+        if (preset.disable) badgesHtml += '<span class="preset-badge disabled">Disabled</span>';
         
         let kwStr = (preset.trigger_keywords && preset.trigger_keywords.length) ? preset.trigger_keywords.join(', ') : '';
         
