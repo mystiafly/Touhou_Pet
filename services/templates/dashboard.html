@@ -72,10 +72,6 @@
                         <label for="api-provider-select">选择AI大脑:</label>
                         <div style="display: flex; gap: 10px;">
                             <select id="api-provider-select" class="modern-select" style="flex: 1;">
-                                <option value="gemini">Gemini 2.5 Flash</option>
-                                <option value="deepseek-v4-flash">DeepSeek V4 Flash</option>
-                                <option value="deepseek-v4-pro">DeepSeek V4 Pro</option>
-                                <option value="deepseek-chat">DeepSeek V3 (标准版)</option>
                             </select>
                             <button id="manage-engines-btn" class="action-btn outline"><i class="fas fa-plus"></i> 自定义引擎</button>
                         </div>
@@ -118,10 +114,6 @@
                         <label for="pre-api-provider-select">前置辅助模型 (Pre-LLM): <span class="help-text" style="display:inline; margin-left:10px;">负责工具调用、意图识别（建议: 快速/廉价模型）</span></label>
                         <select id="pre-api-provider-select" class="modern-select">
                             <option value="inherit">=== 继承主对话模型 ===</option>
-                            <option value="gemini">Gemini 2.5 Flash</option>
-                            <option value="deepseek-v4-flash">DeepSeek V4 Flash</option>
-                            <option value="deepseek-v4-pro">DeepSeek V4 Pro</option>
-                            <option value="deepseek-chat">DeepSeek V3 (标准版)</option>
                         </select>
                     </div>
                     <div class="form-group" style="margin-bottom: 15px;">
@@ -132,10 +124,6 @@
                         <label for="post-api-provider-select">后置填表模型 (Post-LLM): <span class="help-text" style="display:inline; margin-left:10px;">负责读取对话总结并更新 DataBank（建议: 快速/廉价模型）</span></label>
                         <select id="post-api-provider-select" class="modern-select">
                             <option value="inherit">=== 继承主对话模型 ===</option>
-                            <option value="gemini">Gemini 2.5 Flash</option>
-                            <option value="deepseek-v4-flash">DeepSeek V4 Flash</option>
-                            <option value="deepseek-v4-pro">DeepSeek V4 Pro</option>
-                            <option value="deepseek-chat">DeepSeek V3 (标准版)</option>
                         </select>
                     </div>
 

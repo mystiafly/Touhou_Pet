@@ -172,15 +172,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     visionEngineSelect.value = configData.vision_engine;
                 }
                 
-                const geminiOption = apiSelect.querySelector('option[value="gemini"]');
-                const dsFlashOption = apiSelect.querySelector('option[value="deepseek-v4-flash"]');
-                const dsProOption = apiSelect.querySelector('option[value="deepseek-v4-pro"]');
-                const dsChatOption = apiSelect.querySelector('option[value="deepseek-chat"]');
+                const preApiSelect = document.getElementById('pre-api-provider-select');
+                if (preApiSelect && configData.pre_api_provider) {
+                    preApiSelect.value = configData.pre_api_provider;
+                }
                 
-                if (geminiOption) geminiOption.innerText = configData.has_gemini ? "Gemini 2.5 (检测到 Key)" : "Gemini 2.5 (未检测到 Key)";
-                if (dsFlashOption) dsFlashOption.innerText = configData.has_deepseek ? "DeepSeek V4 Flash (已配 Key)" : "DeepSeek V4 Flash (未配 Key)";
-                if (dsProOption) dsProOption.innerText = configData.has_deepseek ? "DeepSeek V4 Pro (已配 Key)" : "DeepSeek V4 Pro (未配 Key)";
-                if (dsChatOption) dsChatOption.innerText = configData.has_deepseek ? "DeepSeek V3 (已配 Key)" : "DeepSeek V3 (未配 Key)";
+                const postApiSelect = document.getElementById('post-api-provider-select');
+                if (postApiSelect && configData.post_api_provider) {
+                    postApiSelect.value = configData.post_api_provider;
+                }
+                
+                const mainDisplay = document.getElementById('main-api-provider-display');
+                if (mainDisplay) {
+                    const selectedOpt = apiSelect.options[apiSelect.selectedIndex];
+                    mainDisplay.value = selectedOpt ? selectedOpt.text : apiSelect.value;
+                }
                 
                 const userPromptArea = document.getElementById('user-prompt');
                 if (userPromptArea && configData.user_prompt !== undefined) {
@@ -2120,7 +2126,11 @@ window.deleteCustomEngine = async function(id) {
             // 重新设置 select value 避免空状态
             const apiSelect = document.getElementById('api-provider-select');
             if(apiSelect.value === id) {
-                apiSelect.value = 'gemini';
+                if (apiSelect.options.length > 0) {
+                    apiSelect.selectedIndex = 0;
+                } else {
+                    apiSelect.value = '';
+                }
                 // Trigger change to save backend
                 apiSelect.dispatchEvent(new Event('change'));
             }
