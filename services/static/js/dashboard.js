@@ -1074,21 +1074,17 @@ function renderPresetsList(type, data, containerId) {
         let kwStr = (preset.trigger_keywords && preset.trigger_keywords.length) ? preset.trigger_keywords.join(', ') : '';
         
         item.innerHTML = `
-            <div class="preset-header" onclick="this.parentElement.classList.toggle('expanded')">
+            <div class="preset-header">
                 <div>
                     <div class="preset-title">
                         ${preset.name}
                     </div>
                     <div class="preset-badges" style="margin-top: 5px;">${badgesHtml}</div>
                 </div>
-                <div class="preset-actions" onclick="event.stopPropagation();">
+                <div class="preset-actions">
                     <button class="preset-btn edit" onclick="editPreset('${type}', '${preset.name}')" title="编辑"><i class="fas fa-pen"></i></button>
                     <button class="preset-btn delete" onclick="deletePreset('${type}', '${preset.name}')" title="删除"><i class="fas fa-trash"></i></button>
                 </div>
-            </div>
-            <div class="preset-body">
-                ${kwStr ? `<div style="font-size:12px; color:var(--text-secondary); margin-bottom:5px;"><b>关键词:</b> ${kwStr}</div>` : ''}
-                <div class="preset-prompt">${preset.prompt || ''}</div>
             </div>
         `;
         container.appendChild(item);
