@@ -681,6 +681,25 @@ input:checked + .slider:before {
 .preset-badge {
     font-size: 11px;
     padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.1);
+    color: var(--text-secondary);
+}
+
+.preset-badge.active {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+}
+
+.preset-badge.disabled {
+    background: rgba(220, 53, 69, 0.2);
+    color: #dc3545;
+}
+
+.preset-actions {
+    display: flex;
+    gap: 8px;
+}
 
 .preset-btn {
     background: none;
