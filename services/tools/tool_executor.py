@@ -48,6 +48,10 @@ def parse_reply(text):
         except:
             pass
 
+    # 移除内部思维链的标签及其内容 (如 <character_thought>...</character_thought> 或 <tucao>)
+    text = re.sub(r'<[^>]*thought[^>]*>.*?</[^>]*thought[^>]*>', '', text, flags=re.IGNORECASE | re.DOTALL)
+    text = re.sub(r'<tucao>.*?</tucao>', '', text, flags=re.IGNORECASE | re.DOTALL)
+
     # 3. 清理除了系统级别工具任务标签以外的所有方括号标签，保障对白内容绝对不泄露格式标签
     # 采用负向先行断言正则，智能跳过各类工具和指令标签的清洗
     clean_content = re.sub(r'\[(?!BROWSER_TASK|MUSIC_PLAY|LAUNCH_APP|SEARCH_ENGINE|UPDATE_USER_NAME|UPDATE_PET_NAME)[^\]]+\]', '', text).strip()
