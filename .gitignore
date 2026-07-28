@@ -41,3 +41,7 @@ services/characters/*/daily_history/
 services/characters/*/qdrant_db/
 legacy_backup/
 data/
+
+# === ±‡“Î”ÎππΩ® ===
+build/
+*.spec
