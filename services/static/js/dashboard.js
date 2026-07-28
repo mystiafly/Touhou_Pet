@@ -487,29 +487,147 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 处理双模式切换
+    // 处理多模式切换
     const modeLazyBtn = document.getElementById('mode-lazy-btn');
     const modeProBtn = document.getElementById('mode-pro-btn');
+    const modeImportBtn = document.getElementById('mode-import-btn');
+    const modeDeleteBtn = document.getElementById('mode-delete-btn');
     const formLazyMode = document.getElementById('form-lazy-mode');
     const formProMode = document.getElementById('form-pro-mode');
+    const formImportMode = document.getElementById('form-import-mode');
+    const formDeleteMode = document.getElementById('form-delete-mode');
 
-    if (modeLazyBtn && modeProBtn) {
-        modeLazyBtn.addEventListener('click', () => {
-            modeLazyBtn.classList.add('active');
-            modeLazyBtn.classList.remove('outline');
-            modeProBtn.classList.add('outline');
-            modeProBtn.classList.remove('active');
-            formLazyMode.style.display = 'block';
-            formProMode.style.display = 'none';
+    function switchMode(activeBtn, activeForm) {
+        [modeLazyBtn, modeProBtn, modeImportBtn, modeDeleteBtn].forEach(btn => {
+            if (!btn) return;
+            btn.classList.add('outline');
+            btn.classList.remove('active');
         });
+        [formLazyMode, formProMode, formImportMode, formDeleteMode].forEach(form => {
+            if (!form) return;
+            form.style.display = 'none';
+        });
+        
+        if (activeBtn) {
+            activeBtn.classList.remove('outline');
+            activeBtn.classList.add('active');
+        }
+        if (activeForm) {
+            activeForm.style.display = 'block';
+        }
+    }
 
-        modeProBtn.addEventListener('click', () => {
-            modeProBtn.classList.add('active');
-            modeProBtn.classList.remove('outline');
-            modeLazyBtn.classList.add('outline');
-            modeLazyBtn.classList.remove('active');
-            formProMode.style.display = 'block';
-            formLazyMode.style.display = 'none';
+    if (modeLazyBtn && modeProBtn && modeImportBtn && modeDeleteBtn) {
+        modeLazyBtn.addEventListener('click', () => switchMode(modeLazyBtn, formLazyMode));
+        modeProBtn.addEventListener('click', () => switchMode(modeProBtn, formProMode));
+        modeImportBtn.addEventListener('click', () => switchMode(modeImportBtn, formImportMode));
+        modeDeleteBtn.addEventListener('click', () => switchMode(modeDeleteBtn, formDeleteMode));
+    }
+
+    // 处理导入角色卡
+    const importBtn = document.getElementById('import-btn');
+    if (importBtn) {
+        importBtn.addEventListener('click', async () => {
+            const charId = document.getElementById('import-char-id').value.trim();
+            const fileInput = document.getElementById('import-char-file');
+            const statusText = document.getElementById('import-status');
+            
+            if (!charId) {
+                alert("请填写底层英文 ID！");
+                return;
+            }
+            if (!/^[a-z0-9_]+$/.test(charId)) {
+                alert("英文 ID 只能包含小写字母、数字和下划线！");
+                return;
+            }
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert("请选择要导入的角色卡压缩包！");
+                return;
+            }
+
+            const confirmImport = await window.asyncConfirm(`即将解压角色卡到 "${charId}"，并配置系统资产。确认继续吗？`);
+            if (!confirmImport) return;
+
+            importBtn.disabled = true;
+            statusText.style.display = 'block';
+            statusText.textContent = "正在上传并解析压缩包，请稍候...";
+            statusText.className = "help-text";
+
+            try {
+                const formData = new FormData();
+                formData.append('char_id', charId);
+                formData.append('file', fileInput.files[0]);
+
+                const res = await fetch('/api/characters/import', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    statusText.textContent = "角色导入成功！即将刷新页面...";
+                    statusText.className = "help-text text-success";
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    statusText.textContent = "导入失败: " + (data.message || "未知错误");
+                    statusText.className = "help-text text-danger";
+                    importBtn.disabled = false;
+                }
+            } catch (e) {
+                console.error(e);
+                statusText.textContent = "网络错误，请检查后端运行状态。";
+                statusText.className = "help-text text-danger";
+                importBtn.disabled = false;
+            }
+        });
+    }
+
+    // 处理删除角色
+    const deleteBtn = document.getElementById('delete-char-btn');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', async () => {
+            const charId = document.getElementById('delete-char-id').value.trim();
+            const statusText = document.getElementById('delete-status');
+
+            if (!charId) {
+                alert("请选择要销毁的角色！");
+                return;
+            }
+
+            const confirmDelete = await window.asyncConfirm(`【警告】即将永久销毁角色 "${charId}"，包括其所有资源文件、记忆、预设。\n此操作不可逆，请确认是否继续？`);
+            if (!confirmDelete) return;
+
+            const finalConfirm = await window.asyncConfirm(`再次确认：你真的要删除 "${charId}" 吗？`);
+            if (!finalConfirm) return;
+
+            deleteBtn.disabled = true;
+            statusText.style.display = 'block';
+            statusText.textContent = "正在执行销毁操作，请稍候...";
+            statusText.className = "help-text";
+
+            try {
+                const res = await fetch(`/api/characters/${encodeURIComponent(charId)}`, {
+                    method: 'DELETE'
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    statusText.textContent = "角色销毁成功！即将刷新页面...";
+                    statusText.className = "help-text text-success";
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    statusText.textContent = "销毁失败: " + (data.message || "未知错误");
+                    statusText.className = "help-text text-danger";
+                    deleteBtn.disabled = false;
+                }
+            } catch (e) {
+                console.error(e);
+                statusText.textContent = "网络错误，请检查后端运行状态。";
+                statusText.className = "help-text text-danger";
+                deleteBtn.disabled = false;
+            }
         });
     }
 

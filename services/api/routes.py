@@ -524,9 +524,11 @@ async def api_characters_import(
 @router.get("/api/character_info")
 async def api_character_info():
     import json
+    from core.config_manager import get_custom_engines
     char_id = get_active_character_id()
     config = get_config()
     char_name = config.get("character_name", char_id)
+    needs_onboarding = len(get_custom_engines()) == 0
     return JSONResponse({
         "character_id": char_id,
         "character_name": char_name,
@@ -535,7 +537,8 @@ async def api_character_info():
         "enable_greeting": config.get("enable_greeting", True),
         "enable_auto_speak": config.get("enable_auto_speak", True),
         "auto_speak_multiplier": config.get("auto_speak_multiplier", 1.0),
-        "bubble_duration_multiplier": config.get("bubble_duration_multiplier", 1.0)
+        "bubble_duration_multiplier": config.get("bubble_duration_multiplier", 1.0),
+        "needs_onboarding": needs_onboarding
     })
 
 @router.post("/api/switch_character")

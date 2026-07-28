@@ -304,6 +304,8 @@
                 <div class="mode-tabs" style="margin-top: 15px; display: flex; gap: 10px;">
                     <button id="mode-lazy-btn" class="action-btn active" style="flex: 1; justify-content: center;"><i class="fas fa-magic"></i> 懒人模式</button>
                     <button id="mode-pro-btn" class="action-btn outline" style="flex: 1; justify-content: center;"><i class="fas fa-code"></i> 高手模式</button>
+                    <button id="mode-import-btn" class="action-btn outline" style="flex: 1; justify-content: center;"><i class="fas fa-file-import"></i> 导入模式</button>
+                    <button id="mode-delete-btn" class="action-btn outline" style="flex: 1; justify-content: center; border-color: #ff4d4f; color: #ff4d4f;"><i class="fas fa-trash-alt"></i> 删除模式</button>
                 </div>
             </header>
             
@@ -368,6 +370,44 @@
                         <i class="fas fa-bolt"></i> 瞬间注入 (纯 Python 极速写入)
                     </button>
                     <p id="generate-pro-status" class="help-text text-success" style="margin-top: 10px; text-align: center; display: none;">配置已物理写入磁盘！</p>
+                </div>
+                
+                <!-- 导入模式表单 -->
+                <div id="form-import-mode" class="settings-card hidden" style="display: none;">
+                    <h3><i class="fas fa-file-archive"></i> 导入角色卡 (压缩包)</h3>
+                    
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="import-char-id" style="font-weight: 500; font-size: 14px;">英文 ID (必填)</label>
+                        <input type="text" id="import-char-id" class="modern-input" placeholder="例如：wriggle_test" style="margin-top: 8px; width: 100%;">
+                        <p class="help-text">底层英文ID文件夹名（通常填入角色英文名），不可与现有角色重复。</p>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="import-char-file" style="font-weight: 500; font-size: 14px;">角色卡文件 (.zip)</label>
+                        <input type="file" id="import-char-file" class="modern-input" accept=".zip,.rumia" style="margin-top: 8px; width: 100%;">
+                        <p class="help-text">请选择符合标准的角色卡压缩包。</p>
+                    </div>
+
+                    <button id="import-btn" class="action-btn" style="margin-top: 20px; width: 100%; justify-content: center;">
+                        <i class="fas fa-upload"></i> 导入并解析角色卡
+                    </button>
+                    <p id="import-status" class="help-text" style="margin-top: 10px; text-align: center; display: none;">正在导入，请稍候...</p>
+                </div>
+
+                <!-- 删除模式表单 -->
+                <div id="form-delete-mode" class="settings-card hidden" style="display: none;">
+                    <h3><i class="fas fa-skull"></i> 抹除灵魂 (放入回收站)</h3>
+                    
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="delete-char-id" style="font-weight: 500; font-size: 14px;">要删除的角色英文 ID (必填)</label>
+                        <input type="text" id="delete-char-id" class="modern-input" placeholder="例如：wriggle_test" style="margin-top: 8px; width: 100%;">
+                        <p class="help-text" style="color: #ff4d4f;">警告：删除后该角色将无法使用！</p>
+                    </div>
+
+                    <button id="delete-char-btn" class="action-btn" style="margin-top: 20px; width: 100%; justify-content: center; background-color: #ff4d4f; border-color: #ff4d4f; color: white;">
+                        <i class="fas fa-trash"></i> 彻底剥离 (移入回收站)
+                    </button>
+                    <p id="delete-status" class="help-text" style="margin-top: 10px; text-align: center; display: none;">正在删除，请稍候...</p>
                 </div>
             </div>
         </section>
@@ -798,6 +838,20 @@
             </div>
             
             <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0;">
+            
+            <div id="engine-onboarding-banner" style="background: rgba(74, 222, 128, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid rgba(74, 222, 128, 0.3);">
+                <h4 style="margin-top:0; color: #4ade80; margin-bottom: 8px;"><i class="fas fa-gift"></i> 新玩家福利：免费获取 AI 大脑</h4>
+                <p style="margin-bottom: 12px; font-size: 0.9em; line-height: 1.5; color: var(--text-color);">
+                    推荐注册 <strong>硅基流动 (SiliconFlow)</strong>，内含大量免费开源模型，注册即送充值额度，完全无需本地部署！
+                </p>
+                <a href="https://cloud.siliconflow.cn/i/kzBKolzI" target="_blank" class="action-btn outline" style="display: inline-flex; align-items: center; justify-content: center; text-decoration: none; border-color: #4ade80; color: #4ade80; padding: 6px 12px; border-radius: 6px;">
+                    <i class="fas fa-external-link-alt" style="margin-right: 6px;"></i> 点击去注册获取 API Key
+                </a>
+                <p style="margin-top: 12px; margin-bottom: 0; font-size: 0.85em; color: var(--text-secondary);">
+                    👉 <strong>教程：</strong> 获取 Key 后，在下方选择【硅基流动】，粘贴你的 Key，点击保存即可激活桌宠！
+                </p>
+            </div>
+
             <h3><i class="fas fa-plus-circle"></i> 添加/编辑引擎</h3>
             
             <form id="engine-form" onsubmit="return false;">

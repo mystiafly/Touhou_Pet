@@ -134,15 +134,38 @@ def build_main_messages(state: AgentState) -> list:
         "[SYSTEM REMINDER - P0 HIGHEST PRIORITY]\n"
         "【最高优先级提醒与行为约束（基础静态规则）】\n"
         f"1. 角色约束与动作描写：请严格扮演{char_name}（{persona_prompt}），用中文回答。在对话中建议穿插用圆括号包裹的动作/表情描述（如：‘(脸红扭过头)’）。如果下方的【触发预设】有更细致的格式与描述要求，请一并严格执行。\n"
-        "2. 格式约束：你的回复必须且只能遵循 '[心情][评分]对话内容' 格式要求。\n"
+        "2. 格式约束：你的最终回复文本必须且只能遵循 '[心情][评分]对话内容' 格式要求。\n"
+        "   - 必须在格式化输出前，使用 <character_thought>...</character_thought> 标签包裹你内心的思考、情绪排查与行动计划（即思维链）。\n"
         "   - '[心情]' 必须且只能是以下英文单词之一：[normal], [angry], [shy], [crying]。\n"
         "   - '[评分]' 必须且只能是方括号内包裹一个 0 到 20 之间的纯数字评分（如 [12]），代表当前言论的好感度评分（10为基准，>10加分，<10扣分）。\n"
-        "   - 示例：'[normal][12]哼，笨蛋！(双手叉腰)'\n\n"
+        "   - 示例：\n"
+        "     <character_thought>\n"
+        "     （思考过程...）\n"
+        "     </character_thought>\n"
+        "     [normal][12]哼，笨蛋！(双手叉腰)\n\n"
     )
     if is_self:
         base_rules += "3. 注意事项：目前只是你在自言自语主动搭话，绝对不要扮演用户或者假装用户对你说了什么！\n"
         
     cat1_parts.append(base_rules)
+    
+    dynamic_presets_list = []
+    if custom_presets:
+        if isinstance(custom_presets, list):
+            sorted_presets = sorted(custom_presets, key=lambda x: x.get("order", 100))
+            constant_content = []
+            for p in sorted_presets:
+                content = p.get("content", p.get("prompt", ""))
+                if not content: continue
+                if p.get("always_active", False) or p.get("constant", False):
+                    constant_content.append(content)
+                else:
+                    dynamic_presets_list.append(content)
+            
+            if constant_content:
+                cat1_parts.append("[SYSTEM INJECTION: 常驻预设]\n" + "\n\n".join(constant_content))
+        else:
+            dynamic_presets_list.append(str(custom_presets))
     system_prompt_top = "\n\n=======================================================================\n\n".join(cat1_parts)
 
     lc_history = []
@@ -200,18 +223,8 @@ def build_main_messages(state: AgentState) -> list:
     if tool_feedback:
         tail_parts.append(f"[SYSTEM INJECTION: 动作与工具执行反馈]\n刚才系统已经帮你执行了后台动作，反馈如下：\n{tool_feedback}\n请你结合此反馈，以角色的口吻自然地回复用户。")
         
-    if custom_presets:
-        preset_content = []
-        if isinstance(custom_presets, list):
-            sorted_presets = sorted(custom_presets, key=lambda x: x.get("order", 100))
-            for p in sorted_presets:
-                if p.get("content", p.get("prompt", "")):
-                    preset_content.append(p.get("content", p.get("prompt", "")))
-        else:
-            preset_content.append(str(custom_presets))
-            
-        if preset_content:
-            tail_parts.append(f"[SYSTEM INJECTION: 触发预设]\n⚠️ 仅当以下预设内容与当前剧情/对话上下文相关时，才在你的回复中自然地结合或提及它；如果毫无关联，请直接忽略该预设，不要强行提及：\n" + "\n\n".join(preset_content))
+    if dynamic_presets_list:
+        tail_parts.append(f"[SYSTEM INJECTION: 触发预设]\n⚠️ 仅当以下预设内容与当前剧情/对话上下文相关时，才在你的回复中自然地结合或提及它；如果毫无关联，请直接忽略该预设，不要强行提及：\n" + "\n\n".join(dynamic_presets_list))
 
     tail_block = "\n\n=======================================================================\n\n".join(tail_parts)
     

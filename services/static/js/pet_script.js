@@ -198,6 +198,8 @@ class DesktopPet {
             } catch(e) {
                 console.error("Failed to load reaction lines", e);
             }
+            
+            this.needsOnboarding = data.needs_onboarding;
         } catch (e) {
             console.error("Failed to load character info", e);
         }
@@ -477,7 +479,12 @@ class DesktopPet {
             }
         }
 
-        if (this.enableGreeting) {
+        if (this.needsOnboarding) {
+            setTimeout(() => {
+                this.showBubble(`人类，我的大脑现在一片空白，需要你帮我连接一下‘魔力源泉’（AI 引擎）我才能说话哦！<br><br><button onclick="window.__petIPC.openSettingsWindow()" style="padding:6px 12px; border-radius:6px; background:#4a4a5a; color:#fff; cursor:pointer; border:1px solid #6a6a7a; font-family:inherit; font-size:12px;"><i class="fas fa-plug"></i> 点击为我配置大脑</button>`, -1, true);
+                this.setEmotion('crying');
+            }, 1000);
+        } else if (this.enableGreeting) {
             setTimeout(() => this.greetUser(), 500);
         }
     }
@@ -789,7 +796,7 @@ class DesktopPet {
     }
 
 // [淇敼] 鏄剧ず姘旀场 (duration 濡傛灉涓嶄紶鎴栦紶 null锛屽垯鑷姩璁＄畻)
-    showBubble(text, duration = null) {
+    showBubble(text, duration = null, isHtml = false) {
         // [鏂板] 缃戞槗浜戠偣姝岄殣钘忔寚浠よВ鏋愭嫤鎴?
         const musicRegex = /\[MUSIC_PLAY:\s*(.*?)\s*\]/;
         const match = text.match(musicRegex);
@@ -800,9 +807,14 @@ class DesktopPet {
             this.searchAndPlayMusic(musicQuery);
         }
 
-        // 转义并解析动作括号
-        const escapedText = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const htmlText = escapedText.replace(/(\(.*?\)|（.*?）)/g, '<span class="action-text">$1</span>');
+        let htmlText;
+        if (isHtml) {
+            htmlText = text;
+        } else {
+            // 转义并解析动作括号
+            const escapedText = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            htmlText = escapedText.replace(/(\(.*?\)|（.*?）)/g, '<span class="action-text">$1</span>');
+        }
         this.bubbleContent.innerHTML = htmlText;
         this.bubbleContent.scrollTop = 0; // 閲嶇疆鏂囧瓧妗嗘粴鍔ㄦ潯浣嶇疆鍒伴《閮紝闃叉涓婁竴鏉¤秴闀挎枃鏈畫鐣欐粴鍔ㄦ潯
         this.bubble.style.opacity = '1';
@@ -1010,6 +1022,11 @@ class DesktopPet {
     }
 
     async triggerPetSpeak() {
+        if (this.isPeeking) {
+            this.resetAutoSpeakTimer();
+            return;
+        }
+        
         this.autoSpeakCount++;
         try {
             const response = await fetch('/api/pet_speak', {
