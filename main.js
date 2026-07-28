@@ -213,6 +213,9 @@ function createWindow() {
             preload: path.join(__dirname, 'preload.js')
         }
     });
+    
+    // 强制把窗口层级提升到最高，避免被全屏游戏或应用遮挡
+    win.setAlwaysOnTop(true, 'screen-saver');
 
     // 閸旂姾娴?Flask/FastAPI 閻ㄥ嫭顢戠€圭娀銆夐棃?(閺€顖涘瘮閸氬骸褰撮幈銏犳儙閸斻劍妫ら梽鎰板櫢鐠囨洜娲块崚鎷岀箾閹恒儲鍨氶崝?
     const petUrl = 'http://127.0.0.1:5000/pet?t=' + Date.now();
