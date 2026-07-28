@@ -408,12 +408,68 @@ async def api_characters_generate(req: CharacterGenRequest):
     except Exception as e:
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
+@router.post("/api/characters/export")
+async def api_characters_export(request: Request, background_tasks: BackgroundTasks):
+    import os, shutil, zipfile
+    from tempfile import mkdtemp
+    from core.config_manager import SERVICES_DIR
+    
+    try:
+        data = await request.json()
+        char_id = data.get("char_id")
+        export_memory = data.get("export_memory", False)
+        export_databank = data.get("export_databank", False)
+        
+        if not char_id:
+            return JSONResponse({"status": "error", "message": "Missing char_id"}, status_code=400)
+            
+        char_dir = os.path.join(SERVICES_DIR, "characters", char_id)
+        if not os.path.exists(char_dir):
+            return JSONResponse({"status": "error", "message": "角色不存在"}, status_code=404)
+            
+        temp_dir = mkdtemp()
+        export_folder = os.path.join(temp_dir, char_id)
+        
+        def ignore_export_files(src, names):
+            ignored = []
+            # 永远忽略 Qdrant 的锁文件，避免在 Windows 上引发 WinError 33 进程占用冲突
+            if ".lock" in names:
+                ignored.append(".lock")
+                
+            # 仅在根目录匹配时排除特定的未勾选内容
+            if os.path.abspath(src) == os.path.abspath(char_dir):
+                if not export_memory:
+                    ignored.extend(["dialog_history.json", "favorability.json", "daily_history", "qdrant_db"])
+                if not export_databank:
+                    ignored.append("databank_state.json")
+            return ignored
+            
+        # 复制整个专属角色文件夹作为基础，并应用忽略规则
+        shutil.copytree(char_dir, export_folder, ignore=ignore_export_files)
+        
+        zip_path = os.path.join(temp_dir, f"{char_id}_export.zip")
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for root, dirs, files in os.walk(export_folder):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    arcname = os.path.relpath(file_path, temp_dir)
+                    zipf.write(file_path, arcname)
+                    
+        def cleanup_temp():
+            shutil.rmtree(temp_dir, ignore_errors=True)
+            
+        background_tasks.add_task(cleanup_temp)
+        return FileResponse(path=zip_path, filename=f"{char_id}_export.zip", media_type='application/zip')
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+
 @router.post("/api/characters/import")
 async def api_characters_import(
     char_id: str = Form(...),
     file: UploadFile = File(...)
 ):
-    import os, json, shutil, zipfile
+    import os, shutil, zipfile
     from tempfile import mkdtemp
     from core.config_manager import SERVICES_DIR
 
@@ -421,7 +477,7 @@ async def api_characters_import(
     img_dir = os.path.join(SERVICES_DIR, "static", "images", char_id)
     
     if os.path.exists(char_dir):
-        return JSONResponse({"status": "error", "message": "该 ID 已存在，请更换！"}, status_code=400)
+        return JSONResponse({"status": "error", "message": f"角色ID {char_id} 已存在，请更换！"}, status_code=400)
         
     temp_dir = mkdtemp()
     try:
@@ -436,31 +492,24 @@ async def api_characters_import(
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(extract_dir)
             
-        # 智能查找包裹根目录（即 manifest.json 所在的目录）
+        # 智能查找包裹根目录（config.json 所在的目录）
         found_root = None
         for root, dirs, files in os.walk(extract_dir):
-            if "manifest.json" in files:
+            if "config.json" in files:
                 found_root = root
                 break
                 
         if not found_root:
             shutil.rmtree(temp_dir)
-            return JSONResponse({"status": "error", "message": "压缩包内未找到 manifest.json"}, status_code=400)
+            return JSONResponse({"status": "error", "message": "压缩包内未找到 config.json (不支持旧版导入)"}, status_code=400)
             
         extract_dir = found_root
-        manifest_path = os.path.join(extract_dir, "manifest.json")
-            
-        with open(manifest_path, "r", encoding="utf-8") as f:
-            manifest = json.load(f)
-            
-        char_name = manifest.get("name", char_id)
-        persona_prompt = manifest.get("core_prompt", "")
-        theme_color = manifest.get("theme_color", "")
         
-        os.makedirs(char_dir, exist_ok=True)
+        shutil.copytree(extract_dir, char_dir)
+        
+        # 将图片复制到 static/images 下提供前端兼容
         os.makedirs(img_dir, exist_ok=True)
-        
-        assets_dir = os.path.join(extract_dir, "assets")
+        assets_dir = os.path.join(char_dir, "assets")
         if os.path.exists(assets_dir):
             for sub in ["main_sprites", "side_sprites"]:
                 sub_dir = os.path.join(assets_dir, sub)
@@ -471,50 +520,6 @@ async def api_characters_import(
                         if os.path.isfile(s):
                             shutil.copy2(s, d)
                             
-        prompts_dir = os.path.join(extract_dir, "prompts")
-        if os.path.exists(prompts_dir):
-            for item in os.listdir(prompts_dir):
-                s = os.path.join(prompts_dir, item)
-                d = os.path.join(char_dir, item)
-                if os.path.isfile(s):
-                    shutil.copy2(s, d)
-                    
-        presets_dir = os.path.join(extract_dir, "presets")
-        if os.path.exists(presets_dir):
-            shutil.copytree(presets_dir, os.path.join(char_dir, "presets"), dirs_exist_ok=True)
-            
-        databank_template = os.path.join(extract_dir, "databank", "template.json")
-        if os.path.exists(databank_template):
-            shutil.copy2(databank_template, os.path.join(char_dir, "databank_template.json"))
-            
-        databank_state = os.path.join(extract_dir, "databank", "state.json")
-        if os.path.exists(databank_state):
-            shutil.copy2(databank_state, os.path.join(char_dir, "databank_state.json"))
-            
-        # load user_prompt if exists
-        user_prompt_val = ""
-        user_prompt_file = os.path.join(extract_dir, "prompts", "user_prompt.txt")
-        if os.path.exists(user_prompt_file):
-            try:
-                with open(user_prompt_file, "r", encoding="utf-8") as f:
-                    user_prompt_val = f.read()
-            except:
-                pass
-                
-        config_data = {
-            "api_provider": "gemini",
-            "model_name": "gemini-2.5-pro",
-            "character_name": char_name,
-            "persona_prompt": persona_prompt,
-            "user_prompt": user_prompt_val,
-            "app_launcher": {}
-        }
-        if theme_color:
-            config_data["theme_color"] = theme_color
-            
-        with open(os.path.join(char_dir, "config.json"), "w", encoding="utf-8") as f:
-            json.dump(config_data, f, ensure_ascii=False, indent=2)
-            
         return JSONResponse({"status": "success", "message": "导入成功！"})
     except Exception as e:
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
@@ -581,6 +586,12 @@ async def api_tools():
             "command": "[MUSIC_PLAY: 歌曲名称 歌手名]",
             "description": "自动在网易云音乐后台点播并播放指定的歌曲。",
             "icon": "fas fa-music"
+        },
+        {
+            "name": "定时闹钟任务",
+            "command": "[TIMER_TASK: 分钟数, 提醒事项]",
+            "description": "设定一个未来的倒计时，在时间到达时强制唤醒桌宠主动开口提醒用户。",
+            "icon": "fas fa-clock"
         },
         {
             "name": "更改用户称呼",
@@ -1525,3 +1536,24 @@ def api_action_sync(payload: dict = Body(...)):
         return {"success": True}
     except Exception as e:
         return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+
+@router.get("/api/poll_events")
+def poll_events():
+    from core.event_manager import pop_event, _event_queue
+    event = pop_event()
+    if event:
+        return {"success": True, "has_event": True, "event": event}
+    return {"success": True, "has_event": False, "queue_len": len(_event_queue)}
+
+@router.get("/api/test_timer")
+def test_timer():
+    from core.event_manager import add_event
+    add_event("timer_alert", {"memo": "测试测试"})
+    return {"success": True}
+
+@router.get("/api/test_timer_1min")
+def test_timer_1min():
+    from core.event_manager import schedule_timer
+    schedule_timer(1, "1分钟延时测试")
+    return {"success": True}

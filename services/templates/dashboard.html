@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>大贤者控制台 (Dashboard)</title>
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.0.0">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.8.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
 </head>
@@ -31,13 +31,16 @@
             <a href="#" class="nav-item" data-target="tools-view">
                 <i class="fas fa-tools"></i> 工具情况
             </a>
+            <a href="#" class="nav-item" data-target="global-presets-view">
+                <i class="fas fa-globe"></i> 公用预设
+            </a>
 
             <div style="font-size: 12px; color: #ff79c6; margin: 20px 0 5px 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">当前角色专属设定</div>
             <a href="#" class="nav-item" data-target="basic-settings-view">
                 <i class="fas fa-cog"></i> 基础设置
             </a>
-            <a href="#" class="nav-item" data-target="presets-view">
-                <i class="fas fa-list-alt"></i> 预设准备
+            <a href="#" class="nav-item" data-target="custom-presets-view">
+                <i class="fas fa-user-tag"></i> 专属预设
             </a>
             <a href="#" class="nav-item" data-target="databank-view">
                 <i class="fas fa-database"></i> 动态数据库
@@ -45,7 +48,7 @@
             <a href="#" class="nav-item" data-target="logs-view">
                 <i class="fas fa-book"></i> 每日回忆
             </a>
-            <a href="#" class="nav-item" data-target="graph-view">
+            <a href="#" class="nav-item" data-target="graph-view" style="display: none;">
                 <i class="fas fa-project-diagram"></i> 记忆图谱
             </a>
         </nav>
@@ -92,7 +95,7 @@
                     </div>
                     <p class="help-text text-danger"><i class="fas fa-exclamation-triangle"></i> 切换灵魂后，为确保记忆隔离，应用主程序将会自动重启！</p>
                 </div>
-
+            </div>
         </section>
 
         <!-- 大模型分配视图 -->
@@ -266,7 +269,7 @@
         </section>
 
         <!-- 3. 记忆图谱视图 -->
-        <section id="graph-view" class="content-section">
+        <section id="graph-view" class="content-section" style="display: none;">
             <header class="section-header">
                 <h1>记忆关系图谱</h1>
                 <p>向量数据库中的长期认知拓扑可视化</p>
@@ -308,6 +311,7 @@
                     <button id="mode-lazy-btn" class="action-btn active" style="flex: 1; justify-content: center;"><i class="fas fa-magic"></i> 懒人模式</button>
                     <button id="mode-pro-btn" class="action-btn outline" style="flex: 1; justify-content: center;"><i class="fas fa-code"></i> 高手模式</button>
                     <button id="mode-import-btn" class="action-btn outline" style="flex: 1; justify-content: center;"><i class="fas fa-file-import"></i> 导入模式</button>
+                    <button id="mode-export-btn" class="action-btn outline" style="flex: 1; justify-content: center; border-color: #50fa7b; color: #50fa7b;"><i class="fas fa-file-export"></i> 导出模式</button>
                     <button id="mode-delete-btn" class="action-btn outline" style="flex: 1; justify-content: center; border-color: #ff4d4f; color: #ff4d4f;"><i class="fas fa-trash-alt"></i> 删除模式</button>
                 </div>
             </header>
@@ -397,6 +401,36 @@
                     <p id="import-status" class="help-text" style="margin-top: 10px; text-align: center; display: none;">正在导入，请稍候...</p>
                 </div>
 
+                <!-- 导出模式表单 -->
+                <div id="form-export-mode" class="settings-card hidden" style="display: none;">
+                    <h3><i class="fas fa-file-export"></i> 导出当前灵魂 (压缩包)</h3>
+                    
+                    <p style="font-size: 13px; color: var(--text-secondary); margin-top: 10px; margin-bottom: 20px;">
+                        导出将自动包含当前的 <code>config.json</code>、所有 <code>prompt</code>、环境预设、专属预设，以及资源贴图。您可以将导出的压缩包分享给其他人使用“导入模式”进行加载。
+                    </p>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label style="font-weight: 500; font-size: 14px; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="export-memory-chk" class="modern-checkbox">
+                            包含对话记忆、日记数据与好感度 (涉及隐私)
+                        </label>
+                        <p class="help-text" style="margin-left: 24px;">包括历史对话记录、生成的日记记录、角色好感度状态以及向量记忆数据库内容。</p>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label style="font-weight: 500; font-size: 14px; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="export-databank-chk" class="modern-checkbox">
+                            包含动态数据库当前状态数据
+                        </label>
+                        <p class="help-text" style="margin-left: 24px;">无论是否勾选，数据库模板 (template) 都会被导出。此选项决定是否导出当前的真实数值记录。</p>
+                    </div>
+
+                    <button id="btn-export-character" class="action-btn" style="margin-top: 25px; width: 100%; justify-content: center; background: #50fa7b; color: #282a36;">
+                        <i class="fas fa-box-open"></i> 封装灵魂为压缩包
+                    </button>
+                    <p id="export-status-text" class="help-text" style="margin-top: 10px; text-align: center; display: none;">正在封装，请稍候...</p>
+                </div>
+
                 <!-- 删除模式表单 -->
                 <div id="form-delete-mode" class="settings-card hidden" style="display: none;">
                     <h3><i class="fas fa-skull"></i> 抹除灵魂 (放入回收站)</h3>
@@ -417,43 +451,48 @@
 
     
         <!-- 6. 预设准备视图 -->
-        <section id="presets-view" class="content-section">
+        <!-- 6. 公用预设视图 -->
+        <section id="global-presets-view" class="content-section">
             <div class="section-header">
-                <h2>预设准备 (Presets)</h2>
-                <p>管理系统的公用预设与当前角色的专属感应预设。</p>
+                <h2>公用预设 (Global)</h2>
+                <p>管理系统的公用预设，所有角色共享。</p>
             </div>
             
-            <div class="grid-2col" style="gap: 20px; align-items: stretch;">
-                
-                <!-- 公用预设 -->
-                <div class="card" style="display: flex; flex-direction: column;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <h3 class="card-title" style="margin:0;"><i class="fas fa-globe"></i> 公用预设 (Global)</h3>
-                        <div style="display: flex; gap: 10px;">
-                            <button class="action-btn outline" id="btn-import-worldbook-global" style="padding: 5px 10px; font-size: 12px;"><i class="fas fa-file-import"></i> 导入酒馆世界书</button>
-                            <button class="action-btn" id="btn-add-global-preset" style="padding: 5px 10px; font-size: 12px;"><i class="fas fa-plus"></i> 新增</button>
-                        </div>
-                    </div>
-                    <div id="global-presets-list" style="display: flex; flex-direction: column; gap: 10px; overflow-y: auto; max-height: 500px; flex: 1;">
-                        <div class="loading-state"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>
+            <!-- 公用预设 -->
+            <div class="card" style="display: flex; flex-direction: column; height: calc(100vh - 180px);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 class="card-title" style="margin:0;"><i class="fas fa-globe"></i> 公用预设列表</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="action-btn outline" id="btn-import-worldbook-global" style="padding: 5px 10px; font-size: 12px;"><i class="fas fa-file-import"></i> 导入酒馆世界书</button>
+                        <button class="action-btn" id="btn-add-global-preset" style="padding: 5px 10px; font-size: 12px;"><i class="fas fa-plus"></i> 新增</button>
                     </div>
                 </div>
+                <div id="global-presets-list" style="display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex: 1;">
+                    <div class="loading-state"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>
+                </div>
+            </div>
+        </section>
 
-                <!-- 角色专属预设 -->
-                <div class="card" style="display: flex; flex-direction: column;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <h3 class="card-title" style="margin:0;"><i class="fas fa-user-tag"></i> 专属预设 (Custom)</h3>
-                        <div style="display: flex; gap: 10px;">
-                            <input type="file" id="worldbook-upload-input" accept=".json" style="display: none;">
-                            <button class="action-btn outline" id="btn-import-worldbook" style="padding: 5px 10px; font-size: 12px;"><i class="fas fa-file-import"></i> 导入酒馆世界书</button>
-                            <button class="action-btn" id="btn-add-custom-preset" style="padding: 5px 10px; font-size: 12px;"><i class="fas fa-plus"></i> 新增</button>
-                        </div>
-                    </div>
-                    <div id="custom-presets-list" style="display: flex; flex-direction: column; gap: 10px; overflow-y: auto; max-height: 500px; flex: 1;">
-                        <div class="loading-state"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>
+        <!-- 6.5 专属预设视图 -->
+        <section id="custom-presets-view" class="content-section">
+            <div class="section-header">
+                <h2>专属预设 (Custom)</h2>
+                <p>管理当前角色的专属感应预设。</p>
+            </div>
+            
+            <!-- 角色专属预设 -->
+            <div class="card" style="display: flex; flex-direction: column; height: calc(100vh - 180px);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 class="card-title" style="margin:0;"><i class="fas fa-user-tag"></i> 专属预设列表</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="file" id="worldbook-upload-input" accept=".json" style="display: none;">
+                        <button class="action-btn outline" id="btn-import-worldbook" style="padding: 5px 10px; font-size: 12px;"><i class="fas fa-file-import"></i> 导入酒馆世界书</button>
+                        <button class="action-btn" id="btn-add-custom-preset" style="padding: 5px 10px; font-size: 12px;"><i class="fas fa-plus"></i> 新增</button>
                     </div>
                 </div>
-
+                <div id="custom-presets-list" style="display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex: 1;">
+                    <div class="loading-state"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>
+                </div>
             </div>
         </section>
 
@@ -688,7 +727,7 @@
     </div>
 </div>
 
-<script src="/static/js/dashboard.js?v=1.7.25"></script>
+<script src="/static/js/dashboard.js?v=1.8.0"></script>
 
 <!-- 视觉识图配置 Modal -->
 <div id="vision-tool-modal" class="modal-overlay hidden">

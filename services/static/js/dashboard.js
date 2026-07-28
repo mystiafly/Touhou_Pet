@@ -491,19 +491,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const modeLazyBtn = document.getElementById('mode-lazy-btn');
     const modeProBtn = document.getElementById('mode-pro-btn');
     const modeImportBtn = document.getElementById('mode-import-btn');
+    const modeExportBtn = document.getElementById('mode-export-btn');
     const modeDeleteBtn = document.getElementById('mode-delete-btn');
     const formLazyMode = document.getElementById('form-lazy-mode');
     const formProMode = document.getElementById('form-pro-mode');
     const formImportMode = document.getElementById('form-import-mode');
+    const formExportMode = document.getElementById('form-export-mode');
     const formDeleteMode = document.getElementById('form-delete-mode');
 
     function switchMode(activeBtn, activeForm) {
-        [modeLazyBtn, modeProBtn, modeImportBtn, modeDeleteBtn].forEach(btn => {
+        [modeLazyBtn, modeProBtn, modeImportBtn, modeExportBtn, modeDeleteBtn].forEach(btn => {
             if (!btn) return;
             btn.classList.add('outline');
             btn.classList.remove('active');
         });
-        [formLazyMode, formProMode, formImportMode, formDeleteMode].forEach(form => {
+        [formLazyMode, formProMode, formImportMode, formExportMode, formDeleteMode].forEach(form => {
             if (!form) return;
             form.style.display = 'none';
         });
@@ -517,10 +519,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    if (modeLazyBtn && modeProBtn && modeImportBtn && modeDeleteBtn) {
+    if (modeLazyBtn && modeProBtn && modeImportBtn && modeExportBtn && modeDeleteBtn) {
         modeLazyBtn.addEventListener('click', () => switchMode(modeLazyBtn, formLazyMode));
         modeProBtn.addEventListener('click', () => switchMode(modeProBtn, formProMode));
         modeImportBtn.addEventListener('click', () => switchMode(modeImportBtn, formImportMode));
+        modeExportBtn.addEventListener('click', () => switchMode(modeExportBtn, formExportMode));
         modeDeleteBtn.addEventListener('click', () => switchMode(modeDeleteBtn, formDeleteMode));
     }
 
@@ -1054,7 +1057,65 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ========== 记忆图谱 ==========
+    // ========== 导出角色 ==========
+    const btnExportCharacter = document.getElementById('btn-export-character');
+    if (btnExportCharacter) {
+        btnExportCharacter.addEventListener('click', async () => {
+            const exportMemory = document.getElementById('export-memory-chk').checked;
+            const exportDatabank = document.getElementById('export-databank-chk').checked;
+            const statusText = document.getElementById('export-status-text');
+            
+            btnExportCharacter.disabled = true;
+            statusText.style.display = 'block';
+            statusText.className = 'help-text';
+            statusText.innerText = '正在封装，请稍候...';
+            
+            try {
+                // Determine current active character
+                const charRes = await fetch('/api/character_info');
+                const charData = await charRes.json();
+                const charId = charData.character_id;
+                
+                const response = await fetch('/api/characters/export', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        char_id: charId,
+                        export_memory: exportMemory,
+                        export_databank: exportDatabank
+                    })
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${charId}_export.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+                    
+                    statusText.className = 'help-text text-success';
+                    statusText.innerText = '打包完成并已触发下载！';
+                } else {
+                    const errData = await response.json();
+                    statusText.className = 'help-text text-danger';
+                    statusText.innerText = `导出失败: ${errData.message || '未知错误'}`;
+                }
+            } catch (e) {
+                statusText.className = 'help-text text-danger';
+                statusText.innerText = `导出异常: ${e.message}`;
+            } finally {
+                btnExportCharacter.disabled = false;
+            }
+        });
+    }
+
+    // ========== 图谱 ==========
     let network = null;
     const manualDistillBtn = document.getElementById('manual-distill-btn');
     const seedTestBtn = document.getElementById('seed-test-btn');
@@ -1280,7 +1341,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Hooks for Navigation
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', (e) => {
-            if (item.getAttribute('data-target') === 'presets-view') {
+            const target = item.getAttribute('data-target');
+            if (target === 'global-presets-view' || target === 'custom-presets-view') {
                 loadPresets();
             }
         });
