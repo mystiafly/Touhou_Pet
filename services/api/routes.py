@@ -533,7 +533,7 @@ async def api_character_info():
         "character_id": char_id,
         "character_name": char_name,
         "theme_color": config.get("theme_color", ""),
-        "image_path": f"/static/images/{char_id}/",
+        "image_path": f"/char_assets/{char_id}/assets/main_sprites/",
         "enable_greeting": config.get("enable_greeting", True),
         "enable_auto_speak": config.get("enable_auto_speak", True),
         "auto_speak_multiplier": config.get("auto_speak_multiplier", 1.0),

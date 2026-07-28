@@ -445,7 +445,7 @@ class DesktopPet {
                     petIPC.onPetHideEdge((side) => {
                         this.isPeeking = true;
                         const peekKey = side === 'left' ? 'peeking_left' : 'peeking_right';
-                        this.img.src = `/static/images/${this.characterId}/${peekKey}.png`;
+                        this.img.src = `/char_assets/${this.characterId}/assets/side_sprites/${peekKey}.png`;
                         
                         document.body.classList.add('peeking-mode');
                         const petContainer = document.querySelector('.pet-container');

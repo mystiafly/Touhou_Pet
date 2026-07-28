@@ -53,6 +53,9 @@ app = FastAPI(title="Desktop Pet Backend", version="0.3.0")
 # 挂载静态文件目录 (services/static -> /static)
 app.mount("/static", StaticFiles(directory=os.path.join(SERVICES_DIR, "static")), name="static")
 
+# 挂载角色资源目录(services/characters -> /char_assets)
+app.mount("/char_assets", StaticFiles(directory=os.path.join(SERVICES_DIR, "characters")), name="char_assets")
+
 # 挂载路由
 app.include_router(router)
 

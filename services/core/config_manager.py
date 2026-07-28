@@ -22,37 +22,85 @@ def get_character_dir():
 def get_file_path(filename):
     return os.path.join(get_character_dir(), filename)
 
+GLOBAL_KEYS = {
+    "api_provider", "engine_base_url", "engine_api_key", "engine_model_name",
+    "engines", "pre_api_provider", "post_api_provider", "app_launcher",
+    "vision_engine", "active_character", "custom_engines"
+}
+
 def get_config():
-    """读取本地配置，默认api_provider为gemini"""
+    """读取并合并全局与角色本地配置"""
+    global_config = {}
+    if os.path.exists(GLOBAL_CONFIG_FILE):
+        try:
+            with open(GLOBAL_CONFIG_FILE, 'r', encoding='utf-8') as f:
+                global_config = json.load(f)
+        except:
+            pass
+            
+    char_config = {}
     config_file = get_file_path("config.json")
     if os.path.exists(config_file):
         try:
             with open(config_file, 'r', encoding='utf-8') as f:
-                config = json.load(f)
+                char_config = json.load(f)
                 
-            # --- 兼容与兜底：如果 config.json 丢失了 user_prompt 字段，从 txt 补齐 ---
-            if "user_prompt" not in config:
+            if "user_prompt" not in char_config:
                 user_prompt_path = get_file_path("user_prompt.txt")
                 if os.path.exists(user_prompt_path):
                     try:
                         with open(user_prompt_path, 'r', encoding='utf-8') as pf:
-                            config["user_prompt"] = pf.read()
+                            char_config["user_prompt"] = pf.read()
                     except:
                         pass
-            
-            return config
         except:
             pass
-    return {"api_provider": "gemini"}
+            
+    merged = {**global_config, **char_config}
+    if "api_provider" not in merged:
+        merged["api_provider"] = "gemini"
+    return merged
 
 def save_config(config_data):
-    """保存本地配置"""
+    """保存本地配置 (拆分到全局和角色)"""
+    global_config = {}
+    if os.path.exists(GLOBAL_CONFIG_FILE):
+        try:
+            with open(GLOBAL_CONFIG_FILE, 'r', encoding='utf-8') as f:
+                global_config = json.load(f)
+        except:
+            pass
+            
+    char_config = {}
     config_file = get_file_path("config.json")
+    if os.path.exists(config_file):
+        try:
+            with open(config_file, 'r', encoding='utf-8') as f:
+                char_config = json.load(f)
+        except:
+            pass
+            
+    for k, v in config_data.items():
+        if k in GLOBAL_KEYS:
+            global_config[k] = v
+            if k in char_config:
+                del char_config[k]
+        else:
+            char_config[k] = v
+            if k in global_config and k != "active_character":
+                del global_config[k]
+
+    try:
+        with open(GLOBAL_CONFIG_FILE, 'w', encoding='utf-8') as f:
+            json.dump(global_config, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"保存全局配置失败: {e}")
+
     try:
         with open(config_file, 'w', encoding='utf-8') as f:
-            json.dump(config_data, f, ensure_ascii=False, indent=2)
+            json.dump(char_config, f, ensure_ascii=False, indent=2)
     except Exception as e:
-        print(f"保存配置失败: {e}")
+        print(f"保存角色配置失败: {e}")
 
 def get_custom_engines():
     """获取所有自定义的大脑引擎"""
