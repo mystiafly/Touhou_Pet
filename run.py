@@ -21,6 +21,19 @@ def main():
     print(f"根目录: {root_dir}")
 
     # ==========================================
+    # 0. 清理残留进程 (防止端口冲突)
+    # ==========================================
+    print("\n[0/2] 正在清理前次残留进程 (防止端口 5000 被占用)...")
+    try:
+        if os.name == 'nt':
+            # 杀死所有占用 5000 端口的进程
+            subprocess.call('for /f "tokens=5" %a in (\'netstat -aon ^| findstr :5000\') do taskkill /f /pid %a >nul 2>&1', shell=True)
+            # 杀死孤立的 electron 进程
+            subprocess.call('taskkill /F /IM electron.exe >nul 2>&1', shell=True)
+    except Exception as e:
+        print(f"清理残留进程时出现警告: {e}")
+
+    # ==========================================
     # 1. 启动大脑 (FastAPI 后端)
     # ==========================================
     print("\n[1/2] 正在唤醒大脑 (FastAPI Backend)...")
