@@ -539,7 +539,15 @@ async def api_character_info():
     needs_onboarding = len(get_custom_engines()) == 0
     
     active_sprite_set = config.get("active_sprite_set", "main_sprites")
-    sprite_dir = os.path.join(get_character_dir(), "assets", active_sprite_set)
+    assets_dir = os.path.join(get_character_dir(), "assets")
+    sprite_dir = os.path.join(assets_dir, active_sprite_set)
+    
+    # If the configured set doesn't exist, fallback to the first available set
+    if not os.path.exists(sprite_dir) and os.path.exists(assets_dir):
+        sets = [d for d in os.listdir(assets_dir) if os.path.isdir(os.path.join(assets_dir, d))]
+        if sets:
+            active_sprite_set = sets[0]
+            sprite_dir = os.path.join(assets_dir, active_sprite_set)
     
     images_dict = {
         "normal": [],
