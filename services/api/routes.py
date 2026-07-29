@@ -1643,8 +1643,8 @@ class SpriteRenameSetRequest(BaseModel):
 @router.post("/api/sprites/create_set")
 async def api_sprites_create_set(req: SpriteCreateSetRequest):
     from core.config_manager import get_character_dir
-    # Sanitize directory name
-    set_name = re.sub(r'[^a-zA-Z0-9_\-]', '', req.set_name)
+    # Sanitize directory name (remove Windows invalid path characters)
+    set_name = re.sub(r'[<>:"/\\|?*]', '', req.set_name).strip()
     if not set_name:
          return JSONResponse({"success": False, "message": "Invalid set name"}, status_code=400)
          
@@ -1658,8 +1658,8 @@ async def api_sprites_create_set(req: SpriteCreateSetRequest):
 @router.post("/api/sprites/rename_set")
 async def api_sprites_rename_set(req: SpriteRenameSetRequest):
     from core.config_manager import get_character_dir
-    old_name = re.sub(r'[^a-zA-Z0-9_\-]', '', req.old_name)
-    new_name = re.sub(r'[^a-zA-Z0-9_\-]', '', req.new_name)
+    old_name = re.sub(r'[<>:"/\\|?*]', '', req.old_name).strip()
+    new_name = re.sub(r'[<>:"/\\|?*]', '', req.new_name).strip()
     if not old_name or not new_name:
          return JSONResponse({"success": False, "message": "Invalid set name"}, status_code=400)
          
