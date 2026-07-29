@@ -1636,6 +1636,10 @@ async def api_sprites_set_active(req: SpriteSetActiveRequest):
 class SpriteCreateSetRequest(BaseModel):
     set_name: str
 
+class SpriteRenameSetRequest(BaseModel):
+    old_name: str
+    new_name: str
+
 @router.post("/api/sprites/create_set")
 async def api_sprites_create_set(req: SpriteCreateSetRequest):
     from core.config_manager import get_character_dir
@@ -1650,6 +1654,33 @@ async def api_sprites_create_set(req: SpriteCreateSetRequest):
         
     os.makedirs(set_dir, exist_ok=True)
     return JSONResponse({"success": True})
+
+@router.post("/api/sprites/rename_set")
+async def api_sprites_rename_set(req: SpriteRenameSetRequest):
+    from core.config_manager import get_character_dir
+    old_name = re.sub(r'[^a-zA-Z0-9_\-]', '', req.old_name)
+    new_name = re.sub(r'[^a-zA-Z0-9_\-]', '', req.new_name)
+    if not old_name or not new_name:
+         return JSONResponse({"success": False, "message": "Invalid set name"}, status_code=400)
+         
+    old_dir = os.path.join(get_character_dir(), "assets", old_name)
+    new_dir = os.path.join(get_character_dir(), "assets", new_name)
+    if not os.path.exists(old_dir):
+        return JSONResponse({"success": False, "message": "Original set not found"}, status_code=400)
+    if os.path.exists(new_dir):
+        return JSONResponse({"success": False, "message": "New set name already exists"}, status_code=400)
+        
+    try:
+        os.rename(old_dir, new_dir)
+        from core.config_manager import get_config, save_config, get_active_character_id
+        char_id = get_active_character_id()
+        config = get_config(char_id)
+        if config.get("active_sprite_set", "main_sprites") == old_name:
+            config["active_sprite_set"] = new_name
+            save_config(char_id, config)
+        return JSONResponse({"success": True})
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
 
 @router.post("/api/sprites/upload")
 async def api_sprites_upload(set_name: str = Form(...), emotion: str = Form(...), files: list[UploadFile] = File(...)):

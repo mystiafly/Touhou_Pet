@@ -2610,6 +2610,69 @@ document.addEventListener('DOMContentLoaded', () => {
     const setSelect = document.getElementById('sprite-set-select');
     const btnSetActive = document.getElementById('set-active-sprite-btn');
     const btnCreateSet = document.getElementById('create-sprite-set-btn');
+
+    function customPrompt(message, defaultValue = "") {
+        return new Promise((resolve) => {
+            const overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0'; overlay.style.left = '0';
+            overlay.style.width = '100vw'; overlay.style.height = '100vh';
+            overlay.style.backgroundColor = 'rgba(0,0,0,0.7)';
+            overlay.style.zIndex = '9999';
+            overlay.style.display = 'flex';
+            overlay.style.justifyContent = 'center';
+            overlay.style.alignItems = 'center';
+            
+            const box = document.createElement('div');
+            box.style.background = '#282a36';
+            box.style.padding = '20px';
+            box.style.borderRadius = '8px';
+            box.style.color = '#fff';
+            box.style.minWidth = '300px';
+            
+            const text = document.createElement('div');
+            text.textContent = message;
+            text.style.marginBottom = '10px';
+            
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = defaultValue;
+            input.style.width = '100%';
+            input.style.padding = '8px';
+            input.style.marginBottom = '15px';
+            input.style.background = '#1e1f29';
+            input.style.color = '#fff';
+            input.style.border = '1px solid #6272a4';
+            input.style.boxSizing = 'border-box';
+            
+            const btnRow = document.createElement('div');
+            btnRow.style.display = 'flex';
+            btnRow.style.justifyContent = 'flex-end';
+            btnRow.style.gap = '10px';
+            
+            const btnCancel = document.createElement('button');
+            btnCancel.textContent = '取消';
+            btnCancel.className = 'action-btn outline';
+            btnCancel.onclick = () => { document.body.removeChild(overlay); resolve(null); };
+            
+            const btnOk = document.createElement('button');
+            btnOk.textContent = '确定';
+            btnOk.className = 'action-btn';
+            btnOk.onclick = () => { document.body.removeChild(overlay); resolve(input.value); };
+            
+            btnRow.appendChild(btnCancel);
+            btnRow.appendChild(btnOk);
+            box.appendChild(text);
+            box.appendChild(input);
+            box.appendChild(btnRow);
+            overlay.appendChild(box);
+            document.body.appendChild(overlay);
+            input.focus();
+        });
+    }
+
+    const btnRenameSet = document.getElementById('rename-sprite-set-btn');
+
     const previewContainer = document.getElementById('sprite-preview-container');
 
     // Hook nav-item click to refresh sprite view
@@ -2627,7 +2690,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/sprites/list');
             const data = await res.json();
             if (data.success) {
+                const currentSelection = setSelect.value;
                 renderSpriteSelect(data.sets, data.active_set);
+                if (currentSelection && Object.keys(data.sets).includes(currentSelection)) {
+                    setSelect.value = currentSelection;
+                }
                 renderSpriteGrid(data.sets, setSelect.value);
             }
         } catch (e) {
@@ -2806,7 +2873,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const data = await res.json();
             if (data.success) {
-                alert('套装已激活！');
+                alert('套装已激活！提示：由于立绘资源属于底层引擎加载内容，请重新启动桌宠以使更换生效。');
                 loadSpriteSets();
             } else {
                 alert('激活失败: ' + data.message);
@@ -2817,8 +2884,36 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    if (btnRenameSet) {
+        btnRenameSet.addEventListener('click', async () => {
+            const oldName = setSelect.value;
+            if (!oldName) return;
+            const newName = await customPrompt(请输入套装 '' 的新名字：, oldName);
+            if (!newName || newName === oldName) return;
+            
+            try {
+                const res = await fetch('/api/sprites/rename_set', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ old_name: oldName, new_name: newName })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('重命名成功！');
+                    setSelect.value = newName;
+                    loadSpriteSets();
+                } else {
+                    alert('重命名失败: ' + data.message);
+                }
+            } catch(err) {
+                console.error(err);
+                alert('重命名错误');
+            }
+        });
+    }
+
     btnCreateSet.addEventListener('click', async () => {
-        const newName = prompt("请输入新套装的名字（仅限英文、数字、下划线）：", "new_outfit");
+        const newName = await customPrompt("请输入新套装的名字（仅限英文、数字、下划线）：", "new_outfit");
         if (!newName) return;
         
         try {
