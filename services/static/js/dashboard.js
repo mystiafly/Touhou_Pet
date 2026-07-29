@@ -2888,7 +2888,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnRenameSet.addEventListener('click', async () => {
             const oldName = setSelect.value;
             if (!oldName) return;
-            const newName = await customPrompt(请输入套装 '' 的新名字：, oldName);
+            const newName = await customPrompt(`请输入套装 '${oldName}' 的新名字：`, oldName);
             if (!newName || newName === oldName) return;
             
             try {
