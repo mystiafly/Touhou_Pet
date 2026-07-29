@@ -2601,6 +2601,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
 // ==================== SPRITE SETTINGS LOGIC ====================
 document.addEventListener('DOMContentLoaded', () => {
     const spriteView = document.getElementById('sprite-settings-view');
@@ -2670,7 +2671,7 @@ document.addEventListener('DOMContentLoaded', () => {
             header.style.marginBottom = '10px';
             
             const title = document.createElement('h3');
-            title.textContent = 情绪: \;
+            title.textContent = `情绪: ${emotion}`;
             title.style.margin = '0';
             title.style.color = '#ff79c6';
             
@@ -2772,7 +2773,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function deleteSprite(setName, filename) {
-        if (!confirm(\确定要删除 \ 吗？\)) return;
+        if (!confirm(`确定要删除 ${filename} 吗？`)) return;
         
         try {
             const res = await fetch('/api/sprites/delete', {
