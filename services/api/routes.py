@@ -1743,7 +1743,7 @@ async def api_sprites_upload(set_name: str = Form(...), emotion: str = Form(...)
     if not os.path.exists(set_dir):
         return JSONResponse({"success": False, "message": "Sprite set not found"}, status_code=400)
         
-    if emotion not in ["normal", "angry", "shy", "crying", "sleeping"]:
+    if emotion not in ["normal", "angry", "shy", "crying", "sleeping", "peeking_left", "peeking_right"]:
         return JSONResponse({"success": False, "message": "Invalid emotion"}, status_code=400)
         
     # Find next available index for this emotion
