@@ -300,6 +300,38 @@ class CharacterGenRequest(BaseModel):
     app_launcher: str = ""
     env_presets: str = ""
 
+@router.delete("/api/characters/{char_id}")
+async def api_delete_character(char_id: str):
+    import os, json
+    from core.config_manager import SERVICES_DIR, get_active_character_id, GLOBAL_CONFIG_FILE
+    
+    if char_id == "rumia":
+        return JSONResponse({"status": "error", "message": "基础角色(露米娅)无法被删除！"}, status_code=400)
+        
+    char_dir = os.path.join(SERVICES_DIR, "characters", char_id)
+    if not os.path.exists(char_dir):
+        return JSONResponse({"status": "error", "message": f"找不到角色: {char_id}"}, status_code=404)
+        
+    try:
+        from send2trash import send2trash
+        send2trash(char_dir)
+        
+        # If we deleted the active character, switch back to rumia
+        if get_active_character_id() == char_id:
+            if os.path.exists(GLOBAL_CONFIG_FILE):
+                try:
+                    with open(GLOBAL_CONFIG_FILE, 'r', encoding='utf-8') as f:
+                        g_config = json.load(f)
+                    g_config["active_character"] = "rumia"
+                    with open(GLOBAL_CONFIG_FILE, 'w', encoding='utf-8') as f:
+                        json.dump(g_config, f, indent=4, ensure_ascii=False)
+                except Exception:
+                    pass
+                    
+        return JSONResponse({"status": "success", "message": "删除成功！"})
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": f"删除失败: {str(e)}"}, status_code=500)
+
 @router.post("/api/characters/generate")
 async def api_characters_generate(req: CharacterGenRequest):
     import os, json
