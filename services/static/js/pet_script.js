@@ -456,7 +456,11 @@ class DesktopPet {
                     petIPC.onPetHideEdge((side) => {
                         this.isPeeking = true;
                         const peekKey = side === 'left' ? 'peeking_left' : 'peeking_right';
-                        this.img.src = `/char_assets/${this.characterId}/assets/side_sprites/${peekKey}.png`;
+                        if (this.images[peekKey] && this.images[peekKey].length > 0) {
+                            this.img.src = this.images[peekKey][0];
+                        } else if (this.images['normal'] && this.images['normal'].length > 0) {
+                            this.img.src = this.images['normal'][0];
+                        }
                         
                         document.body.classList.add('peeking-mode');
                         const petContainer = document.querySelector('.pet-container');

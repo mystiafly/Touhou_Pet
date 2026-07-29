@@ -586,13 +586,21 @@ async def api_character_info():
         "angry": [],
         "shy": [],
         "crying": [],
-        "sleeping": []
+        "sleeping": [],
+        "peeking_left": [],
+        "peeking_right": []
     }
     
     if os.path.exists(sprite_dir):
         for f in os.listdir(sprite_dir):
             if f.lower().endswith('.png'):
-                emotion_key = f.split('_')[0].split('.')[0]
+                if f.lower().startswith('peeking_left'):
+                    emotion_key = 'peeking_left'
+                elif f.lower().startswith('peeking_right'):
+                    emotion_key = 'peeking_right'
+                else:
+                    emotion_key = f.split('_')[0].split('.')[0]
+                    
                 if emotion_key in images_dict:
                     images_dict[emotion_key].append(f"/char_assets/{char_id}/assets/{active_sprite_set}/{f}")
                     
@@ -1643,11 +1651,18 @@ async def api_sprites_list():
             set_dir = os.path.join(assets_dir, set_name)
             if os.path.isdir(set_dir):
                 images = {
-                    "normal": [], "angry": [], "shy": [], "crying": [], "sleeping": []
+                    "normal": [], "angry": [], "shy": [], "crying": [], "sleeping": [], "peeking_left": [], "peeking_right": []
                 }
                 for f in os.listdir(set_dir):
                     if f.lower().endswith('.png'):
-                        emotion_key = f.split('_')[0].split('.')[0]
+                        # special handle for peeking since it contains underscore
+                        if f.lower().startswith('peeking_left'):
+                            emotion_key = 'peeking_left'
+                        elif f.lower().startswith('peeking_right'):
+                            emotion_key = 'peeking_right'
+                        else:
+                            emotion_key = f.split('_')[0].split('.')[0]
+                            
                         if emotion_key in images:
                             images[emotion_key].append(f"/char_assets/{char_id}/assets/{set_name}/{f}")
                 sets[set_name] = images
