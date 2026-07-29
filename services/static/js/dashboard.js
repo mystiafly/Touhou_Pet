@@ -2723,7 +2723,7 @@ document.addEventListener('DOMContentLoaded', () => {
         previewContainer.innerHTML = '';
         const imagesDict = sets[selectedSet] || {};
         
-        const emotions = ['normal', 'angry', 'shy', 'crying', 'sleeping'];
+        const emotions = ['normal', 'angry', 'shy', 'crying', 'sleeping', 'peeking_left', 'peeking_right'];
         
         emotions.forEach(emotion => {
             const groupDiv = document.createElement('div');
