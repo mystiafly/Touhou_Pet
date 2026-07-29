@@ -1672,12 +1672,11 @@ async def api_sprites_rename_set(req: SpriteRenameSetRequest):
         
     try:
         os.rename(old_dir, new_dir)
-        from core.config_manager import get_config, save_config, get_active_character_id
-        char_id = get_active_character_id()
-        config = get_config(char_id)
+        from core.config_manager import get_config, save_config
+        config = get_config()
         if config.get("active_sprite_set", "main_sprites") == old_name:
             config["active_sprite_set"] = new_name
-            save_config(char_id, config)
+            save_config(config)
         return JSONResponse({"success": True})
     except Exception as e:
         return JSONResponse({"success": False, "message": str(e)}, status_code=500)
