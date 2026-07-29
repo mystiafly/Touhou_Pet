@@ -18,7 +18,7 @@ def parse_reply(text):
         
     # 1. 提取心情表情 (支持英文标准表情与中文落子表情)
     emotion = "normal"
-    tags = re.findall(r'\[(normal|angry|shy|crying)\]', text)
+    tags = re.findall(r'\[(normal|angry|shy|crying|sleeping)\]', text)
     if tags:
         emotion = tags[-1]
     else:
@@ -27,7 +27,8 @@ def parse_reply(text):
             "开心": "normal", "微笑": "normal", "常态": "normal", "平静": "normal", "慵懒": "normal", "愉悦": "normal",
             "生气": "angry", "愤怒": "angry", "傲娇": "angry", "抱怨": "angry",
             "害羞": "shy", "脸红": "shy", "扭捏": "shy", "羞耻": "shy",
-            "大哭": "crying", "委屈": "crying", "难过": "crying", "嚎啕大哭": "crying", "流泪": "crying"
+            "大哭": "crying", "委屈": "crying", "难过": "crying", "嚎啕大哭": "crying", "流泪": "crying",
+            "睡觉": "sleeping", "睡眠": "sleeping", "困倦": "sleeping", "打呼": "sleeping"
         }
         for cn_emo, en_emo in chinese_emotion_map.items():
             if f"[{cn_emo}]" in text:
@@ -54,7 +55,7 @@ def parse_reply(text):
 
     # 3. 清理除了系统级别工具任务标签以外的所有方括号标签，保障对白内容绝对不泄露格式标签
     # 采用负向先行断言正则，智能跳过各类工具和指令标签的清洗
-    clean_content = re.sub(r'\[(?!BROWSER_TASK|MUSIC_PLAY|LAUNCH_APP|SEARCH_ENGINE|UPDATE_USER_NAME|UPDATE_PET_NAME)[^\]]+\]', '', text).strip()
+    clean_content = re.sub(r'\[(?!BROWSER_TASK|MUSIC_PLAY|LAUNCH_APP|SEARCH_ENGINE|UPDATE_USER_NAME|UPDATE_PET_NAME|SLEEP_NOW)[^\]]+\]', '', text).strip()
 
     return emotion, score, clean_content
 

@@ -2601,3 +2601,241 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+// ==================== SPRITE SETTINGS LOGIC ====================
+document.addEventListener('DOMContentLoaded', () => {
+    const spriteView = document.getElementById('sprite-settings-view');
+    if (!spriteView) return;
+
+    const setSelect = document.getElementById('sprite-set-select');
+    const btnSetActive = document.getElementById('set-active-sprite-btn');
+    const btnCreateSet = document.getElementById('create-sprite-set-btn');
+    const previewContainer = document.getElementById('sprite-preview-container');
+
+    // Hook nav-item click to refresh sprite view
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            const target = item.getAttribute('data-target');
+            if (target === 'sprite-settings-view') {
+                loadSpriteSets();
+            }
+        });
+    });
+
+    async function loadSpriteSets() {
+        try {
+            const res = await fetch('/api/sprites/list');
+            const data = await res.json();
+            if (data.success) {
+                renderSpriteSelect(data.sets, data.active_set);
+                renderSpriteGrid(data.sets, setSelect.value);
+            }
+        } catch (e) {
+            console.error('Failed to load sprites', e);
+        }
+    }
+
+    function renderSpriteSelect(sets, activeSet) {
+        setSelect.innerHTML = '';
+        Object.keys(sets).forEach(setName => {
+            const opt = document.createElement('option');
+            opt.value = setName;
+            opt.textContent = setName + (setName === activeSet ? ' (当前使用)' : '');
+            setSelect.appendChild(opt);
+        });
+        if (Object.keys(sets).includes(activeSet)) {
+            setSelect.value = activeSet;
+        }
+
+        setSelect.onchange = () => {
+            renderSpriteGrid(sets, setSelect.value);
+        };
+    }
+
+    function renderSpriteGrid(sets, selectedSet) {
+        previewContainer.innerHTML = '';
+        const imagesDict = sets[selectedSet] || {};
+        
+        const emotions = ['normal', 'angry', 'shy', 'crying', 'sleeping'];
+        
+        emotions.forEach(emotion => {
+            const groupDiv = document.createElement('div');
+            groupDiv.style.background = 'rgba(0,0,0,0.3)';
+            groupDiv.style.padding = '15px';
+            groupDiv.style.borderRadius = '8px';
+            
+            const header = document.createElement('div');
+            header.style.display = 'flex';
+            header.style.justifyContent = 'space-between';
+            header.style.alignItems = 'center';
+            header.style.marginBottom = '10px';
+            
+            const title = document.createElement('h3');
+            title.textContent = 情绪: \;
+            title.style.margin = '0';
+            title.style.color = '#ff79c6';
+            
+            const uploadBtn = document.createElement('button');
+            uploadBtn.className = 'action-btn outline';
+            uploadBtn.innerHTML = '<i class="fas fa-upload"></i> 上传立绘';
+            uploadBtn.onclick = () => uploadSprites(selectedSet, emotion);
+            
+            header.appendChild(title);
+            header.appendChild(uploadBtn);
+            groupDiv.appendChild(header);
+            
+            const grid = document.createElement('div');
+            grid.style.display = 'flex';
+            grid.style.flexWrap = 'wrap';
+            grid.style.gap = '10px';
+            
+            const imgs = imagesDict[emotion] || [];
+            if (imgs.length === 0) {
+                const empty = document.createElement('div');
+                empty.textContent = '暂无立绘';
+                empty.style.color = '#777';
+                grid.appendChild(empty);
+            } else {
+                imgs.forEach(url => {
+                    const imgContainer = document.createElement('div');
+                    imgContainer.style.position = 'relative';
+                    imgContainer.style.width = '100px';
+                    imgContainer.style.height = '120px';
+                    imgContainer.style.background = '#282a36';
+                    imgContainer.style.borderRadius = '5px';
+                    imgContainer.style.overflow = 'hidden';
+                    
+                    const img = document.createElement('img');
+                    img.src = url + '?t=' + new Date().getTime(); // prevent cache
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = 'contain';
+                    
+                    const delBtn = document.createElement('button');
+                    delBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                    delBtn.style.position = 'absolute';
+                    delBtn.style.top = '5px';
+                    delBtn.style.right = '5px';
+                    delBtn.style.background = 'rgba(255,85,85,0.8)';
+                    delBtn.style.color = 'white';
+                    delBtn.style.border = 'none';
+                    delBtn.style.borderRadius = '3px';
+                    delBtn.style.cursor = 'pointer';
+                    delBtn.style.padding = '5px';
+                    
+                    delBtn.onclick = () => deleteSprite(selectedSet, url.split('/').pop());
+                    
+                    imgContainer.appendChild(img);
+                    imgContainer.appendChild(delBtn);
+                    grid.appendChild(imgContainer);
+                });
+            }
+            
+            groupDiv.appendChild(grid);
+            previewContainer.appendChild(groupDiv);
+        });
+    }
+
+    async function uploadSprites(setName, emotion) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/png';
+        input.multiple = true;
+        input.onchange = async (e) => {
+            const files = e.target.files;
+            if (!files || files.length === 0) return;
+            
+            const formData = new FormData();
+            formData.append('set_name', setName);
+            formData.append('emotion', emotion);
+            for(let i=0; i<files.length; i++) {
+                formData.append('files', files[i]);
+            }
+            
+            try {
+                const res = await fetch('/api/sprites/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('上传成功！');
+                    loadSpriteSets();
+                } else {
+                    alert('上传失败: ' + data.message);
+                }
+            } catch(err) {
+                console.error(err);
+                alert('上传错误');
+            }
+        };
+        input.click();
+    }
+
+    async function deleteSprite(setName, filename) {
+        if (!confirm(\确定要删除 \ 吗？\)) return;
+        
+        try {
+            const res = await fetch('/api/sprites/delete', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ set_name: setName, filename: filename })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert('删除成功！');
+                loadSpriteSets();
+            } else {
+                alert('删除失败: ' + data.message);
+            }
+        } catch(err) {
+            console.error(err);
+            alert('删除错误');
+        }
+    }
+
+    btnSetActive.addEventListener('click', async () => {
+        const setName = setSelect.value;
+        if (!setName) return;
+        
+        try {
+            const res = await fetch('/api/sprites/set_active', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ set_name: setName })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert('套装已激活！');
+                loadSpriteSets();
+            } else {
+                alert('激活失败: ' + data.message);
+            }
+        } catch(err) {
+            console.error(err);
+            alert('激活错误');
+        }
+    });
+
+    btnCreateSet.addEventListener('click', async () => {
+        const newName = prompt("请输入新套装的名字（仅限英文、数字、下划线）：", "new_outfit");
+        if (!newName) return;
+        
+        try {
+            const res = await fetch('/api/sprites/create_set', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ set_name: newName })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert('套装创建成功！');
+                loadSpriteSets();
+            } else {
+                alert('创建失败: ' + data.message);
+            }
+        } catch(err) {
+            console.error(err);
+            alert('创建错误');
+        }
+    });
+});

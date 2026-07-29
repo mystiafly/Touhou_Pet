@@ -151,14 +151,25 @@ class DesktopPet {
             this.charName = data.character_name || "她";
             document.body.className = `theme-${data.character_id}`;
             document.getElementById("pet-input").placeholder = `和${this.charName}说话...`; // e.g. /static/images/rumia/
-            this.images = {
-                'normal': [prefix + 'normal.png', prefix + 'normal_1.png', prefix + 'normal_2.png'],
-                'angry': [prefix + 'angry.png', prefix + 'angry_1.png', prefix + 'angry_2.png'],
-                'shy': [prefix + 'shy.png', prefix + 'shy_1.png', prefix + 'shy_2.png'],
-                'crying': [prefix + 'crying.png', prefix + 'crying_1.png', prefix + 'crying_2.png'],
-                'sleeping': [prefix + 'sleeping.png', prefix + 'sleeping_1.png', prefix + 'sleeping_2.png']
-            };
-            this.img.src = prefix + 'normal.png';
+            if (data.images_dict) {
+                this.images = data.images_dict;
+                
+                // 设置初始图片为normal列表里的第一张，如果没图片则给个缺省
+                if (this.images['normal'] && this.images['normal'].length > 0) {
+                    this.img.src = this.images['normal'][0];
+                } else {
+                    this.img.src = prefix + 'normal.png'; // 兜底
+                }
+            } else {
+                this.images = {
+                    'normal': [prefix + 'normal.png', prefix + 'normal_1.png', prefix + 'normal_2.png'],
+                    'angry': [prefix + 'angry.png', prefix + 'angry_1.png', prefix + 'angry_2.png'],
+                    'shy': [prefix + 'shy.png', prefix + 'shy_1.png', prefix + 'shy_2.png'],
+                    'crying': [prefix + 'crying.png', prefix + 'crying_1.png', prefix + 'crying_2.png'],
+                    'sleeping': [prefix + 'sleeping.png', prefix + 'sleeping_1.png', prefix + 'sleeping_2.png']
+                };
+                this.img.src = prefix + 'normal.png';
+            }
             this.enableGreeting = data.enable_greeting !== false;
             this.enableAutoSpeak = data.enable_auto_speak !== false;
             this.autoSpeakMultiplier = data.auto_speak_multiplier || 1.0;
@@ -779,7 +790,11 @@ class DesktopPet {
         this.currentEmotion = emotion;
         if (this.isPeeking) return; // 如果正在边缘暗中观察，锁定换图逻辑
         
-        const list = this.images[emotion] || this.images['normal'];
+        let list = this.images[emotion] || this.images['normal'];
+        if (!list || list.length === 0) {
+            list = this.images['normal'];
+        }
+        if (!list || list.length === 0) return; // Fallback if even normal is empty
         const targetSrc = list[Math.floor(Math.random() * list.length)];
 
         // 如果当前已经是这张图，就不操作了，避免闪烁
@@ -868,6 +883,14 @@ class DesktopPet {
 
             if (data.success) {
                 // 1. 鍏堟樉绀哄璇?(杩欐槸鏈€閲嶈鐨勶紝缁濆涓嶈兘琚鐩?
+                // [新增] 如果后端指令睡眠，直接进入挂机睡眠状态
+                if (data.force_sleep) {
+                    data.emotion = "sleeping"; // 强制立绘切换为睡觉
+                    this.isSleeping = true;
+                    if (this.autoSpeakTimer) clearTimeout(this.autoSpeakTimer);
+                    console.log("接收到后端睡眠指令，进入睡眠模式。");
+                }
+
                 this.showBubble(data.reply);
                 this.setEmotion(data.emotion);
 
@@ -905,7 +928,7 @@ class DesktopPet {
 
     resetAutoSpeakTimer() {
         if (this.autoSpeakTimer) clearTimeout(this.autoSpeakTimer);
-        if (this.isMinimized || !this.enableAutoSpeak) return;
+        if (this.isMinimized || !this.enableAutoSpeak || this.isSleeping) return;
         
         // [修复] 根据设定的频率倍率动态调整睡眠阈值。
         // 倍率大于1时（低频），减少需要的次数以保证在一小时左右入睡。
@@ -1001,7 +1024,11 @@ class DesktopPet {
         }
         if (!this.reactionLines) return;
         if (this.isSleeping) {
-            this.wakeUp(false); // 强制唤醒
+            // 在睡眠状态下点击不会唤醒，只会发困倦台词
+            let lines = this.reactionLines['sleeping'] || ["呼呼呼... (正在做梦)"];
+            let randomLine = lines[Math.floor(Math.random() * lines.length)];
+            this.showBubble(randomLine, 1500);
+            return;
         }
         
         let emotion = this.currentEmotion || 'normal';
@@ -1022,8 +1049,8 @@ class DesktopPet {
     }
 
     async triggerPetSpeak() {
-        if (this.isPeeking) {
-            this.resetAutoSpeakTimer();
+        if (this.isPeeking || this.isSleeping) {
+            if (!this.isSleeping) this.resetAutoSpeakTimer();
             return;
         }
         

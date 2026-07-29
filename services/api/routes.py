@@ -179,7 +179,9 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
         final_state = chat_workflow.invoke(initial_state, config)
 
         raw_reply = final_state.get("raw_reply", "")
+        pre_llm_reply = final_state.get("pre_llm_reply", "")
         emotion = final_state.get("emotion", "normal")
+        force_sleep = "[SLEEP_NOW]" in raw_reply or "[SLEEP_NOW]" in pre_llm_reply or emotion == "sleeping"
         score = final_state.get("score", 10)
         clean_content = final_state.get("clean_content", "")
         browser_task = final_state.get("browser_task", None)
@@ -232,7 +234,8 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
             "favorability": current_fav,
             "fav_change": change,
             "history_count": len(updated_history) - 1,
-            "music_play": music_play
+            "music_play": music_play,
+            "force_sleep": force_sleep
         }
 
     except Exception as e:
@@ -529,16 +532,37 @@ async def api_characters_import(
 @router.get("/api/character_info")
 async def api_character_info():
     import json
-    from core.config_manager import get_custom_engines
+    from core.config_manager import get_custom_engines, get_character_dir
     char_id = get_active_character_id()
     config = get_config()
     char_name = config.get("character_name", char_id)
     needs_onboarding = len(get_custom_engines()) == 0
+    
+    active_sprite_set = config.get("active_sprite_set", "main_sprites")
+    sprite_dir = os.path.join(get_character_dir(), "assets", active_sprite_set)
+    
+    images_dict = {
+        "normal": [],
+        "angry": [],
+        "shy": [],
+        "crying": [],
+        "sleeping": []
+    }
+    
+    if os.path.exists(sprite_dir):
+        for f in os.listdir(sprite_dir):
+            if f.lower().endswith('.png'):
+                emotion_key = f.split('_')[0].split('.')[0]
+                if emotion_key in images_dict:
+                    images_dict[emotion_key].append(f"/char_assets/{char_id}/assets/{active_sprite_set}/{f}")
+                    
     return JSONResponse({
         "character_id": char_id,
         "character_name": char_name,
         "theme_color": config.get("theme_color", ""),
-        "image_path": f"/char_assets/{char_id}/assets/main_sprites/",
+        "image_path": f"/char_assets/{char_id}/assets/{active_sprite_set}/",
+        "images_dict": images_dict,
+        "active_sprite_set": active_sprite_set,
         "enable_greeting": config.get("enable_greeting", True),
         "enable_auto_speak": config.get("enable_auto_speak", True),
         "auto_speak_multiplier": config.get("auto_speak_multiplier", 1.0),
@@ -586,6 +610,12 @@ async def api_tools():
             "command": "[MUSIC_PLAY: 歌曲名称 歌手名]",
             "description": "自动在网易云音乐后台点播并播放指定的歌曲。",
             "icon": "fas fa-music"
+        },
+        {
+            "name": "睡眠挂机",
+            "command": "[SLEEP_NOW]",
+            "description": "让桌宠进入深度睡眠模式，停止主动说话和后台自言自语，直到被再次唤醒。",
+            "icon": "fas fa-bed"
         },
         {
             "name": "定时闹钟任务",
@@ -1557,3 +1587,122 @@ def test_timer_1min():
     from core.event_manager import schedule_timer
     schedule_timer(1, "1分钟延时测试")
     return {"success": True}
+import shutil
+
+@router.get("/api/sprites/list")
+async def api_sprites_list():
+    from core.config_manager import get_character_dir
+    char_id = get_active_character_id()
+    config = get_config()
+    active_set = config.get("active_sprite_set", "main_sprites")
+    assets_dir = os.path.join(get_character_dir(), "assets")
+    
+    sets = {}
+    if os.path.exists(assets_dir):
+        for set_name in os.listdir(assets_dir):
+            set_dir = os.path.join(assets_dir, set_name)
+            if os.path.isdir(set_dir):
+                images = {
+                    "normal": [], "angry": [], "shy": [], "crying": [], "sleeping": []
+                }
+                for f in os.listdir(set_dir):
+                    if f.lower().endswith('.png'):
+                        emotion_key = f.split('_')[0].split('.')[0]
+                        if emotion_key in images:
+                            images[emotion_key].append(f"/char_assets/{char_id}/assets/{set_name}/{f}")
+                sets[set_name] = images
+                
+    return JSONResponse({
+        "success": True,
+        "active_set": active_set,
+        "sets": sets
+    })
+
+class SpriteSetActiveRequest(BaseModel):
+    set_name: str
+
+@router.post("/api/sprites/set_active")
+async def api_sprites_set_active(req: SpriteSetActiveRequest):
+    from core.config_manager import get_character_dir
+    set_dir = os.path.join(get_character_dir(), "assets", req.set_name)
+    if not os.path.exists(set_dir):
+        return JSONResponse({"success": False, "message": "Sprite set not found"}, status_code=400)
+        
+    config = get_config()
+    config["active_sprite_set"] = req.set_name
+    save_config(config)
+    return JSONResponse({"success": True})
+
+class SpriteCreateSetRequest(BaseModel):
+    set_name: str
+
+@router.post("/api/sprites/create_set")
+async def api_sprites_create_set(req: SpriteCreateSetRequest):
+    from core.config_manager import get_character_dir
+    # Sanitize directory name
+    set_name = re.sub(r'[^a-zA-Z0-9_\-]', '', req.set_name)
+    if not set_name:
+         return JSONResponse({"success": False, "message": "Invalid set name"}, status_code=400)
+         
+    set_dir = os.path.join(get_character_dir(), "assets", set_name)
+    if os.path.exists(set_dir):
+        return JSONResponse({"success": False, "message": "Set already exists"}, status_code=400)
+        
+    os.makedirs(set_dir, exist_ok=True)
+    return JSONResponse({"success": True})
+
+@router.post("/api/sprites/upload")
+async def api_sprites_upload(set_name: str = Form(...), emotion: str = Form(...), files: list[UploadFile] = File(...)):
+    from core.config_manager import get_character_dir
+    set_dir = os.path.join(get_character_dir(), "assets", set_name)
+    if not os.path.exists(set_dir):
+        return JSONResponse({"success": False, "message": "Sprite set not found"}, status_code=400)
+        
+    if emotion not in ["normal", "angry", "shy", "crying", "sleeping"]:
+        return JSONResponse({"success": False, "message": "Invalid emotion"}, status_code=400)
+        
+    # Find next available index for this emotion
+    existing_files = [f for f in os.listdir(set_dir) if f.startswith(f"{emotion}") and f.endswith(".png")]
+    
+    def get_index(filename):
+        # Extracts index from normal.png (0) or normal_1.png (1)
+        name = filename.split('.')[0]
+        parts = name.split('_')
+        if len(parts) > 1 and parts[-1].isdigit():
+            return int(parts[-1])
+        return 0
+        
+    indices = [get_index(f) for f in existing_files]
+    next_idx = max(indices) + 1 if indices else 0
+    
+    for file in files:
+        if next_idx == 0:
+            filename = f"{emotion}.png"
+        else:
+            filename = f"{emotion}_{next_idx}.png"
+        next_idx += 1
+        
+        file_path = os.path.join(set_dir, filename)
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+    return JSONResponse({"success": True})
+
+class SpriteDeleteRequest(BaseModel):
+    set_name: str
+    filename: str
+
+@router.post("/api/sprites/delete")
+async def api_sprites_delete(req: SpriteDeleteRequest):
+    from core.config_manager import get_character_dir
+    set_dir = os.path.join(get_character_dir(), "assets", req.set_name)
+    file_path = os.path.join(set_dir, req.filename)
+    
+    # Security check to prevent path traversal
+    if not os.path.abspath(file_path).startswith(os.path.abspath(set_dir)):
+        return JSONResponse({"success": False, "message": "Invalid path"}, status_code=400)
+        
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        return JSONResponse({"success": True})
+    return JSONResponse({"success": False, "message": "File not found"}, status_code=404)

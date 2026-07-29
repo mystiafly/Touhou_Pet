@@ -39,6 +39,9 @@
             <a href="#" class="nav-item" data-target="basic-settings-view">
                 <i class="fas fa-cog"></i> 基础设置
             </a>
+            <a href="#" class="nav-item" data-target="sprite-settings-view">
+                <i class="fas fa-image"></i> 立绘设置
+            </a>
             <a href="#" class="nav-item" data-target="custom-presets-view">
                 <i class="fas fa-user-tag"></i> 专属预设
             </a>
@@ -134,6 +137,39 @@
                         <button id="preview-prompt-btn" class="action-btn outline">
                             <i class="fas fa-eye"></i> 三段式提示词透视 (X-Ray)
                         </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 立绘设置视图 -->
+        <section id="sprite-settings-view" class="content-section">
+            <header class="section-header">
+                <h1>立绘设置</h1>
+                <p>管理当前角色的多套立绘与动态表情</p>
+            </header>
+            
+            <div class="card-container">
+                <div class="settings-card" style="grid-column: 1 / -1;">
+                    <h2>套装管理</h2>
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <select id="sprite-set-select" class="theme-select" style="flex: 1; padding: 10px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid #ff79c6; border-radius: 5px;">
+                            <option value="main_sprites">main_sprites</option>
+                        </select>
+                        <button id="set-active-sprite-btn" class="action-btn">
+                            <i class="fas fa-check"></i> 设为当前使用
+                        </button>
+                        <button id="create-sprite-set-btn" class="action-btn outline">
+                            <i class="fas fa-plus"></i> 新建套装
+                        </button>
+                    </div>
+                </div>
+
+                <div class="settings-card" style="grid-column: 1 / -1;">
+                    <h2>立绘预览与上传</h2>
+                    <p style="font-size: 13px; color: #aaa; margin-bottom: 15px;">支持多图上传。系统会自动根据情绪分类并随机读取。注意上传会被限制只能选PNG文件。</p>
+                    <div id="sprite-preview-container" style="display: flex; flex-direction: column; gap: 30px;">
+                        <!-- JS 动态渲染各情绪图片 -->
                     </div>
                 </div>
             </div>

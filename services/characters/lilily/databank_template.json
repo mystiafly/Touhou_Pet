@@ -1,0 +1,201 @@
+{
+  "mate": {
+    "globalInjectionConfig": {
+      "readableEntryPlacement": {
+        "position": "before_character_definition",
+        "depth": 2,
+        "order": 99981
+      },
+      "wrapperPlacement": {
+        "position": "before_character_definition",
+        "depth": 2,
+        "order": 99980
+      }
+    },
+    "type": "chatSheets",
+    "updateConfigUiSentinel": -1,
+    "version": 2
+  },
+  "sheet_user_profile": {
+    "uid": "sheet_user_profile",
+    "name": "用户档案表",
+    "sourceData": {
+      "deleteNode": "当设定的信息不再成立、或者用户明确否认时。",
+      "initNode": "插入一条基本信息，记录用户的初始设定或身份。",
+      "insertNode": "当用户提及关于自己的新设定、身份、习惯、喜好、现实生活状态时。",
+      "note": "专门用来收集并在后台记录用户（User）透露的个人信息。\n行示例: `用户身份`, `大学生，每天晚上熬夜写代码`\n记录内容包括但不限于：喜好、厌恶、职业、作息、生活状态、人际关系等。",
+      "updateNode": "当原有设定或状态发生明显改变时。"
+    },
+    "content": [
+      [
+        "row_id",
+        "记录项",
+        "详细描述"
+      ]
+    ],
+    "updateConfig": {
+      "batchSize": 4,
+      "contextDepth": 4,
+      "skipFloors": -1,
+      "uiSentinel": -1,
+      "updateFrequency": -1
+    },
+    "exportConfig": {
+      "enabled": true,
+      "splitByRow": false,
+      "entryName": "用户档案表",
+      "entryType": "constant",
+      "keywords": "",
+      "preventRecursion": true,
+      "injectionTemplate": "",
+      "extraIndexEnabled": false,
+      "entryPlacement": {
+        "position": "at_depth_as_system",
+        "depth": 2,
+        "order": 10001
+      }
+    },
+    "orderNo": 0
+  },
+  "sheet_pet_status": {
+    "uid": "sheet_pet_status",
+    "name": "桌宠当前状态表",
+    "sourceData": {
+      "deleteNode": "禁止删除。",
+      "initNode": "插入一行，描述桌宠的初始心情和状态。",
+      "insertNode": "禁止新增。此表仅保持唯一一行。",
+      "note": "记录桌宠（角色本身）此时此刻的心境、正在进行的活动、以及对当前用户的好感度(0-100数值)。\n此表有且仅有一行，禁止增删行，只能更新。",
+      "updateNode": "每轮对话根据角色的反应和情绪变化，更新当前的心情和正在模拟进行的事件。"
+    },
+    "content": [
+      [
+        "row_id",
+        "当前心情",
+        "正在做的事",
+        "好感度(0-100)"
+      ]
+    ],
+    "updateConfig": {
+      "batchSize": 4,
+      "contextDepth": 4,
+      "skipFloors": -1,
+      "uiSentinel": -1,
+      "updateFrequency": -1
+    },
+    "exportConfig": {
+      "enabled": true,
+      "splitByRow": false,
+      "entryName": "桌宠当前状态表",
+      "entryType": "constant",
+      "keywords": "",
+      "preventRecursion": true,
+      "injectionTemplate": "",
+      "extraIndexEnabled": false,
+      "entryPlacement": {
+        "position": "at_depth_as_system",
+        "depth": 2,
+        "order": 10000
+      }
+    },
+    "orderNo": 1
+  },
+  "sheet_memories": {
+    "uid": "sheet_memories",
+    "name": "羁绊与纪念表",
+    "sourceData": {
+      "deleteNode": "当事件完全失去时效性，或超过10条时删除最不重要的一条。",
+      "initNode": "可留空。",
+      "insertNode": "当发生了一件值得长期铭记的事件，或者双方立下了某个重要的约定。",
+      "note": "记录双方之间发生的极其重要的事情、约定或里程碑回忆。总条数≤10条。不要记录琐碎的日常。\n例如“第一次庆祝生日”、“约定了周末一起看电影”。\n这会让桌宠拥有长期的深刻记忆。",
+      "updateNode": "对某个事件有新的感受或后续进展时。"
+    },
+    "content": [
+      [
+        "row_id",
+        "事件摘要",
+        "对两人的意义与影响"
+      ]
+    ],
+    "updateConfig": {
+      "batchSize": 4,
+      "contextDepth": 4,
+      "skipFloors": -1,
+      "uiSentinel": -1,
+      "updateFrequency": -1
+    },
+    "exportConfig": {
+      "enabled": true,
+      "splitByRow": false,
+      "entryName": "羁绊与纪念表",
+      "entryType": "constant",
+      "keywords": "",
+      "preventRecursion": true,
+      "injectionTemplate": "",
+      "extraIndexEnabled": false,
+      "entryPlacement": {
+        "position": "at_depth_as_system",
+        "depth": 2,
+        "order": 10002
+      }
+    },
+    "orderNo": 2
+  },
+  "sheet_topics": {
+    "uid": "sheet_topics",
+    "name": "备忘与话题表",
+    "sourceData": {
+      "deleteNode": "已完成且失去记录价值的待办，或已经聊完且不再重要的话题。",
+      "initNode": "可留空。",
+      "insertNode": "当用户要求提醒某事，或者双方约定稍后聊某个话题，或有暂时搁置的任务时。",
+      "note": "记录短暂的任务、待办事项、或者承诺要完成的事情。\n状态请填入：[待办,进行中,已完成,已聊过]。",
+      "updateNode": "事项的状态发生改变时。"
+    },
+    "content": [
+      [
+        "row_id",
+        "事项内容",
+        "状态"
+      ]
+    ],
+    "updateConfig": {
+      "batchSize": 4,
+      "contextDepth": 4,
+      "skipFloors": -1,
+      "uiSentinel": -1,
+      "updateFrequency": -1
+    },
+    "exportConfig": {
+      "enabled": false
+    },
+    "orderNo": 3
+  },
+  "sheet_summary": {
+    "uid": "sheet_summary",
+    "name": "日常摘要表",
+    "sourceData": {
+      "deleteNode": "超过20条时，删除最旧的记录。",
+      "initNode": "插入初始记录。",
+      "insertNode": "经过数次交互后，提取这段时间的聊天要点。",
+      "note": "轮次日志，提炼聊天的核心内容，保持上下文记忆。格式简短客观。\n例如：“用户抱怨了工作很累，我安慰了他并提议一起听歌。”\n不要记录无意义的语气词。",
+      "updateNode": "一般不更新，而是新增。若信息补充可合并到最新一条。"
+    },
+    "content": [
+      [
+        "row_id",
+        "时间段",
+        "聊天摘要"
+      ]
+    ],
+    "updateConfig": {
+      "batchSize": 4,
+      "contextDepth": 4,
+      "skipFloors": -1,
+      "uiSentinel": -1,
+      "updateFrequency": -1
+    },
+    "exportConfig": {
+      "enabled": false
+    },
+    "orderNo": 4
+  }
+}
