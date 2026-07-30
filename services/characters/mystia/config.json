@@ -5,5 +5,8 @@
   "app_launcher": {
     "记事本": "C:\\Windows\\System32\\notepad.exe",
     "网易云音乐": "H:\\\\CloudMusic\\\\cloudmusic.exe"
-  }
+  },
+  "distilled_dates": [
+    "2026-07-18"
+  ]
 }
