@@ -552,7 +552,7 @@ async def api_characters_import(
         os.makedirs(img_dir, exist_ok=True)
         assets_dir = os.path.join(char_dir, "assets")
         if os.path.exists(assets_dir):
-            for sub in ["main_sprites", "side_sprites"]:
+            for sub in os.listdir(assets_dir):
                 sub_dir = os.path.join(assets_dir, sub)
                 if os.path.exists(sub_dir):
                     for item in os.listdir(sub_dir):

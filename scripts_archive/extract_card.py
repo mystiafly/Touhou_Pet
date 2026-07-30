@@ -11,7 +11,7 @@ if os.path.exists(dest_dir):
 
 # Create directories
 os.makedirs(os.path.join(dest_dir, "assets", "main_sprites"), exist_ok=True)
-os.makedirs(os.path.join(dest_dir, "assets", "side_sprites"), exist_ok=True)
+    pass
 os.makedirs(os.path.join(dest_dir, "prompts"), exist_ok=True)
 os.makedirs(os.path.join(dest_dir, "presets"), exist_ok=True)
 os.makedirs(os.path.join(dest_dir, "databank"), exist_ok=True)
@@ -20,10 +20,7 @@ os.makedirs(os.path.join(dest_dir, "databank"), exist_ok=True)
 for img in os.listdir(src_img_dir):
     if not img.endswith(".png"): continue
     src_path = os.path.join(src_img_dir, img)
-    if "peeking" in img:
-        shutil.copy(src_path, os.path.join(dest_dir, "assets", "side_sprites", img))
-    else:
-        shutil.copy(src_path, os.path.join(dest_dir, "assets", "main_sprites", img))
+    shutil.copy(src_path, os.path.join(dest_dir, "assets", "main_sprites", img))
 
 # 2. 读取 config
 with open(os.path.join(src_char_dir, "config.json"), "r", encoding="utf-8") as f:
