@@ -1253,18 +1253,77 @@ class DesktopPet {
         }
     }
 
-    // [鏂板] 鍒濆鍖栭鍒跺彂瑷€绯荤粺
+    // [新增] 初始化预制发言系统
     initPresets() {
         this.presetsBtn = document.getElementById('presets-btn');
         this.presetsPopup = document.getElementById('presets-popup');
+        this.actionPopup = document.getElementById('action-popup');
+        this.toolsPopup = document.getElementById('tools-popup');
 
-        // 鐐瑰嚮鎸夐挳鍒囨崲鑿滃崟鏄剧ず/闅愯棌
+        // 点击按钮切换菜单显示/隐藏
         this.presetsBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            this.presetsPopup.classList.toggle('hidden');
+            if (this.presetsPopup.classList.contains('hidden') && this.toolsPopup.classList.contains('hidden')) {
+                this.actionPopup.classList.toggle('hidden');
+            } else {
+                this.actionPopup.classList.add('hidden');
+                this.presetsPopup.classList.add('hidden');
+                this.toolsPopup.classList.add('hidden');
+            }
         });
 
-        // 鐐瑰嚮鍏蜂綋棰勫埗鍙戣█閫夐」锛岃嚜鍔ㄥ～鍏ヨ緭鍏ユ骞惰Е鍙戝彂閫?
+        if(document.getElementById('open-presets-btn')) {
+            document.getElementById('open-presets-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.actionPopup.classList.add('hidden');
+                this.presetsPopup.classList.remove('hidden');
+            });
+        }
+
+        if(document.getElementById('open-tools-btn')) {
+            document.getElementById('open-tools-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.actionPopup.classList.add('hidden');
+                this.toolsPopup.classList.remove('hidden');
+            });
+        }
+
+        if(document.getElementById('tool-clean-memory')) {
+            document.getElementById('tool-clean-memory').addEventListener('click', async (e) => {
+                e.stopPropagation();
+                this.toolsPopup.classList.add('hidden');
+                
+                this.showBubble("正在深度清理内存中...", -1);
+                try {
+                    const cleanRes = await fetch('/api/clean_memory', { method: 'POST' });
+                    const cleanData = await cleanRes.json();
+                    
+                    if(cleanData.success) {
+                        const response = await fetch('/api/pet_speak', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ type: 'clean_memory', count: 1, message: cleanData.message })
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.showBubble(data.reply);
+                            this.setEmotion(data.emotion);
+                            if (data.favorability !== undefined) {
+                                this.favScore.innerText = data.favorability;
+                            }
+                        }
+                    } else {
+                        this.showBubble("内存清理失败了捏...");
+                        setTimeout(() => this.showBubble(""), 3000);
+                    }
+                } catch (err) {
+                    console.error(err);
+                    this.showBubble("调用清理工具出错了...");
+                }
+            });
+        }
+
+        // 点击具体预制发言选项，自动填入输入框并触发发送
         const items = this.presetsPopup.querySelectorAll('.preset-item');
         items.forEach(item => {
             item.addEventListener('click', (e) => {
@@ -1275,15 +1334,18 @@ class DesktopPet {
             });
         });
 
-        // 鐐瑰嚮椤甸潰鍏朵粬鍖哄煙锛岃嚜鍔ㄦ敹璧烽鍒惰彍鍗?(浣跨敤 contains 纭繚鐐瑰嚮鎸夐挳鍐呯殑鍥炬爣鏃朵笉浼氳璇垽骞剁灛闂村叧闂?
+        // 点击页面其他区域，自动收起预制菜单
         document.addEventListener('click', (e) => {
-            if (this.presetsPopup && !this.presetsPopup.classList.contains('hidden')) {
-                if (this.presetsBtn && this.presetsBtn.contains(e.target)) {
-                return; // 点击在预制按钮或其子图标上，由按钮自身事件处理
-                }
-                if (!this.presetsPopup.contains(e.target)) {
-                    this.presetsPopup.classList.add('hidden');
-                }
+            if (this.presetsBtn && this.presetsBtn.contains(e.target)) return;
+            
+            if (this.actionPopup && !this.actionPopup.contains(e.target)) {
+                this.actionPopup.classList.add('hidden');
+            }
+            if (this.presetsPopup && !this.presetsPopup.contains(e.target)) {
+                this.presetsPopup.classList.add('hidden');
+            }
+            if (this.toolsPopup && !this.toolsPopup.contains(e.target)) {
+                this.toolsPopup.classList.add('hidden');
             }
         });
     }

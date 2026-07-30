@@ -1,4 +1,4 @@
-aiohappyeyeballs==2.7.1
+﻿aiohappyeyeballs==2.7.1
 aiohttp==3.14.1
 aiosignal==1.4.0
 aiosqlite==0.22.1
@@ -160,3 +160,4 @@ xxhash==3.8.0
 yarl==1.24.2
 zh_core_web_sm @ https://ghproxy.net/https://github.com/explosion/spacy-models/releases/download/zh_core_web_sm-3.8.0/zh_core_web_sm-3.8.0-py3-none-any.whl#sha256=7de3bd267176b9b2a8defb6997c1cd296da16c57b5e712f72ea44a51755421c8
 zstandard==0.25.0
+psutil==7.2.2

@@ -45,19 +45,29 @@ def load_databank():
             template_headers = template_content[0]
             
             if state_headers != template_headers:
-                # Re-align state_content to match template_headers
-                realigned_content = [template_headers]
-                for row in state_content[1:]:
-                    new_row = []
-                    for h in template_headers:
-                        if h in state_headers:
-                            idx = state_headers.index(h)
-                            val = row[idx] if idx < len(row) else ""
-                            new_row.append(val)
-                        else:
-                            new_row.append("")
-                    realigned_content.append(new_row)
-                final_content = realigned_content
+                # Check if there is any overlap in columns (excluding row_id)
+                overlap = set(template_headers[1:]) & set(state_headers[1:])
+                if not overlap and len(template_headers) > 1:
+                    # Incompatible schema, drop old state
+                    final_content = template_content
+                else:
+                    # Re-align state_content to match template_headers
+                    realigned_content = [template_headers]
+                    for row in state_content[1:]:
+                        new_row = []
+                        is_empty = True
+                        for i, h in enumerate(template_headers):
+                            if h in state_headers:
+                                idx = state_headers.index(h)
+                                val = row[idx] if idx < len(row) else ""
+                                new_row.append(val)
+                                if i > 0 and str(val).strip():
+                                    is_empty = False
+                            else:
+                                new_row.append("")
+                        if not is_empty:
+                            realigned_content.append(new_row)
+                    final_content = realigned_content
             else:
                 final_content = state_content
         elif state_content:
@@ -257,12 +267,23 @@ def parse_and_execute_databank_commands(llm_output):
     if not merged:
         return llm_output # 没有配置 databank，不处理
         
+    commands_text = ""
     pattern = r"```databank\n(.*?)\n```"
     match = re.search(pattern, llm_output, re.DOTALL)
-    if not match:
-        return llm_output
+    if match:
+        commands_text = match.group(1).strip()
+    else:
+        # Fallback: extract any valid commands if markdown wrapper is missing
+        lines = []
+        for line in llm_output.split('\n'):
+            line = line.strip()
+            if line.startswith("UPDATE_TABLE:") or line.startswith("INSERT_ROW:"):
+                lines.append(line)
+        if lines:
+            commands_text = "\n".join(lines)
+        else:
+            return llm_output
         
-    commands_text = match.group(1).strip()
     clean_output = re.sub(pattern, "", llm_output, flags=re.DOTALL).strip()
     
     modified = False
@@ -302,12 +323,21 @@ def parse_and_execute_databank_commands(llm_output):
                     sheet_id = parts[0].strip()
                     row_data_str = parts[1].strip()
                     if sheet_id in merged and row_data_str.startswith('[') and row_data_str.endswith(']'):
-                        # 简单的列表解析或 json 解析，兼容单引号
+                        import ast
                         try:
-                            # 替换单引号为双引号
-                            row_data_str = row_data_str.replace("'", '"')
-                            row_data = json.loads(row_data_str)
-                            if isinstance(row_data, list):
+                            # Use ast.literal_eval to safely parse list string with potential single quotes
+                            row_data = ast.literal_eval(row_data_str)
+                            if not isinstance(row_data, list):
+                                raise ValueError("Not a list")
+                        except Exception:
+                            # Fallback to json if ast fails
+                            try:
+                                row_data_str = row_data_str.replace("'", '"')
+                                row_data = json.loads(row_data_str)
+                            except Exception:
+                                row_data = None
+
+                        if isinstance(row_data, list):
                                 actual_cols = merged[sheet_id].get("content", [[]])[0]
                                 if actual_cols and actual_cols[0] == "row_id":
                                     import uuid
@@ -320,8 +350,7 @@ def parse_and_execute_databank_commands(llm_output):
                                 merged[sheet_id]["content"].append(row_data)
                                 modified = True
                                 print(f"[DataBank] 新增行: {sheet_id} -> {row_data}")
-                        except:
-                            pass
+
         except Exception as e:
             print(f"[DataBank] 解析指令失败: {line}, 错误: {e}")
             

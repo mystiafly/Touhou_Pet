@@ -29,7 +29,7 @@
                 <i class="fas fa-magic"></i> 孕育新灵魂
             </a>
             <a href="#" class="nav-item" data-target="tools-view">
-                <i class="fas fa-tools"></i> 工具情况
+                <i class="fas fa-tools"></i> 工具设置
             </a>
             <a href="#" class="nav-item" data-target="global-presets-view">
                 <i class="fas fa-globe"></i> 公用预设
@@ -44,6 +44,9 @@
             </a>
             <a href="#" class="nav-item" data-target="custom-presets-view">
                 <i class="fas fa-user-tag"></i> 专属预设
+            </a>
+            <a href="#" class="nav-item" data-target="reactions-view">
+                <i class="fas fa-comments"></i> 互动应付词
             </a>
             <a href="#" class="nav-item" data-target="databank-view">
                 <i class="fas fa-database"></i> 动态数据库
@@ -535,6 +538,29 @@
             </div>
         </section>
 
+        <!-- 6.6 互动应付词视图 -->
+        <section id="reactions-view" class="content-section">
+            <div class="section-header">
+                <h2>💬 互动应付词库 (Reactions)</h2>
+                <p>管理桌宠在不同情绪下，被点击时说出的随机短句。如果词库太空，系统会在后台自动用大模型补全。</p>
+            </div>
+            
+            <div class="card" style="display: flex; flex-direction: column; height: calc(100vh - 180px);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 class="card-title" style="margin:0;"><i class="fas fa-comments"></i> 应付词列表</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="action-btn outline" id="btn-refresh-reactions" style="padding: 5px 10px; font-size: 12px;"><i class="fas fa-sync-alt"></i> 刷新</button>
+                    </div>
+                </div>
+                <div id="reactions-list-container" style="display: flex; flex-direction: column; gap: 20px; overflow-y: auto; flex: 1; padding-right: 10px;">
+                    <div class="loading-state" id="reactions-loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>
+                    <div id="reactions-content" style="display: none; flex-direction: column; gap: 15px;">
+                        <!-- 动态填充 -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- 7. 动态数据库视图 -->
         <section id="databank-view" class="content-section">
             <header class="section-header">
@@ -688,10 +714,10 @@
         
         </section>
 
-        <!-- 9. 工具情况视图 -->
+        <!-- 9. 工具设置视图 -->
         <section id="tools-view" class="content-section">
             <header class="section-header">
-                <h1>工具情况</h1>
+                <h1>工具设置</h1>
                 <p>当前 Chain 状态机中已注册且支持的大模型工具一览</p>
             </header>
             

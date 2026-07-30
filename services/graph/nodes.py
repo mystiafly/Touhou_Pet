@@ -94,7 +94,8 @@ def build_pre_messages(state: AgentState) -> list:
         "5. 睡眠控制：如果用户明确命令你去睡觉、休息，输出 `[SLEEP_NOW]`。\n"
         "6. 更改称呼: 如果用户要求改变你对他的称呼，输出 `[UPDATE_USER_NAME: 新称呼]`。\n"
         "7. 更改自己的名字: 如果用户要求你改名，输出 `[UPDATE_PET_NAME: 新名字]`。\n"
-        "8. 视觉识图: 如果用户要求你看看屏幕上有什么，或者让你识图，输出 `[ANALYZE_SCREEN]`。\n\n"
+        "8. 视觉识图: 如果用户要求你看看屏幕上有什么，或者让你识图，输出 `[ANALYZE_SCREEN]`。\n"
+        "9. 内存清理: 如果用户抱怨电脑卡顿或明确要求清理系统内存，输出 `[CLEAN_MEMORY]`。\n\n"
         "【规则】\n"
         "1. 如果检测到工具意图，请仅输出上述的一个或多个标签，不需要任何多余解释！绝对禁止进行角色扮演！\n"
         "2. 如果未检测到任何需要工具协助的意图，请仅输出 `[NO_TOOLS_NEEDED]`。\n"
@@ -345,6 +346,10 @@ def parse_pre_response_node(state: AgentState) -> Dict[str, Any]:
     vision_match = re.search(r'\[ANALYZE_SCREEN\]', raw_reply, re.IGNORECASE)
     if vision_match: vision_task = "analyze_screen"
 
+    clean_memory_task = None
+    clean_memory_match = re.search(r'\[CLEAN_MEMORY\]', raw_reply, re.IGNORECASE)
+    if clean_memory_match: clean_memory_task = True
+
     return {
         "browser_task": browser_task,
         "search_task": search_task,
@@ -352,22 +357,43 @@ def parse_pre_response_node(state: AgentState) -> Dict[str, Any]:
         "launcher_task": launcher_task,
         "rename_task_user": rename_task_user,
         "rename_task_pet": rename_task_pet,
-        "vision_task": vision_task
+        "vision_task": vision_task,
+        "clean_memory_task": clean_memory_task
     }
 
 def collect_tool_feedback_node(state: AgentState) -> Dict[str, Any]:
     tool_feedback = []
     if state.get("music_result"):
         res = state.get("music_result")
-        if "error" in res: tool_feedback.append(f"点歌检索失败：{res['error']}。")
-        else: tool_feedback.append(f"点歌检索成功：已播放歌曲：《{res['name']}》（歌手: {res['artists']}）。")
-    if state.get("browser_result"): tool_feedback.append(f"网页反馈：\n{state['browser_result']}")
-    if state.get("search_result"): tool_feedback.append(f"搜索反馈：\n{state['search_result']}")
-    if state.get("launcher_result"): tool_feedback.append(f"应用启动反馈：\n{state['launcher_result']}")
-    if state.get("rename_result"): tool_feedback.append(f"改名反馈：\n{state['rename_result']}")
-    if state.get("vision_result"): tool_feedback.append(f"视觉识图反馈：\n{state['vision_result']}")
-    
-    return {"tool_feedback_context": "\n".join(tool_feedback) if tool_feedback else ""}
+        if res.get("success"):
+            tool_feedback.append(f"【系统反馈】已找到音乐 '{res.get('name')}' by {res.get('artists')}，并在后台开始播放。")
+        else:
+            tool_feedback.append(f"【系统反馈】未找到音乐: {state.get('music_task')}")
+            
+    if state.get("browser_result"):
+        tool_feedback.append(f"【系统反馈-网页内容】\n{state.get('browser_result')}")
+        
+    if state.get("search_result"):
+        tool_feedback.append(f"【系统反馈-搜索结果】\n{state.get('search_result')}")
+        
+    if state.get("launcher_result"):
+        tool_feedback.append(f"【系统反馈-应用启动】\n{state.get('launcher_result')}")
+        
+    if state.get("rename_result"):
+        tool_feedback.append(f"【系统反馈-称呼更改】\n{state.get('rename_result')}")
+        
+    if state.get("vision_result"):
+        tool_feedback.append(f"【系统反馈-屏幕画面解析】\n{state.get('vision_result')}")
+        
+    if state.get("clean_memory_result"):
+        res = state.get("clean_memory_result")
+        if res.get("success"):
+            tool_feedback.append(f"【系统反馈】{res.get('message')}")
+        else:
+            tool_feedback.append(f"【系统反馈】内存清理失败: {res.get('error')}")
+
+    feedback_str = "\n".join(tool_feedback)
+    return {"tool_feedback_context": feedback_str}
 
 def main_llm_node(state: AgentState) -> Dict[str, Any]:
     active_messages = build_main_messages(state)
@@ -384,6 +410,25 @@ def main_llm_node(state: AgentState) -> Dict[str, Any]:
         "score": score,
         "clean_content": clean_content
     }
+
+def execute_launcher_task_node(state: AgentState) -> Dict[str, Any]:
+    from core.launcher_manager import launch_app
+    app_name = state.get("launcher_task")
+    if not app_name:
+        return {"launcher_result": "Error: No app specified"}
+        
+    config_data = get_config()
+    app_launcher = config_data.get("app_launcher", {})
+    success, msg = launch_app(app_name, app_launcher)
+    return {"launcher_result": msg}
+    
+def execute_clean_memory_task_node(state: AgentState) -> Dict[str, Any]:
+    from core.optimizer_manager import clean_memory
+    if not state.get("clean_memory_task"):
+        return {"clean_memory_result": {"success": False, "error": "No task"}}
+    
+    result = clean_memory()
+    return {"clean_memory_result": result}
 
 def post_llm_node(state: AgentState) -> Dict[str, Any]:
     messages = build_post_messages(state)
@@ -444,4 +489,6 @@ def should_execute_tools(state: AgentState) -> str:
         return "execute_launcher_task"
     if state.get("vision_task") and state.get("vision_result") is None:
         return "execute_vision_task"
+    if state.get("clean_memory_task") and state.get("clean_memory_result") is None:
+        return "execute_clean_memory_task"
     return "collect_tool_feedback"

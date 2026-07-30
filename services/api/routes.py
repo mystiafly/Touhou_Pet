@@ -184,12 +184,6 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
         force_sleep = "[SLEEP_NOW]" in raw_reply or "[SLEEP_NOW]" in pre_llm_reply or emotion == "sleeping"
         score = final_state.get("score", 10)
         clean_content = final_state.get("clean_content", "")
-        
-        # 内存清理工具拦截
-        if "[CLEAN_MEMORY]" in raw_reply or "[CLEAN_MEMORY]" in clean_content:
-            from core.optimizer_manager import clean_memory
-            threading.Thread(target=clean_memory, daemon=True).start()
-            clean_content = clean_content.replace("[CLEAN_MEMORY]", "").strip()
 
         browser_task = final_state.get("browser_task", None)
         current_fav = final_state.get("favorability", 10)
@@ -657,6 +651,12 @@ async def api_tools():
     """获取当前系统支持的大模型工具列表"""
     tools = [
         {
+            "name": "清理系统内存",
+            "command": "[CLEAN_MEMORY]",
+            "description": "静默清理操作系统的物理内存与缓存，并在清理后向用户汇报释放的内存量。",
+            "icon": "fas fa-broom"
+        },
+        {
             "name": "启动应用",
             "command": "[LAUNCH_APP: 应用名称]",
             "description": "启动系统中已配置的本地应用，如记事本或网易云音乐等。",
@@ -828,7 +828,8 @@ def pet_speak(payload: dict = Body(...), background_tasks: BackgroundTasks = Bac
         prompt_content = get_time_greeting_prompt(char_name)
         prompt_content += greeting_suffix
     elif request_type == 'clean_memory':
-        prompt_content = f"[SELF TALK TRIGGER: 此刻你正在自言自语...]\n（你刚刚施展魔法帮助用户清理了电脑内存并加速了系统。请你向用户汇报这个好消息，并邀功求夸奖。）"
+        clean_msg = payload.get('message', '已执行内存清理并释放了系统缓存。')
+        prompt_content = f"[SELF TALK TRIGGER: 此刻你正在自言自语...]\n（你刚刚施展魔法帮助用户清理了电脑内存并加速了系统。以下是具体清理成果：\n{clean_msg}\n请你向用户汇报这个好消息，把具体数值带上，并邀功求夸奖。）"
     else:
         if count < 3:
             prompt_content = short_idle
@@ -1844,3 +1845,10 @@ async def api_sprites_delete(req: SpriteDeleteRequest):
         os.remove(file_path)
         return JSONResponse({"success": True})
     return JSONResponse({"success": False, "message": "File not found"}, status_code=404)
+
+@router.post("/api/clean_memory")
+def api_clean_memory():
+    """纯粹的内存清理接口，由前端快捷工具直接调用并返回清理统计"""
+    from core.optimizer_manager import clean_memory
+    result = clean_memory()
+    return JSONResponse(result)

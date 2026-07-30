@@ -260,8 +260,8 @@ app.whenReady().then(() => {
             execSync('for /f "tokens=5" %a in (\'netstat -aon ^| findstr :5000\') do taskkill /f /pid %a', { shell: 'cmd.exe', stdio: 'ignore' });
         } catch(e) {}
         
-        // 透明可见极客模式：弹出一个新的可见CMD窗口
-        exec('start "Touhou Pet Backend" cmd.exe /k start_backend.bat', {
+        // 透明可见极客模式：弹出一个新的可见CMD窗口 (运行完毕自动关闭)
+        exec('start "Touhou Pet Backend" cmd.exe /c start_backend.bat', {
             cwd: __dirname
         });
     }

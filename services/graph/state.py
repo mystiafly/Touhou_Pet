@@ -28,4 +28,6 @@ class AgentState(TypedDict):
     rename_result: Optional[str]
     vision_task: Optional[str]
     vision_result: Optional[str]
+    clean_memory_task: Optional[bool]
+    clean_memory_result: Optional[Dict[str, Any]]
     request_type: Optional[str]

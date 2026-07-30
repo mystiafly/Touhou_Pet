@@ -44,6 +44,16 @@ def append_reaction(char_id, emotion, text):
             data[emotion].pop(0)
         save_reactions(char_id, data)
 
+def remove_reaction(char_id, emotion, text):
+    data = load_reactions(char_id)
+    if not data:
+        return False
+    if emotion in data and text in data[emotion]:
+        data[emotion].remove(text)
+        save_reactions(char_id, data)
+        return True
+    return False
+
 def generate_initial_reactions(char_id):
     """Generate the initial 5x5 reaction library using LLM"""
     client, model_name = get_llm_client_and_model()
@@ -84,14 +94,21 @@ def generate_initial_reactions(char_id):
         import re
         match = re.search(r'\{.*\}', content, re.DOTALL)
         if match:
-            data = json.loads(match.group(0))
-            # Validate format
+            new_data = json.loads(match.group(0))
+            # Load existing to merge instead of overwrite
+            existing_data = load_reactions(char_id) or {e: [] for e in DEFAULT_EMOTIONS}
+            # Validate format and merge
             for e in DEFAULT_EMOTIONS:
-                if e not in data:
-                    data[e] = ["..."]
-            save_reactions(char_id, data)
-            print(f"[REACTION] 初始 5x5 词库生成完毕并保存。")
-            return data
+                if e not in existing_data:
+                    existing_data[e] = []
+                if e in new_data and isinstance(new_data[e], list):
+                    for text in new_data[e]:
+                        if text not in existing_data[e]:
+                            existing_data[e].append(text)
+            
+            save_reactions(char_id, existing_data)
+            print(f"[REACTION] 初始 5x5 词库补全完毕并保存。")
+            return existing_data
     except Exception as e:
         print(f"[REACTION] 生成初始词库失败: {e}")
     
