@@ -40,7 +40,7 @@ exit /b 1
 
 :RUN_PIP
 echo == Step 1/2 == Checking and installing dependencies...
-%PYTHON_EXE% -m pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+%PYTHON_EXE% -m pip install -r requirements.txt --timeout 1000 -i https://pypi.tuna.tsinghua.edu.cn/simple
 if errorlevel 1 goto PIP_ERROR
 goto START_BACKEND
 
