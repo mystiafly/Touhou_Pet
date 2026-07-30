@@ -47,7 +47,7 @@ exit /b 1
 :RUN_PIP
 echo.
 echo == Step 1/3 == Checking and installing base dependencies...
-%PYTHON_EXE% -m pip install -r requirements.txt
+%PYTHON_EXE% -m pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 if errorlevel 1 goto PIP_ERROR
 goto CHECK_PACKAGES
 
@@ -60,13 +60,14 @@ exit /b 1
 echo.
 echo == Step 2/3 == Validating Flask and Mem0 packages...
 %PYTHON_EXE% -c "import flask; print('-> Flask Core OK')" 2>nul
-if errorlevel 1 %PYTHON_EXE% -m pip install --force-reinstall flask openai python-dotenv
+if errorlevel 1 %PYTHON_EXE% -m pip install --force-reinstall flask openai python-dotenv -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 %PYTHON_EXE% -c "import mem0; print('-> Mem0 Memory Agent OK')" 2>nul
-if errorlevel 1 %PYTHON_EXE% -m pip install mem0ai sentence-transformers qdrant-client torch
+if errorlevel 1 %PYTHON_EXE% -m pip install mem0ai sentence-transformers qdrant-client torch -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 echo.
 echo == Step 3/3 == Waking up Rumia. Please wait...
 echo.
+set HF_ENDPOINT=https://hf-mirror.com
 %PYTHON_EXE% run.py <nul
 
