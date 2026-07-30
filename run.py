@@ -3,6 +3,53 @@ import os
 import sys
 import time
 import signal
+import urllib.request
+import zipfile
+import shutil
+
+def get_npm_command(root_dir):
+    """获取 npm 命令路径。如果系统没装 Node.js，则自动下载便携版。"""
+    if os.name != 'nt':
+        return 'npm'
+
+    try:
+        # 尝试检查系统全局 npm
+        subprocess.check_output(['npm.cmd', '-v'], stderr=subprocess.STDOUT)
+        return 'npm.cmd'
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        pass
+    
+    # 系统未找到，使用便携版
+    node_version = "v20.11.1"
+    arch = "win-x64"
+    portable_node_dir = os.path.join(root_dir, '.node_env')
+    npm_path = os.path.join(portable_node_dir, f"node-{node_version}-{arch}", "npm.cmd")
+    
+    if os.path.exists(npm_path):
+        return npm_path
+        
+    print(f"\n[SYSTEM] 未检测到系统 Node.js。正在自动为您下载便携版 Node.js ({node_version})，这可能需要一两分钟...")
+    os.makedirs(portable_node_dir, exist_ok=True)
+    zip_url = f"https://nodejs.org/dist/{node_version}/node-{node_version}-{arch}.zip"
+    zip_path = os.path.join(portable_node_dir, "node.zip")
+    
+    def report_progress(block_num, block_size, total_size):
+        if total_size > 0:
+            percent = min(100, int(block_num * block_size * 100 / total_size))
+            sys.stdout.write(f"\r下载进度: {percent}%")
+            sys.stdout.flush()
+            
+    try:
+        urllib.request.urlretrieve(zip_url, zip_path, reporthook=report_progress)
+        print("\n[SYSTEM] 下载完成，正在解压...")
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(portable_node_dir)
+        os.remove(zip_path)
+        print("[SYSTEM] 便携版 Node.js 准备完毕！")
+        return npm_path
+    except Exception as e:
+        print(f"\n[ERROR] 自动下载 Node.js 失败: {e}")
+        return 'npm.cmd'  # 回退到默认，后续流程会正常捕获并报错退出
 
 def main():
     # 获取当前脚本所在的根目录路径
@@ -51,8 +98,8 @@ def main():
     # ==========================================
     print("[2/2] 正在构建身体 (Electron Frontend)...")
 
-    # Windows 下 npm 命令实际上是 npm.cmd
-    npm_cmd = 'npm.cmd' if os.name == 'nt' else 'npm'
+    # 获取 npm 命令 (自动寻找全局或下载便携版)
+    npm_cmd = get_npm_command(root_dir)
 
     # 自动检查并安装前端依赖
     node_modules_dir = os.path.join(root_dir, 'node_modules')

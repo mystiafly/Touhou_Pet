@@ -40,3 +40,7 @@ services/characters/*/databank_state.json
 services/characters/*/daily_history/
 services/characters/*/qdrant_db/
 legacy_backup/*
+
+# === Node.js ±„–Ø∞Ê ===
+.node_env/
+node_temp.zip
