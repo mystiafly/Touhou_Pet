@@ -26,12 +26,12 @@ services/qdrant_db_temp/
 services/characters/*/qdrant_db/
 .cache/
 
-# === ä¸´æ—¶ä¸æµ‹è¯•æ–‡ä»?===
+# === ä¸´æ—¶ä¸æµ‹è¯•æ–‡ä»¶ ===
 scratch/
 /*.py
 !test_*.py
 
-# === å®‰å…¨éšç§ (ç»å¯¹ä¸èƒ½ä¸Šä¼ ï¼? ===
+# === å®‰å…¨éšç§ (ç»å¯¹ä¸èƒ½ä¸Šä¼ ï¼) ===
 .env
 # === ½ÇÉ«ÒşË½Óë¸öÈË¼ÇÂ¼ ===
 services/characters/*/dialog_history.json
@@ -39,17 +39,4 @@ services/characters/*/favorability.json
 services/characters/*/databank_state.json
 services/characters/*/daily_history/
 services/characters/*/qdrant_db/
-legacy_backup/
-data/
-
-# === ±àÒëÓë¹¹½¨ ===
-build/
-*.spec
-services/global_config.json
-
-# === Òş²ØÁÙÊ±²Ù×÷Óë¸öÈËÅäÖÃ ===
-temp_*/
-services/user_profile.json
-services/dialog_history.json
-services/characters/*/user_profile.json
-# services/characters/*/config.json
+legacy_backup/*

@@ -1,9 +1,7 @@
 {
-  "api_provider": "custom_801a15f1",
   "model_name": "gemini-2.5-pro",
   "character_name": "莉格露测试",
   "persona_prompt": "",
   "user_prompt": "我是一个神隐到幻想乡的外界男性，对这里一无所知，被你从昏迷中救了过来。",
-  "app_launcher": {},
   "theme_color": "#76C789"
 }
