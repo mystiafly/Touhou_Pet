@@ -7,6 +7,46 @@
     "start": "electron . --enable-logging"
   },
   "devDependencies": {
-    "electron": "^28.0.0"
+    "electron": "^28.0.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.mystiafly.rumiapet",
+    "productName": "Rumia Desktop Pet",
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "大贤者桌宠 (Touhou Pet)"
+    },
+    "asar": false,
+    "directories": {
+      "output": "dist/installer"
+    },
+    "extraFiles": [
+      {
+        "from": ".node_env",
+        "to": ".node_env"
+      },
+      {
+        "from": ".venv",
+        "to": ".venv"
+      }
+    ],
+    "files": [
+      "**/*",
+      "!.venv",
+      "!qdrant_db",
+      "!__pycache__",
+      "!.node_env",
+      "!.vscode",
+      "!.idea",
+      "!dist",
+      "!build",
+      "!*.zip"
+    ]
   }
 }

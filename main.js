@@ -245,10 +245,37 @@ function createWindow() {
         clearInterval(mouseTimer);
     });
 
-    win.webContents.openDevTools({ mode: 'detach' });
+    if (!app.isPackaged) {
+        win.webContents.openDevTools({ mode: 'detach' });
+    }
 }
 
-app.whenReady().then(createWindow);
+let backendProcess = null;
+
+app.whenReady().then(() => {
+    if (app.isPackaged) {
+        const { execSync, exec } = require('child_process');
+        // 先清理旧端口
+        try {
+            execSync('for /f "tokens=5" %a in (\'netstat -aon ^| findstr :5000\') do taskkill /f /pid %a', { shell: 'cmd.exe', stdio: 'ignore' });
+        } catch(e) {}
+        
+        // 透明可见极客模式：弹出一个新的可见CMD窗口
+        exec('start "Touhou Pet Backend" cmd.exe /k start_backend.bat', {
+            cwd: __dirname
+        });
+    }
+    createWindow();
+});
+
+app.on('will-quit', () => {
+    if (app.isPackaged) {
+        const { execSync } = require('child_process');
+        try {
+            execSync('for /f "tokens=5" %a in (\'netstat -aon ^| findstr :5000\') do taskkill /f /t /pid %a', { shell: 'cmd.exe', stdio: 'ignore' });
+        } catch(e) {}
+    }
+});
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
