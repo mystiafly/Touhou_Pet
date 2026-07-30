@@ -56,11 +56,28 @@
             <i class="fas fa-cog"></i>
         </button>
 
-        <button id="presets-btn" class="icon-btn" title="预置发言">
-            <i class="fas fa-comment-dots"></i>
+        <button id="presets-btn" class="icon-btn" title="快捷操作">
+            <i class="fas fa-layer-group"></i>
         </button>
 
         <input type="text" id="pet-input" placeholder="和她说话..." autocomplete="off">
+
+        <!-- 一级快捷操作菜单 -->
+        <div id="action-popup" class="presets-popup hidden">
+            <div class="preset-item" id="open-presets-btn">
+                <i class="fas fa-comment-dots" style="color: #8be9fd;"></i> 预制对话
+            </div>
+            <div class="preset-item" id="open-tools-btn">
+                <i class="fas fa-wrench" style="color: #ffb86c;"></i> 快速工具
+            </div>
+        </div>
+
+        <!-- 快速工具弹出层 -->
+        <div id="tools-popup" class="presets-popup hidden">
+            <div class="preset-item" id="tool-clean-memory">
+                <i class="fas fa-broom" style="color: #ff5555;"></i> 内存清理
+            </div>
+        </div>
 
         <!-- 预制发言弹出层 -->
         <div id="presets-popup" class="presets-popup hidden">

@@ -827,6 +827,8 @@ def pet_speak(payload: dict = Body(...), background_tasks: BackgroundTasks = Bac
     if request_type == 'greeting':
         prompt_content = get_time_greeting_prompt(char_name)
         prompt_content += greeting_suffix
+    elif request_type == 'clean_memory':
+        prompt_content = f"[SELF TALK TRIGGER: 此刻你正在自言自语...]\n（你刚刚施展魔法帮助用户清理了电脑内存并加速了系统。请你向用户汇报这个好消息，并邀功求夸奖。）"
     else:
         if count < 3:
             prompt_content = short_idle
