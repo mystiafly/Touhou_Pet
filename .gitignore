@@ -46,3 +46,10 @@ data/
 build/
 *.spec
 services/global_config.json
+
+# === 隐藏临时操作与个人配置 ===
+temp_*/
+services/user_profile.json
+services/dialog_history.json
+services/characters/*/user_profile.json
+services/characters/*/config.json
