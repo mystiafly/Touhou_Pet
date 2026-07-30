@@ -26,12 +26,12 @@ services/qdrant_db_temp/
 services/characters/*/qdrant_db/
 .cache/
 
-# === 临时与测试文件 ===
+# === 临时与测试文�?===
 scratch/
 /*.py
 !test_*.py
 
-# === 安全隐私 (绝对不能上传！) ===
+# === 安全隐私 (绝对不能上传�? ===
 .env
 # === ��ɫ��˽����˼�¼ ===
 services/characters/*/dialog_history.json
@@ -52,4 +52,4 @@ temp_*/
 services/user_profile.json
 services/dialog_history.json
 services/characters/*/user_profile.json
-services/characters/*/config.json
+# services/characters/*/config.json
