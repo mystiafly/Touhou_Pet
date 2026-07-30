@@ -23,3 +23,7 @@ Whenever you need to delete user files or directories, you MUST use a method tha
 - In PowerShell, you can use the COM object `Shell.Application` to move items to the Recycle Bin: `$sh = New-Object -ComObject Shell.Application; $sh.Namespace(0).ParseName("C:\path\to\file").InvokeVerb("delete")`
 - Alternatively, you can use python's `send2trash` library if available.
 - NEVER use `Remove-Item` or `rm -rf` or `del` directly on user data files (like databases, text logs, or histories) unless the user EXPLICITLY commands a permanent deletion.
+
+## Personal Data Protection Policy
+
+**CRITICAL RULE:** Under no circumstances are you allowed to delete the user's personal information or local configuration files (like keys, histories, configs). Furthermore, you must NEVER track, stage, or commit these personal files into Git, ensuring they are NEVER pushed to a remote repository.
