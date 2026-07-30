@@ -55,7 +55,7 @@ def parse_reply(text):
 
     # 3. 清理除了系统级别工具任务标签以外的所有方括号标签，保障对白内容绝对不泄露格式标签
     # 采用负向先行断言正则，智能跳过各类工具和指令标签的清洗
-    clean_content = re.sub(r'\[(?!BROWSER_TASK|MUSIC_PLAY|LAUNCH_APP|SEARCH_ENGINE|UPDATE_USER_NAME|UPDATE_PET_NAME|SLEEP_NOW)[^\]]+\]', '', text).strip()
+    clean_content = re.sub(r'\[(?!BROWSER_TASK|MUSIC_PLAY|LAUNCH_APP|SEARCH_ENGINE|UPDATE_USER_NAME|UPDATE_PET_NAME|SLEEP_NOW|CLEAN_MEMORY)[^\]]+\]', '', text).strip()
 
     return emotion, score, clean_content
 

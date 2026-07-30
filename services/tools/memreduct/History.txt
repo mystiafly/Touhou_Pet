@@ -1,0 +1,215 @@
+v3.4 (25 January 2022)
+- security code improvements
+- improved windows 10 support
+- added arm64 binaries (portable only)
+- added option to opt-out cleanup standby list restriction (issue #92)
+- added dropdown menu for button to clean specified memory region
+- added log cleanup results into a file feature (issue #76)
+- added option to disable tray balloon sound
+- added command line support (issue #82)
+- added single-click tray icon option
+- added per-monitor dpi support
+- changed default ranges for up-down controls (issue #107)
+- fixed wrong unit in notification (issue #112)
+- fixed update installation in some cases
+- fixed winxp font selection
+- updated translations
+- updated project sdk
+- fixed cosmetics bugs
+- fixed bugs
+
+v3.3.5 (10 February 2019)
+- updated project sdk
+- fixed running as admin on every startup
+- fixed cosmetics bugs
+- fixed bugs
+
+v3.3.4 (20 October 2018)
+- fixed tray icon bug on windows xp
+
+v3.3.3 (19 October 2018)
+- updated project sdk
+- stability improvements
+- fixed saving autoreduct option in tray menu
+- fixed windows xp support
+- fixed bugs
+
+v3.3.2 (9 February 2018)
+- revert "start minimized" option (issue #39)
+- updated project sdk
+- cosmetic fixes
+
+v3.3.1 (5 January 2018)
+- disable auto-reduct by default
+- updated translations
+- updated project sdk
+- cosmetic fixes
+
+v3.3 (20 October 2017)
+- new settings dialog
+- added "combine memory lists" area (win10 and above)
+- added warning message for "standby list" & "modified page list" about freezes (issue #17)
+- updated translations
+- updated project sdk
+- fixed freezes after auto-reduct
+- fixed ui bugs
+- fixed bugs
+
+v3.2.2 (9 September 2017)
+- added set default language as in system
+- more precise cleaning result
+- fixed cleaning result crash
+- updated translations
+- updated project sdk
+
+v3.2.1 (9 May 2017)
+- show clean result even if it's empty
+- fixed settings window tabstop
+- updated project sdk
+
+v3.2 (30 October 2016)
+- fixed skip uac doesn't worked
+- fixed footer postition
+- updated translations
+
+v3.1.1454 (19 August 2016)
+- updated translations
+- updated project sdk
+
+v3.1.1453 (26 February 2016)
+- now locale applied without restart
+- fixed critical bug in locale engine
+- fixed muted messagebox
+
+v3.1.1452 (12 February 2016)
+- fixed uac incorrect checking when spaces in path
+- stability fixes (now compiled with "treat warning as errors" key)
+
+v3.1.1451 (11 February 2016)
+- fixed transparent background with antialiased font
+
+v3.1.1450 (10 February 2016)
+- added windows xp (64-bit) support
+- small ui fixes
+- fixed bugs
+
+v3.1.1310 (20 November 2015)
+- added tray menu for configure clean areas
+- fixed tray menu incorrect range calculation bug
+- returned the "reductconfirmation" config [issue #9]
+
+v3.1.1262 (31 October 2015)
+- added option to disable balloon tips
+- fixed hotkey settings
+- fixed windows xp support
+
+v3.1.1201 (28 October 2015)
+- added french localization
+- added hungarian localization
+- fixed cleaning by timeout doesn't triggered due optimizations
+
+v3.1.1186 (27 October 2015)
+- added antialiasing
+- added memory cleaning by timeout
+- added middle click tray icon action customization
+- new localization model (plain text)
+- changed default tray icon style
+- improved settings window
+- skip uac sometimes doesn't work
+- small ui fixes
+
+v3.0.436 (1 May 2015)
+- updated greek localization
+- updated polish localization
+- fixed tray icon incorrect memory value
+- fixed memory reduction behaviour under non-admin account (windows xp)
+- fixed main window footer incorrect size (windows xp)
+- fixed update checking request cached incorrect
+- fixed installer script
+- fixed bugs
+
+v3.0.377 (26 April 2015)
+- added spanish (argentina) localization
+- updated french localization
+- updated korean localization
+- updated russian localization
+- fixed bugs
+
+v3.0.305 (21 April 2015)
+- added french localization
+- added german localization
+- added cleaning confirmation switch
+- added cleaning on tray icon double click feature
+- fixed transparency & color indication compatibility
+- fixed bugs
+
+v3.0.277 (19 April 2015)
+- added icon animation
+- added greek localization
+- added slovak localization
+- added spanish localization
+- fixed critical bug in korean localization
+- fixed bug when application prevent restart (windows xp)
+
+v3.0.206 (17 April 2015)
+- added russian localization
+- added korean localization
+- fixed auto-reduct doesn't clean normally
+- fixed bugs
+
+v3.0.187 (14 April 2015)
+- windows 10 support
+- x64 support
+- added "standby list without priority" cleaning
+- added icon transparency
+- skip uac prompt feature
+- improved uac/uipi/dpi compatibility
+- fixed tray icon disappear when explorer restart
+- now process priority set to "high"
+- i/o operations optimization
+- fixed ui & bugs
+
+v2.4 (17 September 2013)
+- added tray icon customization
+- uac compatibility improved
+- x64 compatibility improved
+- changed application icon
+- fixed ui & bugs
+
+v2.3 (14 July 2012)
+- windows 8 support
+- added "bulgarian" localization (by nahalnik)
+- added "chinese (simplified)" localization (by hsxz)
+- added "chinese (traditional)" translation (by hsxz)
+- listview color indication
+- removed admin rights requirement (shown only if necessary)
+- fixed ui & bugs
+
+v2.2 (24 May 2012)
+- added on double-click option "start memory reduction (silently)"
+- fixed auto cleaning configuration
+
+v2.1 (23 May 2012)
+- added "portuguese" localization (by lucas macedo)
+- added auto cleaning configuration
+- added balloon tips
+- added "system working set" usage
+- fixed percentage calculation
+- fixed memory leak
+- fixed ui & bugs
+
+v2.0 (2 April 2012)
+- program worked in the background now
+- windows xp partial support
+- localization support
+- more new settings
+- fixed ui & bugs
+
+v1.1 (10 November 2011)
+- memory clening region configuration
+- added "working set" cleaning
+- added "page list" information
+- fixed ui & bugs
+
+v1.0 (27 October 2011)
+- first public version

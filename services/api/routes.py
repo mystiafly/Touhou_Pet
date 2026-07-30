@@ -184,6 +184,13 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
         force_sleep = "[SLEEP_NOW]" in raw_reply or "[SLEEP_NOW]" in pre_llm_reply or emotion == "sleeping"
         score = final_state.get("score", 10)
         clean_content = final_state.get("clean_content", "")
+        
+        # 内存清理工具拦截
+        if "[CLEAN_MEMORY]" in raw_reply or "[CLEAN_MEMORY]" in clean_content:
+            from core.optimizer_manager import clean_memory
+            threading.Thread(target=clean_memory, daemon=True).start()
+            clean_content = clean_content.replace("[CLEAN_MEMORY]", "").strip()
+
         browser_task = final_state.get("browser_task", None)
         current_fav = final_state.get("favorability", 10)
         updated_history = final_state.get("history", [])
