@@ -198,6 +198,11 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
         elif score < 5:
             change = -1
 
+        # 打印原始大模型输出用于调试
+        print("\n\n======== RAW REPLY FROM CHAT API ========\n")
+        print(raw_reply)
+        print("\n===========================================\n\n")
+
         # 写入每日归档日志 (.txt)
         try:
             today_str = datetime.now().strftime("%Y-%m-%d")
@@ -1577,18 +1582,54 @@ def api_pet_reactions():
     char_id = get_active_character_id()
     data = load_reactions(char_id)
     
-    if not data:
-        # 触发后台生成
+    # Check total reaction count to determine if it is extremely empty
+    total_reactions = 0
+    if data:
+        for e in DEFAULT_EMOTIONS:
+            total_reactions += len(data.get(e, []))
+
+    if not data or total_reactions < 5:
+        # 触发后台补全生成
         trigger_initial_generation_async(char_id)
-        # 返回临时保底数据防止前端报错
+        # 返回临时保底数据防止前端报错，合并已有数据
         fallback = {e: ["嗯？"] for e in DEFAULT_EMOTIONS}
         fallback["angry"] = ["别碰我！"]
         fallback["crying"] = ["呜呜..."]
         fallback["shy"] = ["哎呀..."]
         fallback["sleeping"] = ["Zzz..."]
+        if data:
+            for e in DEFAULT_EMOTIONS:
+                if data.get(e):
+                    fallback[e] = data[e]
         return JSONResponse({"success": True, "reactions": fallback, "is_generating": True})
         
     return JSONResponse({"success": True, "reactions": data, "is_generating": False})
+
+@router.post("/api/pet_reactions/add")
+def api_pet_reactions_add(payload: dict = Body(...)):
+    """添加应付词"""
+    from core.reaction_manager import append_reaction, DEFAULT_EMOTIONS
+    emotion = payload.get("emotion")
+    text = payload.get("text")
+    if emotion not in DEFAULT_EMOTIONS or not text:
+        return JSONResponse({"success": False, "error": "Invalid parameters"}, status_code=400)
+    
+    char_id = get_active_character_id()
+    append_reaction(char_id, emotion, text)
+    return {"success": True}
+
+@router.post("/api/pet_reactions/delete")
+def api_pet_reactions_delete(payload: dict = Body(...)):
+    """删除应付词"""
+    from core.reaction_manager import remove_reaction, DEFAULT_EMOTIONS
+    emotion = payload.get("emotion")
+    text = payload.get("text")
+    if emotion not in DEFAULT_EMOTIONS or not text:
+        return JSONResponse({"success": False, "error": "Invalid parameters"}, status_code=400)
+    
+    char_id = get_active_character_id()
+    success = remove_reaction(char_id, emotion, text)
+    return {"success": success}
 
 # 13. 静默记忆注入接口
 @router.post("/api/action_sync")

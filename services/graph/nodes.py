@@ -235,11 +235,12 @@ def build_main_messages(state: AgentState) -> list:
         if user_message:
             content += f"[闲置状态提示: {user_message}]\n\n"
         content += tail_block
-        content += "\n\n(请严格遵守 '[心情][评分]对白内容' 的回复格式！)"
+        content += "\n\n[SYSTEM TASK - MANDATORY]\n(你必须先使用 <character_thought> 进行思维链内心吐槽，然后再严格输出 '[心情][评分]对白内容' 格式！)"
         active_messages.append(HumanMessage(content=content))
     else:
-        content = user_message + "\n\n" + tail_block
-        content += "\n\n(请严格遵守 '[心情][评分]对白内容' 的回复格式！)"
+        content = f"[HUMAN]:\n{user_message}\n\n"
+        content += tail_block
+        content += "\n\n[SYSTEM TASK - MANDATORY]\n(你必须先使用 <character_thought> 进行思维链内心吐槽，然后再严格输出 '[心情][评分]对白内容' 格式！)"
         active_messages.append(HumanMessage(content=content))
 
     return active_messages
