@@ -22,12 +22,12 @@ goto CHECK_PYTHON
 echo [WARNING] Local virtual environment (.venv) not found. Using global Python.
 
 :CHECK_PYTHON
-%PYTHON_EXE% --version >nul 2>&1
+%PYTHON_EXE% -c "import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)" >nul 2>&1
 if errorlevel 1 goto DOWNLOAD_PYTHON
 goto RUN_PIP
 
 :DOWNLOAD_PYTHON
-echo [SYSTEM] Python not detected. Automatically downloading and installing Python 3.11...
+echo [SYSTEM] Python 3.10+ not detected. Automatically downloading and installing Python 3.11...
 curl.exe -L -o python_installer.exe https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe
 if errorlevel 1 goto PYTHON_DL_ERROR
 echo [SYSTEM] Download successful! Installing in background (takes ~1 minute, DO NOT CLOSE)...
@@ -35,7 +35,7 @@ start /wait python_installer.exe /quiet InstallAllUsers=0 PrependPath=1 Include_
 del python_installer.exe
 echo [SYSTEM] Python installed! Re-checking...
 set PYTHON_EXE="%LocalAppData%\Programs\Python\Python311\python.exe"
-%PYTHON_EXE% --version >nul 2>&1
+%PYTHON_EXE% -c "import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)" >nul 2>&1
 if errorlevel 1 goto PYTHON_DL_ERROR
 goto RUN_PIP
 
