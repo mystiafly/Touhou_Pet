@@ -54,12 +54,32 @@ def main():
     # Windows 下 npm 命令实际上是 npm.cmd
     npm_cmd = 'npm.cmd' if os.name == 'nt' else 'npm'
 
-    # 运行 npm start
-    electron_process = subprocess.Popen(
-        [npm_cmd, 'start'],
-        cwd=root_dir,
-        shell=False
-    )
+    # 自动检查并安装前端依赖
+    node_modules_dir = os.path.join(root_dir, 'node_modules')
+    if not os.path.exists(node_modules_dir):
+        print("\n[SYSTEM] 初次运行或未检测到前端依赖 (node_modules)，正在自动为您执行 npm install，请稍候...")
+        try:
+            subprocess.call([npm_cmd, 'install'], cwd=root_dir, shell=False)
+        except FileNotFoundError:
+            print("\n[ERROR] 未找到 npm 命令！请确认您是否已经安装了 Node.js (https://nodejs.org) 并已将其添加到 PATH。")
+            flask_process.terminate()
+            if os.name == 'nt':
+                subprocess.call(['taskkill', '/F', '/T', '/PID', str(flask_process.pid)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            sys.exit(1)
+
+    try:
+        # 运行 npm start
+        electron_process = subprocess.Popen(
+            [npm_cmd, 'start'],
+            cwd=root_dir,
+            shell=False
+        )
+    except FileNotFoundError:
+        print("\n[ERROR] 未找到 npm 命令！请确认您是否已经安装了 Node.js (https://nodejs.org) 并已将其添加到 PATH。")
+        flask_process.terminate()
+        if os.name == 'nt':
+            subprocess.call(['taskkill', '/F', '/T', '/PID', str(flask_process.pid)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        sys.exit(1)
 
     print("\n>>> 桌宠已召唤成功！ <<<")
     print("提示：关闭桌宠窗口，或者关闭此黑框，都会结束程序。")
