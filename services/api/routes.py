@@ -627,8 +627,11 @@ async def api_switch_character(request: Request):
         if not new_char_id:
             return JSONResponse({"status": "error", "message": "Missing character_id"}, status_code=400)
             
-        with open(GLOBAL_CONFIG_FILE, 'r', encoding='utf-8') as f:
-            g_config = json.load(f)
+        import os
+        g_config = {}
+        if os.path.exists(GLOBAL_CONFIG_FILE):
+            with open(GLOBAL_CONFIG_FILE, 'r', encoding='utf-8') as f:
+                g_config = json.load(f)
         g_config["active_character"] = new_char_id
         with open(GLOBAL_CONFIG_FILE, 'w', encoding='utf-8') as f:
             json.dump(g_config, f, indent=2)
