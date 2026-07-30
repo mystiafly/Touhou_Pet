@@ -45,3 +45,4 @@ data/
 # === ±‡“Î”ÎππΩ® ===
 build/
 *.spec
+services/global_config.json
