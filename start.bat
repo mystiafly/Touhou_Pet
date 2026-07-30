@@ -27,20 +27,20 @@ if errorlevel 1 goto DOWNLOAD_PYTHON
 goto RUN_PIP
 
 :DOWNLOAD_PYTHON
-echo [SYSTEM] 未检测到 Python，正在为您全自动下载并静默安装 Python 3.11...
+echo [SYSTEM] Python not detected. Automatically downloading and installing Python 3.11...
 curl.exe -L -o python_installer.exe https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe
 if errorlevel 1 goto PYTHON_DL_ERROR
-echo [SYSTEM] 下载成功！正在后台安装 (约需1分钟，请勿关闭窗口)...
+echo [SYSTEM] Download successful! Installing in background (takes ~1 minute, DO NOT CLOSE)...
 start /wait python_installer.exe /quiet InstallAllUsers=0 PrependPath=1 Include_test=0
 del python_installer.exe
-echo [SYSTEM] Python 安装完毕！正在重新检测...
+echo [SYSTEM] Python installed! Re-checking...
 set PYTHON_EXE="%LocalAppData%\Programs\Python\Python311\python.exe"
 %PYTHON_EXE% --version >nul 2>&1
 if errorlevel 1 goto PYTHON_DL_ERROR
 goto RUN_PIP
 
 :PYTHON_DL_ERROR
-echo [ERROR] 自动安装 Python 失败。请您手动前往 https://www.python.org/ 下载并安装！
+echo [ERROR] Automatic Python installation failed. Please download and install manually from https://www.python.org/
 pause
 exit /b 1
 
