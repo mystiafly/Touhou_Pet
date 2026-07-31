@@ -994,7 +994,7 @@ def rewrite_log_diary(date: str):
         new_diary_content, compressed_diary = generate_pet_diary(date, log_content)
         
         with open(diary_file, 'w', encoding='utf-8') as df:
-            df.write(new_diary_content)
+            df.write(new_diary_content + f"\n\n---\n【记忆压缩(用于核心检索)】：\n{compressed_diary}")
             
         return {
             "success": True,
