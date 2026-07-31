@@ -956,9 +956,11 @@ def get_log_content(date: str):
         else:
             print(f"[DIARY SYSTEM] 正在为 {date} 动态提炼并生成桌宠的日记...")
             diary_content, compressed_diary = generate_pet_diary(date, log_content)
+            full_new_diary = diary_content + f"\n\n---\n【记忆压缩(用于核心检索)】：\n{compressed_diary}"
             try:
                 with open(diary_file, 'w', encoding='utf-8') as df:
-                    df.write(diary_content)
+                    df.write(full_new_diary)
+                diary_content = full_new_diary
             except Exception as df_ex:
                 print(f"动态保存日记失败: {df_ex}")
                 
@@ -993,13 +995,14 @@ def rewrite_log_diary(date: str):
         print(f"[DIARY SYSTEM] 正在为 {date} 重新提炼并重写桌宠的日记...")
         new_diary_content, compressed_diary = generate_pet_diary(date, log_content)
         
+        full_new_diary = new_diary_content + f"\n\n---\n【记忆压缩(用于核心检索)】：\n{compressed_diary}"
         with open(diary_file, 'w', encoding='utf-8') as df:
-            df.write(new_diary_content + f"\n\n---\n【记忆压缩(用于核心检索)】：\n{compressed_diary}")
+            df.write(full_new_diary)
             
         return {
             "success": True,
             "date": date,
-            "diary_content": new_diary_content
+            "diary_content": full_new_diary
         }
     except Exception as ex:
         return JSONResponse({"success": False, "error": str(ex)}, status_code=500)
