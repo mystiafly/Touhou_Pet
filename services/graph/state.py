@@ -5,7 +5,8 @@ class AgentState(TypedDict):
     is_self_talk: bool
     history: List[Dict[str, Any]]
     favorability: int
-    recalled_memories: str
+    recalled_memories: List[str]
+    selected_memory: str
     custom_presets: str
     raw_reply: str
     pre_llm_reply: str

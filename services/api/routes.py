@@ -955,7 +955,7 @@ def get_log_content(date: str):
                 diary_content = df.read()
         else:
             print(f"[DIARY SYSTEM] 正在为 {date} 动态提炼并生成桌宠的日记...")
-            diary_content = generate_pet_diary(date, log_content)
+            diary_content, compressed_diary = generate_pet_diary(date, log_content)
             try:
                 with open(diary_file, 'w', encoding='utf-8') as df:
                     df.write(diary_content)
@@ -991,7 +991,7 @@ def rewrite_log_diary(date: str):
             log_content = lf.read()
             
         print(f"[DIARY SYSTEM] 正在为 {date} 重新提炼并重写桌宠的日记...")
-        new_diary_content = generate_pet_diary(date, log_content)
+        new_diary_content, compressed_diary = generate_pet_diary(date, log_content)
         
         with open(diary_file, 'w', encoding='utf-8') as df:
             df.write(new_diary_content)
@@ -1181,7 +1181,7 @@ def manual_distill_now(payload: dict = Body(default={})):
             
         diary_file_path = os.path.join(DAILY_HISTORY_DIR, f"{char_id}_diary_{today_str}.txt")
         print(f"[MANUAL DISTILL] Generating today's diary for {char_name} ({today_str})...")
-        today_diary = generate_pet_diary(today_str, log_content)
+        today_diary, compressed_diary = generate_pet_diary(today_str, log_content)
         try:
             with open(diary_file_path, 'w', encoding='utf-8') as df:
                 df.write(today_diary)

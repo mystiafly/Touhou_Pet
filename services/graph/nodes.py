@@ -18,7 +18,7 @@ def recall_memories_node(state: AgentState) -> Dict[str, Any]:
     user_msg = state.get("user_message", "")
     history = state.get("history", [])
     is_self = state.get("is_self_talk", False)
-    recalled = ""
+    recalled = []
     if not is_self and user_msg:
         dialogue_msgs = [msg for msg in history if msg.get("role") in ("user", "assistant")]
         recent_msgs = dialogue_msgs[-6:]
@@ -37,39 +37,17 @@ def recall_memories_node(state: AgentState) -> Dict[str, Any]:
                 results = agent.search(compiled_query, filters={"user_id": "player_01"}, limit=3, threshold=0.45)
                 results_list = results.get("results", []) if isinstance(results, dict) else (results if isinstance(results, list) else [])
                 if results_list:
-                    recalled = "\n".join([f"- {r['memory']}" for r in results_list if isinstance(r, dict) and 'memory' in r])
+                    recalled = [r['memory'] for r in results_list if isinstance(r, dict) and 'memory' in r]
             except Exception as me:
                 pass
                 
     active_tables = get_active_tables(user_msg, current_pool="\n".join([msg.get("content", "") for msg in history[-4:]]))
     if active_tables:
-        recalled += f"\n\n[DataBank 动态数据库内容]\n{active_tables}"
+        recalled.append(f"[DataBank 动态数据库内容]\n{active_tables}")
         
-    return {"recalled_memories": recalled.strip()}
+    return {"recalled_memories": recalled}
 
-def load_presets_node(state: AgentState) -> Dict[str, Any]:
-    user_msg = state.get("user_message", "")
-    history = state.get("history", [])
-    current_fav = state.get("favorability", 10)
-    is_self = state.get("is_self_talk", False)
-    
-    if not is_self and user_msg:
-        dialogue_msgs = [msg for msg in history if msg.get("role") in ("user", "assistant")]
-        recent_msgs = dialogue_msgs[-2:]
-        
-        query_parts = []
-        char_name = get_config().get("character_name", "桌宠")
-        role_map = {"user": "用户", "assistant": char_name}
-        for msg in recent_msgs:
-            query_parts.append(f"{role_map.get(msg['role'], msg['role'])}: {msg['content']}")
-        query_parts.append(f"用户: {user_msg}")
-        compiled_query = "\n".join(query_parts)
-        
-        presets = load_and_trigger_presets(compiled_query, current_fav, is_self_talk=is_self)
-    else:
-        presets = load_and_trigger_presets(user_msg, current_fav, is_self_talk=is_self)
-        
-    return {"custom_presets": presets}
+
 
 def build_pre_messages(state: AgentState) -> list:
     config_data = get_config()
@@ -123,11 +101,24 @@ def build_main_messages(state: AgentState) -> list:
 
     history_msgs = state.get("history", [])
     current_fav = state.get("favorability", 10)
-    recalled_memories = state.get("recalled_memories", "")
-    custom_presets = state.get("custom_presets", "")
+    selected_memory = state.get("selected_memory", "")
     user_message = state.get("user_message", "")
     is_self = state.get("is_self_talk", False)
     is_greeting = state.get("request_type") == 'greeting'
+
+    # Load presets dynamically here, so it can scan both user message and the selected memory
+    trigger_text = f"{user_message}\n{selected_memory}" if selected_memory else user_message
+    if not is_self and user_message:
+        dialogue_msgs = [msg for msg in history_msgs if msg.get("role") in ("user", "assistant")]
+        recent_msgs = dialogue_msgs[-2:]
+        query_parts = []
+        role_map = {"user": "用户", "assistant": char_name}
+        for msg in recent_msgs:
+            query_parts.append(f"{role_map.get(msg['role'], msg['role'])}: {msg['content']}")
+        query_parts.append(f"用户: {trigger_text}")
+        trigger_text = "\n".join(query_parts)
+        
+    custom_presets = load_and_trigger_presets(trigger_text, current_fav, is_self_talk=is_self)
 
     cat1_parts = []
     if user_prompt:
@@ -219,8 +210,8 @@ def build_main_messages(state: AgentState) -> list:
     )
     tail_parts.append(state_str)
     
-    if recalled_memories:
-        tail_parts.append(f"[SYSTEM INJECTION: 唤醒的长期记忆]\n{recalled_memories}\n（注：仅在当前对话主题与这些记忆相关时，才自然提及。）")
+    if selected_memory:
+        tail_parts.append(f"[SYSTEM INJECTION: 唤醒的长期记忆]\n{selected_memory}\n（注：仅在当前对话主题与这些记忆相关时，才自然提及。）")
         
     tool_feedback = state.get("tool_feedback_context", "")
     if tool_feedback:
@@ -231,17 +222,28 @@ def build_main_messages(state: AgentState) -> list:
 
     tail_block = "\n\n=======================================================================\n\n".join(tail_parts)
     
+    final_instruction = (
+        "\n\n[SYSTEM TASK - MANDATORY OUTPUT FORMAT]\n"
+        "你必须且只能按照以下完全固定的模板进行回复！严禁任何妥协！\n\n"
+        "<character_thought>\n"
+        "1. 情绪本能：...\n"
+        "2. 规则审查（字数必须砍到15-50字以内！绝对不脑补虚构剧情！）：...\n"
+        "3. 输出规划：...\n"
+        "</character_thought>\n"
+        "[心情][评分](极简的动作短语) 极其简短、口语化的一两句话，绝不自导自演。"
+    )
+
     if is_self:
         content = "[SELF TALK TRIGGER: 此刻你正在自言自语，请主动寻找话题发散。]\n\n"
         if user_message:
             content += f"[闲置状态提示: {user_message}]\n\n"
         content += tail_block
-        content += "\n\n[SYSTEM TASK - MANDATORY]\n(你必须先使用 <character_thought> 进行思维链内心吐槽，然后再严格输出 '[心情][评分]对白内容' 格式！)"
+        content += final_instruction
         active_messages.append(HumanMessage(content=content))
     else:
         content = f"[HUMAN]:\n{user_message}\n\n"
         content += tail_block
-        content += "\n\n[SYSTEM TASK - MANDATORY]\n(你必须先使用 <character_thought> 进行思维链内心吐槽，然后再严格输出 '[心情][评分]对白内容' 格式！)"
+        content += final_instruction
         active_messages.append(HumanMessage(content=content))
 
     return active_messages

@@ -81,7 +81,7 @@ def _process_missing_diaries():
             print(f"[DiaryBatch] 发现缺失日记，正在补写 {date_str} 并顺带进化词库...")
             
             # 使用带反应词生成的新版日记函数
-            new_diary_content = generate_pet_diary(date_str, chat_content)
+            new_diary_content, compressed_diary = generate_pet_diary(date_str, chat_content)
             
             try:
                 with open(diary_path, 'w', encoding='utf-8') as df:

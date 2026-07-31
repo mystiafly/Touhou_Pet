@@ -3266,16 +3266,15 @@
   {
     "name": "雪 (Yuki)",
     "prompt": "{\n\"content\":\"[Name: 雪 (Yuki)]\n[Role: 魔界人, 魔法使]\n[Appearance: 金色长发, 黄瞳, 活泼的神态]\n[Attire: 黑软帽(系粉色丝带), 白袖黑色长裙]\n[Equip: 无]\n[Ability: 擅长火系魔法]\n[Personality: 聒噪, 容易激动, 自信, 重情义, 讨厌寒冷]\n[Relations: 舞(搭档/好友), 神绮(创造主)]\n[Background: 居住于魔界的冰雪世界. 负责守护通往神绮处的道路. 经常抱怨环境寒冷. 非常在意搭档舞，如果舞先被击败，她会变得极度愤怒并强化攻击.]\n[Speech: 吵闹且充满活力的少女语气. 喜欢大声抱怨或挑衅.]\"\n}",
-    "trigger_keywords": [
-      "Yuki",
-      "雪"
-    ],
-    "constant": false,
+    "always_active": false,
     "disable": true,
-    "position": 0,
-    "order": 150,
     "prevent_recursion": false,
-    "worldbook_source": "「Touhou」-Akyuu-集思广益精简版1129Daiyousei"
+    "worldbook_source": "「Touhou」-Akyuu-集思广益精简版1129Daiyousei",
+    "position": 1,
+    "order": 150,
+    "trigger_keywords": [
+      "雪"
+    ]
   },
   {
     "name": "博丽灵梦 (Hakurei Reimu)",

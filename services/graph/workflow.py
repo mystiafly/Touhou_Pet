@@ -5,7 +5,6 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from graph.state import AgentState
 from graph.nodes import (
     recall_memories_node,
-    load_presets_node,
     pre_llm_node,
     parse_pre_response_node,
     collect_tool_feedback_node,
@@ -25,7 +24,6 @@ from tools.tool_executor import (
 workflow = StateGraph(AgentState)
 
 workflow.add_node("recall_memories", recall_memories_node)
-workflow.add_node("load_presets", load_presets_node)
 workflow.add_node("pre_llm", pre_llm_node)
 workflow.add_node("parse_pre_response", parse_pre_response_node)
 workflow.add_node("execute_music_task", execute_music_task_node)
@@ -40,8 +38,7 @@ workflow.add_node("main_llm", main_llm_node)
 
 workflow.set_entry_point("recall_memories")
 
-workflow.add_edge("recall_memories", "load_presets")
-workflow.add_edge("load_presets", "pre_llm")
+workflow.add_edge("recall_memories", "pre_llm")
 workflow.add_edge("pre_llm", "parse_pre_response")
 
 workflow.add_conditional_edges(
