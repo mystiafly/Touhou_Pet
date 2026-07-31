@@ -39,7 +39,9 @@
     "files": [
       "**/*",
       "!.venv",
-      "!qdrant_db",
+      "!**/qdrant_db",
+      "!**/*.log",
+      "!**/*.db",
       "!__pycache__",
       "!.node_env",
       "!.vscode",
