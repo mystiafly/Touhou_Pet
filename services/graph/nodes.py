@@ -101,7 +101,8 @@ def build_main_messages(state: AgentState) -> list:
 
     history_msgs = state.get("history", [])
     current_fav = state.get("favorability", 10)
-    selected_memory = state.get("selected_memory", "")
+    recalled_memories = state.get("recalled_memories", [])
+    selected_memory = "\n".join(recalled_memories) if recalled_memories else ""
     user_message = state.get("user_message", "")
     is_self = state.get("is_self_talk", False)
     is_greeting = state.get("request_type") == 'greeting'
