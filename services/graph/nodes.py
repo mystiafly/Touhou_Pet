@@ -74,16 +74,16 @@ def build_pre_messages(state: AgentState) -> list:
         "6. 更改称呼: 如果用户要求改变你对他的称呼，输出 `[UPDATE_USER_NAME: 新称呼]`。\n"
         "7. 更改自己的名字: 如果用户要求你改名，输出 `[UPDATE_PET_NAME: 新名字]`。\n"
         "8. 视觉识图: 如果用户要求你看看屏幕上有什么，或者让你识图，输出 `[ANALYZE_SCREEN]`。\n"
-        "10. 长期记忆检索: 如果检测到下面的【相关记忆检索结果】中有跟当前对话高度相关的记忆片段，可以输出 `[SELECT_MEMORY: ID]` 来在后续环节调取完整日记。\n\n"
+        "10. 长期记忆检索: 如果检测到下面的【相关记忆检索结果】中的内容与当前用户的话题有实质性关联（例如提及了过去的某件事、某个约定或情感），你必须输出对应的 `[SELECT_MEMORY: ID]` 来在后续环节调取完整日记。\n\n"
         "【规则】\n"
         "1. 如果检测到工具意图，请仅输出上述的一个或多个标签，不需要任何多余解释！绝对禁止进行角色扮演！\n"
-        "2. 如果未检测到任何需要工具协助的意图，请仅输出 `[NO_TOOLS_NEEDED]`。\n"
+        "2. 如果未检测到任何需要工具协助的意图（且不需要调取长记忆），请仅输出 `[NO_TOOLS_NEEDED]`。\n"
     )
 
     recalled_memories = state.get("recalled_memories", [])
     if recalled_memories:
         mem_str = "\n\n".join(recalled_memories)
-        system_prompt += f"\n\n【相关记忆检索结果】\n以下是系统检索到的可能相关的压缩记忆。请判断其中哪个记忆/ID最符合当前用户输入的情境。如果有最符合的一项，输出对应的 `[SELECT_MEMORY: ID]`。如果没有相关内容，请不要输出该标签。\n{mem_str}\n"
+        system_prompt += f"\n\n【相关记忆检索结果】\n以下是系统检索到的可能相关的压缩记忆。请判断其中哪个记忆/ID最符合当前用户输入的情境。\n⚠️ 如果有相关项，你必须且只能输出对应的 `[SELECT_MEMORY: ID]`（不要输出 NO_TOOLS_NEEDED）。\n如果没有相关内容，请完全忽略此检索结果。\n{mem_str}\n"
 
     messages = [SystemMessage(content=system_prompt)]
     
@@ -367,13 +367,21 @@ def parse_pre_response_node(state: AgentState) -> Dict[str, Any]:
     if memory_match: 
         memory_task = memory_match.group(1).strip()
         char_id = get_active_character_id()
-        diary_file_path = os.path.join(
+        diary_dir = os.path.join(
             os.path.dirname(os.path.dirname(__file__)),
-            "characters", char_id, "daily_history", f"{char_id}_diary_{memory_task}.txt"
+            "characters", char_id, "daily_history"
         )
+        import glob
+        pattern = os.path.join(diary_dir, f"*_diary_{memory_task}.txt")
+        matching_files = glob.glob(pattern)
+        
         try:
-            with open(diary_file_path, "r", encoding="utf-8") as f:
-                selected_memory = f.read().strip()
+            if matching_files:
+                with open(matching_files[0], "r", encoding="utf-8") as f:
+                    selected_memory = f.read().strip()
+                print(f"[MEMORY SELECT] Successfully read full diary: {matching_files[0]}")
+            else:
+                print(f"[MEMORY SELECT] full diary for {memory_task} not found in {diary_dir}")
         except Exception as e:
             print(f"[MEMORY SELECT] failed to read full diary for {memory_task}: {e}")
 
