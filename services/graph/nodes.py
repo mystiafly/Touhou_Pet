@@ -87,15 +87,15 @@ def build_pre_messages(state: AgentState) -> list:
 
     messages = [SystemMessage(content=system_prompt)]
     
-    # Add recent history (last 2 messages)
+    # Bundle recent history into a single string to avoid triggering roleplay mode
     recent = history_msgs[-2:] if len(history_msgs) >= 2 else history_msgs
+    history_str = ""
     for msg in recent:
-        if msg["role"] == "user":
-            messages.append(HumanMessage(content=msg["content"]))
-        elif msg["role"] == "assistant":
-            messages.append(AIMessage(content=msg["content"]))
-
-    messages.append(HumanMessage(content=f"用户的最新输入: {user_message}\n请输出标签或 [NO_TOOLS_NEEDED]。"))
+        role = "助理" if msg["role"] == "assistant" else "用户"
+        history_str += f"{role}: {msg['content']}\n"
+        
+    human_content = f"【近期对话上下文】\n{history_str}\n\n【用户最新输入】\n{user_message}\n\n请输出意图标签或 [NO_TOOLS_NEEDED]，绝对禁止角色扮演或代入对话！"
+    messages.append(HumanMessage(content=human_content))
     return messages
 
 def build_main_messages(state: AgentState) -> list:
