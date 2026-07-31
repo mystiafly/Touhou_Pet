@@ -37,15 +37,16 @@ def recall_memories_node(state: AgentState) -> Dict[str, Any]:
                 results = agent.search(compiled_query, filters={"user_id": "player_01"}, limit=3, threshold=0.45)
                 results_list = results.get("results", []) if isinstance(results, dict) else (results if isinstance(results, list) else [])
                 if results_list:
-                    recalled = [r['memory'] for r in results_list if isinstance(r, dict) and 'memory' in r]
+                    for r in results_list:
+                        if isinstance(r, dict) and 'memory' in r:
+                            date_meta = r.get("metadata", {}).get("date", "unknown_date") if r.get("metadata") else "unknown_date"
+                            recalled.append(f"[ID: {date_meta}] {r['memory']}")
             except Exception as me:
                 pass
                 
     active_tables = get_active_tables(user_msg, current_pool="\n".join([msg.get("content", "") for msg in history[-4:]]))
-    if active_tables:
-        recalled.append(f"[DataBank 动态数据库内容]\n{active_tables}")
         
-    return {"recalled_memories": recalled}
+    return {"recalled_memories": recalled, "active_databank": active_tables if active_tables else ""}
 
 
 
@@ -73,11 +74,16 @@ def build_pre_messages(state: AgentState) -> list:
         "6. 更改称呼: 如果用户要求改变你对他的称呼，输出 `[UPDATE_USER_NAME: 新称呼]`。\n"
         "7. 更改自己的名字: 如果用户要求你改名，输出 `[UPDATE_PET_NAME: 新名字]`。\n"
         "8. 视觉识图: 如果用户要求你看看屏幕上有什么，或者让你识图，输出 `[ANALYZE_SCREEN]`。\n"
-        "9. 内存清理: 如果用户抱怨电脑卡顿或明确要求清理系统内存，输出 `[CLEAN_MEMORY]`。\n\n"
+        "10. 长期记忆检索: 如果检测到下面的【相关记忆检索结果】中有跟当前对话高度相关的记忆片段，可以输出 `[SELECT_MEMORY: ID]` 来在后续环节调取完整日记。\n\n"
         "【规则】\n"
         "1. 如果检测到工具意图，请仅输出上述的一个或多个标签，不需要任何多余解释！绝对禁止进行角色扮演！\n"
         "2. 如果未检测到任何需要工具协助的意图，请仅输出 `[NO_TOOLS_NEEDED]`。\n"
     )
+
+    recalled_memories = state.get("recalled_memories", [])
+    if recalled_memories:
+        mem_str = "\n\n".join(recalled_memories)
+        system_prompt += f"\n\n【相关记忆检索结果】\n以下是系统检索到的可能相关的压缩记忆。请判断其中哪个记忆/ID最符合当前用户输入的情境。如果有最符合的一项，输出对应的 `[SELECT_MEMORY: ID]`。如果没有相关内容，请不要输出该标签。\n{mem_str}\n"
 
     messages = [SystemMessage(content=system_prompt)]
     
@@ -101,8 +107,8 @@ def build_main_messages(state: AgentState) -> list:
 
     history_msgs = state.get("history", [])
     current_fav = state.get("favorability", 10)
-    recalled_memories = state.get("recalled_memories", [])
-    selected_memory = "\n".join(recalled_memories) if recalled_memories else ""
+    selected_memory = state.get("selected_memory", "")
+    active_databank = state.get("active_databank", "")
     user_message = state.get("user_message", "")
     is_self = state.get("is_self_talk", False)
     is_greeting = state.get("request_type") == 'greeting'
@@ -213,6 +219,9 @@ def build_main_messages(state: AgentState) -> list:
     
     if selected_memory:
         tail_parts.append(f"[SYSTEM INJECTION: 唤醒的长期记忆]\n{selected_memory}\n（注：仅在当前对话主题与这些记忆相关时，才自然提及。）")
+        
+    if active_databank:
+        tail_parts.append(f"[SYSTEM INJECTION: DataBank 动态数据库内容]\n{active_databank}")
         
     tool_feedback = state.get("tool_feedback_context", "")
     if tool_feedback:
@@ -352,6 +361,21 @@ def parse_pre_response_node(state: AgentState) -> Dict[str, Any]:
     clean_memory_task = None
     clean_memory_match = re.search(r'\[CLEAN_MEMORY\]', raw_reply, re.IGNORECASE)
     if clean_memory_match: clean_memory_task = True
+        
+    selected_memory = ""
+    memory_match = re.search(r'\[SELECT_MEMORY:\s*(.*?)\]', raw_reply, re.IGNORECASE)
+    if memory_match: 
+        memory_task = memory_match.group(1).strip()
+        char_id = get_active_character_id()
+        diary_file_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            "characters", char_id, "daily_history", f"{char_id}_diary_{memory_task}.txt"
+        )
+        try:
+            with open(diary_file_path, "r", encoding="utf-8") as f:
+                selected_memory = f.read().strip()
+        except Exception as e:
+            print(f"[MEMORY SELECT] failed to read full diary for {memory_task}: {e}")
 
     return {
         "browser_task": browser_task,
@@ -361,7 +385,8 @@ def parse_pre_response_node(state: AgentState) -> Dict[str, Any]:
         "rename_task_user": rename_task_user,
         "rename_task_pet": rename_task_pet,
         "vision_task": vision_task,
-        "clean_memory_task": clean_memory_task
+        "clean_memory_task": clean_memory_task,
+        "selected_memory": selected_memory
     }
 
 def collect_tool_feedback_node(state: AgentState) -> Dict[str, Any]:

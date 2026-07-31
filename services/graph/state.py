@@ -6,6 +6,7 @@ class AgentState(TypedDict):
     history: List[Dict[str, Any]]
     favorability: int
     recalled_memories: List[str]
+    active_databank: str
     selected_memory: str
     custom_presets: str
     raw_reply: str
