@@ -755,7 +755,7 @@ def post_config_api(payload: dict = Body(...)):
         if "app_launcher" in payload:
             config_data["app_launcher"] = payload["app_launcher"]
         save_config(config_data)
-        return {"success": True, "message": "配置已成功保存"}
+        return {"success": True, "status": "success", "message": "配置已成功保存"}
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
 
