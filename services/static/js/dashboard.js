@@ -284,6 +284,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     mainDisplay.value = selectedOpt ? selectedOpt.text : apiSelect.value;
                 }
                 
+                const personaPromptArea = document.getElementById('persona-prompt');
+                if (personaPromptArea && configData.persona_prompt !== undefined) {
+                    personaPromptArea.value = configData.persona_prompt;
+                }
+                
                 const userPromptArea = document.getElementById('user-prompt');
                 if (userPromptArea && configData.user_prompt !== undefined) {
                     userPromptArea.value = configData.user_prompt;
@@ -325,6 +330,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (configData.theme_color) {
                     applyDashboardThemeColor(configData.theme_color);
+                    document.querySelectorAll('.theme-color-swatch').forEach(s => {
+                        s.classList.toggle('selected', s.dataset.color === configData.theme_color);
+                    });
                 }
             }
 
@@ -446,6 +454,57 @@ document.addEventListener('DOMContentLoaded', () => {
                 btnTestVision.disabled = false;
                 btnTestVision.innerHTML = '<i class="fas fa-eye"></i> 测试识图';
             }
+        });
+    }
+
+    const personaPromptArea = document.getElementById('persona-prompt');
+    if (personaPromptArea) {
+        personaPromptArea.addEventListener('change', async () => {
+            try {
+                const response = await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ persona_prompt: personaPromptArea.value })
+                });
+                const data = await response.json();
+                if (!data.success) {
+                    alert("保存 角色核心词 失败: " + data.error);
+                }
+            } catch (e) {
+                alert("保存失败！");
+            }
+        });
+    }
+
+    const themeSwatches = document.querySelectorAll('.theme-color-swatch:not([data-color="custom"])');
+    const customThemePicker = document.getElementById('custom-theme-color-picker');
+    
+    function saveThemeColor(color) {
+        applyDashboardThemeColor(color);
+        document.querySelectorAll('.theme-color-swatch').forEach(s => {
+            s.classList.toggle('selected', s.dataset.color === color);
+        });
+        fetch('/api/settings/config', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ theme_color: color })
+        }).catch(e => console.error(e));
+    }
+    
+    themeSwatches.forEach(swatch => {
+        swatch.addEventListener('click', () => {
+            saveThemeColor(swatch.dataset.color);
+        });
+    });
+    
+    if (customThemePicker) {
+        customThemePicker.addEventListener('input', (e) => {
+            applyDashboardThemeColor(e.target.value);
+            document.querySelectorAll('.theme-color-swatch').forEach(s => s.classList.remove('selected'));
+            customThemePicker.closest('.theme-color-swatch').classList.add('selected');
+        });
+        customThemePicker.addEventListener('change', (e) => {
+            saveThemeColor(e.target.value);
         });
     }
 

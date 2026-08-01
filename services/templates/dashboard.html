@@ -193,10 +193,58 @@
             
             <div class="card-container">
                 <div class="settings-card">
+                    <h3><i class="fas fa-id-badge"></i> 角色核心词 (Persona Prompt)</h3>
+                    <div class="form-group">
+                        <p class="help-text" style="margin-bottom: 8px;">在这里设定“你是谁”或“性格特征”。此设定将作为角色最基础的人格定义被置于大模型上下文中。</p>
+                        <textarea id="persona-prompt" class="modern-input" rows="4" placeholder="例如：你是东方Project中的露米娅，一个喜欢在黑暗中恶作剧的食人妖怪。性格傲娇。" style="width: 100%; resize: vertical;"></textarea>
+                    </div>
+                </div>
+
+                <div class="settings-card">
                     <h3><i class="fas fa-user-edit"></i> User 提示词 (User Prompt)</h3>
                     <div class="form-group">
                         <p class="help-text" style="margin-bottom: 8px;">在这里设定“我是谁”或“特殊背景”。此设定将作为最高优先级规则被强制置于大模型上下文的<strong style="color:var(--accent-color)">最顶层</strong>。</p>
                         <textarea id="user-prompt" class="modern-input" rows="4" placeholder="例如：我是一个每天加班的打工人，你需要经常主动安慰我。或者：当前的聊天背景是在一个充满魔法的森林里。" style="width: 100%; resize: vertical;"></textarea>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <h3><i class="fas fa-palette"></i> 角色色调 (Theme Color)</h3>
+                    <div class="form-group">
+                        <p class="help-text" style="margin-bottom: 12px;">选择代表当前角色的主题色。此颜色将应用于界面上的高亮元素、按钮及光效特效。</p>
+                        <div id="theme-color-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px;">
+                            <!-- 粉色 (默认) -->
+                            <div class="bg-color-swatch theme-color-swatch" data-color="#ff6b8b" title="樱花粉">
+                                <div style="width: 100%; height: 40px; border-radius: 6px; background: #ff6b8b; border: 1px solid rgba(255,255,255,0.15);"></div>
+                            </div>
+                            <!-- 红色 -->
+                            <div class="bg-color-swatch theme-color-swatch" data-color="#ff5555" title="绯红">
+                                <div style="width: 100%; height: 40px; border-radius: 6px; background: #ff5555; border: 1px solid rgba(255,255,255,0.15);"></div>
+                            </div>
+                            <!-- 蓝色 -->
+                            <div class="bg-color-swatch theme-color-swatch" data-color="#8be9fd" title="青蓝">
+                                <div style="width: 100%; height: 40px; border-radius: 6px; background: #8be9fd; border: 1px solid rgba(255,255,255,0.15);"></div>
+                            </div>
+                            <!-- 绿色 -->
+                            <div class="bg-color-swatch theme-color-swatch" data-color="#50fa7b" title="荧绿">
+                                <div style="width: 100%; height: 40px; border-radius: 6px; background: #50fa7b; border: 1px solid rgba(255,255,255,0.15);"></div>
+                            </div>
+                            <!-- 黄色 -->
+                            <div class="bg-color-swatch theme-color-swatch" data-color="#f1fa8c" title="明黄">
+                                <div style="width: 100%; height: 40px; border-radius: 6px; background: #f1fa8c; border: 1px solid rgba(255,255,255,0.15);"></div>
+                            </div>
+                            <!-- 紫色 -->
+                            <div class="bg-color-swatch theme-color-swatch" data-color="#bd93f9" title="魅紫">
+                                <div style="width: 100%; height: 40px; border-radius: 6px; background: #bd93f9; border: 1px solid rgba(255,255,255,0.15);"></div>
+                            </div>
+                            <!-- 自定义 -->
+                            <div class="bg-color-swatch theme-color-swatch" data-color="custom" title="自定义颜色">
+                                <div style="width: 100%; height: 40px; border-radius: 6px; background: linear-gradient(135deg, #f06, #4a90e2, #50fa7b); border: 2px dashed rgba(255,255,255,0.3); position: relative; cursor: pointer;">
+                                    <input type="color" id="custom-theme-color-picker" style="opacity: 0; position: absolute; inset: 0; width: 100%; height: 100%; cursor: pointer; border: none; padding: 0;">
+                                    <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; pointer-events: none;">🎨</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -899,7 +947,7 @@
     </div>
 </div>
 
-<script src="/static/js/dashboard.js?v=1.14.1"></script>
+<script src="/static/js/dashboard.js?v=1.15.0"></script>
 
 <!-- 视觉识图配置 Modal -->
 <div id="vision-tool-modal" class="modal-overlay hidden">
