@@ -1644,6 +1644,16 @@ def api_pet_reactions_delete(payload: dict = Body(...)):
     success = remove_reaction(char_id, emotion, text)
     return {"success": success}
 
+@router.post("/api/pet_reactions/regenerate")
+def api_pet_reactions_regenerate():
+    """清空并重新生成词库"""
+    from core.reaction_manager import save_reactions, trigger_initial_generation_async
+    char_id = get_active_character_id()
+    # 清空为 {}，然后触发生成
+    save_reactions(char_id, {})
+    trigger_initial_generation_async(char_id)
+    return {"success": True}
+
 # 13. 静默记忆注入接口
 @router.post("/api/action_sync")
 def api_action_sync(payload: dict = Body(...)):

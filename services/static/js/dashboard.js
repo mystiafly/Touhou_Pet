@@ -3174,6 +3174,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // === Reactions (Coping Words) Logic ===
 document.addEventListener('DOMContentLoaded', () => {
     const btnRefreshReactions = document.getElementById('btn-refresh-reactions');
+    const btnRegenerateReactions = document.getElementById('btn-regenerate-reactions');
     const reactionsContainer = document.getElementById('reactions-content');
     const reactionsLoading = document.getElementById('reactions-loading');
     
@@ -3188,6 +3189,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if(btnRefreshReactions) {
         btnRefreshReactions.addEventListener('click', loadReactions);
+    }
+    
+    if(btnRegenerateReactions) {
+        btnRegenerateReactions.addEventListener('click', async () => {
+            const confirmed = await window.asyncConfirm("确定要清空当前的应付词库，并根据最新的人设重新生成吗？\n后台生成可能需要几十秒的时间，请耐心等待并刷新。");
+            if (confirmed) {
+                try {
+                    await fetch('/api/pet_reactions/regenerate', { method: 'POST' });
+                    loadReactions();
+                } catch(e) {
+                    console.error("Failed to regenerate reactions", e);
+                }
+            }
+        });
     }
 
     const emotionMap = {
