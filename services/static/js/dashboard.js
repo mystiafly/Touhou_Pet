@@ -3290,7 +3290,7 @@ document.addEventListener('DOMContentLoaded', () => {
         reactionsContainer.style.display = 'none';
         
         try {
-            const res = await fetch('/api/pet_reactions');
+            const res = await fetch('/api/pet_reactions?_t=' + Date.now());
             const data = await res.json();
             if (data.success) {
                 renderReactions(data.reactions, data.is_generating);

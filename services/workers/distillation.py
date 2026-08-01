@@ -77,10 +77,17 @@ def generate_pet_diary(date_str, log_content):
                 data = json.loads(json_str)
                 if "new_reaction" in data:
                     new_reaction = data["new_reaction"]
-                    emotion = new_reaction.get("emotion")
+                    emotion = str(new_reaction.get("emotion")).lower()
                     text = new_reaction.get("text")
                     if emotion and text:
-                        from core.reaction_manager import append_reaction
+                        from core.reaction_manager import append_reaction, DEFAULT_EMOTIONS
+                        if emotion not in DEFAULT_EMOTIONS:
+                            # 尝试兜底修正
+                            if '生气' in emotion or 'ang' in emotion: emotion = 'angry'
+                            elif '哭' in emotion or 'cry' in emotion: emotion = 'crying'
+                            elif '害羞' in emotion or 'shy' in emotion: emotion = 'shy'
+                            elif '睡' in emotion or 'sleep' in emotion: emotion = 'sleeping'
+                            else: emotion = 'normal'
                         append_reaction(char_id, emotion, text)
                         print(f"[DIARY GENERATION] 提取到新的应付词并保存: [{emotion}] {text}")
                 
