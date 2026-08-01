@@ -1360,6 +1360,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCancelPreset = document.getElementById('btn-cancel-preset');
     if (btnCancelPreset) btnCancelPreset.addEventListener('click', hidePresetModal);
     
+    const alwaysActiveCheckbox = document.getElementById('preset-always-active');
+    const disableCheckbox = document.getElementById('preset-disable');
+    
+    if (alwaysActiveCheckbox && disableCheckbox) {
+        alwaysActiveCheckbox.addEventListener('change', (e) => {
+            if (e.target.checked) disableCheckbox.checked = false;
+        });
+        disableCheckbox.addEventListener('change', (e) => {
+            if (e.target.checked) alwaysActiveCheckbox.checked = false;
+        });
+    }
+    
     const btnSavePreset = document.getElementById('btn-save-preset');
     if (btnSavePreset) {
         btnSavePreset.addEventListener('click', () => {
