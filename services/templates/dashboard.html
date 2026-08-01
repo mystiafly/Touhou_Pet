@@ -833,9 +833,18 @@
         </div>
         <div class="modal-body">
             <div class="form-group">
-                <label for="edit-app-launcher-json" style="font-weight: 500; font-size: 14px;">编辑 JSON 配置</label>
-                <textarea id="edit-app-launcher-json" class="modern-input" rows="8" placeholder='{"记事本": "C:\\\\Windows\\\\System32\\\\notepad.exe"}' style="margin-top: 8px; width: 100%; resize: vertical; font-family: monospace;"></textarea>
-                <p class="help-text">请确保格式为合法的 JSON 对象，键名为唤醒应用的别名，键值为可执行文件的绝对路径。</p>
+                <label style="font-weight: 500; font-size: 14px;">已配置的应用白名单</label>
+                <div id="app-launcher-list" style="margin-top: 8px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px; max-height: 250px; overflow-y: auto;">
+                    <!-- 动态列表将会在这里渲染 -->
+                </div>
+                
+                <label style="font-weight: 500; font-size: 14px; margin-top: 15px; display: block;">添加新应用</label>
+                <div style="display: flex; gap: 10px; margin-top: 8px;">
+                    <input type="text" id="new-app-alias" class="modern-input" placeholder="唤醒词 (如: 记事本)" style="flex: 1;">
+                    <input type="text" id="new-app-path" class="modern-input" placeholder="应用路径 (如: C:\Windows\notepad.exe)" style="flex: 2;">
+                    <button id="add-app-btn" class="action-btn outline" style="white-space: nowrap;"><i class="fas fa-plus"></i> 添加</button>
+                </div>
+                <p class="help-text" style="margin-top: 10px;">提示：前端将自动校验输入并组装正确的后台数据结构，您不再需要手写 JSON。</p>
             </div>
             <button id="save-app-launcher-btn" class="action-btn" style="margin-top: 20px; width: 100%; justify-content: center;">
                 <i class="fas fa-save"></i> 保存并生效

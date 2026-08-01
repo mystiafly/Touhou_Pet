@@ -2123,8 +2123,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const cfgRes = await fetch('/api/settings/config');
                                 const cfgData = await cfgRes.json();
                                 if (cfgData.success) {
-                                    const appLauncher = cfgData.app_launcher || {};
-                                    document.getElementById('edit-app-launcher-json').value = JSON.stringify(appLauncher, null, 2);
+                                    window.currentAppLauncherConfig = cfgData.app_launcher || {};
+                                    window.renderAppLauncherList();
                                     document.getElementById('app-launcher-modal').classList.remove('hidden');
                                 }
                             } catch (e) {
@@ -2142,9 +2142,56 @@ document.addEventListener('DOMContentLoaded', () => {
                     container.appendChild(card);
                 });
 
+                // 渲染 App Launcher 列表
+                window.renderAppLauncherList = function() {
+                    const listContainer = document.getElementById('app-launcher-list');
+                    if (!listContainer) return;
+                    listContainer.innerHTML = '';
+                    
+                    const keys = Object.keys(window.currentAppLauncherConfig || {});
+                    if (keys.length === 0) {
+                        listContainer.innerHTML = '<div style="color: #888; text-align: center; padding: 10px;">暂未配置任何应用，请在下方添加。</div>';
+                        return;
+                    }
+                    
+                    keys.forEach(alias => {
+                        const path = window.currentAppLauncherConfig[alias];
+                        const itemDiv = document.createElement('div');
+                        itemDiv.style.display = 'flex';
+                        itemDiv.style.alignItems = 'center';
+                        itemDiv.style.justifyContent = 'space-between';
+                        itemDiv.style.padding = '8px';
+                        itemDiv.style.marginBottom = '8px';
+                        itemDiv.style.backgroundColor = 'rgba(255,255,255,0.05)';
+                        itemDiv.style.borderRadius = '6px';
+                        
+                        const textDiv = document.createElement('div');
+                        textDiv.style.flex = '1';
+                        textDiv.style.overflow = 'hidden';
+                        textDiv.innerHTML = `<strong style="color: var(--accent-color);">${alias}</strong> <span style="color: #aaa; font-size: 12px; margin-left: 8px;" title="${path}">${path}</span>`;
+                        
+                        const delBtn = document.createElement('button');
+                        delBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                        delBtn.className = 'action-btn';
+                        delBtn.style.padding = '4px 8px';
+                        delBtn.style.backgroundColor = 'rgba(255, 107, 139, 0.2)';
+                        delBtn.style.color = '#ff6b8b';
+                        delBtn.style.border = 'none';
+                        delBtn.addEventListener('click', () => {
+                            delete window.currentAppLauncherConfig[alias];
+                            window.renderAppLauncherList();
+                        });
+                        
+                        itemDiv.appendChild(textDiv);
+                        itemDiv.appendChild(delBtn);
+                        listContainer.appendChild(itemDiv);
+                    });
+                };
+
                 // 绑定 App Launcher Modal 事件
                 const btnCloseAppLauncher = document.getElementById('close-app-launcher-modal-btn');
                 const btnSaveAppLauncher = document.getElementById('save-app-launcher-btn');
+                const btnAddApp = document.getElementById('add-app-btn');
                 
                 if (btnCloseAppLauncher && !btnCloseAppLauncher.dataset.bound) {
                     btnCloseAppLauncher.dataset.bound = 'true';
@@ -2153,12 +2200,33 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
                 
+                if (btnAddApp && !btnAddApp.dataset.bound) {
+                    btnAddApp.dataset.bound = 'true';
+                    btnAddApp.addEventListener('click', () => {
+                        const aliasInput = document.getElementById('new-app-alias');
+                        const pathInput = document.getElementById('new-app-path');
+                        const alias = aliasInput.value.trim();
+                        const path = pathInput.value.trim();
+                        
+                        if (!alias || !path) {
+                            alert('唤醒词和应用路径不能为空！');
+                            return;
+                        }
+                        
+                        window.currentAppLauncherConfig = window.currentAppLauncherConfig || {};
+                        window.currentAppLauncherConfig[alias] = path;
+                        
+                        aliasInput.value = '';
+                        pathInput.value = '';
+                        window.renderAppLauncherList();
+                    });
+                }
+                
                 if (btnSaveAppLauncher && !btnSaveAppLauncher.dataset.bound) {
                     btnSaveAppLauncher.dataset.bound = 'true';
                     btnSaveAppLauncher.addEventListener('click', async () => {
                         try {
-                            const val = document.getElementById('edit-app-launcher-json').value.trim();
-                            const parsed = val ? JSON.parse(val) : {};
+                            const parsed = window.currentAppLauncherConfig || {};
                             
                             const btn = btnSaveAppLauncher;
                             const originalHTML = btn.innerHTML;
@@ -2178,7 +2246,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                             btn.innerHTML = originalHTML;
                         } catch (e) {
-                            alert('JSON 格式不正确或保存失败：' + e);
+                            alert('保存失败：' + e);
                         }
                     });
                 }
