@@ -876,3 +876,24 @@ input:checked + .slider:before {
     color: #6272a4;
     margin: 5px 0;
 }
+
+/* 个性化 - 背景色卡片 */
+.bg-color-swatch {
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+    background: rgba(255,255,255,0.03);
+}
+
+.bg-color-swatch:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    border-color: rgba(255,255,255,0.2);
+}
+
+.bg-color-swatch.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}

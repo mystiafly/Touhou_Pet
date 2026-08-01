@@ -114,6 +114,59 @@ document.addEventListener('DOMContentLoaded', () => {
         document.documentElement.style.setProperty('--accent-glow', `rgba(${r}, ${g}, ${b}, 0.3)`);
     }
 
+    function applyDashboardBgColor(hex) {
+        if (!/^#[0-9A-Fa-f]{6}$/i.test(hex)) return;
+        document.documentElement.style.setProperty('--bg-dark', hex);
+        document.body.style.backgroundColor = hex;
+        // 更新预览区域
+        const preview = document.getElementById('current-bg-preview');
+        const hexLabel = document.getElementById('current-bg-hex');
+        if (preview) preview.style.background = hex;
+        if (hexLabel) hexLabel.textContent = hex;
+        // 更新选中状态
+        document.querySelectorAll('.bg-color-swatch').forEach(s => {
+            s.classList.toggle('selected', s.dataset.color === hex);
+        });
+    }
+
+    // 初始化个性化面板
+    function initPersonalizationPanel() {
+        const swatches = document.querySelectorAll('.bg-color-swatch:not([data-color="custom"])');
+        const customPicker = document.getElementById('custom-bg-color-picker');
+        const saveBtn = document.getElementById('save-bg-color-btn');
+        let pendingColor = localStorage.getItem('dashboard_bg_color') || '#12121a';
+
+        // 加载已保存的颜色
+        applyDashboardBgColor(pendingColor);
+
+        swatches.forEach(swatch => {
+            swatch.addEventListener('click', () => {
+                pendingColor = swatch.dataset.color;
+                applyDashboardBgColor(pendingColor);
+            });
+        });
+
+        if (customPicker) {
+            customPicker.addEventListener('input', (e) => {
+                pendingColor = e.target.value;
+                applyDashboardBgColor(pendingColor);
+                // 自定义格子也标为选中
+                document.querySelectorAll('.bg-color-swatch').forEach(s => s.classList.remove('selected'));
+                customPicker.closest('.bg-color-swatch').classList.add('selected');
+            });
+        }
+
+        if (saveBtn && !saveBtn.dataset.bound) {
+            saveBtn.dataset.bound = 'true';
+            saveBtn.addEventListener('click', async () => {
+                localStorage.setItem('dashboard_bg_color', pendingColor);
+                const originalHTML = saveBtn.innerHTML;
+                saveBtn.innerHTML = '<i class="fas fa-check"></i> 已保存';
+                setTimeout(() => { saveBtn.innerHTML = originalHTML; }, 1500);
+            });
+        }
+    }
+
     // 导航栏切换
     const navItems = document.querySelectorAll('.nav-item');
     const sections = document.querySelectorAll('.content-section');
@@ -145,8 +198,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(window.loadToolsList) window.loadToolsList();
                 window.toolsLoaded = true;
             }
+            if (targetId === 'personalization-view' && !window.personalizationInited) {
+                initPersonalizationPanel();
+                window.personalizationInited = true;
+            }
         });
     });
+
+    // 页面加载时立即恢复已保存的背景色
+    const savedBg = localStorage.getItem('dashboard_bg_color');
+    if (savedBg) applyDashboardBgColor(savedBg);
 
     // ========== 大脑引擎配置 ==========
     const apiSelect = document.getElementById('api-provider-select');

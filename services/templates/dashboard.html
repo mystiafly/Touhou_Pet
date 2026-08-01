@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>大贤者控制台 (Dashboard)</title>
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.8.0">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.13.4">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
 </head>
@@ -33,6 +33,9 @@
             </a>
             <a href="#" class="nav-item" data-target="global-presets-view">
                 <i class="fas fa-globe"></i> 公用预设
+            </a>
+            <a href="#" class="nav-item" data-target="personalization-view">
+                <i class="fas fa-palette"></i> 个性化
             </a>
 
             <div style="font-size: 12px; color: #ff79c6; margin: 20px 0 5px 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">当前角色专属设定</div>
@@ -515,6 +518,110 @@
             </div>
         </section>
 
+        <!-- 个性化视图 -->
+        <section id="personalization-view" class="content-section">
+            <header class="section-header">
+                <h1>系统个性化</h1>
+                <p>调整大贤者控制台的外观与配色，与角色无关。</p>
+            </header>
+
+            <div class="settings-card">
+                <h3><i class="fas fa-fill-drip"></i> 背景颜色</h3>
+                <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">选择控制台的主背景颜色，仅作用于大贤者控制台页面，不影响桌宠本体。</p>
+
+                <div id="bg-color-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px;">
+
+                    <!-- 深邃黑 (当前默认) -->
+                    <div class="bg-color-swatch" data-color="#12121a" title="深邃黑">
+                        <div style="width: 100%; height: 60px; border-radius: 8px; background: #12121a; border: 2px solid rgba(255,255,255,0.15); position: relative;">
+                            <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px;">🌑</span>
+                        </div>
+                        <div style="text-align: center; margin-top: 8px;">
+                            <span style="font-size: 13px; font-weight: 500;">深邃黑</span><br>
+                            <span style="font-size: 11px; color: var(--text-muted);">#12121a · 默认</span>
+                        </div>
+                    </div>
+
+                    <!-- 纯白 -->
+                    <div class="bg-color-swatch" data-color="#f5f5f5" title="纯白">
+                        <div style="width: 100%; height: 60px; border-radius: 8px; background: #f5f5f5; border: 2px solid rgba(0,0,0,0.12); position: relative;">
+                            <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px;">☀️</span>
+                        </div>
+                        <div style="text-align: center; margin-top: 8px;">
+                            <span style="font-size: 13px; font-weight: 500;">纯白</span><br>
+                            <span style="font-size: 11px; color: var(--text-muted);">#f5f5f5</span>
+                        </div>
+                    </div>
+
+                    <!-- 米色 -->
+                    <div class="bg-color-swatch" data-color="#f5f0e8" title="米色">
+                        <div style="width: 100%; height: 60px; border-radius: 8px; background: #f5f0e8; border: 2px solid rgba(0,0,0,0.1); position: relative;">
+                            <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px;">🍞</span>
+                        </div>
+                        <div style="text-align: center; margin-top: 8px;">
+                            <span style="font-size: 13px; font-weight: 500;">米色</span><br>
+                            <span style="font-size: 11px; color: var(--text-muted);">#f5f0e8</span>
+                        </div>
+                    </div>
+
+                    <!-- 深海蓝 (推荐) -->
+                    <div class="bg-color-swatch" data-color="#0d1117" title="深海蓝">
+                        <div style="width: 100%; height: 60px; border-radius: 8px; background: #0d1117; border: 2px solid rgba(255,255,255,0.15); position: relative;">
+                            <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px;">🌊</span>
+                        </div>
+                        <div style="text-align: center; margin-top: 8px;">
+                            <span style="font-size: 13px; font-weight: 500;">深海蓝 ✨</span><br>
+                            <span style="font-size: 11px; color: var(--text-muted);">#0d1117 · 推荐</span>
+                        </div>
+                    </div>
+
+                    <!-- 暖夜棕 (推荐) -->
+                    <div class="bg-color-swatch" data-color="#1a1410" title="暖夜棕">
+                        <div style="width: 100%; height: 60px; border-radius: 8px; background: #1a1410; border: 2px solid rgba(255,255,255,0.15); position: relative;">
+                            <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px;">🕯️</span>
+                        </div>
+                        <div style="text-align: center; margin-top: 8px;">
+                            <span style="font-size: 13px; font-weight: 500;">暖夜棕 ✨</span><br>
+                            <span style="font-size: 11px; color: var(--text-muted);">#1a1410 · 推荐</span>
+                        </div>
+                    </div>
+
+                    <!-- 暮紫 (推荐) -->
+                    <div class="bg-color-swatch" data-color="#13101e" title="暮紫">
+                        <div style="width: 100%; height: 60px; border-radius: 8px; background: #13101e; border: 2px solid rgba(255,255,255,0.15); position: relative;">
+                            <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px;">🔮</span>
+                        </div>
+                        <div style="text-align: center; margin-top: 8px;">
+                            <span style="font-size: 13px; font-weight: 500;">暮紫 ✨</span><br>
+                            <span style="font-size: 11px; color: var(--text-muted);">#13101e · 推荐</span>
+                        </div>
+                    </div>
+
+                    <!-- 自定义 -->
+                    <div class="bg-color-swatch" data-color="custom" title="自定义颜色">
+                        <div style="width: 100%; height: 60px; border-radius: 8px; background: linear-gradient(135deg, #f06, #4a90e2, #50fa7b); border: 2px dashed rgba(255,255,255,0.3); position: relative; cursor: pointer;">
+                            <input type="color" id="custom-bg-color-picker" style="opacity: 0; position: absolute; inset: 0; width: 100%; height: 100%; cursor: pointer; border: none; padding: 0;">
+                            <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 18px; pointer-events: none;">🎨</span>
+                        </div>
+                        <div style="text-align: center; margin-top: 8px;">
+                            <span style="font-size: 13px; font-weight: 500;">自定义</span><br>
+                            <span style="font-size: 11px; color: var(--text-muted);">选取任意颜色</span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div style="margin-top: 20px; padding: 12px 16px; background: rgba(255,255,255,0.04); border-radius: 8px; display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 13px; color: var(--text-muted);">当前已选：</span>
+                    <div id="current-bg-preview" style="width: 24px; height: 24px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); display: inline-block; flex-shrink: 0;"></div>
+                    <span id="current-bg-hex" style="font-family: monospace; font-size: 14px; color: var(--text-main);">#12121a</span>
+                    <button id="save-bg-color-btn" class="action-btn" style="margin-left: auto; padding: 6px 18px;">
+                        <i class="fas fa-save"></i> 保存
+                    </button>
+                </div>
+            </div>
+        </section>
+
         <!-- 6.5 专属预设视图 -->
         <section id="custom-presets-view" class="content-section">
             <div class="section-header">
@@ -792,7 +899,7 @@
     </div>
 </div>
 
-<script src="/static/js/dashboard.js?v=1.13.3"></script>
+<script src="/static/js/dashboard.js?v=1.13.4"></script>
 
 <!-- 视觉识图配置 Modal -->
 <div id="vision-tool-modal" class="modal-overlay hidden">
