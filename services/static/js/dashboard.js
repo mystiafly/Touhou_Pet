@@ -116,8 +116,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function applyDashboardBgColor(hex) {
         if (!/^#[0-9A-Fa-f]{6}$/i.test(hex)) return;
+        
+        let r = parseInt(hex.substring(1, 3), 16);
+        let g = parseInt(hex.substring(3, 5), 16);
+        let b = parseInt(hex.substring(5, 7), 16);
+        
+        let lightness = (r * 299 + g * 587 + b * 114) / 1000;
+        let isLight = lightness > 128;
+        
         document.documentElement.style.setProperty('--bg-dark', hex);
         document.body.style.backgroundColor = hex;
+        
+        if (isLight) {
+            document.documentElement.style.setProperty('--text-main', '#1a1a24');
+            document.documentElement.style.setProperty('--text-muted', '#6a6a7a');
+            document.documentElement.style.setProperty('--border-color', 'rgba(0, 0, 0, 0.08)');
+            
+            let pr = Math.min(255, r + 10);
+            let pg = Math.min(255, g + 10);
+            let pb = Math.min(255, b + 10);
+            document.documentElement.style.setProperty('--bg-panel', `rgb(${pr}, ${pg}, ${pb})`);
+            document.documentElement.style.setProperty('--bg-card', '#ffffff');
+        } else {
+            document.documentElement.style.setProperty('--text-main', '#f0f0f0');
+            document.documentElement.style.setProperty('--text-muted', '#a0a0b0');
+            document.documentElement.style.setProperty('--border-color', 'rgba(255, 255, 255, 0.08)');
+            
+            let pr = Math.min(255, r + 12);
+            let pg = Math.min(255, g + 12);
+            let pb = Math.min(255, b + 12);
+            document.documentElement.style.setProperty('--bg-panel', `rgb(${pr}, ${pg}, ${pb})`);
+            
+            let cr = Math.min(255, r + 24);
+            let cg = Math.min(255, g + 24);
+            let cb = Math.min(255, b + 24);
+            document.documentElement.style.setProperty('--bg-card', `rgb(${cr}, ${cg}, ${cb})`);
+        }
+
         // 更新预览区域
         const preview = document.getElementById('current-bg-preview');
         const hexLabel = document.getElementById('current-bg-hex');
