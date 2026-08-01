@@ -12,8 +12,9 @@ def generate_pet_diary(date_str, log_content):
     try:
         client, model_name = get_llm_client_and_model()
         current_fav = get_favorability()
+        from core.config_manager import get_config, get_active_character_id
         config = get_config()
-        char_id = config.get("character_id", "rumia")
+        char_id = get_active_character_id()
         char_name = config.get("character_name", "桌宠")
         char_persona = config.get("priority_reminder", "")
         
