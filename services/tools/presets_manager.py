@@ -245,8 +245,8 @@ def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
             if not isinstance(preset, dict) or idx in triggered_indices:
                 continue
                 
-            # 如果该预设被标记为“禁止递归触发”，则直接跳过
-            if preset.get("prevent_recursion", False):
+            # 检查是否被禁用，以及是否被标记为“禁止递归触发”
+            if preset.get("disable", False) or preset.get("prevent_recursion", False):
                 continue
                 
             # 同样需要校验好感度范围限制
