@@ -550,6 +550,5 @@ def should_execute_tools(state: AgentState) -> str:
 def prepare_retry_node(state: AgentState) -> Dict[str, Any]:
     retry_count = state.get("retry_count") or 0
     return {
-        "retry_count": retry_count + 1,
-        "history": [] # 清除短期记忆，防止被被污染的历史记录带偏
+        "retry_count": retry_count + 1
     }
