@@ -33,3 +33,4 @@ class AgentState(TypedDict):
     clean_memory_task: Optional[bool]
     clean_memory_result: Optional[Dict[str, Any]]
     request_type: Optional[str]
+    retry_count: Optional[int]

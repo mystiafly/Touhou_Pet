@@ -248,11 +248,15 @@ def build_main_messages(state: AgentState) -> list:
         if user_message:
             content += f"[闲置状态提示: {user_message}]\n\n"
         active_messages.append(SystemMessage(content=content))
-        active_messages.append(SystemMessage(content=tail_block + final_instruction))
     else:
         active_messages.append(HumanMessage(content=user_message))
-        # 强制用 SystemMessage 隔离注入的上下文和格式约束，防止被稀释
-        active_messages.append(SystemMessage(content=tail_block + final_instruction))
+        
+    retry_count = state.get("retry_count") or 0
+    if retry_count > 0:
+        final_instruction += f"\n\n[SYSTEM WARNING: 你在上一轮回复中遗漏了强制格式 `<character_thought>`！本轮已是第 {retry_count} 次打回重做。请务必使用标签包裹思考，否则将被判定为严重系统错误！]"
+        
+    # 强制用 SystemMessage 隔离注入的上下文和格式约束，防止被稀释
+    active_messages.append(SystemMessage(content=tail_block + final_instruction))
 
     return active_messages
 
@@ -542,3 +546,10 @@ def should_execute_tools(state: AgentState) -> str:
     if state.get("clean_memory_task") and state.get("clean_memory_result") is None:
         return "execute_clean_memory_task"
     return "collect_tool_feedback"
+
+def prepare_retry_node(state: AgentState) -> Dict[str, Any]:
+    retry_count = state.get("retry_count") or 0
+    return {
+        "retry_count": retry_count + 1,
+        "history": [] # 清除短期记忆，防止被被污染的历史记录带偏
+    }
