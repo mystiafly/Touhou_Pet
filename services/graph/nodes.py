@@ -247,14 +247,12 @@ def build_main_messages(state: AgentState) -> list:
         content = "[SELF TALK TRIGGER: 此刻你正在自言自语，请主动寻找话题发散。]\n\n"
         if user_message:
             content += f"[闲置状态提示: {user_message}]\n\n"
-        content += tail_block
-        content += final_instruction
-        active_messages.append(HumanMessage(content=content))
+        active_messages.append(SystemMessage(content=content))
+        active_messages.append(SystemMessage(content=tail_block + final_instruction))
     else:
-        content = f"[HUMAN]:\n{user_message}\n\n"
-        content += tail_block
-        content += final_instruction
-        active_messages.append(HumanMessage(content=content))
+        active_messages.append(HumanMessage(content=user_message))
+        # 强制用 SystemMessage 隔离注入的上下文和格式约束，防止被稀释
+        active_messages.append(SystemMessage(content=tail_block + final_instruction))
 
     return active_messages
 
