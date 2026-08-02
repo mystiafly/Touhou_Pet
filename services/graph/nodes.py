@@ -451,6 +451,11 @@ def main_llm_node(state: AgentState) -> Dict[str, Any]:
     if reasoning:
         raw_reply = f"<think>\n{reasoning}\n</think>\n\n" + raw_reply
 
+    retry_count = state.get("retry_count") or 0
+    if not ("<think>" in raw_reply or "<character_thought>" in raw_reply):
+        if retry_count >= 5:
+            raw_reply = "<character_thought>\n大模型连续5次拒绝输出思维链，已被系统强制拦截。\n</character_thought>\n[crying][0](大模型连续5次格式异常，消息已被大贤者系统安全拦截。)"
+
     emotion, score, clean_content = parse_reply(raw_reply)
     
     return {

@@ -76,7 +76,7 @@ def check_thought_chain(state: AgentState) -> str:
     # 兼容两种格式的思维链标签
     has_thought = "<think>" in reply or "<character_thought>" in reply
     
-    if not has_thought and retry_count < 2:
+    if not has_thought and retry_count < 5:
         return "retry"
     return "end"
 
