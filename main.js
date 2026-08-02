@@ -205,7 +205,8 @@ function createWindow() {
         frame: false,       // 閺冪姾绔熷?
         transparent: true,  // 闁繑妲戦懗灞炬珯
         alwaysOnTop: true,  // 婵绮撶純顕€銆?
-        skipTaskbar: false, // 閺勵垰鎯侀崷銊ゆ崲閸斺剝鐖弰鍓с仛閿涘澅rue閸掓瑩娈ｉ挊蹇ョ礆
+        skipTaskbar: true,  // true 以防止在任务栏显示，并配合 toolbar 抵抗 Win+D (显示桌面)
+        type: 'toolbar',    // 设置为 toolbar 级别，避免被系统级“显示桌面”最小化
         resizable: false,   // 缁備焦顒涢弨鐟板綁婢堆冪毈
         webPreferences: {
             nodeIntegration: true,
