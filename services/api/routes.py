@@ -165,12 +165,12 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
             "launcher_result": None,
             "search_task": None,
             "search_result": None,
-            "rename_task_user": None,
             "rename_task_pet": None,
             "rename_result": None,
             "vision_task": None,
             "vision_result": None,
-            "request_type": "chat"
+            "request_type": "chat",
+            "retry_count": 0
         }
 
         # 调用 LangGraph 对话工作流 (ReAct 闭环)，附带持久化 thread_id

@@ -529,7 +529,14 @@ def update_history_node(state: AgentState) -> Dict[str, Any]:
         if last_msg.get("role") == "assistant" and last_msg.get("is_self_talk") is True:
             new_history.pop()
 
-    new_history.append({"role": "assistant", "content": raw_reply, "is_self_talk": is_self})
+    # 过滤大模型崩溃的报错消息，防止其污染对话上下文
+    if "大模型连续5次拒绝输出思维链，已被系统强制拦截" in raw_reply:
+        # 如果大模型拦截报错了，我们将刚才追加的用户发言一并弹出（相当于本次对话在记忆里回档作废）
+        if not is_self and len(new_history) > 0 and new_history[-1]["role"] == "user":
+            new_history.pop()
+    else:
+        new_history.append({"role": "assistant", "content": raw_reply, "is_self_talk": is_self})
+        
     new_history = trim_history(new_history)
     save_history(new_history)
     
