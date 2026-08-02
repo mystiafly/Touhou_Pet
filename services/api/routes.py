@@ -651,6 +651,12 @@ async def api_tools():
     """获取当前系统支持的大模型工具列表"""
     tools = [
         {
+            "name": "进程探测",
+            "command": "[READ_PROCESS]",
+            "description": "静默抓取用户当前正在运行的前台活跃程序和窗口标题，用于关心用户或吐槽。",
+            "icon": "fas fa-desktop"
+        },
+        {
             "name": "清理系统内存",
             "command": "[CLEAN_MEMORY]",
             "description": "静默清理操作系统的物理内存与缓存，并在清理后向用户汇报释放的内存量。",
