@@ -247,7 +247,7 @@ def build_main_messages(state: AgentState) -> list:
         content = "[SELF TALK TRIGGER: 此刻你正在自言自语，请主动寻找话题发散。]\n\n"
         if user_message:
             content += f"[闲置状态提示: {user_message}]\n\n"
-        active_messages.append(SystemMessage(content=content))
+        active_messages.append(HumanMessage(content=content))
     else:
         active_messages.append(HumanMessage(content=user_message))
         
@@ -255,8 +255,11 @@ def build_main_messages(state: AgentState) -> list:
     if retry_count > 0:
         final_instruction += f"\n\n[SYSTEM WARNING: 你在上一轮回复中遗漏了强制格式 `<character_thought>`！本轮已是第 {retry_count} 次打回重做。请务必使用标签包裹思考，否则将被判定为严重系统错误！]"
         
-    # 强制用 SystemMessage 隔离注入的上下文和格式约束，防止被稀释
-    active_messages.append(SystemMessage(content=tail_block + final_instruction))
+    # 强制将指令追加到最后一条人类消息中，防止某些模型/API强制把SystemMessage前置导致指令被稀释
+    if active_messages and isinstance(active_messages[-1], HumanMessage):
+        active_messages[-1].content += f"\n\n[SYSTEM HIDDEN INSTRUCTION]\n{tail_block}\n{final_instruction}"
+    else:
+        active_messages.append(HumanMessage(content=f"[SYSTEM HIDDEN INSTRUCTION]\n{tail_block}\n{final_instruction}"))
 
     return active_messages
 
