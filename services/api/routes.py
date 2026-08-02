@@ -1241,7 +1241,7 @@ def exit_game():
 @router.get("/api/settings/preview_prompt")
 def preview_prompt():
     """模拟运行一次查询，并返回即将送给大模型的上下文 Prompt (Dry Run)"""
-    from graph.nodes import recall_memories_node, load_presets_node, build_pre_messages, build_main_messages, build_post_messages
+    from graph.nodes import recall_memories_node, build_pre_messages, build_main_messages, build_post_messages
     
     test_message = "你好"
     
@@ -1279,9 +1279,7 @@ def preview_prompt():
     mem_result = recall_memories_node(state)
     state.update(mem_result)
     
-    # 执行预设加载
-    preset_result = load_presets_node(state)
-    state.update(preset_result)
+    # (预设加载现在已合并至 build_main_messages 内部调用)
     
     def format_msgs(active_messages):
         result_data = []
