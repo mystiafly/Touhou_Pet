@@ -42,6 +42,19 @@ exit /b 1
 echo == Step 1/2 == Checking and installing dependencies...
 %PYTHON_EXE% -m pip install -r requirements.txt --timeout 1000 -i https://pypi.tuna.tsinghua.edu.cn/simple
 if errorlevel 1 goto PIP_ERROR
+
+echo [SYSTEM] Checking spacy models...
+%PYTHON_EXE% -c "import zh_core_web_sm" >nul 2>&1
+if errorlevel 1 (
+    echo [SYSTEM] Downloading zh_core_web_sm (this only happens once)...
+    %PYTHON_EXE% -m pip install https://ghfast.top/https://github.com/explosion/spacy-models/releases/download/zh_core_web_sm-3.8.0/zh_core_web_sm-3.8.0-py3-none-any.whl
+)
+%PYTHON_EXE% -c "import en_core_web_sm" >nul 2>&1
+if errorlevel 1 (
+    echo [SYSTEM] Downloading en_core_web_sm (this only happens once)...
+    %PYTHON_EXE% -m pip install https://ghfast.top/https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
+)
+
 goto START_BACKEND
 
 :PIP_ERROR

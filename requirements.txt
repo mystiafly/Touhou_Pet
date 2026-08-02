@@ -21,7 +21,6 @@ confection==1.3.3
 cymem==2.0.13
 distro==1.9.0
 duckduckgo_search==8.1.1
-en_core_web_sm @ https://ghfast.top/https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
 fastapi==0.138.1
 fastembed==0.8.0
 filelock==3.29.0
@@ -158,6 +157,5 @@ win32_setctime==1.2.0
 wrapt==2.2.1
 xxhash==3.8.0
 yarl==1.24.2
-zh_core_web_sm @ https://ghfast.top/https://github.com/explosion/spacy-models/releases/download/zh_core_web_sm-3.8.0/zh_core_web_sm-3.8.0-py3-none-any.whl
 zstandard==0.25.0
 psutil==7.2.2
