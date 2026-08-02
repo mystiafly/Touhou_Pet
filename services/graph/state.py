@@ -25,6 +25,12 @@ class AgentState(TypedDict):
     launcher_result: Optional[str]
     search_task: Optional[str]
     search_result: Optional[str]
+
+    # 读进程工具
+    process_task: Optional[bool]
+    process_result: Optional[str]
+
+    # 修改备注/名字工具
     rename_task_user: Optional[str]
     rename_task_pet: Optional[str]
     rename_result: Optional[str]

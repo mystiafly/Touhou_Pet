@@ -11,6 +11,7 @@ from graph.nodes import (
     main_llm_node,
     should_execute_tools,
     execute_clean_memory_task_node,
+    execute_process_task_node,
     prepare_retry_node
 )
 from tools.tool_executor import (
@@ -34,6 +35,7 @@ workflow.add_node("execute_search_task", execute_search_task_node)
 workflow.add_node("execute_rename_task", execute_rename_task_node)
 workflow.add_node("execute_vision_task", execute_vision_task_node)
 workflow.add_node("execute_clean_memory_task", execute_clean_memory_task_node)
+workflow.add_node("execute_process_task", execute_process_task_node)
 workflow.add_node("collect_tool_feedback", collect_tool_feedback_node)
 workflow.add_node("main_llm", main_llm_node)
 workflow.add_node("prepare_retry", prepare_retry_node)
@@ -54,6 +56,7 @@ workflow.add_conditional_edges(
         "execute_rename_task": "execute_rename_task",
         "execute_vision_task": "execute_vision_task",
         "execute_clean_memory_task": "execute_clean_memory_task",
+        "execute_process_task": "execute_process_task",
         "collect_tool_feedback": "collect_tool_feedback"
     }
 )
@@ -66,6 +69,7 @@ workflow.add_edge("execute_launcher_task", "collect_tool_feedback")
 workflow.add_edge("execute_search_task", "collect_tool_feedback")
 workflow.add_edge("execute_vision_task", "collect_tool_feedback")
 workflow.add_edge("execute_clean_memory_task", "collect_tool_feedback")
+workflow.add_edge("execute_process_task", "collect_tool_feedback")
 
 workflow.add_edge("collect_tool_feedback", "main_llm")
 

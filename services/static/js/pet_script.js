@@ -1322,6 +1322,36 @@ class DesktopPet {
                 }
             });
         }
+        
+        if(document.getElementById('tool-read-process')) {
+            document.getElementById('tool-read-process').addEventListener('click', async (e) => {
+                e.stopPropagation();
+                this.toolsPopup.classList.add('hidden');
+                
+                this.showBubble("正在探查后台进程...", -1);
+                try {
+                    const response = await fetch('/api/pet_speak', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ type: 'read_process' })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        this.showBubble(data.reply);
+                        this.setEmotion(data.emotion);
+                        if (data.favorability !== undefined) {
+                            this.favScore.innerText = data.favorability;
+                        }
+                    } else {
+                        this.showBubble("进程读取失败了捏...");
+                        setTimeout(() => this.showBubble(""), 3000);
+                    }
+                } catch (err) {
+                    console.error(err);
+                    this.showBubble("调用进程工具出错了...");
+                }
+            });
+        }
 
         // 点击具体预制发言选项，自动填入输入框并触发发送
         const items = this.presetsPopup.querySelectorAll('.preset-item');

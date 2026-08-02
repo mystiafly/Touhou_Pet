@@ -830,6 +830,10 @@ def pet_speak(payload: dict = Body(...), background_tasks: BackgroundTasks = Bac
     elif request_type == 'clean_memory':
         clean_msg = payload.get('message', '已执行内存清理并释放了系统缓存。')
         prompt_content = f"[SELF TALK TRIGGER: 此刻你正在自言自语...]\n（你刚刚施展魔法帮助用户清理了电脑内存并加速了系统。以下是具体清理成果：\n{clean_msg}\n请你向用户汇报这个好消息，把具体数值带上，并邀功求夸奖。）"
+    elif request_type == 'read_process':
+        from core.system_inspector import get_active_programs
+        bg_programs = get_active_programs()
+        prompt_content = f"[SELF TALK TRIGGER: 此刻你正在自言自语...]\n（你突然想看看用户在忙什么，经过后台探查，{bg_programs}\n请你结合这些信息主动向用户搭话，关心一下用户的进度，或者傲娇地吐槽一下他一直盯着这些东西看都不理你。）"
     else:
         if count < 3:
             prompt_content = short_idle

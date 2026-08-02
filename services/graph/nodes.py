@@ -74,6 +74,7 @@ def build_pre_messages(state: AgentState) -> list:
         "6. 更改称呼: 如果用户要求改变你对他的称呼，输出 `[UPDATE_USER_NAME: 新称呼]`。\n"
         "7. 更改自己的名字: 如果用户要求你改名，输出 `[UPDATE_PET_NAME: 新名字]`。\n"
         "8. 视觉识图: 如果用户要求你看看屏幕上有什么，或者让你识图，输出 `[ANALYZE_SCREEN]`。\n"
+        "9. 进程探测: 如果用户问你在忙什么、玩什么游戏，或者让你看看他电脑里开着什么软件，输出 `[READ_PROCESS]`。\n"
         "10. 长期记忆检索: 如果检测到下面的【相关记忆检索结果】中的内容与当前用户的话题有实质性关联（例如提及了过去的某件事、某个约定或情感），你必须输出对应的 `[SELECT_MEMORY: ID]` 来在后续环节调取完整日记。\n\n"
         "【规则】\n"
         "1. 如果检测到工具意图，请仅输出上述的一个或多个标签，不需要任何多余解释！绝对禁止进行角色扮演！\n"
@@ -203,10 +204,12 @@ def build_main_messages(state: AgentState) -> list:
             diff_seconds = time.time() - float(last_user_time)
             if diff_seconds > 30 * 60:
                 diff_minutes = int(diff_seconds // 60)
+                from core.system_inspector import get_active_programs
+                bg_programs = get_active_programs()
                 if diff_minutes >= 60:
-                    time_gap_str = f"\n- ⚠️ 注意：用户隔了 {diff_minutes // 60} 小时 {diff_minutes % 60} 分钟 后才再次和你说话！"
+                    time_gap_str = f"\n- ⚠️ 注意：用户隔了 {diff_minutes // 60} 小时 {diff_minutes % 60} 分钟 后才再次和你说话！\n{bg_programs}"
                 else:
-                    time_gap_str = f"\n- ⚠️ 注意：用户隔了 {diff_minutes} 分钟 后才再次和你说话！"
+                    time_gap_str = f"\n- ⚠️ 注意：用户隔了 {diff_minutes} 分钟 后才再次和你说话！\n{bg_programs}"
 
     state_str = (
         f"[SYSTEM INJECTION: 当前状态]\n"
@@ -373,6 +376,10 @@ def parse_pre_response_node(state: AgentState) -> Dict[str, Any]:
     clean_memory_match = re.search(r'\[CLEAN_MEMORY\]', raw_reply, re.IGNORECASE)
     if clean_memory_match: clean_memory_task = True
         
+    process_task = None
+    process_match = re.search(r'\[READ_PROCESS\]', raw_reply, re.IGNORECASE)
+    if process_match: process_task = True
+
     selected_memory = ""
     memory_match = re.search(r'\[SELECT_MEMORY:\s*(.*?)\]', raw_reply, re.IGNORECASE)
     if memory_match: 
@@ -405,6 +412,7 @@ def parse_pre_response_node(state: AgentState) -> Dict[str, Any]:
         "rename_task_pet": rename_task_pet,
         "vision_task": vision_task,
         "clean_memory_task": clean_memory_task,
+        "process_task": process_task,
         "selected_memory": selected_memory
     }
 
@@ -432,6 +440,9 @@ def collect_tool_feedback_node(state: AgentState) -> Dict[str, Any]:
     if state.get("vision_result"):
         tool_feedback.append(f"【系统反馈-屏幕画面解析】\n{state.get('vision_result')}")
         
+    if state.get("process_result"):
+        tool_feedback.append(f"【系统反馈-前台进程探测】\n{state.get('process_result')}")
+        
     if state.get("clean_memory_result"):
         res = state.get("clean_memory_result")
         if res.get("success"):
@@ -441,6 +452,11 @@ def collect_tool_feedback_node(state: AgentState) -> Dict[str, Any]:
 
     feedback_str = "\n".join(tool_feedback)
     return {"tool_feedback_context": feedback_str}
+
+def execute_process_task_node(state: AgentState) -> Dict[str, Any]:
+    from core.system_inspector import get_active_programs
+    result = get_active_programs()
+    return {"process_result": result}
 
 def main_llm_node(state: AgentState) -> Dict[str, Any]:
     active_messages = build_main_messages(state)
@@ -558,6 +574,8 @@ def should_execute_tools(state: AgentState) -> str:
         return "execute_launcher_task"
     if state.get("vision_task") and state.get("vision_result") is None:
         return "execute_vision_task"
+    if state.get("process_task") and state.get("process_result") is None:
+        return "execute_process_task"
     if state.get("clean_memory_task") and state.get("clean_memory_result") is None:
         return "execute_clean_memory_task"
     return "collect_tool_feedback"
