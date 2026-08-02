@@ -325,7 +325,13 @@ def pre_llm_node(state: AgentState) -> Dict[str, Any]:
         return {"pre_llm_reply": "[NO_TOOLS_NEEDED]"}
     
     response = call_model_with_fallback(active_messages, provider_override=get_config().get("pre_api_provider", "inherit"), node_name="PRE-LLM")
-    return {"pre_llm_reply": response.content}
+    
+    raw_reply = response.content
+    reasoning = response.additional_kwargs.get("reasoning_content", "")
+    if reasoning:
+        raw_reply = f"<think>\n{reasoning}\n</think>\n\n" + raw_reply
+
+    return {"pre_llm_reply": raw_reply}
 
 def parse_pre_response_node(state: AgentState) -> Dict[str, Any]:
     raw_reply = state.get("pre_llm_reply", "")
@@ -437,6 +443,12 @@ def main_llm_node(state: AgentState) -> Dict[str, Any]:
     response = call_model_with_fallback(active_messages, provider_override=get_config().get("api_provider", "inherit"), node_name="MAIN-LLM")
     
     raw_reply = response.content
+    
+    # 兼容 DeepSeek 深度思考等模型的 reasoning_content
+    reasoning = response.additional_kwargs.get("reasoning_content", "")
+    if reasoning:
+        raw_reply = f"<think>\n{reasoning}\n</think>\n\n" + raw_reply
+
     emotion, score, clean_content = parse_reply(raw_reply)
     
     return {
@@ -473,9 +485,13 @@ def post_llm_node(state: AgentState) -> Dict[str, Any]:
         
     active_messages = messages
     response = call_model_with_fallback(active_messages, provider_override=get_config().get("post_api_provider", "inherit"), node_name="POST-LLM")
-    raw_reply = response.content
     
-    # 解析并执行 DataBank 修改指令
+    raw_reply = response.content
+    reasoning = response.additional_kwargs.get("reasoning_content", "")
+    if reasoning:
+        raw_reply = f"<think>\n{reasoning}\n</think>\n\n" + raw_reply
+        
+    # Execute any DB commands
     parse_and_execute_databank_commands(raw_reply)
     
     return {"post_llm_reply": raw_reply}
