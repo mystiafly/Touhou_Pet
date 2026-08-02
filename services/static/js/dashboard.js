@@ -2920,6 +2920,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    let hasLoadedSprites = false;
     async function loadSpriteSets() {
         try {
             const res = await fetch('/api/sprites/list');
@@ -2927,9 +2928,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success) {
                 const currentSelection = setSelect.value;
                 renderSpriteSelect(data.sets, data.active_set);
-                if (currentSelection && Object.keys(data.sets).includes(currentSelection)) {
+                if (hasLoadedSprites && currentSelection && Object.keys(data.sets).includes(currentSelection)) {
                     setSelect.value = currentSelection;
                 }
+                hasLoadedSprites = true;
                 renderSpriteGrid(data.sets, setSelect.value);
             }
         } catch (e) {
