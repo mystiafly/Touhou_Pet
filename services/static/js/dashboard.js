@@ -3400,7 +3400,7 @@ function renderDashboardStats(stats) {
             labels: charLabels,
             datasets: [{
                 data: charData,
-                backgroundColor: ['#ff79c6', '#8be9fd', '#50fa7b', '#ffb86c', '#bd93f9', '#ff5555'],
+                backgroundColor: charLabels.map((k, i) => (stats.character_colors && stats.character_colors[k]) ? stats.character_colors[k] : ['#ff79c6', '#8be9fd', '#50fa7b', '#ffb86c', '#bd93f9', '#ff5555'][i % 6]),
                 borderWidth: 0,
                 hoverOffset: 10
             }]

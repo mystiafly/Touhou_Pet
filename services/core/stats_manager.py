@@ -138,6 +138,23 @@ class StatsManager:
                     "close_time": datetime.fromtimestamp(end_ts).strftime("%H:%M:%S")
                 })
                 
+            # 4. Character Colors
+            import json
+            stats["character_colors"] = {}
+            chars_dir = os.path.join(os.path.dirname(DB_PATH), "..", "services", "characters")
+            if os.path.exists(chars_dir):
+                for item in os.listdir(chars_dir):
+                    config_path = os.path.join(chars_dir, item, "config.json")
+                    if os.path.exists(config_path):
+                        try:
+                            with open(config_path, 'r', encoding='utf-8') as f:
+                                conf = json.load(f)
+                                theme = conf.get("theme_color")
+                                if theme:
+                                    stats["character_colors"][item] = theme
+                        except Exception:
+                            pass
+                            
         return stats
 
 stats_manager = StatsManager()
