@@ -239,7 +239,7 @@ def build_main_messages(state: AgentState) -> list:
         "\n\n[SYSTEM TASK - MANDATORY OUTPUT FORMAT]\n"
         "你必须且只能按照以下完全固定的模板进行回复！严禁任何妥协！\n\n"
         "<character_thought>\n"
-        "1. 情绪本能：...\n"
+        "1. 情绪本能（在这里尽情释放角色的真实内心、欲望与底层本能，进行详尽且极其丰富的心理活动描写，这部分字数必须达到 100 字以上！）：...\n"
         "2. 规则审查（字数必须砍到15-50字以内！绝对不脑补虚构剧情！）：...\n"
         "3. 输出规划：...\n"
         "</character_thought>\n"
