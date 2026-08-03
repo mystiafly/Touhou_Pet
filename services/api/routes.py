@@ -1877,3 +1877,24 @@ def api_clean_memory():
     from core.optimizer_manager import clean_memory
     result = clean_memory()
     return JSONResponse(result)
+
+
+
+@router.post("/api/stats/ping")
+def api_stats_ping():
+    """接收前端心跳，更新桌宠活跃时长"""
+    try:
+        char_id = get_active_character_id()
+        stats_manager.ping(char_id)
+        return JSONResponse({"status": "success"})
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+@router.get("/api/stats/dashboard")
+def api_stats_dashboard():
+    """获取仪表盘统计数据"""
+    try:
+        data = stats_manager.get_dashboard_stats()
+        return JSONResponse({"status": "success", "data": data})
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
