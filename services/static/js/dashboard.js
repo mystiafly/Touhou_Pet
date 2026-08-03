@@ -848,6 +848,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const charId = document.getElementById('pro-char-id').value.trim();
             const charName = document.getElementById('pro-char-name').value.trim();
             const personaPrompt = document.getElementById('pro-persona-prompt').value.trim();
+            const basePrompt = document.getElementById('pro-base-prompt') ? document.getElementById('pro-base-prompt').value.trim() : "";
+            const dynamicTail = document.getElementById('pro-dynamic-tail') ? document.getElementById('pro-dynamic-tail').value.trim() : "";
             const themeColor = document.getElementById('pro-theme-color').value.trim();
             const appLauncher = document.getElementById('pro-app-launcher').value.trim();
             const envPresets = document.getElementById('pro-env-presets').value.trim();
@@ -881,6 +883,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         character_id: charId,
                         character_name: charName,
                         persona_prompt: personaPrompt,
+                        base_prompt: basePrompt,
+                        dynamic_tail: dynamicTail,
                         theme_color: themeColor,
                         app_launcher: appLauncher,
                         env_presets: envPresets

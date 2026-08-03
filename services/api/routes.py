@@ -306,6 +306,8 @@ class CharacterGenRequest(BaseModel):
     character_id: str = ""
     character_name: str = ""
     persona_prompt: str = ""
+    base_prompt: str = ""
+    dynamic_tail: str = ""
     theme_color: str = ""
     app_launcher: str = ""
     env_presets: str = ""
@@ -373,6 +375,10 @@ async def api_characters_generate(req: CharacterGenRequest):
                     env_presets_data = json.loads(req.env_presets)
                 except Exception as e:
                     return JSONResponse({"status": "error", "message": f"环境触发词 JSON 格式错误: {e}"}, status_code=400)
+            
+            # 高手模式不提供这两个参数，所以填入默认值让用户稍后手动去文件夹修改
+            base_prompt = req.base_prompt if req.base_prompt else f"你是由大贤者系统孕育出的新灵魂：{char_name}。请根据你的核心设定({persona_prompt})，以第一人称扮演好这个角色与我对话。"
+            dynamic_tail = req.dynamic_tail if req.dynamic_tail else "当前时间: {time_of_day}\n环境天气: {weather}"
                     
         else:
             # 懒人模式：调用大模型
@@ -386,6 +392,8 @@ async def api_characters_generate(req: CharacterGenRequest):
 1. "character_id": 英文短小标识符（仅小写字母和下划线，如 "neko"、"alice"）
 2. "character_name": 角色的中文名
 3. "persona_prompt": 浓缩的系统核心人设（2-3句话，第一人称或客观陈述均可，如"你是东方Project中的xxx，一个喜欢...的妖怪..."）
+4. "base_prompt": 详尽的系统人设，也就是大语言模型系统的 System Prompt。详细描述世界观、性格、口癖。注意：内容必须使用纯文本，不可包含任何特殊代码块标记，且需要符合大模型设定指令的语境。
+5. "dynamic_tail": 动态尾部 Prompt 模板，包含类似 {time_of_day}, {weather} 的变量占位符。
 """
             llm = get_langchain_model()
             messages = [
@@ -409,6 +417,8 @@ async def api_characters_generate(req: CharacterGenRequest):
             char_id = data.get("character_id")
             char_name = data.get("character_name")
             persona_prompt = data.get("persona_prompt")
+            base_prompt = data.get("base_prompt", "请在此输入详细的系统人设。")
+            dynamic_tail = data.get("dynamic_tail", "当前时间: {time_of_day}\n环境天气: {weather}")
             theme_color = ""
             app_launcher_data = {
                 "记事本": "C:\\Windows\\System32\\notepad.exe",
@@ -426,7 +436,23 @@ async def api_characters_generate(req: CharacterGenRequest):
         os.makedirs(char_dir, exist_ok=True)
         os.makedirs(img_dir, exist_ok=True)
         os.makedirs(presets_dir, exist_ok=True)
+        # Copy default images from rumia to avoid frontend crashes
+        rumia_img_dir = os.path.join(SERVICES_DIR, "static", "images", "rumia")
+        if os.path.exists(rumia_img_dir):
+            import shutil
+            for filename in os.listdir(rumia_img_dir):
+                if filename.endswith(".png"):
+                    shutil.copy2(
+                        os.path.join(rumia_img_dir, filename),
+                        os.path.join(img_dir, filename)
+                    )
         
+        # Write additional text files
+        with open(os.path.join(char_dir, "base_prompt.txt"), "w", encoding="utf-8") as f:
+            f.write(base_prompt)
+        with open(os.path.join(char_dir, "dynamic_tail.txt"), "w", encoding="utf-8") as f:
+            f.write(dynamic_tail)
+            
         # 写入 config.json
         config_data = {
             "api_provider": "deepseek-v4-pro",
@@ -444,6 +470,19 @@ async def api_characters_generate(req: CharacterGenRequest):
         if env_presets_data:
             with open(os.path.join(presets_dir, "env_presets.json"), "w", encoding="utf-8") as f:
                 json.dump(env_presets_data, f, ensure_ascii=False, indent=2)
+                
+        # 写入默认的 presets.json
+        default_dialogue_presets = {
+            "eating": [f"(*正在开心地吃着东西*)", "好美味..."],
+            "sleeping": ["Zzz...", "唔...再睡五分钟..."],
+            "waking_up": ["哈啊...早安...", "好困..."],
+            "idle": ["发呆中...", "有点无聊呢..."],
+            "angry": ["哼！", "别理我！"],
+            "working": ["认真工作中...", "别打扰我！"],
+            "gaming": ["冲啊！", "赢了！"]
+        }
+        with open(os.path.join(presets_dir, "presets.json"), "w", encoding="utf-8") as f:
+            json.dump({"dialogue_presets": default_dialogue_presets}, f, ensure_ascii=False, indent=2)
             
         return JSONResponse({
             "status": "success", 
