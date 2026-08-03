@@ -3343,3 +3343,148 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
+
+// ==================== DASHBOARD STATS LOGIC ====================
+let chartsInstances = {};
+
+async function loadDashboardStats() {
+    try {
+        const res = await fetch('/api/stats/dashboard');
+        const data = await res.json();
+        if (data.status === 'success') {
+            renderDashboardStats(data.data);
+        }
+    } catch (e) {
+        console.error("Failed to load dashboard stats", e);
+    }
+}
+
+function renderDashboardStats(stats) {
+    // 1. Total Time
+    const totalMin = Math.floor(stats.total_time / 60);
+    const hours = Math.floor(totalMin / 60);
+    const mins = totalMin % 60;
+    document.getElementById('stats-total-time').textContent = `${hours}h ${mins}m`;
+
+    // Shared Chart Options
+    const commonOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { labels: { color: '#f8f8f2', font: { family: 'monospace' } } },
+            tooltip: { backgroundColor: 'rgba(40,42,54,0.9)', titleColor: '#ff79c6', bodyColor: '#8be9fd' }
+        },
+        scales: {
+            x: { ticks: { color: '#6272a4' }, grid: { color: 'rgba(98, 114, 164, 0.2)' } },
+            y: { ticks: { color: '#6272a4' }, grid: { color: 'rgba(98, 114, 164, 0.2)' } }
+        }
+    };
+    const pieOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'right', labels: { color: '#f8f8f2' } },
+            tooltip: { backgroundColor: 'rgba(40,42,54,0.9)', titleColor: '#ff79c6', bodyColor: '#8be9fd' }
+        }
+    };
+
+    // 2. Character Time Pie Chart
+    const charLabels = Object.keys(stats.character_time);
+    const charData = charLabels.map(k => Math.round(stats.character_time[k] / 60));
+    
+    if (chartsInstances.charPie) chartsInstances.charPie.destroy();
+    const ctxPie = document.getElementById('chart-character-time').getContext('2d');
+    chartsInstances.charPie = new Chart(ctxPie, {
+        type: 'doughnut',
+        data: {
+            labels: charLabels,
+            datasets: [{
+                data: charData,
+                backgroundColor: ['#ff79c6', '#8be9fd', '#50fa7b', '#ffb86c', '#bd93f9', '#ff5555'],
+                borderWidth: 0,
+                hoverOffset: 10
+            }]
+        },
+        options: pieOptions
+    });
+
+    // 3. Weekly Usage Bar Chart
+    if (chartsInstances.weeklyBar) chartsInstances.weeklyBar.destroy();
+    const ctxBar = document.getElementById('chart-weekly-usage').getContext('2d');
+    chartsInstances.weeklyBar = new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+            labels: stats.weekly_usage.labels,
+            datasets: [{
+                label: '活跃时长 (分钟)',
+                data: stats.weekly_usage.data,
+                backgroundColor: 'rgba(139, 233, 253, 0.6)',
+                borderColor: '#8be9fd',
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: commonOptions
+    });
+
+    // 4. Daily Dialogs Line Chart
+    if (chartsInstances.dialogsLine) chartsInstances.dialogsLine.destroy();
+    const ctxLine = document.getElementById('chart-daily-dialogs').getContext('2d');
+    chartsInstances.dialogsLine = new Chart(ctxLine, {
+        type: 'line',
+        data: {
+            labels: stats.daily_dialogs.labels,
+            datasets: [{
+                label: '对话次数',
+                data: stats.daily_dialogs.data,
+                backgroundColor: 'rgba(255, 121, 198, 0.2)',
+                borderColor: '#ff79c6',
+                borderWidth: 2,
+                tension: 0.3,
+                fill: true,
+                pointBackgroundColor: '#ffb86c'
+            }]
+        },
+        options: commonOptions
+    });
+
+    // 5. Activity Table
+    const tbody = document.getElementById('stats-activity-table').querySelector('tbody');
+    tbody.innerHTML = '';
+    stats.recent_activity.forEach(act => {
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+        
+        const td1 = document.createElement('td');
+        td1.textContent = act.date;
+        td1.style.padding = '10px';
+        td1.style.color = '#bd93f9';
+        
+        const td2 = document.createElement('td');
+        td2.textContent = act.open_time;
+        td2.style.padding = '10px';
+        td2.style.color = '#50fa7b';
+        
+        const td3 = document.createElement('td');
+        td3.textContent = act.close_time;
+        td3.style.padding = '10px';
+        td3.style.color = '#ff5555';
+        
+        tr.appendChild(td1);
+        tr.appendChild(td2);
+        tr.appendChild(td3);
+        tbody.appendChild(tr);
+    });
+}
+
+// Hook into nav logic
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            const target = item.getAttribute('data-target');
+            if (target === 'dashboard-stats-view') {
+                loadDashboardStats();
+            }
+        });
+    });
+});

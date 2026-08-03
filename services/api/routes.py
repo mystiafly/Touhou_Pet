@@ -18,6 +18,7 @@ from tools.presets_manager import get_self_talk_presets_file
 from external_api import netease_music
 from time_system import get_time_greeting_prompt
 from core.databank_manager import load_databank, save_databank_state_sheet, save_databank_template_raw, get_databank_paths
+from core.stats_manager import stats_manager
 
 router = APIRouter()
 SERVICES_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -143,6 +144,9 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
         return JSONResponse({"error": "消息不能为空"}, status_code=400)
 
     messages = load_history()
+    
+    # 记录对话热度
+    stats_manager.log_dialog(get_active_character_id())
 
     try:
         # 组装初始状态

@@ -1584,4 +1584,9 @@ class DesktopPet {
 
 document.addEventListener('DOMContentLoaded', () => {
     new DesktopPet();
+    
+    // 心跳上报：每 60 秒上报一次存活，用来统计用户使用时长
+    setInterval(() => {
+        fetch('/api/stats/ping', { method: 'POST' }).catch(e => console.error("Ping error:", e));
+    }, 60000);
 });
