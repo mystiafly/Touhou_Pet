@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import random
 from core.config_manager import get_file_path
 
 def get_databank_paths():
@@ -190,6 +191,20 @@ def get_active_tables(user_message, current_pool=""):
                         break
                         
         if is_active and active_rows:
+            inject_limit = export_config.get("injectLimit", 10)
+            inject_strategy = export_config.get("injectStrategy", "recent")
+            
+            headers = active_rows[0]
+            data_rows = active_rows[1:]
+            
+            if len(data_rows) > inject_limit:
+                if inject_strategy == "random":
+                    data_rows = random.sample(data_rows, inject_limit)
+                else: # "recent"
+                    data_rows = data_rows[-inject_limit:]
+            
+            active_rows = [headers] + data_rows
+
             # 将二维数组转为 Markdown Table
             md_table = f"### DataBank Table: {sheet.get('name')}\n"
             md_table += "|" + "|".join([str(x).replace('|', '\\|') for x in active_rows[0]]) + "|\n"

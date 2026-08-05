@@ -898,6 +898,17 @@
                                     <label class="form-label">触发词 (多词逗号分隔)</label>
                                     <input type="text" id="tpl-fld-keywords" class="modern-input" placeholder="例如: 灵梦,神社">
                                 </div>
+                                <div>
+                                    <label class="form-label">最大注入条数</label>
+                                    <input type="number" id="tpl-fld-injectlimit" class="modern-input" min="1" value="10" placeholder="默认 10">
+                                </div>
+                                <div>
+                                    <label class="form-label">超出时选取策略</label>
+                                    <select id="tpl-fld-injectstrategy" class="modern-input">
+                                        <option value="recent">最新记录优先</option>
+                                        <option value="random">随机抽取</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                         

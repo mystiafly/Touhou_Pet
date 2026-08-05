@@ -1987,6 +1987,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!sheet.exportConfig) sheet.exportConfig = {};
         sheet.exportConfig.entryType = document.getElementById('tpl-fld-entrytype').value;
         sheet.exportConfig.keywords = document.getElementById('tpl-fld-keywords').value.trim();
+        sheet.exportConfig.injectLimit = parseInt(document.getElementById('tpl-fld-injectlimit').value) || 10;
+        sheet.exportConfig.injectStrategy = document.getElementById('tpl-fld-injectstrategy').value || 'recent';
         
         if(!sheet.sourceData) sheet.sourceData = {};
         sheet.sourceData.note = document.getElementById('tpl-fld-note').value;
@@ -2066,6 +2068,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('tpl-fld-name').value = sheet.name || '';
         document.getElementById('tpl-fld-entrytype').value = sheet.exportConfig?.entryType || 'constant';
         document.getElementById('tpl-fld-keywords').value = sheet.exportConfig?.keywords || '';
+        document.getElementById('tpl-fld-injectlimit').value = sheet.exportConfig?.injectLimit || 10;
+        document.getElementById('tpl-fld-injectstrategy').value = sheet.exportConfig?.injectStrategy || 'recent';
         
         // 填充提示词
         document.getElementById('tpl-fld-note').value = sheet.sourceData?.note || '';
@@ -2162,7 +2166,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentTemplateRaw[newKey] = {
                 "uid": newKey,
                 "name": "新建数据表",
-                "exportConfig": { "entryType": "constant", "keywords": "" },
+                "exportConfig": { "entryType": "constant", "keywords": "", "injectLimit": 10, "injectStrategy": "recent" },
                 "sourceData": { "note": "", "updateNode": "", "insertNode": "", "deleteNode": "" },
                 "content": [ ["row_id", "新列1"] ],
                 "updateConfig": { "batchSize": 4, "contextDepth": 4, "skipFloors": -1, "uiSentinel": -1, "updateFrequency": -1 },
