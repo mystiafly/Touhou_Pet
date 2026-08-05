@@ -191,7 +191,10 @@ def get_active_tables(user_message, current_pool=""):
                         break
                         
         if is_active and active_rows:
-            inject_limit = export_config.get("injectLimit", 10)
+            try:
+                inject_limit = int(export_config.get("injectLimit", 10))
+            except (ValueError, TypeError):
+                inject_limit = 10
             inject_strategy = export_config.get("injectStrategy", "recent")
             
             headers = active_rows[0]
