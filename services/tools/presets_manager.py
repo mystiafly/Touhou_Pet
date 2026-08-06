@@ -104,17 +104,18 @@ def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
     block_english = config.get("preset_block_english", False)
     
     candidates = []
+    presets = []
     custom_presets_file = get_custom_presets_file()
-    if not os.path.exists(custom_presets_file):
-        return ""
-    try:
-        with open(custom_presets_file, 'r', encoding='utf-8') as f:
-            presets = json.load(f)
-    except Exception as e:
-        print(f"[PRESETS ERROR] 读取预设文件失败: {e}")
-        return ""
-    if not isinstance(presets, list):
-        return ""
+    if os.path.exists(custom_presets_file):
+        try:
+            with open(custom_presets_file, 'r', encoding='utf-8') as f:
+                content = f.read().strip()
+                if content:
+                    loaded = json.loads(content)
+                    if isinstance(loaded, list):
+                        presets = loaded
+        except Exception as e:
+            print(f"[PRESETS ERROR] 读取自定义预设文件失败，将跳过自定义预设: {e}")
 
     global_presets_file = os.path.join(SERVICES_DIR, "global_presets", "global_presets.json")
     if os.path.exists(global_presets_file):
