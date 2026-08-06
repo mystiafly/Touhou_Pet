@@ -1,6 +1,10 @@
 import subprocess
 import os
 import sys
+
+# 默认设置 HuggingFace 镜像，防止国内下载模型超时失败
+os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+
 import time
 import signal
 import urllib.request

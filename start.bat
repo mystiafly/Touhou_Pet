@@ -1,5 +1,6 @@
 @echo off
 chcp 65001 >nul
+set HF_ENDPOINT=https://hf-mirror.com
 cd /d "%~dp0"
 
 echo [SYSTEM] Clearing orphaned ghost windows and port 5000...

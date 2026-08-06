@@ -29,9 +29,10 @@ log_dir = os.path.join(appdata_dir, "RumiaPet", "data")
 os.makedirs(log_dir, exist_ok=True)
 log_file = os.path.join(log_dir, "backend_error.log")
 
-if sys.stdout is None or not hasattr(sys.stdout, 'isatty') or not sys.stdout.isatty():
-    sys.stdout = LoggerWriter(log_file)
-    sys.stderr = sys.stdout
+if 'pytest' not in sys.modules:
+    if sys.stdout is None or not hasattr(sys.stdout, 'isatty') or not sys.stdout.isatty():
+        sys.stdout = LoggerWriter(log_file)
+        sys.stderr = sys.stdout
 
 # 重新配置 stdout/stderr 编码为 utf-8，防止 Windows 环境下打印 Emoji ⚠️ 触发 UnicodeEncodeError
 if hasattr(sys.stdout, 'reconfigure'):
