@@ -27,3 +27,9 @@ Whenever you need to delete user files or directories, you MUST use a method tha
 ## Personal Data Protection Policy
 
 **CRITICAL RULE:** Under no circumstances are you allowed to delete the user's personal information or local configuration files (like keys, histories, configs). Furthermore, you must NEVER track, stage, or commit these personal files into Git, ensuring they are NEVER pushed to a remote repository.
+
+
+## Git Commit Signature
+Always append the following lines to your commit messages to use the Git Co-authored-by feature:
+
+Co-authored-by: Antigravity <antigravity-bot@users.noreply.github.com>
