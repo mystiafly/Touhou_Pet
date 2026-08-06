@@ -123,6 +123,23 @@ def get_memory_agent():
                         "model": "sentence-transformers/all-MiniLM-L6-v2"
                     }
                 }
+            else:
+                # 如果用户使用完全自定义的API且没有设置以上两种key，兜底提供一个免费的本地向量引擎
+                mem0_config["embedder"] = {
+                    "provider": "huggingface",
+                    "config": {
+                        "model": "sentence-transformers/all-MiniLM-L6-v2"
+                    }
+                }
+                # 自定义API下的 LLM 就让 mem0 报错或忽略，因为只有日记压缩需要 llm
+                if os.getenv("OPENAI_API_KEY"):
+                    mem0_config["llm"] = {
+                        "provider": "openai",
+                        "config": {
+                            "api_key": os.getenv("OPENAI_API_KEY"),
+                            "model": config_data.get("model_name", "gpt-3.5-turbo")
+                        }
+                    }
                 
         # 自动检查并清理维度冲突的本地 Qdrant 集合 (避免 shapes not aligned 启动错误)
         qdrant_path = os.path.join(get_character_dir(), "qdrant_db")
