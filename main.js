@@ -56,8 +56,14 @@ ipcMain.on('window-drag', (event, { deltaX, deltaY }) => {
             win.petIsHidden = false; // 用户主动拖动时，解除隐藏状态
             win.webContents.send('pet-restore');
         }
-        const [x, y] = win.getPosition();
-        win.setPosition(Math.round(x + deltaX), Math.round(y + deltaY));
+        const bounds = win.getBounds();
+        // 强制锁定宽高，防止 Windows 下多屏幕/DPI 拖动导致的自动放大 Bug
+        win.setBounds({
+            x: Math.round(bounds.x + deltaX),
+            y: Math.round(bounds.y + deltaY),
+            width: 400,
+            height: 600
+        });
     }
 });
 
@@ -69,7 +75,12 @@ ipcMain.on('pet-click-restore', (event) => {
     if (!win) return;
     if (win.petIsHidden) {
         win.petIsHidden = false;
-        win.setPosition(win.petRestoreX, win.petRestoreY);
+        win.setBounds({
+            x: win.petRestoreX,
+            y: win.petRestoreY,
+            width: 400,
+            height: 600
+        });
         win.webContents.send('pet-restore');
     }
 });
@@ -94,27 +105,27 @@ ipcMain.on('window-drag-end', (event) => {
         const workAreaCenter = workArea.x + workArea.width / 2;
         if (center < workAreaCenter) {
             // 滑向左边
-            newX = workArea.x - bounds.width + exposedPixels;
+            newX = workArea.x - 400 + exposedPixels; // 固定宽度 400
             side = 'left';
         } else {
             // 滑向右边
             newX = workArea.x + workArea.width - exposedPixels;
             side = 'right';
         }
-        win.petRestoreX = (side === 'left') ? workArea.x : (workArea.x + workArea.width - bounds.width);
+        win.petRestoreX = (side === 'left') ? workArea.x : (workArea.x + workArea.width - 400);
         win.petRestoreY = bounds.y; // 保持原有高度
         hidden = true;
     } 
     // 正常的左右吸附
     else if (bounds.x <= workArea.x + snapDistance) {
-        newX = workArea.x - bounds.width + exposedPixels;
+        newX = workArea.x - 400 + exposedPixels;
         win.petRestoreX = workArea.x;
         win.petRestoreY = bounds.y;
         hidden = true;
         side = 'left';
     } else if (bounds.x + bounds.width >= workArea.x + workArea.width - snapDistance) {
         newX = workArea.x + workArea.width - exposedPixels;
-        win.petRestoreX = workArea.x + workArea.width - bounds.width;
+        win.petRestoreX = workArea.x + workArea.width - 400;
         win.petRestoreY = bounds.y;
         hidden = true;
         side = 'right';
@@ -124,7 +135,12 @@ ipcMain.on('window-drag-end', (event) => {
         win.petIsHidden = true;
         win.petMouseLeft = false; // 必须等鼠标先离开，才能触发悬浮弹回
         win.petHideSide = side; // 记录隐藏在哪一侧
-        win.setPosition(newX, newY);
+        win.setBounds({
+            x: newX,
+            y: newY,
+            width: 400,
+            height: 600
+        });
         // 通知前端切换探头素材
         win.webContents.send('pet-hide-edge', side);
         
