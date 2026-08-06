@@ -113,7 +113,9 @@ def update_databank_template(payload: dict = Body(...)):
 
 # --- 后台任务包装器 ---
 def run_post_and_history(state: dict):
-    with open("g:/code/rumia/data/bg_task_log.txt", "a", encoding="utf-8") as f:
+    log_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "bg_task_log.txt")
+    os.makedirs(os.path.dirname(log_path), exist_ok=True)
+    with open(log_path, "a", encoding="utf-8") as f:
         f.write(f"\\n--- BG Task Started ---\\n")
         f.write(f"User Message: {state.get('user_message')}\\n")
         f.write(f"Main LLM Reply: {state.get('main_llm_reply')}\\n")
@@ -121,12 +123,12 @@ def run_post_and_history(state: dict):
         post_delta = post_llm_node(state)
         state.update(post_delta)
         update_history_node(state)
-        with open("g:/code/rumia/data/bg_task_log.txt", "a", encoding="utf-8") as f:
+        with open(log_path, "a", encoding="utf-8") as f:
             f.write(f"BG Task Success. Post Delta: {post_delta}\\n")
     except Exception as e:
         import traceback
         err_str = traceback.format_exc()
-        with open("g:/code/rumia/data/bg_task_log.txt", "a", encoding="utf-8") as f:
+        with open(log_path, "a", encoding="utf-8") as f:
             f.write(f"BG Task Error: {e}\\n{err_str}\\n")
         print(f"后台任务 (post_llm & update_history) 执行异常: {e}")
 
