@@ -727,7 +727,7 @@ class DesktopPet {
         if (!text) return "";
         let cleaned = text.replace(/<(?:think|character_thought|thought)>[\s\S]*?<\/(?:think|character_thought|thought)>/gi, '');
         cleaned = cleaned.replace(/\[[A-Z0-9_]+(?::.*?)?\]/gi, '');
-        cleaned = cleaned.replace(/\(用户刚刚触碰了物理动作.*?\)/gi, '');
+        cleaned = cleaned.replace(/\(用户刚刚触碰了物理动作[，,]?\s*你的下意识反应是[：:]?\s*(.*?)\)/gi, '($1)');
         return cleaned.trim();
     }
 
@@ -735,18 +735,23 @@ class DesktopPet {
         if (!this.immersiveChatHistory) return;
         this.immersiveChatHistory.innerHTML = '';
         history.forEach(item => {
-            if (item.content && item.content.includes("用户刚刚触碰了物理动作")) return;
             const cleanedText = this.cleanDisplayText(item.content);
             if (!cleanedText) return;
 
+            const isAction = item.is_action || (cleanedText.startsWith("(") && cleanedText.endsWith(")") && cleanedText.length < 35);
             const msgDiv = document.createElement('div');
-            const displayRole = (item.role === 'human' || item.role === 'user') ? '你' : item.role;
-            const isUser = displayRole === '你';
-            msgDiv.className = `immersive-chat-msg ${isUser ? 'user' : 'assistant'}`;
+            
+            if (isAction) {
+                msgDiv.className = 'immersive-chat-msg system-action';
+            } else {
+                const displayRole = (item.role === 'human' || item.role === 'user') ? '你' : item.role;
+                const isUser = displayRole === '你';
+                msgDiv.className = `immersive-chat-msg ${isUser ? 'user' : 'assistant'}`;
+            }
 
             const senderDiv = document.createElement('div');
             senderDiv.className = 'immersive-chat-sender';
-            senderDiv.innerText = `${displayRole} · ${item.timestamp || ''}`;
+            senderDiv.innerText = `${item.role} · ${item.timestamp || ''}`;
 
             const textDiv = document.createElement('div');
             textDiv.className = 'immersive-chat-text';
@@ -764,16 +769,21 @@ class DesktopPet {
         this.immersiveChatHistory.scrollTop = this.immersiveChatHistory.scrollHeight;
     }
 
-    appendLocalChatMessage(role, content) {
+    appendLocalChatMessage(role, content, isAction = false) {
         if (!this.immersiveChatHistory || !content) return;
-        if (content.includes("用户刚刚触碰了物理动作")) return;
         const cleanedText = this.cleanDisplayText(content);
         if (!cleanedText) return;
 
+        const checkAction = isAction || (cleanedText.startsWith("(") && cleanedText.endsWith(")") && cleanedText.length < 35);
         const msgDiv = document.createElement('div');
-        const displayRole = (role === 'human' || role === 'user') ? '你' : role;
-        const isUser = displayRole === '你';
-        msgDiv.className = `immersive-chat-msg ${isUser ? 'user' : 'assistant'}`;
+
+        if (checkAction) {
+            msgDiv.className = 'immersive-chat-msg system-action';
+        } else {
+            const displayRole = (role === 'human' || role === 'user') ? '你' : role;
+            const isUser = displayRole === '你';
+            msgDiv.className = `immersive-chat-msg ${isUser ? 'user' : 'assistant'}`;
+        }
 
         const senderDiv = document.createElement('div');
         senderDiv.className = 'immersive-chat-sender';
@@ -1297,6 +1307,10 @@ class DesktopPet {
         
         // 极速弹出气泡（1.5秒）
         this.showBubble(randomLine, 1500);
+        if (this.isImmersiveMode) {
+            this.appendLocalChatMessage("你 (动作)", `(戳了戳${this.charName || "桌宠"})`, true);
+            this.appendLocalChatMessage(this.charName || "桌宠", randomLine);
+        }
         // 随机切换差分动作
         this.setEmotion(emotion);
         

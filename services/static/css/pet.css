@@ -1426,6 +1426,18 @@ body.peeking-mode .log-container {
     align-items: flex-start;
 }
 
+.immersive-chat-msg.system-action {
+    align-self: center !important;
+    align-items: center !important;
+    max-width: 85% !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px dashed rgba(255, 121, 198, 0.3) !important;
+    border-radius: 12px !important;
+    padding: 6px 12px !important;
+    margin: 4px 0 !important;
+    text-align: center !important;
+}
+
 .immersive-chat-sender {
     font-size: 11px;
     color: rgba(255, 255, 255, 0.55);

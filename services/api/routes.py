@@ -65,8 +65,8 @@ def clean_history_text(text: str) -> str:
     cleaned = re.sub(r'<(?:think|character_thought|thought)>.*?</(?:think|character_thought|thought)>', '', text, flags=re.DOTALL | re.IGNORECASE)
     # 过滤所有 [TAG:...] 或 [TAG] 系统指令标记
     cleaned = re.sub(r'\[[A-Z0-9_]+(?::.*?)?\]', '', cleaned)
-    # 过滤动作注入系统提示句
-    cleaned = re.sub(r'\(用户刚刚触碰了物理动作.*?\)', '', cleaned)
+    # 精简物理动作系统提示句，转为精炼的动作说明
+    cleaned = re.sub(r'\(用户刚刚触碰了物理动作[，,]?\s*你的下意识反应是[：:]?\s*(.*?)\)', r'(\1)', cleaned)
     lines = [line.strip() for line in cleaned.splitlines() if line.strip()]
     return '\n'.join(lines)
 
@@ -80,22 +80,21 @@ def get_history():
 
     for i, msg in enumerate(messages[1:], 1):
         role = msg.get("role", "")
-        # 屏蔽系统消息与摸头/戳头后台动作静默注入消息
-        if role == "system" or msg.get("is_self_talk") is True:
+        if role == "system":
             continue
         
         content = msg.get("content", "")
-        if "用户刚刚触碰了物理动作" in content:
-            continue
-
         cleaned_content = clean_history_text(content)
         if not cleaned_content:
             continue
+        
+        is_action = "用户刚刚触碰了物理动作" in content or (cleaned_content.startswith("(") and cleaned_content.endswith(")") and len(cleaned_content) < 30 and any(k in cleaned_content for k in ["敲", "摸", "捏", "碰", "打", "拉", "抱"]))
             
         dialogue.append({
             "id": i,
-            "role": role_map.get(role, role),
+            "role": "你 (动作)" if is_action else role_map.get(role, role),
             "content": cleaned_content,
+            "is_action": is_action,
             "timestamp": datetime.now().strftime("%H:%M:%S")
         })
     return {
