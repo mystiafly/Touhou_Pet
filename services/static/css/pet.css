@@ -78,6 +78,15 @@ body, html {
     margin-bottom: 0;
 }
 
+@keyframes live2dBobbing {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
 /* 4. 角色图片：强制大小、允许拖拽 */
 .character-wrapper img {
     height: 300px;
@@ -86,6 +95,7 @@ body, html {
     cursor: grab;
     -webkit-user-select: none;
     pointer-events: auto;
+    animation: live2dBobbing 3.8s ease-in-out infinite;
 }
 
 /* 5. 好感度样式 */
@@ -1272,10 +1282,9 @@ body.peeking-mode .log-container {
     transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important;
 }
 
-/* 调整好感度图标在沉浸模式下的比例 */
+/* 沉浸模式下隐藏好感度图标 */
 .pet-container.immersive-mode #fav-container {
-    transform: scale(0.6) !important;
-    top: -25px !important;
+    display: none !important;
 }
 
 /* 右侧常驻拉长拉高对话框 */
@@ -1298,10 +1307,10 @@ body.peeking-mode .log-container {
     -webkit-backdrop-filter: blur(20px) !important;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
     border-radius: 20px !important;
-    padding: 24px !important;
+    padding: 20px !important;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6) !important;
     z-index: 10 !important;
-    overflow-y: auto !important;
+    overflow: hidden !important;
     box-sizing: border-box !important;
     pointer-events: auto !important;
 }
@@ -1312,12 +1321,64 @@ body.peeking-mode .log-container {
 }
 
 .pet-container.immersive-mode #bubble-content {
-    font-size: 16px !important;
-    line-height: 1.7 !important;
-    color: #f8f8f2 !important;
-    text-shadow: none !important;
-    white-space: pre-wrap !important;
-    word-break: break-word !important;
+    display: none !important;
+}
+
+/* 沉浸模式下的聊天历史列表 */
+.pet-container.immersive-mode #immersive-chat-history {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow-y: auto !important;
+    padding-right: 4px !important;
+}
+
+.immersive-chat-msg {
+    display: flex;
+    flex-direction: column;
+    max-width: 88%;
+    animation: fadeIn 0.3s ease;
+}
+
+.immersive-chat-msg.user {
+    align-self: flex-end;
+    align-items: flex-end;
+}
+
+.immersive-chat-msg.assistant {
+    align-self: flex-start;
+    align-items: flex-start;
+}
+
+.immersive-chat-sender {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.55);
+    margin-bottom: 3px;
+}
+
+.immersive-chat-text {
+    padding: 10px 14px;
+    border-radius: 14px;
+    font-size: 14px;
+    line-height: 1.5;
+    word-break: break-word;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+
+.immersive-chat-msg.user .immersive-chat-text {
+    background: rgba(139, 233, 253, 0.22);
+    color: #8be9fd;
+    border: 1px solid rgba(139, 233, 253, 0.4);
+    border-bottom-right-radius: 4px;
+}
+
+.immersive-chat-msg.assistant .immersive-chat-text {
+    background: rgba(255, 121, 198, 0.22);
+    color: #f8f8f2;
+    border: 1px solid rgba(255, 121, 198, 0.4);
+    border-bottom-left-radius: 4px;
 }
 
 /* 右下角输入栏 */

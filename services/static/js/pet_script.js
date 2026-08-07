@@ -103,6 +103,7 @@ class DesktopPet {
         this.img = document.getElementById('pet-img');
         this.favScore = document.getElementById('fav-score');
         this.favContainer = document.getElementById('fav-container');
+        this.immersiveChatHistory = document.getElementById('immersive-chat-history');
 
         this.images = {};
         this.currentEmotion = 'normal';
@@ -621,6 +622,11 @@ class DesktopPet {
             }
         }
 
+        if (this.immersiveChatHistory) {
+            this.immersiveChatHistory.classList.remove('hidden');
+            this.fetchImmersiveChatHistory();
+        }
+
         if (this.immersiveClockContainer) {
             this.immersiveClockContainer.classList.remove('hidden');
             this.updateImmersiveClock();
@@ -648,6 +654,10 @@ class DesktopPet {
             this.immersiveWallpaper.classList.add('hidden');
         }
 
+        if (this.immersiveChatHistory) {
+            this.immersiveChatHistory.classList.add('hidden');
+        }
+
         if (this.immersiveClockContainer) {
             this.immersiveClockContainer.classList.add('hidden');
         }
@@ -660,6 +670,47 @@ class DesktopPet {
         if (notifyIPC && window.__petIPC && typeof window.__petIPC.sendExitImmersiveMode === 'function') {
             window.__petIPC.sendExitImmersiveMode();
         }
+    }
+
+    async fetchImmersiveChatHistory() {
+        if (!this.isImmersiveMode || !this.immersiveChatHistory) return;
+        try {
+            const res = await fetch('/api/history');
+            const data = await res.json();
+            if (data && data.history) {
+                this.renderImmersiveChatHistory(data.history);
+            }
+        } catch (e) {
+            console.error("加载沉浸模式聊天历史失败:", e);
+        }
+    }
+
+    renderImmersiveChatHistory(history) {
+        if (!this.immersiveChatHistory) return;
+        this.immersiveChatHistory.innerHTML = '';
+        history.forEach(item => {
+            const msgDiv = document.createElement('div');
+            const isUser = item.role === '你' || item.role === 'user';
+            msgDiv.className = `immersive-chat-msg ${isUser ? 'user' : 'assistant'}`;
+
+            const senderDiv = document.createElement('div');
+            senderDiv.className = 'immersive-chat-sender';
+            senderDiv.innerText = `${item.role} · ${item.timestamp || ''}`;
+
+            const textDiv = document.createElement('div');
+            textDiv.className = 'immersive-chat-text';
+            textDiv.innerText = item.content;
+
+            msgDiv.appendChild(senderDiv);
+            msgDiv.appendChild(textDiv);
+            this.immersiveChatHistory.appendChild(msgDiv);
+        });
+
+        // 自动滚动到底部
+        if (this.bubble) {
+            this.bubble.scrollTop = this.bubble.scrollHeight;
+        }
+        this.immersiveChatHistory.scrollTop = this.immersiveChatHistory.scrollHeight;
     }
 
     updateImmersiveClock() {
@@ -962,9 +1013,14 @@ class DesktopPet {
             htmlText = escapedText.replace(/(\(.*?\)|（.*?）)/g, '<span class="action-text">$1</span>');
         }
         this.bubbleContent.innerHTML = htmlText;
-        this.bubbleContent.scrollTop = 0; // 閲嶇疆鏂囧瓧妗嗘粴鍔ㄦ潯浣嶇疆鍒伴《閮紝闃叉涓婁竴鏉¤秴闀挎枃鏈畫鐣欐粴鍔ㄦ潯
+        this.bubbleContent.scrollTop = 0;
         this.bubble.style.opacity = '1';
-        this.bubble.style.pointerEvents = 'auto'; // 璇磋瘽鏃跺惎鐢ㄩ紶鏍囦氦浜掞紙鍏佽婊氬姩銆侀€夋嫨鏂囨湰锛?
+        this.bubble.style.pointerEvents = 'auto';
+
+        if (this.isImmersiveMode) {
+            this.fetchImmersiveChatHistory();
+            return;
+        }
 
         if (this.bubbleTimer) clearTimeout(this.bubbleTimer);
 
@@ -1003,6 +1059,9 @@ class DesktopPet {
         this.resetAutoSpeakTimer();
 
         this.showBubble("hmm...", -1); // 传入 -1 让气泡持续显示直到新消息覆盖
+        if (this.isImmersiveMode) {
+            this.fetchImmersiveChatHistory();
+        }
 
         try {
             const response = await fetch('/api/chat', {
@@ -1013,17 +1072,11 @@ class DesktopPet {
             const data = await response.json();
 
             if (data.success) {
-                // 1. 鍏堟樉绀哄璇?(杩欐槸鏈€閲嶈鐨勶紝缁濆涓嶈兘琚鐩?
-                // [新增] 如果后端指令睡眠，直接进入挂机睡眠状态
-                if (data.force_sleep) {
-                    data.emotion = "sleeping"; // 强制立绘切换为睡觉
-                    this.isSleeping = true;
-                    if (this.autoSpeakTimer) clearTimeout(this.autoSpeakTimer);
-                    console.log("接收到后端睡眠指令，进入睡眠模式。");
-                }
-
                 this.showBubble(data.reply);
                 this.setEmotion(data.emotion);
+                if (this.isImmersiveMode) {
+                    this.fetchImmersiveChatHistory();
+                }
 
                 // [鏂板] 濡傛灉鍚庣杩斿洖浜?ReAct 鐐规瓕鏁版嵁锛岀洿鎺ヨ皟鐢ㄦ挱鏀惧櫒鎾斁锛岃烦杩囬噸澶嶆悳绱?
                 if (data.music_play) {
