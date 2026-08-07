@@ -293,6 +293,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (userPromptArea && configData.user_prompt !== undefined) {
                     userPromptArea.value = configData.user_prompt;
                 }
+
+                const immersiveWallpaperInput = document.getElementById('immersive-wallpaper-input');
+                if (immersiveWallpaperInput && configData.immersive_wallpaper !== undefined) {
+                    immersiveWallpaperInput.value = configData.immersive_wallpaper;
+                }
                 
                 const greetingToggle = document.getElementById('greeting-toggle');
                 if (greetingToggle) {
@@ -472,6 +477,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } catch (e) {
                 alert("保存失败！");
+            }
+        });
+    }
+
+    const immersiveWallpaperInput = document.getElementById('immersive-wallpaper-input');
+    if (immersiveWallpaperInput) {
+        immersiveWallpaperInput.addEventListener('change', async () => {
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ immersive_wallpaper: immersiveWallpaperInput.value.trim() })
+                });
+            } catch (e) {
+                console.error("保存沉浸壁纸失败:", e);
             }
         });
     }

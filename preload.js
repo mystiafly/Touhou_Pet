@@ -36,6 +36,15 @@ window.__petIPC = {
     },
     openSettingsWindow: () => {
         ipcRenderer.send('open-settings-window');
+    },
+    sendEnterImmersiveMode: () => {
+        ipcRenderer.send('enter-immersive-mode');
+    },
+    sendExitImmersiveMode: () => {
+        ipcRenderer.send('exit-immersive-mode');
+    },
+    onImmersiveModeState: (callback) => {
+        ipcRenderer.on('immersive-mode-state', (event, state) => callback(state));
     }
 };
 

@@ -52,6 +52,7 @@ ipcMain.on('set-ignore-mouse-events', (event, ignore, options) => {
 ipcMain.on('window-drag', (event, { deltaX, deltaY }) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) {
+        if (win.isImmersiveMode) return; // 沉浸模式下禁用拖拽吸附
         if (win.petIsHidden) {
             win.petIsHidden = false; // 用户主动拖动时，解除隐藏状态
             win.webContents.send('pet-restore');
@@ -64,6 +65,43 @@ ipcMain.on('window-drag', (event, { deltaX, deltaY }) => {
             width: 400,
             height: 600
         });
+    }
+});
+
+// 监听进入沉浸模式
+ipcMain.on('enter-immersive-mode', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+        if (!win.isImmersiveMode) {
+            win.normalBounds = win.getBounds();
+        }
+        win.isImmersiveMode = true;
+        const display = screen.getDisplayMatching(win.getBounds());
+        win.setBounds(display.bounds);
+        win.setAlwaysOnTop(true, 'screen-saver');
+        win.setIgnoreMouseEvents(false);
+        win.webContents.send('immersive-mode-state', true);
+    }
+});
+
+// 监听退出沉浸模式
+ipcMain.on('exit-immersive-mode', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+        win.isImmersiveMode = false;
+        if (win.normalBounds) {
+            win.setBounds(win.normalBounds);
+        } else {
+            const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+            win.setBounds({
+                x: width - 450,
+                y: height - 650,
+                width: 400,
+                height: 600
+            });
+        }
+        win.setAlwaysOnTop(true, 'screen-saver');
+        win.webContents.send('immersive-mode-state', false);
     }
 });
 
@@ -87,7 +125,7 @@ ipcMain.on('pet-click-restore', (event) => {
 
 ipcMain.on('window-drag-end', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
-    if (!win) return;
+    if (!win || win.isImmersiveMode) return;
     
     const bounds = win.getBounds();
     const workArea = screen.getDisplayMatching(bounds).workArea;

@@ -170,6 +170,7 @@ class DesktopPet {
                 };
                 this.img.src = prefix + 'normal.png';
             }
+            this.wallpaperUrl = data.wallpaper_url || "";
             this.enableGreeting = data.enable_greeting !== false;
             this.enableAutoSpeak = data.enable_auto_speak !== false;
             this.autoSpeakMultiplier = data.auto_speak_multiplier || 1.0;
@@ -368,7 +369,7 @@ class DesktopPet {
                 petIPC.onGlobalMouseMove((point) => {
                     if (isDragging) return;
 
-                    let isInteractive = false;
+                    let isInteractive = this.isImmersiveMode ? true : false;
 
                     const checkHover = (element) => {
                         if (!element) return false;
@@ -549,6 +550,117 @@ class DesktopPet {
                     window.__petIPC.sendMinimizeToTray();
                 }
             });
+        }
+
+        // 进入沉浸模式
+        this.enterImmersiveBtn = document.getElementById('enter-immersive-btn');
+        if (this.enterImmersiveBtn) {
+            this.enterImmersiveBtn.addEventListener('click', () => {
+                this.enterImmersiveMode();
+            });
+        }
+
+        this.initImmersiveMode();
+    }
+
+    initImmersiveMode() {
+        this.isImmersiveMode = false;
+        this.immersiveWallpaper = document.getElementById('immersive-wallpaper');
+        this.immersiveClockContainer = document.getElementById('immersive-clock-container');
+        this.immersiveClockTime = document.getElementById('immersive-clock-time');
+        this.immersiveClockDate = document.getElementById('immersive-clock-date');
+
+        // 按 ESC 键退出沉浸模式
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.isImmersiveMode) {
+                this.exitImmersiveMode();
+            }
+        });
+
+        // 监听来自 Electron 主进程的沉浸模式状态事件
+        if (window.__petIPC && typeof window.__petIPC.onImmersiveModeState === 'function') {
+            window.__petIPC.onImmersiveModeState((state) => {
+                if (!state && this.isImmersiveMode) {
+                    this.exitImmersiveMode(false);
+                }
+            });
+        }
+    }
+
+    enterImmersiveMode() {
+        if (this.isImmersiveMode) return;
+        this.isImmersiveMode = true;
+        this.closeSettingsModal();
+
+        const container = document.querySelector('.pet-container');
+        if (container) {
+            container.classList.add('immersive-mode');
+        }
+
+        if (this.immersiveWallpaper) {
+            this.immersiveWallpaper.classList.remove('hidden');
+            if (this.wallpaperUrl) {
+                this.immersiveWallpaper.style.backgroundImage = `url('${this.wallpaperUrl}')`;
+            } else {
+                this.immersiveWallpaper.style.backgroundImage = `linear-gradient(135deg, #1e1e2e, #282a36, #44475a)`;
+            }
+        }
+
+        if (this.immersiveClockContainer) {
+            this.immersiveClockContainer.classList.remove('hidden');
+            this.updateImmersiveClock();
+            if (!this.clockInterval) {
+                this.clockInterval = setInterval(() => this.updateImmersiveClock(), 1000);
+            }
+        }
+
+        // 通知 Electron 主进程扩充窗口全屏
+        if (window.__petIPC && typeof window.__petIPC.sendEnterImmersiveMode === 'function') {
+            window.__petIPC.sendEnterImmersiveMode();
+        }
+    }
+
+    exitImmersiveMode(notifyIPC = true) {
+        if (!this.isImmersiveMode) return;
+        this.isImmersiveMode = false;
+
+        const container = document.querySelector('.pet-container');
+        if (container) {
+            container.classList.remove('immersive-mode');
+        }
+
+        if (this.immersiveWallpaper) {
+            this.immersiveWallpaper.classList.add('hidden');
+        }
+
+        if (this.immersiveClockContainer) {
+            this.immersiveClockContainer.classList.add('hidden');
+        }
+
+        if (this.clockInterval) {
+            clearInterval(this.clockInterval);
+            this.clockInterval = null;
+        }
+
+        if (notifyIPC && window.__petIPC && typeof window.__petIPC.sendExitImmersiveMode === 'function') {
+            window.__petIPC.sendExitImmersiveMode();
+        }
+    }
+
+    updateImmersiveClock() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        if (this.immersiveClockTime) {
+            this.immersiveClockTime.innerText = `${hours}:${minutes}`;
+        }
+        const weekDays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const week = weekDays[now.getDay()];
+        if (this.immersiveClockDate) {
+            this.immersiveClockDate.innerText = `${year}年${month}月${day}日 ${week}`;
         }
     }
 

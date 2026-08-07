@@ -655,6 +655,23 @@ async def api_character_info():
                 if emotion_key in images_dict:
                     images_dict[emotion_key].append(f"/char_assets/{char_id}/assets/{active_sprite_set}/{f}")
                     
+    # 自动检测沉浸模式角色专属壁纸 (支持 gif, png, jpg, webp)
+    wallpaper_url = config.get("immersive_wallpaper", "")
+    if not wallpaper_url:
+        char_dir = get_character_dir()
+        candidate_dirs = [assets_dir, char_dir]
+        for cdir in candidate_dirs:
+            if os.path.exists(cdir):
+                for f in os.listdir(cdir):
+                    if f.lower().startswith("wallpaper.") and f.lower().endswith(('.gif', '.png', '.jpg', '.jpeg', '.webp')):
+                        if cdir == assets_dir:
+                            wallpaper_url = f"/char_assets/{char_id}/assets/{f}"
+                        else:
+                            wallpaper_url = f"/char_assets/{char_id}/{f}"
+                        break
+            if wallpaper_url:
+                break
+                    
     return JSONResponse({
         "character_id": char_id,
         "character_name": char_name,
@@ -662,6 +679,7 @@ async def api_character_info():
         "image_path": f"/char_assets/{char_id}/assets/{active_sprite_set}/",
         "images_dict": images_dict,
         "active_sprite_set": active_sprite_set,
+        "wallpaper_url": wallpaper_url,
         "enable_greeting": config.get("enable_greeting", True),
         "enable_auto_speak": config.get("enable_auto_speak", True),
         "auto_speak_multiplier": config.get("auto_speak_multiplier", 1.0),

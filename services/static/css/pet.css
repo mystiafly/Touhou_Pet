@@ -1201,3 +1201,145 @@ body.peeking-mode .log-container {
     color: #999;
     margin: 5px 0;
 }
+
+/* ==========================================================================
+   12. 沉浸模式 (Immersive Mode) 样式定义
+   ========================================================================== */
+.immersive-wallpaper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 1;
+    pointer-events: auto;
+    transition: opacity 0.5s ease;
+}
+
+.immersive-clock-container {
+    position: fixed;
+    top: 40px;
+    right: 50px;
+    text-align: right;
+    z-index: 20;
+    color: #ffffff;
+    text-shadow: 0 4px 15px rgba(0, 0, 0, 0.7);
+    font-family: 'Consolas', 'Segoe UI', sans-serif;
+    pointer-events: none;
+    user-select: none;
+}
+
+#immersive-clock-time {
+    font-size: 72px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    line-height: 1;
+    color: #f8f8f2;
+    text-shadow: 0 0 20px rgba(139, 233, 253, 0.6);
+}
+
+#immersive-clock-date {
+    font-size: 20px;
+    color: #8be9fd;
+    margin-top: 8px;
+    font-weight: 500;
+}
+
+.immersive-exit-hint {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.65);
+    margin-top: 10px;
+    font-style: italic;
+}
+
+.pet-container.immersive-mode {
+    width: 100vw !important;
+    height: 100vh !important;
+    overflow: hidden;
+}
+
+/* 左下角 2倍放大桌宠 */
+.pet-container.immersive-mode .character-wrapper {
+    position: fixed !important;
+    left: 40px !important;
+    bottom: 20px !important;
+    z-index: 10 !important;
+    transform: scale(2) !important;
+    transform-origin: bottom left !important;
+    transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
+/* 调整好感度图标在沉浸模式下的比例 */
+.pet-container.immersive-mode #fav-container {
+    transform: scale(0.6) !important;
+    top: -25px !important;
+}
+
+/* 右侧常驻拉长拉高对话框 */
+.pet-container.immersive-mode #speech-bubble {
+    position: fixed !important;
+    right: 40px !important;
+    top: 130px !important;
+    left: auto !important;
+    bottom: auto !important;
+    width: 480px !important;
+    height: calc(100vh - 240px) !important;
+    max-width: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    background: rgba(30, 31, 41, 0.8) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 20px !important;
+    padding: 24px !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6) !important;
+    z-index: 10 !important;
+    overflow-y: auto !important;
+    box-sizing: border-box !important;
+    pointer-events: auto !important;
+}
+
+.pet-container.immersive-mode #speech-bubble::before,
+.pet-container.immersive-mode #speech-bubble::after {
+    display: none !important;
+}
+
+.pet-container.immersive-mode #bubble-content {
+    font-size: 16px !important;
+    line-height: 1.7 !important;
+    color: #f8f8f2 !important;
+    text-shadow: none !important;
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+}
+
+/* 右下角输入栏 */
+.pet-container.immersive-mode .input-bar {
+    position: fixed !important;
+    right: 40px !important;
+    bottom: 40px !important;
+    left: auto !important;
+    width: 480px !important;
+    z-index: 10 !important;
+    background: rgba(40, 42, 54, 0.9) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 30px !important;
+    padding: 8px 18px !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+    box-sizing: border-box !important;
+}
+
+/* 沉浸模式下隐藏底部两个按钮 */
+.pet-container.immersive-mode #settings-btn,
+.pet-container.immersive-mode #presets-btn {
+    display: none !important;
+}

@@ -3,13 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <title>Desktop Pet</title>
-    <link rel="stylesheet" href="/static/css/pet.css?v=1.18.10">
+    <link rel="stylesheet" href="/static/css/pet.css?v=1.19.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Premium Interactive Network Graph Vis.js -->
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
 </head>
 <body>
 <div class="pet-container">
+    <!-- 沉浸模式背景壁纸 -->
+    <div id="immersive-wallpaper" class="immersive-wallpaper hidden"></div>
+
+    <!-- 沉浸模式右上角时间日期控件 -->
+    <div id="immersive-clock-container" class="immersive-clock-container hidden">
+        <div id="immersive-clock-time">00:00</div>
+        <div id="immersive-clock-date">2026年08月08日 星期六</div>
+        <div class="immersive-exit-hint"><i class="fas fa-keyboard"></i> 按 ESC 键退出沉浸模式</div>
+    </div>
+
     <div id="debug-coord-panel" style="display: none; position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.85); color: #50fa7b; font-family: monospace; font-size: 11px; z-index: 99999; pointer-events: none; padding: 6px; border-radius: 4px; border: 1px solid #ff5555; line-height: 1.4;">
         Mouse: <span id="debug-mouse-val">N/A</span><br>
         ImgRect: <span id="debug-rect-val">N/A</span><br>
@@ -104,7 +114,9 @@
                     <button id="open-dashboard-btn" class="menu-btn primary-btn">
                         <i class="fas fa-sliders-h"></i> 大贤者控制台
                     </button>
-
+                    <button id="enter-immersive-btn" class="menu-btn success-btn" style="background: linear-gradient(135deg, #bd93f9, #ff79c6); border: none; color: #fff;">
+                        <i class="fas fa-expand-alt"></i> 进入沉浸模式
+                    </button>
                     <button id="minimize-btn" class="menu-btn warning-btn">
                         <i class="fas fa-minus"></i> 最小化至托盘
                     </button>
@@ -120,6 +132,6 @@
     </div>
 </div>
 
-<script src="/static/js/pet_script.js?v=1.18.10"></script>
+<script src="/static/js/pet_script.js?v=1.19.0"></script>
 </body>
 </html>

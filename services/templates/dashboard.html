@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>大贤者控制台 (Dashboard)</title>
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.18.10">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.19.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -308,8 +308,11 @@
                                     <input type="color" id="custom-theme-color-picker" style="opacity: 0; position: absolute; inset: 0; width: 100%; height: 100%; cursor: pointer; border: none; padding: 0;">
                                     <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; pointer-events: none;">🎨</span>
                                 </div>
-                            </div>
-                        </div>
+                <div class="settings-card">
+                    <h3><i class="fas fa-image"></i> 专属沉浸模式壁纸 (Immersive Wallpaper)</h3>
+                    <div class="form-group">
+                        <p class="help-text" style="margin-bottom: 8px;">设置当前角色的专属沉浸模式背景壁纸。可填写图片/动图 (GIF) URL 或把壁纸图片 (wallpaper.gif/png/jpg) 直接放入角色 assets 目录中。</p>
+                        <input type="text" id="immersive-wallpaper-input" class="modern-input" placeholder="例如：/char_assets/rumia/assets/wallpaper.gif 或网络图片/动图链接" style="width: 100%;">
                     </div>
                 </div>
 
@@ -1051,7 +1054,7 @@
     </div>
 </div>
 
-<script src="/static/js/dashboard.js?v=1.18.10"></script>
+<script src="/static/js/dashboard.js?v=1.19.0"></script>
 
 <!-- 视觉识图配置 Modal -->
 <div id="vision-tool-modal" class="modal-overlay hidden">
