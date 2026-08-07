@@ -624,6 +624,7 @@ class DesktopPet {
         // 重新获取最新角色壁纸与 WE 壁纸配置（防缓存/实时生效）
         let bgMode = 'image';
         let mediaUrl = '';
+        let bgmUrl = '';
         try {
             const res = await fetch('/api/character_info');
             const data = await res.json();
@@ -631,6 +632,7 @@ class DesktopPet {
             if (data.wallpaper_fit) this.wallpaperFit = data.wallpaper_fit;
             if (data.immersive_bg_mode) bgMode = data.immersive_bg_mode;
             if (data.immersive_media_url) mediaUrl = data.immersive_media_url;
+            if (data.immersive_bgm_url) bgmUrl = data.immersive_bgm_url;
         } catch (e) {
             console.error("更新沉浸壁纸配置失败:", e);
         }
@@ -647,9 +649,27 @@ class DesktopPet {
             this.immersiveVideo.pause();
         }
         if (this.immersiveWeb) this.immersiveWeb.classList.add('hidden');
+        const particleCanvas = document.getElementById('immersive-particle-canvas');
+        if (particleCanvas) particleCanvas.classList.add('hidden');
+        if (this.particleAnimFrame) cancelAnimationFrame(this.particleAnimFrame);
 
         // 根据配置模式智能加载背景
-        if (bgMode === 'video' && (mediaUrl || this.wallpaperUrl)) {
+        if (bgMode === 'scene_extracted') {
+            // 解包 4K 超高清原图 + 流星粒子特效 + BGM
+            if (this.immersiveWallpaper) {
+                this.immersiveWallpaper.classList.remove('hidden');
+                this.immersiveWallpaper.style.backgroundSize = 'cover';
+                this.immersiveWallpaper.style.backgroundPosition = 'center';
+                this.immersiveWallpaper.style.backgroundImage = `url('${this.wallpaperUrl}')`;
+            }
+            this.startImmersiveParticleEffect();
+            if (bgmUrl) {
+                if (!this.bgmAudio) this.bgmAudio = new Audio();
+                this.bgmAudio.src = bgmUrl;
+                this.bgmAudio.loop = true;
+                this.bgmAudio.play().catch(e => console.log("BGM 自动播放受限:", e));
+            }
+        } else if (bgMode === 'video' && (mediaUrl || this.wallpaperUrl)) {
             if (this.immersiveVideo) {
                 this.immersiveVideo.classList.remove('hidden');
                 this.immersiveVideo.src = mediaUrl || this.wallpaperUrl;
@@ -719,6 +739,18 @@ class DesktopPet {
             this.immersiveWallpaper.classList.add('hidden');
         }
 
+        const particleCanvas = document.getElementById('immersive-particle-canvas');
+        if (particleCanvas) particleCanvas.classList.add('hidden');
+        if (this.particleAnimFrame) {
+            cancelAnimationFrame(this.particleAnimFrame);
+            this.particleAnimFrame = null;
+        }
+
+        if (this.bgmAudio) {
+            this.bgmAudio.pause();
+            this.bgmAudio.src = "";
+        }
+
         if (this.immersiveVideo) {
             this.immersiveVideo.classList.add('hidden');
             this.immersiveVideo.pause();
@@ -729,6 +761,85 @@ class DesktopPet {
             this.immersiveWeb.classList.add('hidden');
             this.immersiveWeb.src = "";
         }
+
+    startImmersiveParticleEffect() {
+        const canvas = document.getElementById('immersive-particle-canvas');
+        if (!canvas) return;
+        canvas.classList.remove('hidden');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const ctx = canvas.getContext('2d');
+
+        const stars = [];
+        for (let i = 0; i < 90; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height * 0.75,
+                size: Math.random() * 2.2 + 0.5,
+                alpha: Math.random(),
+                speed: Math.random() * 0.02 + 0.005
+            });
+        }
+
+        const shootingStars = [];
+        function createShootingStar() {
+            if (shootingStars.length < 3 && Math.random() < 0.25) {
+                shootingStars.push({
+                    x: Math.random() * canvas.width * 0.8,
+                    y: Math.random() * canvas.height * 0.4,
+                    length: Math.random() * 90 + 50,
+                    speed: Math.random() * 9 + 5,
+                    dx: Math.random() * 5 + 4,
+                    dy: Math.random() * 2.5 + 2,
+                    alpha: 1
+                });
+            }
+        }
+
+        const self = this;
+        function animate() {
+            if (!self.isImmersiveMode) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 绘制闪烁群星
+            stars.forEach(s => {
+                s.alpha += s.speed;
+                if (s.alpha > 1 || s.alpha < 0.15) s.speed = -s.speed;
+                ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(s.alpha)})`;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 绘制划过夜空的流星雨
+            createShootingStar();
+            for (let i = shootingStars.length - 1; i >= 0; i--) {
+                const st = shootingStars[i];
+                st.x += st.dx;
+                st.y += st.dy;
+                st.alpha -= 0.012;
+
+                if (st.alpha <= 0 || st.x > canvas.width || st.y > canvas.height) {
+                    shootingStars.splice(i, 1);
+                    continue;
+                }
+
+                const grad = ctx.createLinearGradient(st.x, st.y, st.x - st.dx * 12, st.y - st.dy * 12);
+                grad.addColorStop(0, `rgba(255, 255, 255, ${st.alpha})`);
+                grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = 2.2;
+                ctx.beginPath();
+                ctx.moveTo(st.x, st.y);
+                ctx.lineTo(st.x - st.dx * 12, st.y - st.dy * 12);
+                ctx.stroke();
+            }
+
+            self.particleAnimFrame = requestAnimationFrame(animate);
+        }
+        animate();
+    }
 
         if (this.immersiveChatPanel) {
             this.immersiveChatPanel.classList.add('hidden');

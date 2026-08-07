@@ -709,6 +709,7 @@ async def api_character_info():
         "wallpaper_fit": config.get("wallpaper_fit", "cover"),
         "immersive_bg_mode": config.get("immersive_bg_mode", "image"),
         "immersive_media_url": config.get("immersive_media_url", ""),
+        "immersive_bgm_url": config.get("immersive_bgm_url", ""),
         "enable_greeting": config.get("enable_greeting", True),
         "enable_auto_speak": config.get("enable_auto_speak", True),
         "auto_speak_multiplier": config.get("auto_speak_multiplier", 1.0),
@@ -2046,6 +2047,66 @@ COMMON_WE_PATHS = [
     r"G:\SteamLibrary\steamapps\workshop\content\431960",
 ]
 
+def extract_we_scene(sdir: str):
+    """自动解包 WE .pkg 二进制场景资源，提取 4K 极清底层原图与 BGM 音频"""
+    pkg_path = os.path.join(sdir, 'scene.pkg')
+    if not os.path.exists(pkg_path):
+        return None
+        
+    extracted_dir = os.path.join(sdir, 'extracted')
+    os.makedirs(extracted_dir, exist_ok=True)
+    
+    bg_path = os.path.join(extracted_dir, 'base_bg.png')
+    bgm_path = os.path.join(extracted_dir, 'bgm.mp3')
+    
+    try:
+        if not os.path.exists(bg_path) or not os.path.exists(bgm_path):
+            with open(pkg_path, 'rb') as f:
+                magic_len = struct.unpack('<I', f.read(4))[0]
+                magic = f.read(magic_len).decode('utf-8', errors='ignore')
+                num_files = struct.unpack('<I', f.read(4))[0]
+                
+                files = []
+                for _ in range(num_files):
+                    name_len = struct.unpack('<I', f.read(4))[0]
+                    name_bytes = f.read(name_len)
+                    name = name_bytes.decode('utf-8', errors='ignore')
+                    offset = struct.unpack('<I', f.read(4))[0]
+                    length = struct.unpack('<I', f.read(4))[0]
+                    files.append((name, name_bytes, offset, length))
+                
+                header_end = f.tell()
+                
+                best_png_size = 0
+                best_png_data = None
+                
+                for name, name_bytes, offset, length in files:
+                    f.seek(header_end + offset)
+                    data = f.read(length)
+                    
+                    lower_name = name.lower()
+                    if ('.mp3' in lower_name or '.wav' in lower_name or '.ogg' in lower_name or b'.mp3' in name_bytes) and not os.path.exists(bgm_path):
+                        with open(bgm_path, 'wb') as audio_f:
+                            audio_f.write(data)
+                            
+                    png_idx = data.find(b'\x89PNG')
+                    if png_idx != -1:
+                        png_bytes = data[png_idx:]
+                        if len(png_bytes) > best_png_size:
+                            best_png_size = len(png_bytes)
+                            best_png_data = png_bytes
+                
+                if best_png_data and not os.path.exists(bg_path):
+                    with open(bg_path, 'wb') as img_f:
+                        img_f.write(best_png_data)
+    except Exception as e:
+        print(f"[WE UNPACK ERROR] {pkg_path}: {e}")
+            
+    return {
+        'extracted_bg_path': bg_path if os.path.exists(bg_path) else '',
+        'extracted_bgm_path': bgm_path if os.path.exists(bgm_path) else ''
+    }
+
 @router.get("/api/wallpaper_engine/scan")
 def api_scan_wallpaper_engine(custom_path: str = ""):
     """扫描 Steam Wallpaper Engine (431960) 创意工坊壁纸"""
@@ -2085,6 +2146,19 @@ def api_scan_wallpaper_engine(custom_path: str = ""):
 
                             media_full_path = os.path.join(sdir, file_entry) if file_entry else ""
 
+                            # 对 scene (.pkg) 类型尝试自动解包原生 4K 高清底图与音频
+                            extracted = None
+                            if bg_type == "scene":
+                                extracted = extract_we_scene(sdir)
+
+                            extracted_bg_url = ""
+                            extracted_bgm_url = ""
+                            if extracted:
+                                if extracted.get("extracted_bg_path"):
+                                    extracted_bg_url = f"/api/wallpaper_engine/media?path={urllib.parse.quote(extracted['extracted_bg_path'])}"
+                                if extracted.get("extracted_bgm_path"):
+                                    extracted_bgm_url = f"/api/wallpaper_engine/media?path={urllib.parse.quote(extracted['extracted_bgm_path'])}"
+
                             items.append({
                                 "folder_id": folder_id,
                                 "folder_path": sdir,
@@ -2094,6 +2168,8 @@ def api_scan_wallpaper_engine(custom_path: str = ""):
                                 "media_path": media_full_path if os.path.exists(media_full_path) else "",
                                 "media_url": f"/api/wallpaper_engine/media?path={urllib.parse.quote(media_full_path)}" if media_full_path else "",
                                 "preview_url": f"/api/wallpaper_engine/media?path={urllib.parse.quote(preview_full_path)}" if preview_full_path else "",
+                                "extracted_bg_url": extracted_bg_url,
+                                "extracted_bgm_url": extracted_bgm_url,
                                 "description": meta.get("description", "")
                             })
                         except Exception as e:
@@ -2135,6 +2211,8 @@ async def api_save_immersive_config(request: Request):
             config["immersive_wallpaper"] = data["immersive_wallpaper"]
         if "immersive_media_url" in data:
             config["immersive_media_url"] = data["immersive_media_url"]
+        if "immersive_bgm_url" in data:
+            config["immersive_bgm_url"] = data["immersive_bgm_url"]
         if "wallpaper_fit" in data:
             config["wallpaper_fit"] = data["wallpaper_fit"]
             

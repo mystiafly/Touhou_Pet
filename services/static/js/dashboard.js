@@ -681,6 +681,8 @@ document.addEventListener('DOMContentLoaded', () => {
         async function selectWEWallpaper(item) {
             let mode = 'image';
             let mediaUrl = item.media_url || item.preview_url;
+            let wallpaperUrl = item.preview_url;
+            let bgmUrl = item.extracted_bgm_url || "";
             let noteText = "";
 
             if (item.type === 'video') {
@@ -690,9 +692,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 mode = 'web';
                 noteText = "已应用为【网页壁纸模式】，原生HTML5/WebGL嵌入！";
             } else if (item.type === 'scene') {
-                // 3D/粒子 scene 类型的 .pkg 壁纸：自动开启透传模式
-                mode = 'transparent';
-                noteText = "该壁纸为 Wallpaper Engine 3D/粒子场景壁纸 (scene.pkg)。\n\n系统已为你自动开启【桌面透传模式】！只需后台开着 Wallpaper Engine 运行该壁纸，进入沉浸模式时即可原生呈现 100% 完整的动态粒子、3D 特效与背景音乐，绝不放大或丢失特效！";
+                if (item.extracted_bg_url) {
+                    mode = 'scene_extracted';
+                    wallpaperUrl = item.extracted_bg_url;
+                    mediaUrl = item.extracted_bg_url;
+                    noteText = "系统已解包 .pkg 资源并提取出【4K 超高清无损底图 (3840x2160)】与【原版 BGM 音频】！无需在后台运行 Wallpaper Engine 软件，即可独立呈现场景！";
+                } else {
+                    mode = 'transparent';
+                    noteText = "已自动开启【桌面透传模式】！只需后台开着 Wallpaper Engine 运行该壁纸即可透传全量 3D 动画与音乐！";
+                }
             } else {
                 mode = 'image';
                 mediaUrl = item.preview_url;
@@ -706,12 +714,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({
                         immersive_bg_mode: mode,
                         immersive_media_url: mediaUrl,
-                        immersive_wallpaper: item.preview_url
+                        immersive_wallpaper: wallpaperUrl,
+                        immersive_bgm_url: bgmUrl
                     })
                 });
                 const data = await res.json();
                 if (data.success) {
-                    updateWallpaperPreview(item.preview_url);
+                    updateWallpaperPreview(wallpaperUrl);
                     alert(`已成功选择壁纸《${item.title}》！\n\n${noteText}`);
                 }
             } catch (err) {
