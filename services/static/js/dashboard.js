@@ -295,8 +295,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 const immersiveWallpaperInput = document.getElementById('immersive-wallpaper-input');
-                if (immersiveWallpaperInput && configData.immersive_wallpaper !== undefined) {
-                    immersiveWallpaperInput.value = configData.immersive_wallpaper;
+                if (immersiveWallpaperInput) {
+                    const url = configData.immersive_wallpaper || configData.wallpaper_url || "";
+                    immersiveWallpaperInput.value = url;
+                    updateWallpaperPreview(url);
                 }
                 
                 const greetingToggle = document.getElementById('greeting-toggle');
@@ -481,18 +483,43 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function updateWallpaperPreview(url) {
+        const previewImg = document.getElementById('wallpaper-preview-img');
+        const previewPlaceholder = document.getElementById('wallpaper-preview-placeholder');
+        if (previewImg && previewPlaceholder) {
+            if (url && url.trim()) {
+                previewImg.src = url.trim();
+                previewImg.style.display = 'block';
+                previewPlaceholder.style.display = 'none';
+            } else {
+                previewImg.style.display = 'none';
+                previewPlaceholder.style.display = 'block';
+            }
+        }
+    }
+
     const immersiveWallpaperInput = document.getElementById('immersive-wallpaper-input');
+    const previewWallpaperBtn = document.getElementById('preview-wallpaper-btn');
+
     if (immersiveWallpaperInput) {
         immersiveWallpaperInput.addEventListener('change', async () => {
+            const val = immersiveWallpaperInput.value.trim();
+            updateWallpaperPreview(val);
             try {
                 await fetch('/api/settings/config', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ immersive_wallpaper: immersiveWallpaperInput.value.trim() })
+                    body: JSON.stringify({ immersive_wallpaper: val })
                 });
             } catch (e) {
                 console.error("保存沉浸壁纸失败:", e);
             }
+        });
+    }
+
+    if (previewWallpaperBtn && immersiveWallpaperInput) {
+        previewWallpaperBtn.addEventListener('click', () => {
+            updateWallpaperPreview(immersiveWallpaperInput.value.trim());
         });
     }
 

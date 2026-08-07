@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>大贤者控制台 (Dashboard)</title>
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.19.1">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.19.2">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -48,6 +48,9 @@
             <div style="font-size: 12px; color: #ff79c6; margin: 20px 0 5px 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">当前角色专属设定</div>
             <a href="#" class="nav-item" data-target="basic-settings-view">
                 <i class="fas fa-cog"></i> 基础设置
+            </a>
+            <a href="#" class="nav-item" data-target="immersive-settings-view">
+                <i class="fas fa-expand-alt"></i> 沉浸模式
             </a>
             <a href="#" class="nav-item" data-target="sprite-settings-view">
                 <i class="fas fa-image"></i> 立绘设置
@@ -249,6 +252,41 @@
             </div>
         </section>
 
+        <!-- 沉浸模式配置视图 -->
+        <section id="immersive-settings-view" class="content-section" style="display: none;">
+            <header class="section-header">
+                <h1>沉浸模式 (Immersive Mode)</h1>
+                <p>配置当前角色的专属沉浸背景壁纸与全屏显示偏好</p>
+            </header>
+            
+            <div class="card-container">
+                <div class="settings-card" style="grid-column: 1 / -1;">
+                    <h3><i class="fas fa-image"></i> 专属沉浸背景壁纸</h3>
+                    <div class="form-group">
+                        <p class="help-text" style="margin-bottom: 12px;">设置当前角色的沉浸模式背景。支持静态图片 (PNG/JPG/WEBP) 或动态图片 (GIF) 的网络 URL、绝对路径，或者直接将壁纸命名为 <code>wallpaper.gif</code> / <code>wallpaper.png</code> 放入该角色的 <code>assets/</code> 目录中。</p>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="text" id="immersive-wallpaper-input" class="modern-input" placeholder="例如：/char_assets/rumia/assets/wallpaper.gif 或网络图片/GIF链接" style="flex: 1;">
+                            <button id="preview-wallpaper-btn" class="action-btn outline" style="white-space: nowrap;">
+                                <i class="fas fa-eye"></i> 预览
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 壁纸实时预览卡片 -->
+                <div class="settings-card" style="grid-column: 1 / -1;">
+                    <h3><i class="fas fa-desktop"></i> 壁纸实时预览</h3>
+                    <div id="wallpaper-preview-container" style="width: 100%; height: 320px; border-radius: 12px; overflow: hidden; background: #1a1a24; border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; position: relative;">
+                        <img id="wallpaper-preview-img" src="" alt="壁纸预览" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                        <div id="wallpaper-preview-placeholder" style="color: var(--text-muted); text-align: center;">
+                            <i class="fas fa-image" style="font-size: 40px; margin-bottom: 10px; opacity: 0.5;"></i>
+                            <p>暂未设置自定义壁纸，沉浸模式将使用默认极光渐变背景</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- 4. 基础设置视图 -->
         <section id="basic-settings-view" class="content-section">
             <header class="section-header">
@@ -309,14 +347,6 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <div class="settings-card">
-                    <h3><i class="fas fa-expand-alt"></i> 沉浸模式专属壁纸 (Immersive Wallpaper)</h3>
-                    <div class="form-group">
-                        <p class="help-text" style="margin-bottom: 8px;">在此设定当前角色的沉浸模式背景壁纸。支持静态图片 (PNG/JPG/WEBP) 或动态壁纸 (GIF) 的网络 URL / 本地路径。</p>
-                        <input type="text" id="immersive-wallpaper-input" class="modern-input" placeholder="例如：/char_assets/rumia/assets/wallpaper.gif 或图片链接" style="width: 100%;">
                     </div>
                 </div>
 
@@ -1058,7 +1088,7 @@
     </div>
 </div>
 
-<script src="/static/js/dashboard.js?v=1.19.1"></script>
+<script src="/static/js/dashboard.js?v=1.19.2"></script>
 
 <!-- 视觉识图配置 Modal -->
 <div id="vision-tool-modal" class="modal-overlay hidden">
