@@ -4,13 +4,13 @@
 
 For every code modification that results in a Git commit, you must update the version number in `package.json` according to Semantic Versioning (SemVer) guidelines:
 - **MAJOR**: Incompatible API changes or major architectural redesigns. **CRITICAL RESTRICTION**: You must ONLY increment the MAJOR version when the user explicitly requests it ("MAJOR我说你才能增加版本").
-- **MINOR**: Brand-new feature modules added in a backward-compatible manner.
+- **MINOR**: Brand-new feature modules that require writing an Implementation Plan for user confirmation and approval ("需要写计划书给我确认的更新才能升中版本号").
 - **PATCH**: Backward-compatible bug fixes, minor updates, or follow-up tweaks/options for an existing feature being developed.
 
-**IMPORTANT VERSIONING RESTRICTION**: During active iteration, refinement, or bug-fixing of a newly added feature (e.g. 1.20.0), ALWAYS increment ONLY the PATCH version (1.20.1, 1.20.2...). Do NOT bump MINOR versions for follow-up options, UI adjustments, or bug fixes related to the same ongoing feature module.
+**IMPORTANT VERSIONING RESTRICTION**: ONLY increment the MINOR version when a major new feature is being planned and approved via a formal implementation plan. During active iteration, refinement, or bug-fixing of a feature (or any update not requiring an approved plan), ALWAYS increment ONLY the PATCH version (1.20.1, 1.20.2...).
 
 Before staging and committing any code changes:
-1. Determine the appropriate version increment (MINOR for distinct new feature modules, PATCH for bug fixes & feature refinements).
+1. Determine the appropriate version increment (MINOR ONLY if an implementation plan was submitted and approved, PATCH for all other fixes & refinements).
 2. Edit `package.json` to update the `"version"` field.
 3. Stage both the modified code files and `package.json` together, and commit them.
 
