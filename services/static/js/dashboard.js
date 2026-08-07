@@ -709,16 +709,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
 
-                if (item.extracted_bg_url) {
-                    mode = 'scene_extracted';
-                    wallpaperUrl = item.extracted_bg_url;
-                    mediaUrl = item.extracted_bg_url;
-                    bgmUrl = item.extracted_bgm_url || "";
-                    noteText = "系统已解包 .pkg 资源并提取出【4K 超高清无损底图 (3840x2160)】与【原版 BGM 音频】！无需在后台运行 Wallpaper Engine 软件，即可独立呈现场景！";
-                } else {
-                    mode = 'transparent';
-                    noteText = "已自动开启【桌面透传模式】！只需后台开着 Wallpaper Engine 运行该壁纸即可透传全量 3D 动画与音乐！";
-                }
+                mode = 'scene_extracted';
+                wallpaperUrl = item.extracted_bg_url || item.preview_url;
+                mediaUrl = wallpaperUrl;
+                bgmUrl = item.extracted_bgm_url || "";
+                noteText = "已成功应用为【独立 4K 沉浸壁纸模式】！\n\n画面已自动全屏遮罩（遮挡桌面图标与任务栏），并配合流星粒子动画与原版 BGM 音频，无需开启桌面透传或后台软件！";
             } else {
                 mode = 'image';
                 mediaUrl = item.preview_url;
