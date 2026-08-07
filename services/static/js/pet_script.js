@@ -725,8 +725,9 @@ class DesktopPet {
 
     cleanDisplayText(text) {
         if (!text) return "";
-        let cleaned = text.replace(/<think>[\s\S]*?<\/think>/gi, '');
+        let cleaned = text.replace(/<(?:think|character_thought|thought)>[\s\S]*?<\/(?:think|character_thought|thought)>/gi, '');
         cleaned = cleaned.replace(/\[[A-Z0-9_]+(?::.*?)?\]/gi, '');
+        cleaned = cleaned.replace(/\(用户刚刚触碰了物理动作.*?\)/gi, '');
         return cleaned.trim();
     }
 
@@ -734,16 +735,18 @@ class DesktopPet {
         if (!this.immersiveChatHistory) return;
         this.immersiveChatHistory.innerHTML = '';
         history.forEach(item => {
+            if (item.content && item.content.includes("用户刚刚触碰了物理动作")) return;
             const cleanedText = this.cleanDisplayText(item.content);
             if (!cleanedText) return;
 
             const msgDiv = document.createElement('div');
-            const isUser = item.role === '你' || item.role === 'user';
+            const displayRole = (item.role === 'human' || item.role === 'user') ? '你' : item.role;
+            const isUser = displayRole === '你';
             msgDiv.className = `immersive-chat-msg ${isUser ? 'user' : 'assistant'}`;
 
             const senderDiv = document.createElement('div');
             senderDiv.className = 'immersive-chat-sender';
-            senderDiv.innerText = `${item.role} · ${item.timestamp || ''}`;
+            senderDiv.innerText = `${displayRole} · ${item.timestamp || ''}`;
 
             const textDiv = document.createElement('div');
             textDiv.className = 'immersive-chat-text';
@@ -763,11 +766,13 @@ class DesktopPet {
 
     appendLocalChatMessage(role, content) {
         if (!this.immersiveChatHistory || !content) return;
+        if (content.includes("用户刚刚触碰了物理动作")) return;
         const cleanedText = this.cleanDisplayText(content);
         if (!cleanedText) return;
 
         const msgDiv = document.createElement('div');
-        const isUser = role === '你' || role === 'user';
+        const displayRole = (role === 'human' || role === 'user') ? '你' : role;
+        const isUser = displayRole === '你';
         msgDiv.className = `immersive-chat-msg ${isUser ? 'user' : 'assistant'}`;
 
         const senderDiv = document.createElement('div');

@@ -61,10 +61,12 @@ def clean_history_text(text: str) -> str:
     if not text:
         return ""
     import re
-    # 过滤 <think>...</think> 思考链
-    cleaned = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
+    # 过滤 <think>, <character_thought>, <thought> 各种思考链
+    cleaned = re.sub(r'<(?:think|character_thought|thought)>.*?</(?:think|character_thought|thought)>', '', text, flags=re.DOTALL | re.IGNORECASE)
     # 过滤所有 [TAG:...] 或 [TAG] 系统指令标记
     cleaned = re.sub(r'\[[A-Z0-9_]+(?::.*?)?\]', '', cleaned)
+    # 过滤动作注入系统提示句
+    cleaned = re.sub(r'\(用户刚刚触碰了物理动作.*?\)', '', cleaned)
     lines = [line.strip() for line in cleaned.splitlines() if line.strip()]
     return '\n'.join(lines)
 
@@ -73,15 +75,26 @@ def get_history():
     """获取对话历史及当前好感度 (全自动线程隔离运行)"""
     messages = load_history()
     dialogue = []
+    char_name = get_config().get("character_name", "桌宠")
+    role_map = {"user": "你", "human": "你", "assistant": char_name, "ai": char_name}
+
     for i, msg in enumerate(messages[1:], 1):
-        char_name = get_config().get("character_name", "桌宠")
-        role_map = {"user": "你", "assistant": char_name}
-        cleaned_content = clean_history_text(msg["content"])
+        role = msg.get("role", "")
+        # 屏蔽系统消息与摸头/戳头后台动作静默注入消息
+        if role == "system" or msg.get("is_self_talk") is True:
+            continue
+        
+        content = msg.get("content", "")
+        if "用户刚刚触碰了物理动作" in content:
+            continue
+
+        cleaned_content = clean_history_text(content)
         if not cleaned_content:
             continue
+            
         dialogue.append({
             "id": i,
-            "role": role_map.get(msg["role"], msg["role"]),
+            "role": role_map.get(role, role),
             "content": cleaned_content,
             "timestamp": datetime.now().strftime("%H:%M:%S")
         })
