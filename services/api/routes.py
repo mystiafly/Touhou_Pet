@@ -2146,18 +2146,15 @@ def api_scan_wallpaper_engine(custom_path: str = ""):
 
                             media_full_path = os.path.join(sdir, file_entry) if file_entry else ""
 
-                            # 对 scene (.pkg) 类型尝试自动解包原生 4K 高清底图与音频
-                            extracted = None
-                            if bg_type == "scene":
-                                extracted = extract_we_scene(sdir)
-
+                            # 仅检视是否先前已解包过，绝不在扫描循环中强行同步解包所有pkg
                             extracted_bg_url = ""
                             extracted_bgm_url = ""
-                            if extracted:
-                                if extracted.get("extracted_bg_path"):
-                                    extracted_bg_url = f"/api/wallpaper_engine/media?path={urllib.parse.quote(extracted['extracted_bg_path'])}"
-                                if extracted.get("extracted_bgm_path"):
-                                    extracted_bgm_url = f"/api/wallpaper_engine/media?path={urllib.parse.quote(extracted['extracted_bgm_path'])}"
+                            extracted_bg_path = os.path.join(sdir, "extracted", "base_bg.png")
+                            extracted_bgm_path = os.path.join(sdir, "extracted", "bgm.mp3")
+                            if os.path.exists(extracted_bg_path):
+                                extracted_bg_url = f"/api/wallpaper_engine/media?path={urllib.parse.quote(extracted_bg_path)}"
+                            if os.path.exists(extracted_bgm_path):
+                                extracted_bgm_url = f"/api/wallpaper_engine/media?path={urllib.parse.quote(extracted_bgm_path)}"
 
                             items.append({
                                 "folder_id": folder_id,
@@ -2184,6 +2181,32 @@ def api_scan_wallpaper_engine(custom_path: str = ""):
         "scanned_path": scanned_path,
         "items": items
     }
+
+@router.post("/api/wallpaper_engine/unpack")
+async def api_unpack_wallpaper_engine_item(request: Request):
+    """按需只解包用户选中的单个 .pkg 场景壁纸，响应极速且绝不卡死主线程"""
+    try:
+        data = await request.json()
+        folder_path = data.get("folder_path", "")
+        if not folder_path or not os.path.exists(folder_path):
+            return JSONResponse({"success": False, "message": "文件夹不存在"}, status_code=400)
+            
+        extracted = extract_we_scene(folder_path)
+        extracted_bg_url = ""
+        extracted_bgm_url = ""
+        if extracted:
+            if extracted.get("extracted_bg_path"):
+                extracted_bg_url = f"/api/wallpaper_engine/media?path={urllib.parse.quote(extracted['extracted_bg_path'])}"
+            if extracted.get("extracted_bgm_path"):
+                extracted_bgm_url = f"/api/wallpaper_engine/media?path={urllib.parse.quote(extracted['extracted_bgm_path'])}"
+
+        return JSONResponse({
+            "success": True,
+            "extracted_bg_url": extracted_bg_url,
+            "extracted_bgm_url": extracted_bgm_url
+        })
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
 
 @router.get("/api/wallpaper_engine/media")
 def api_serve_wallpaper_engine_media(path: str = ""):

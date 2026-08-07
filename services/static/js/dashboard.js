@@ -692,10 +692,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 mode = 'web';
                 noteText = "已应用为【网页壁纸模式】，原生HTML5/WebGL嵌入！";
             } else if (item.type === 'scene') {
+                if (!item.extracted_bg_url) {
+                    try {
+                        const unpackRes = await fetch('/api/wallpaper_engine/unpack', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ folder_path: item.folder_path })
+                        });
+                        const unpackData = await unpackRes.json();
+                        if (unpackData.success) {
+                            item.extracted_bg_url = unpackData.extracted_bg_url;
+                            item.extracted_bgm_url = unpackData.extracted_bgm_url;
+                        }
+                    } catch (e) {
+                        console.error("按需解包失败:", e);
+                    }
+                }
+
                 if (item.extracted_bg_url) {
                     mode = 'scene_extracted';
                     wallpaperUrl = item.extracted_bg_url;
                     mediaUrl = item.extracted_bg_url;
+                    bgmUrl = item.extracted_bgm_url || "";
                     noteText = "系统已解包 .pkg 资源并提取出【4K 超高清无损底图 (3840x2160)】与【原版 BGM 音频】！无需在后台运行 Wallpaper Engine 软件，即可独立呈现场景！";
                 } else {
                     mode = 'transparent';
