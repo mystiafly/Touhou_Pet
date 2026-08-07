@@ -1134,7 +1134,6 @@ class DesktopPet {
                 this.setEmotion(data.emotion);
                 if (this.isImmersiveMode) {
                     this.appendLocalChatMessage(this.charName || "桌宠", data.reply);
-                    setTimeout(() => this.fetchImmersiveChatHistory(), 1200);
                 }
 
                 // [鏂板] 濡傛灉鍚庣杩斿洖浜?ReAct 鐐规瓕鏁版嵁锛岀洿鎺ヨ皟鐢ㄦ挱鏀惧櫒鎾斁锛岃烦杩囬噸澶嶆悳绱?
@@ -1310,7 +1309,6 @@ class DesktopPet {
                 this.setEmotion(data.emotion);
                 if (this.isImmersiveMode) {
                     this.appendLocalChatMessage(this.charName || "桌宠", data.reply);
-                    setTimeout(() => this.fetchImmersiveChatHistory(), 1200);
                 }
                 if (data.favorability !== undefined) {
                     this.favScore.innerText = data.favorability;
