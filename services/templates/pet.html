@@ -3,15 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <title>Desktop Pet</title>
-    <link rel="stylesheet" href="/static/css/pet.css?v=1.20.10">
+    <link rel="stylesheet" href="/static/css/pet.css?v=1.20.11">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Premium Interactive Network Graph Vis.js -->
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
 </head>
 <body>
 <div class="pet-container">
-    <!-- 沉浸模式背景壁纸 -->
+    <!-- 沉浸模式背景壁纸与多媒体容器 -->
     <div id="immersive-wallpaper" class="immersive-wallpaper hidden"></div>
+    <video id="immersive-video-wallpaper" class="immersive-media hidden" autoplay loop muted playsinline></video>
+    <iframe id="immersive-web-wallpaper" class="immersive-media hidden" frameborder="0"></iframe>
 
     <!-- 沉浸模式右上角时间日期控件 -->
     <div id="immersive-clock-container" class="immersive-clock-container hidden">
@@ -149,6 +151,6 @@
     </div>
 </div>
 
-<script src="/static/js/pet_script.js?v=1.20.10"></script>
+<script src="/static/js/pet_script.js?v=1.20.11"></script>
 </body>
 </html>

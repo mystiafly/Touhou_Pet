@@ -593,6 +593,8 @@ class DesktopPet {
     initImmersiveMode() {
         this.isImmersiveMode = false;
         this.immersiveWallpaper = document.getElementById('immersive-wallpaper');
+        this.immersiveVideo = document.getElementById('immersive-video-wallpaper');
+        this.immersiveWeb = document.getElementById('immersive-web-wallpaper');
         this.immersiveClockContainer = document.getElementById('immersive-clock-container');
         this.immersiveClockTime = document.getElementById('immersive-clock-time');
         this.immersiveClockDate = document.getElementById('immersive-clock-date');
@@ -619,12 +621,16 @@ class DesktopPet {
         this.isImmersiveMode = true;
         this.closeSettingsModal();
 
-        // 重新获取最新角色壁纸配置（防缓存/实时生效）
+        // 重新获取最新角色壁纸与 WE 壁纸配置（防缓存/实时生效）
+        let bgMode = 'image';
+        let mediaUrl = '';
         try {
             const res = await fetch('/api/character_info');
             const data = await res.json();
             if (data.wallpaper_url) this.wallpaperUrl = data.wallpaper_url;
             if (data.wallpaper_fit) this.wallpaperFit = data.wallpaper_fit;
+            if (data.immersive_bg_mode) bgMode = data.immersive_bg_mode;
+            if (data.immersive_media_url) mediaUrl = data.immersive_media_url;
         } catch (e) {
             console.error("更新沉浸壁纸配置失败:", e);
         }
@@ -634,16 +640,41 @@ class DesktopPet {
             container.classList.add('immersive-mode');
         }
 
-        if (this.immersiveWallpaper) {
-            this.immersiveWallpaper.classList.remove('hidden');
-            const fitMode = this.wallpaperFit || 'cover';
-            this.immersiveWallpaper.style.backgroundSize = fitMode;
-            this.immersiveWallpaper.style.backgroundPosition = 'center';
+        // 隐藏所有壁纸组件，避免层叠冲突
+        if (this.immersiveWallpaper) this.immersiveWallpaper.classList.add('hidden');
+        if (this.immersiveVideo) {
+            this.immersiveVideo.classList.add('hidden');
+            this.immersiveVideo.pause();
+        }
+        if (this.immersiveWeb) this.immersiveWeb.classList.add('hidden');
 
-            if (this.wallpaperUrl) {
-                this.immersiveWallpaper.style.backgroundImage = `url('${this.wallpaperUrl}')`;
-            } else {
-                this.immersiveWallpaper.style.backgroundImage = `linear-gradient(135deg, #1e1e2e, #282a36, #44475a)`;
+        // 根据配置模式智能加载背景
+        if (bgMode === 'video' && (mediaUrl || this.wallpaperUrl)) {
+            if (this.immersiveVideo) {
+                this.immersiveVideo.classList.remove('hidden');
+                this.immersiveVideo.src = mediaUrl || this.wallpaperUrl;
+                this.immersiveVideo.play().catch(err => console.log("视频壁纸自动播放提示:", err));
+            }
+        } else if (bgMode === 'web' && mediaUrl) {
+            if (this.immersiveWeb) {
+                this.immersiveWeb.classList.remove('hidden');
+                this.immersiveWeb.src = mediaUrl;
+            }
+        } else if (bgMode === 'transparent') {
+            // 透明穿透模式：隐藏所有背景遮罩，直接透传桌面原本运行的 Wallpaper Engine 动态动画
+        } else {
+            // 默认静态/GIF 图片壁纸
+            if (this.immersiveWallpaper) {
+                this.immersiveWallpaper.classList.remove('hidden');
+                const fitMode = this.wallpaperFit || 'cover';
+                this.immersiveWallpaper.style.backgroundSize = fitMode;
+                this.immersiveWallpaper.style.backgroundPosition = 'center';
+
+                if (this.wallpaperUrl) {
+                    this.immersiveWallpaper.style.backgroundImage = `url('${this.wallpaperUrl}')`;
+                } else {
+                    this.immersiveWallpaper.style.backgroundImage = `linear-gradient(135deg, #1e1e2e, #282a36, #44475a)`;
+                }
             }
         }
 
@@ -686,6 +717,17 @@ class DesktopPet {
 
         if (this.immersiveWallpaper) {
             this.immersiveWallpaper.classList.add('hidden');
+        }
+
+        if (this.immersiveVideo) {
+            this.immersiveVideo.classList.add('hidden');
+            this.immersiveVideo.pause();
+            this.immersiveVideo.src = "";
+        }
+
+        if (this.immersiveWeb) {
+            this.immersiveWeb.classList.add('hidden');
+            this.immersiveWeb.src = "";
         }
 
         if (this.immersiveChatPanel) {

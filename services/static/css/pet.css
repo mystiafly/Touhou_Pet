@@ -1229,6 +1229,19 @@ body.peeking-mode .log-container {
     transition: opacity 0.5s ease;
 }
 
+.immersive-media {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    z-index: 1;
+    pointer-events: none;
+    border: none;
+    outline: none;
+}
+
 .immersive-clock-container {
     position: fixed;
     top: 40px;

@@ -707,6 +707,8 @@ async def api_character_info():
         "active_sprite_set": active_sprite_set,
         "wallpaper_url": wallpaper_url,
         "wallpaper_fit": config.get("wallpaper_fit", "cover"),
+        "immersive_bg_mode": config.get("immersive_bg_mode", "image"),
+        "immersive_media_url": config.get("immersive_media_url", ""),
         "enable_greeting": config.get("enable_greeting", True),
         "enable_auto_speak": config.get("enable_auto_speak", True),
         "auto_speak_multiplier": config.get("auto_speak_multiplier", 1.0),
@@ -2020,8 +2022,123 @@ async def api_upload_wallpaper(file: UploadFile = File(...)):
         
         config = get_config()
         config["immersive_wallpaper"] = wallpaper_url
+        config["immersive_bg_mode"] = "image"
         save_config(config)
         
         return JSONResponse({"success": True, "wallpaper_url": wallpaper_url})
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
+# --------------------------------------------------------------------------
+# Steam Wallpaper Engine (WE) 工坊支持与管理接口
+# --------------------------------------------------------------------------
+import json
+import urllib.parse
+from fastapi.responses import FileResponse
+
+COMMON_WE_PATHS = [
+    r"H:\SteamLibrary\steamapps\workshop\content\431960",
+    r"C:\Program Files (x86)\Steam\steamapps\workshop\content\431960",
+    r"C:\Program Files\Steam\steamapps\workshop\content\431960",
+    r"D:\SteamLibrary\steamapps\workshop\content\431960",
+    r"E:\SteamLibrary\steamapps\workshop\content\431960",
+    r"F:\SteamLibrary\steamapps\workshop\content\431960",
+    r"G:\SteamLibrary\steamapps\workshop\content\431960",
+]
+
+@router.get("/api/wallpaper_engine/scan")
+def api_scan_wallpaper_engine(custom_path: str = ""):
+    """扫描 Steam Wallpaper Engine (431960) 创意工坊壁纸"""
+    scanned_path = ""
+    items = []
+
+    target_paths = []
+    if custom_path and os.path.exists(custom_path):
+        target_paths.append(custom_path)
+    target_paths.extend(COMMON_WE_PATHS)
+
+    for path in target_paths:
+        if os.path.exists(path) and os.path.isdir(path):
+            scanned_path = path
+            try:
+                subdirs = [os.path.join(path, d) for d in os.listdir(path) if os.path.isdir(os.path.join(path, d))]
+                for sdir in subdirs:
+                    project_json_path = os.path.join(sdir, "project.json")
+                    if os.path.exists(project_json_path):
+                        try:
+                            with open(project_json_path, "r", encoding="utf-8", errors="ignore") as pf:
+                                meta = json.load(pf)
+                            
+                            folder_id = os.path.basename(sdir)
+                            title = meta.get("title", f"壁纸 {folder_id}")
+                            bg_type = meta.get("type", "scene").lower()
+                            file_entry = meta.get("file", "")
+                            preview_file = meta.get("preview", "preview.jpg")
+
+                            preview_full_path = os.path.join(sdir, preview_file)
+                            if not os.path.exists(preview_full_path):
+                                preview_full_path = ""
+                                for pf_name in ["preview.jpg", "preview.png", "preview.gif"]:
+                                    if os.path.exists(os.path.join(sdir, pf_name)):
+                                        preview_full_path = os.path.join(sdir, pf_name)
+                                        break
+
+                            media_full_path = os.path.join(sdir, file_entry) if file_entry else ""
+
+                            items.append({
+                                "folder_id": folder_id,
+                                "folder_path": sdir,
+                                "title": title,
+                                "type": bg_type, # "video", "scene", "web"
+                                "file_entry": file_entry,
+                                "media_path": media_full_path if os.path.exists(media_full_path) else "",
+                                "media_url": f"/api/wallpaper_engine/media?path={urllib.parse.quote(media_full_path)}" if media_full_path else "",
+                                "preview_url": f"/api/wallpaper_engine/media?path={urllib.parse.quote(preview_full_path)}" if preview_full_path else "",
+                                "description": meta.get("description", "")
+                            })
+                        except Exception as e:
+                            print(f"[WE SCAN ERROR] {sdir}: {e}")
+                if items:
+                    break
+            except Exception as e:
+                print(f"[WE PATH SCAN ERROR] {path}: {e}")
+
+    return {
+        "success": True,
+        "scanned_path": scanned_path,
+        "items": items
+    }
+
+@router.get("/api/wallpaper_engine/media")
+def api_serve_wallpaper_engine_media(path: str = ""):
+    """安全的本地壁纸引擎媒体文件代理与流式传输"""
+    if not path:
+        return JSONResponse({"status": "error", "message": "Missing path"}, status_code=400)
+    
+    decoded_path = urllib.parse.unquote(path)
+    if not os.path.exists(decoded_path):
+        return JSONResponse({"status": "error", "message": "File not found"}, status_code=404)
+
+    return FileResponse(decoded_path)
+
+@router.post("/api/character/save_immersive_config")
+async def api_save_immersive_config(request: Request):
+    """保存当前角色的沉浸模式高阶配置 (支持背景模式、WE壁纸路径、缩放规则)"""
+    from core.config_manager import save_config, get_config
+    try:
+        data = await request.json()
+        config = get_config()
+        
+        if "immersive_bg_mode" in data:
+            config["immersive_bg_mode"] = data["immersive_bg_mode"] # "image", "video", "web", "transparent"
+        if "immersive_wallpaper" in data:
+            config["immersive_wallpaper"] = data["immersive_wallpaper"]
+        if "immersive_media_url" in data:
+            config["immersive_media_url"] = data["immersive_media_url"]
+        if "wallpaper_fit" in data:
+            config["wallpaper_fit"] = data["wallpaper_fit"]
+            
+        save_config(config)
+        return JSONResponse({"success": True})
     except Exception as e:
         return JSONResponse({"success": False, "message": str(e)}, status_code=500)

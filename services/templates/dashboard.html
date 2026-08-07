@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>大贤者控制台 (Dashboard)</title>
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.20.10">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.20.11">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -297,6 +297,32 @@
                             <i class="fas fa-image" style="font-size: 40px; margin-bottom: 10px; opacity: 0.5;"></i>
                             <p>暂未设置自定义壁纸，沉浸模式将使用默认极光渐变背景</p>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Steam Wallpaper Engine 联动工坊卡片 -->
+                <div class="settings-card" style="grid-column: 1 / -1;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3><i class="fab fa-steam" style="color: #bd93f9;"></i> Steam Wallpaper Engine 创意工坊联动库</h3>
+                        <button id="use-transparent-mode-btn" class="action-btn outline" style="font-size: 12px; border-color: #ff79c6; color: #ff79c6;">
+                            <i class="fas fa-ghost"></i> 切换为桌面透传模式
+                        </button>
+                    </div>
+                    <p class="help-text" style="margin-bottom: 15px;">智能扫描已订阅的 Wallpaper Engine 动态壁纸（支持视频 MP4/WebM 原生60帧流畅播放、网页 HTML5 原生嵌入及 WE 桌面透传模式）。</p>
+                    
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px; flex-wrap: wrap;">
+                        <input type="text" id="we-custom-path-input" class="modern-input" placeholder="自定义 Workshop 路径 (如：H:\SteamLibrary\steamapps\workshop\content\431960)" style="flex: 1; min-width: 300px;">
+                        <button id="scan-we-btn" class="action-btn primary-btn" style="white-space: nowrap; background: linear-gradient(135deg, #11998e, #38ef7d); border: none; color: #fff; padding: 8px 16px;">
+                            <i class="fas fa-sync-alt"></i> 扫描/刷新 WE 壁纸库
+                        </button>
+                    </div>
+
+                    <div id="we-scan-status" style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-info-circle"></i> <span>初始化壁纸库中...</span>
+                    </div>
+
+                    <div id="we-wallpaper-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; max-height: 480px; overflow-y: auto; padding-right: 6px;">
+                        <!-- 动态生成的 WE 壁纸列表 -->
                     </div>
                 </div>
             </div>
@@ -1103,7 +1129,7 @@
     </div>
 </div>
 
-<script src="/static/js/dashboard.js?v=1.20.10"></script>
+<script src="/static/js/dashboard.js?v=1.20.11"></script>
 
 <!-- 视觉识图配置 Modal -->
 <div id="vision-tool-modal" class="modal-overlay hidden">

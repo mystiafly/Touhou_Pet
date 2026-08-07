@@ -597,6 +597,153 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --------------------------------------------------------------------------
+    // Steam Wallpaper Engine 联动壁纸管理
+    // --------------------------------------------------------------------------
+    function initWallpaperEngineManager() {
+        const scanBtn = document.getElementById('scan-we-btn');
+        const customPathInput = document.getElementById('we-custom-path-input');
+        const statusDiv = document.getElementById('we-scan-status');
+        const gridDiv = document.getElementById('we-wallpaper-grid');
+        const transparentBtn = document.getElementById('use-transparent-mode-btn');
+
+        if (!gridDiv) return;
+
+        async function fetchAndRenderWEWallpapers(customPath = "") {
+            statusDiv.innerHTML = `<i class="fas fa-spinner fa-spin"></i> <span>正在扫描 Steam 创意工坊壁纸中...</span>`;
+            gridDiv.innerHTML = '';
+
+            try {
+                const url = customPath ? `/api/wallpaper_engine/scan?custom_path=${encodeURIComponent(customPath)}` : '/api/wallpaper_engine/scan';
+                const res = await fetch(url);
+                const data = await res.json();
+
+                if (data.success && data.items && data.items.length > 0) {
+                    if (data.scanned_path && customPathInput && !customPathInput.value) {
+                        customPathInput.value = data.scanned_path;
+                    }
+                    statusDiv.innerHTML = `<i class="fas fa-check-circle" style="color: #50fa7b;"></i> <span>已找到 ${data.items.length} 个创意工坊壁纸 (检索路径: ${data.scanned_path})</span>`;
+                    
+                    data.items.forEach(item => {
+                        const card = document.createElement('div');
+                        card.className = 'we-wallpaper-card';
+                        card.style.cssText = `
+                            background: rgba(30, 31, 41, 0.7);
+                            border: 1px solid rgba(255, 255, 255, 0.12);
+                            border-radius: 12px;
+                            overflow: hidden;
+                            display: flex;
+                            flex-direction: column;
+                            transition: all 0.3s ease;
+                            cursor: pointer;
+                            position: relative;
+                        `;
+
+                        let badgeColor = '#bd93f9';
+                        let typeText = item.type;
+                        if (item.type === 'video') { badgeColor = '#ff79c6'; typeText = '视频 (MP4)'; }
+                        else if (item.type === 'scene') { badgeColor = '#8be9fd'; typeText = '3D/场景'; }
+                        else if (item.type === 'web') { badgeColor = '#50fa7b'; typeText = '网页 (HTML5)'; }
+
+                        card.innerHTML = `
+                            <div style="width: 100%; height: 130px; background: #181926; position: relative; overflow: hidden;">
+                                <img src="${item.preview_url || ''}" alt="${item.title}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'">
+                                <span style="position: absolute; top: 8px; right: 8px; background: ${badgeColor}; color: #181926; font-weight: bold; font-size: 10px; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;">${typeText}</span>
+                            </div>
+                            <div style="padding: 10px; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div style="font-weight: 600; font-size: 13px; color: #f8f8f2; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${item.title}">${item.title}</div>
+                                <button class="apply-we-btn action-btn outline" style="width: 100%; font-size: 12px; padding: 6px; border-color: rgba(255,255,255,0.2);">
+                                    <i class="fas fa-check"></i> 应用此壁纸
+                                </button>
+                            </div>
+                        `;
+
+                        const applyBtn = card.querySelector('.apply-we-btn');
+                        applyBtn.addEventListener('click', async (e) => {
+                            e.stopPropagation();
+                            await selectWEWallpaper(item);
+                        });
+                        card.addEventListener('click', async () => {
+                            await selectWEWallpaper(item);
+                        });
+
+                        gridDiv.appendChild(card);
+                    });
+                } else {
+                    statusDiv.innerHTML = `<i class="fas fa-exclamation-triangle" style="color: #ffb86c;"></i> <span>未在该路径找到 Steam 壁纸文件，请尝试在上方输入自定义 Workshop 路径</span>`;
+                }
+            } catch (err) {
+                console.error("扫描 WE 壁纸库失败:", err);
+                statusDiv.innerHTML = `<i class="fas fa-times-circle" style="color: #ff5555;"></i> <span>扫描失败，请检查网络或路径</span>`;
+            }
+        }
+
+        async function selectWEWallpaper(item) {
+            let mode = 'image';
+            let mediaUrl = item.media_url || item.preview_url;
+
+            if (item.type === 'video') {
+                mode = 'video';
+            } else if (item.type === 'web') {
+                mode = 'web';
+            } else {
+                mode = 'image';
+                mediaUrl = item.preview_url;
+            }
+
+            try {
+                const res = await fetch('/api/character/save_immersive_config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        immersive_bg_mode: mode,
+                        immersive_media_url: mediaUrl,
+                        immersive_wallpaper: item.preview_url
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    updateWallpaperPreview(item.preview_url);
+                    alert(`已成功设置沉浸模式壁纸：${item.title} (${item.type.toUpperCase()} 模式)`);
+                }
+            } catch (err) {
+                console.error("保存 WE 壁纸配置失败:", err);
+            }
+        }
+
+        if (transparentBtn) {
+            transparentBtn.addEventListener('click', async () => {
+                try {
+                    const res = await fetch('/api/character/save_immersive_config', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            immersive_bg_mode: 'transparent'
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        alert("已成功切换为“桌面透明透传模式”！在沉浸模式下背景将保持透明，透传桌面正在运行的 Wallpaper Engine 动态动画。");
+                    }
+                } catch (err) {
+                    console.error("保存透明模式失败:", err);
+                }
+            });
+        }
+
+        if (scanBtn) {
+            scanBtn.addEventListener('click', () => {
+                const customPath = customPathInput ? customPathInput.value.trim() : "";
+                fetchAndRenderWEWallpapers(customPath);
+            });
+        }
+
+        // 默认自动扫描一次
+        fetchAndRenderWEWallpapers();
+    }
+
+    initWallpaperEngineManager();
+
     const themeSwatches = document.querySelectorAll('.theme-color-swatch:not([data-color="custom"])');
     const customThemePicker = document.getElementById('custom-theme-color-picker');
     
