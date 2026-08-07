@@ -498,6 +498,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    const immersiveWallpaperInput = document.getElementById('immersive-wallpaper-input');
+    const previewWallpaperBtn = document.getElementById('preview-wallpaper-btn');
     const uploadWallpaperBtn = document.getElementById('upload-wallpaper-btn');
     const wallpaperFileInput = document.getElementById('wallpaper-file-input');
 
