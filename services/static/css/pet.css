@@ -1282,7 +1282,7 @@ body.peeking-mode .log-container {
     width: 100vw !important;
     height: 100vh !important;
     overflow: hidden;
-    background: transparent !important;
+    background: #0d0e15 !important;
 }
 
 /* 左下角 2倍放大桌宠 */
