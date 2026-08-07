@@ -762,6 +762,28 @@ class DesktopPet {
             this.immersiveWeb.src = "";
         }
 
+        if (this.immersiveChatPanel) {
+            this.immersiveChatPanel.classList.add('hidden');
+        }
+
+        if (this.chatTrigger) {
+            this.chatTrigger.classList.add('hidden');
+        }
+
+        if (this.immersiveClockContainer) {
+            this.immersiveClockContainer.classList.add('hidden');
+        }
+
+        if (this.clockInterval) {
+            clearInterval(this.clockInterval);
+            this.clockInterval = null;
+        }
+
+        if (notifyIPC && window.__petIPC && typeof window.__petIPC.sendExitImmersiveMode === 'function') {
+            window.__petIPC.sendExitImmersiveMode();
+        }
+    }
+
     startImmersiveParticleEffect() {
         const canvas = document.getElementById('immersive-particle-canvas');
         if (!canvas) return;
@@ -839,28 +861,6 @@ class DesktopPet {
             self.particleAnimFrame = requestAnimationFrame(animate);
         }
         animate();
-    }
-
-        if (this.immersiveChatPanel) {
-            this.immersiveChatPanel.classList.add('hidden');
-        }
-
-        if (this.chatTrigger) {
-            this.chatTrigger.classList.add('hidden');
-        }
-
-        if (this.immersiveClockContainer) {
-            this.immersiveClockContainer.classList.add('hidden');
-        }
-
-        if (this.clockInterval) {
-            clearInterval(this.clockInterval);
-            this.clockInterval = null;
-        }
-
-        if (notifyIPC && window.__petIPC && typeof window.__petIPC.sendExitImmersiveMode === 'function') {
-            window.__petIPC.sendExitImmersiveMode();
-        }
     }
 
     async fetchImmersiveChatHistory() {
