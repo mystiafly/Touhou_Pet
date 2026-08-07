@@ -2048,7 +2048,10 @@ COMMON_WE_PATHS = [
 ]
 
 def extract_we_scene(sdir: str):
-    """自动解包 WE .pkg 二进制场景资源，提取 4K 极清底层原图与 BGM 音频"""
+    """自动解包 WE .pkg 二进制场景资源，提取 4K 极清底层原图 (PNG/JPG) 与 BGM 音频"""
+    import io
+    from PIL import Image
+
     pkg_path = os.path.join(sdir, 'scene.pkg')
     if not os.path.exists(pkg_path):
         return None
@@ -2060,45 +2063,56 @@ def extract_we_scene(sdir: str):
     bgm_path = os.path.join(extracted_dir, 'bgm.mp3')
     
     try:
-        if not os.path.exists(bg_path) or not os.path.exists(bgm_path):
-            with open(pkg_path, 'rb') as f:
-                magic_len = struct.unpack('<I', f.read(4))[0]
-                magic = f.read(magic_len).decode('utf-8', errors='ignore')
-                num_files = struct.unpack('<I', f.read(4))[0]
+        with open(pkg_path, 'rb') as f:
+            magic_len = struct.unpack('<I', f.read(4))[0]
+            magic = f.read(magic_len).decode('utf-8', errors='ignore')
+            num_files = struct.unpack('<I', f.read(4))[0]
+            
+            files = []
+            for _ in range(num_files):
+                name_len = struct.unpack('<I', f.read(4))[0]
+                name_bytes = f.read(name_len)
+                name = name_bytes.decode('utf-8', errors='ignore')
+                offset = struct.unpack('<I', f.read(4))[0]
+                length = struct.unpack('<I', f.read(4))[0]
+                files.append((name, name_bytes, offset, length))
+            
+            header_end = f.tell()
+            
+            best_area = 0
+            best_img_bytes = None
+            
+            for name, name_bytes, offset, length in files:
+                f.seek(header_end + offset)
+                data = f.read(length)
                 
-                files = []
-                for _ in range(num_files):
-                    name_len = struct.unpack('<I', f.read(4))[0]
-                    name_bytes = f.read(name_len)
-                    name = name_bytes.decode('utf-8', errors='ignore')
-                    offset = struct.unpack('<I', f.read(4))[0]
-                    length = struct.unpack('<I', f.read(4))[0]
-                    files.append((name, name_bytes, offset, length))
+                lower_name = name.lower()
+                if ('.mp3' in lower_name or '.wav' in lower_name or '.ogg' in lower_name or b'.mp3' in name_bytes) and not os.path.exists(bgm_path):
+                    with open(bgm_path, 'wb') as audio_f:
+                        audio_f.write(data)
+                        
+                png_idx = data.find(b'\x89PNG')
+                jpg_idx = data.find(b'\xff\xd8\xff')
                 
-                header_end = f.tell()
+                headers = []
+                if png_idx != -1: headers.append(png_idx)
+                if jpg_idx != -1: headers.append(jpg_idx)
                 
-                best_png_size = 0
-                best_png_data = None
-                
-                for name, name_bytes, offset, length in files:
-                    f.seek(header_end + offset)
-                    data = f.read(length)
-                    
-                    lower_name = name.lower()
-                    if ('.mp3' in lower_name or '.wav' in lower_name or '.ogg' in lower_name or b'.mp3' in name_bytes) and not os.path.exists(bgm_path):
-                        with open(bgm_path, 'wb') as audio_f:
-                            audio_f.write(data)
-                            
-                    png_idx = data.find(b'\x89PNG')
-                    if png_idx != -1:
-                        png_bytes = data[png_idx:]
-                        if len(png_bytes) > best_png_size:
-                            best_png_size = len(png_bytes)
-                            best_png_data = png_bytes
-                
-                if best_png_data and not os.path.exists(bg_path):
-                    with open(bg_path, 'wb') as img_f:
-                        img_f.write(best_png_data)
+                for h_idx in headers:
+                    img_bytes = data[h_idx:]
+                    try:
+                        im = Image.open(io.BytesIO(img_bytes))
+                        area = im.size[0] * im.size[1]
+                        if area > best_area:
+                            best_area = area
+                            best_img_bytes = img_bytes
+                    except Exception:
+                        pass
+            
+            if best_img_bytes:
+                # 写入极清底图 (允许覆盖旧版较低分辨率的缓存)
+                with open(bg_path, 'wb') as img_f:
+                    img_f.write(best_img_bytes)
     except Exception as e:
         print(f"[WE UNPACK ERROR] {pkg_path}: {e}")
             
