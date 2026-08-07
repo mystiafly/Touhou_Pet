@@ -2166,9 +2166,11 @@ def api_scan_wallpaper_engine(custom_path: str = ""):
                             extracted_bg_path = os.path.join(sdir, "extracted", "base_bg.png")
                             extracted_bgm_path = os.path.join(sdir, "extracted", "bgm.mp3")
                             if os.path.exists(extracted_bg_path):
-                                extracted_bg_url = f"/api/wallpaper_engine/media?path={urllib.parse.quote(extracted_bg_path)}"
+                                mtime = int(os.path.getmtime(extracted_bg_path))
+                                extracted_bg_url = f"/api/wallpaper_engine/media?path={urllib.parse.quote(extracted_bg_path)}&t={mtime}"
                             if os.path.exists(extracted_bgm_path):
-                                extracted_bgm_url = f"/api/wallpaper_engine/media?path={urllib.parse.quote(extracted_bgm_path)}"
+                                mtime = int(os.path.getmtime(extracted_bgm_path))
+                                extracted_bgm_url = f"/api/wallpaper_engine/media?path={urllib.parse.quote(extracted_bgm_path)}&t={mtime}"
 
                             items.append({
                                 "folder_id": folder_id,
@@ -2210,9 +2212,11 @@ async def api_unpack_wallpaper_engine_item(request: Request):
         extracted_bgm_url = ""
         if extracted:
             if extracted.get("extracted_bg_path"):
-                extracted_bg_url = f"/api/wallpaper_engine/media?path={urllib.parse.quote(extracted['extracted_bg_path'])}"
+                mtime = int(os.path.getmtime(extracted['extracted_bg_path']))
+                extracted_bg_url = f"/api/wallpaper_engine/media?path={urllib.parse.quote(extracted['extracted_bg_path'])}&t={mtime}"
             if extracted.get("extracted_bgm_path"):
-                extracted_bgm_url = f"/api/wallpaper_engine/media?path={urllib.parse.quote(extracted['extracted_bgm_path'])}"
+                mtime = int(os.path.getmtime(extracted['extracted_bgm_path']))
+                extracted_bgm_url = f"/api/wallpaper_engine/media?path={urllib.parse.quote(extracted['extracted_bgm_path'])}&t={mtime}"
 
         return JSONResponse({
             "success": True,
