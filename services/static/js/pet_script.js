@@ -723,10 +723,20 @@ class DesktopPet {
         }
     }
 
+    cleanDisplayText(text) {
+        if (!text) return "";
+        let cleaned = text.replace(/<think>[\s\S]*?<\/think>/gi, '');
+        cleaned = cleaned.replace(/\[[A-Z0-9_]+(?::.*?)?\]/gi, '');
+        return cleaned.trim();
+    }
+
     renderImmersiveChatHistory(history) {
         if (!this.immersiveChatHistory) return;
         this.immersiveChatHistory.innerHTML = '';
         history.forEach(item => {
+            const cleanedText = this.cleanDisplayText(item.content);
+            if (!cleanedText) return;
+
             const msgDiv = document.createElement('div');
             const isUser = item.role === '你' || item.role === 'user';
             msgDiv.className = `immersive-chat-msg ${isUser ? 'user' : 'assistant'}`;
@@ -737,7 +747,7 @@ class DesktopPet {
 
             const textDiv = document.createElement('div');
             textDiv.className = 'immersive-chat-text';
-            textDiv.innerText = item.content;
+            textDiv.innerText = cleanedText;
 
             msgDiv.appendChild(senderDiv);
             msgDiv.appendChild(textDiv);
@@ -753,6 +763,9 @@ class DesktopPet {
 
     appendLocalChatMessage(role, content) {
         if (!this.immersiveChatHistory || !content) return;
+        const cleanedText = this.cleanDisplayText(content);
+        if (!cleanedText) return;
+
         const msgDiv = document.createElement('div');
         const isUser = role === '你' || role === 'user';
         msgDiv.className = `immersive-chat-msg ${isUser ? 'user' : 'assistant'}`;
@@ -765,7 +778,7 @@ class DesktopPet {
 
         const textDiv = document.createElement('div');
         textDiv.className = 'immersive-chat-text';
-        textDiv.innerText = content;
+        textDiv.innerText = cleanedText;
 
         msgDiv.appendChild(senderDiv);
         msgDiv.appendChild(textDiv);
