@@ -681,14 +681,22 @@ document.addEventListener('DOMContentLoaded', () => {
         async function selectWEWallpaper(item) {
             let mode = 'image';
             let mediaUrl = item.media_url || item.preview_url;
+            let noteText = "";
 
             if (item.type === 'video') {
                 mode = 'video';
+                noteText = "已应用为【视频壁纸模式】，原生60帧无缝播放！";
             } else if (item.type === 'web') {
                 mode = 'web';
+                noteText = "已应用为【网页壁纸模式】，原生HTML5/WebGL嵌入！";
+            } else if (item.type === 'scene') {
+                // 3D/粒子 scene 类型的 .pkg 壁纸：自动开启透传模式
+                mode = 'transparent';
+                noteText = "该壁纸为 Wallpaper Engine 3D/粒子场景壁纸 (scene.pkg)。\n\n系统已为你自动开启【桌面透传模式】！只需后台开着 Wallpaper Engine 运行该壁纸，进入沉浸模式时即可原生呈现 100% 完整的动态粒子、3D 特效与背景音乐，绝不放大或丢失特效！";
             } else {
                 mode = 'image';
                 mediaUrl = item.preview_url;
+                noteText = "已应用为【静态/GIF图片模式】。";
             }
 
             try {
@@ -704,7 +712,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await res.json();
                 if (data.success) {
                     updateWallpaperPreview(item.preview_url);
-                    alert(`已成功设置沉浸模式壁纸：${item.title} (${item.type.toUpperCase()} 模式)`);
+                    alert(`已成功选择壁纸《${item.title}》！\n\n${noteText}`);
                 }
             } catch (err) {
                 console.error("保存 WE 壁纸配置失败:", err);
