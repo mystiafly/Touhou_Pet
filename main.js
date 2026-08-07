@@ -130,7 +130,7 @@ ipcMain.on('window-drag-end', (event) => {
     const bounds = win.getBounds();
     const workArea = screen.getDisplayMatching(bounds).workArea;
     const snapDistance = -150; // 距离边缘多少像素触发吸附（负数表示需要把窗口拖出屏幕该像素值，实现“压入身子”再触发）
-    const exposedPixels = 140; // 吸附后露出的宽度（保证“暗中观察”图能看清）
+    const exposedPixels = 240; // 吸附后露出的宽度（确保莉莉与露米娅等桌宠在侧边探头时身体与表情清晰可见，不致潜入边缘过深）
     
     let newX = bounds.x;
     let newY = bounds.y;

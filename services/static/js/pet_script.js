@@ -493,9 +493,8 @@ class DesktopPet {
                         document.body.classList.add('peeking-mode');
                         const petContainer = document.querySelector('.pet-container');
                         if (petContainer) {
-                            petContainer.style.alignItems = side === 'left' ? 'flex-end' : 'flex-start';
-                            // 往屏幕内偏移，让她更露出来一点（原本弄反了，导致藏得更深）
-                            this.img.style.transform = side === 'left' ? 'translateX(50px)' : 'translateX(-50px)';
+                            // 往屏幕内微调偏移，保证露出姿态完整自然
+                            this.img.style.transform = side === 'left' ? 'translateX(15px)' : 'translateX(-15px)';
                         }
                     });
                 }
