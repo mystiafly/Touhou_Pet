@@ -498,8 +498,48 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    const immersiveWallpaperInput = document.getElementById('immersive-wallpaper-input');
-    const previewWallpaperBtn = document.getElementById('preview-wallpaper-btn');
+    const uploadWallpaperBtn = document.getElementById('upload-wallpaper-btn');
+    const wallpaperFileInput = document.getElementById('wallpaper-file-input');
+
+    if (uploadWallpaperBtn && wallpaperFileInput) {
+        uploadWallpaperBtn.addEventListener('click', () => {
+            wallpaperFileInput.click();
+        });
+
+        wallpaperFileInput.addEventListener('change', async () => {
+            if (!wallpaperFileInput.files || wallpaperFileInput.files.length === 0) return;
+            const file = wallpaperFileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const origHtml = uploadWallpaperBtn.innerHTML;
+            uploadWallpaperBtn.disabled = true;
+            uploadWallpaperBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 上传中...';
+
+            try {
+                const response = await fetch('/api/character/upload_wallpaper', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.success && data.wallpaper_url) {
+                    if (immersiveWallpaperInput) {
+                        immersiveWallpaperInput.value = data.wallpaper_url;
+                    }
+                    updateWallpaperPreview(data.wallpaper_url);
+                } else {
+                    alert("壁纸上传失败: " + (data.message || "未知错误"));
+                }
+            } catch (e) {
+                console.error("壁纸上传出错:", e);
+                alert("壁纸上传出错，请重试！");
+            } finally {
+                uploadWallpaperBtn.disabled = false;
+                uploadWallpaperBtn.innerHTML = origHtml;
+                wallpaperFileInput.value = '';
+            }
+        });
+    }
 
     if (immersiveWallpaperInput) {
         immersiveWallpaperInput.addEventListener('change', async () => {

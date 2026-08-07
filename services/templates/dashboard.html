@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>大贤者控制台 (Dashboard)</title>
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.19.3">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.20.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -263,9 +263,13 @@
                 <div class="settings-card" style="grid-column: 1 / -1;">
                     <h3><i class="fas fa-image"></i> 专属沉浸背景壁纸</h3>
                     <div class="form-group">
-                        <p class="help-text" style="margin-bottom: 12px;">设置当前角色的沉浸模式背景。支持静态图片 (PNG/JPG/WEBP) 或动态图片 (GIF) 的网络 URL、绝对路径，或者直接将壁纸命名为 <code>wallpaper.gif</code> / <code>wallpaper.png</code> 放入该角色的 <code>assets/</code> 目录中。</p>
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <input type="text" id="immersive-wallpaper-input" class="modern-input" placeholder="例如：/char_assets/rumia/assets/wallpaper.gif 或网络图片/GIF链接" style="flex: 1;">
+                        <p class="help-text" style="margin-bottom: 12px;">您可以直接点击<b>【选择本地壁纸文件】</b>上传图片或动图 (GIF/PNG/JPG/WEBP)，系统会自动重命名并保存至该角色的资源目录中。也支持手动填写网络 URL/路径。</p>
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <input type="file" id="wallpaper-file-input" accept="image/*,.gif,.png,.jpg,.jpeg,.webp" style="display: none;">
+                            <button id="upload-wallpaper-btn" class="action-btn primary-btn" style="white-space: nowrap; background: linear-gradient(135deg, #bd93f9, #ff79c6); border: none; color: #fff; padding: 8px 16px;">
+                                <i class="fas fa-file-upload"></i> 选择本地壁纸文件...
+                            </button>
+                            <input type="text" id="immersive-wallpaper-input" class="modern-input" placeholder="例如：/char_assets/rumia/assets/wallpaper.gif 或网络图片/GIF链接" style="flex: 1; min-width: 240px;">
                             <button id="preview-wallpaper-btn" class="action-btn outline" style="white-space: nowrap;">
                                 <i class="fas fa-eye"></i> 预览
                             </button>
@@ -1088,7 +1092,7 @@
     </div>
 </div>
 
-<script src="/static/js/dashboard.js?v=1.19.3"></script>
+<script src="/static/js/dashboard.js?v=1.20.0"></script>
 
 <!-- 视觉识图配置 Modal -->
 <div id="vision-tool-modal" class="modal-overlay hidden">

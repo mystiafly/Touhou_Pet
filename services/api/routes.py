@@ -1957,3 +1957,34 @@ def api_stats_dashboard():
         return JSONResponse({"status": "success", "data": data})
     except Exception as e:
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+@router.post("/api/character/upload_wallpaper")
+async def api_upload_wallpaper(file: UploadFile = File(...)):
+    """接收用户上传的壁纸文件，自动保存为当前角色的 wallpaper 并存入 assets 目录"""
+    import shutil
+    from core.config_manager import get_character_dir, get_active_character_id, save_config, get_config
+    try:
+        char_id = get_active_character_id()
+        char_dir = get_character_dir()
+        assets_dir = os.path.join(char_dir, "assets")
+        os.makedirs(assets_dir, exist_ok=True)
+        
+        ext = os.path.splitext(file.filename)[1].lower() if file.filename else ".png"
+        if not ext or ext not in ['.gif', '.png', '.jpg', '.jpeg', '.webp']:
+            ext = '.gif' if file.content_type and 'gif' in file.content_type else '.png'
+            
+        target_filename = f"wallpaper{ext}"
+        target_path = os.path.join(assets_dir, target_filename)
+        
+        with open(target_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        wallpaper_url = f"/char_assets/{char_id}/assets/{target_filename}"
+        
+        config = get_config()
+        config["immersive_wallpaper"] = wallpaper_url
+        save_config(config)
+        
+        return JSONResponse({"success": True, "wallpaper_url": wallpaper_url})
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
