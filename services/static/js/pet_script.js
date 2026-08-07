@@ -104,6 +104,9 @@ class DesktopPet {
         this.favScore = document.getElementById('fav-score');
         this.favContainer = document.getElementById('fav-container');
         this.immersiveChatHistory = document.getElementById('immersive-chat-history');
+        this.immersiveChatPanel = document.getElementById('immersive-chat-panel');
+        this.toggleChatBtn = document.getElementById('toggle-immersive-chat-btn');
+        this.chatTrigger = document.getElementById('immersive-chat-trigger');
 
         this.images = {};
         this.currentEmotion = 'normal';
@@ -265,6 +268,28 @@ class DesktopPet {
 
         this.initSettings();
         this.initPresets();
+
+        if (this.toggleChatBtn) {
+            this.toggleChatBtn.addEventListener('click', () => {
+                const container = document.querySelector('.pet-container');
+                if (container) {
+                    container.classList.add('chat-collapsed');
+                }
+                if (this.chatTrigger) {
+                    this.chatTrigger.classList.remove('hidden');
+                }
+            });
+        }
+
+        if (this.chatTrigger) {
+            this.chatTrigger.addEventListener('click', () => {
+                const container = document.querySelector('.pet-container');
+                if (container) {
+                    container.classList.remove('chat-collapsed');
+                }
+                this.chatTrigger.classList.add('hidden');
+            });
+        }
 
         this.resetAutoSpeakTimer();
 
@@ -622,9 +647,17 @@ class DesktopPet {
             }
         }
 
-        if (this.immersiveChatHistory) {
-            this.immersiveChatHistory.classList.remove('hidden');
+        if (this.immersiveChatPanel) {
+            this.immersiveChatPanel.classList.remove('hidden');
             this.fetchImmersiveChatHistory();
+        }
+
+        if (this.chatTrigger) {
+            this.chatTrigger.classList.add('hidden');
+        }
+
+        if (container) {
+            container.classList.remove('chat-collapsed');
         }
 
         if (this.immersiveClockContainer) {
@@ -648,14 +681,19 @@ class DesktopPet {
         const container = document.querySelector('.pet-container');
         if (container) {
             container.classList.remove('immersive-mode');
+            container.classList.remove('chat-collapsed');
         }
 
         if (this.immersiveWallpaper) {
             this.immersiveWallpaper.classList.add('hidden');
         }
 
-        if (this.immersiveChatHistory) {
-            this.immersiveChatHistory.classList.add('hidden');
+        if (this.immersiveChatPanel) {
+            this.immersiveChatPanel.classList.add('hidden');
+        }
+
+        if (this.chatTrigger) {
+            this.chatTrigger.classList.add('hidden');
         }
 
         if (this.immersiveClockContainer) {

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Desktop Pet</title>
-    <link rel="stylesheet" href="/static/css/pet.css?v=1.20.4">
+    <link rel="stylesheet" href="/static/css/pet.css?v=1.20.5">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Premium Interactive Network Graph Vis.js -->
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
@@ -27,9 +27,25 @@
         Ignoring: <span id="debug-ignoring-val">N/A</span>
     </div>
 
+    <!-- 沉浸模式右侧可折叠/展开的对话记录面板 -->
+    <div id="immersive-chat-panel" class="immersive-chat-panel hidden">
+        <div class="immersive-chat-header">
+            <span><i class="fas fa-comments"></i> 对话记录</span>
+            <button id="toggle-immersive-chat-btn" class="chat-toggle-btn" title="收起对话栏">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+        <div id="immersive-chat-history" class="immersive-chat-history"></div>
+    </div>
+
+    <!-- 沉浸模式对话栏收起时的展开触发按钮 -->
+    <div id="immersive-chat-trigger" class="immersive-chat-trigger hidden" title="展开对话栏">
+        <i class="fas fa-comments"></i>
+    </div>
+
+    <!-- 头顶气泡 -->
     <div id="speech-bubble" class="bubble" style="opacity: 0;">
         <p id="bubble-content">...</p>
-        <div id="immersive-chat-history" class="immersive-chat-history hidden"></div>
     </div>
 
     <div class="character-wrapper">
@@ -133,6 +149,6 @@
     </div>
 </div>
 
-<script src="/static/js/pet_script.js?v=1.20.4"></script>
+<script src="/static/js/pet_script.js?v=1.20.5"></script>
 </body>
 </html>

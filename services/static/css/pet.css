@@ -1282,50 +1282,92 @@ body.peeking-mode .log-container {
     transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important;
 }
 
-/* 沉浸模式下隐藏好感度图标 */
+/* 沉浸模式下好感度图标隐藏 */
 .pet-container.immersive-mode #fav-container {
     display: none !important;
 }
 
-/* 右侧常驻拉长拉高对话框 */
+/* 沉浸模式下头顶对话气泡（依然浮动于左下角桌宠头顶） */
 .pet-container.immersive-mode #speech-bubble {
     position: fixed !important;
+    left: 45px !important;
+    bottom: 580px !important;
+    right: auto !important;
+    top: auto !important;
+    width: 340px !important;
+    max-width: 340px !important;
+    z-index: 25 !important;
+    background: rgba(30, 31, 41, 0.88) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    border-radius: 16px !important;
+    padding: 14px 18px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+    transition: opacity 0.3s ease !important;
+}
+
+.pet-container.immersive-mode #bubble-content {
+    display: block !important;
+    font-size: 15px !important;
+    line-height: 1.6 !important;
+    color: #f8f8f2 !important;
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+}
+
+/* 右侧常驻可折叠对话记录面板 */
+.immersive-chat-panel {
+    position: fixed !important;
     right: 40px !important;
-    top: 130px !important;
-    left: auto !important;
-    bottom: auto !important;
-    width: 480px !important;
-    height: calc(100vh - 240px) !important;
-    max-width: none !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: flex-end !important;
+    top: 120px !important;
+    width: 460px !important;
+    height: calc(100vh - 230px) !important;
     background: rgba(30, 31, 41, 0.8) !important;
     backdrop-filter: blur(20px) !important;
     -webkit-backdrop-filter: blur(20px) !important;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
     border-radius: 20px !important;
-    padding: 20px !important;
+    padding: 16px 18px !important;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6) !important;
-    z-index: 10 !important;
-    overflow: hidden !important;
+    z-index: 20 !important;
+    display: flex;
+    flex-direction: column;
     box-sizing: border-box !important;
     pointer-events: auto !important;
+    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease !important;
 }
 
-.pet-container.immersive-mode #speech-bubble::before,
-.pet-container.immersive-mode #speech-bubble::after {
-    display: none !important;
+.immersive-chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    color: #bd93f9;
+    font-weight: 600;
+    font-size: 15px;
 }
 
-.pet-container.immersive-mode #bubble-content {
-    display: none !important;
+.chat-toggle-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.chat-toggle-btn:hover {
+    color: #ff79c6;
+    background: rgba(255, 255, 255, 0.1);
 }
 
 /* 沉浸模式下的聊天历史列表 */
-.pet-container.immersive-mode #immersive-chat-history {
+.immersive-chat-history {
     display: flex !important;
     flex-direction: column !important;
     gap: 12px !important;
@@ -1333,6 +1375,38 @@ body.peeking-mode .log-container {
     height: 100% !important;
     overflow-y: auto !important;
     padding-right: 4px !important;
+}
+
+/* 右侧面板折叠状态下的缩进动画与展开触发按钮 */
+.pet-container.immersive-mode.chat-collapsed .immersive-chat-panel,
+.pet-container.immersive-mode.chat-collapsed .input-bar {
+    transform: translateX(540px) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+.immersive-chat-trigger {
+    position: fixed !important;
+    right: 24px !important;
+    bottom: 40px !important;
+    z-index: 30 !important;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #bd93f9, #ff79c6);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    cursor: pointer;
+    box-shadow: 0 8px 25px rgba(189, 147, 249, 0.5);
+    transition: all 0.3s ease;
+    pointer-events: auto !important;
+}
+
+.immersive-chat-trigger:hover {
+    transform: scale(1.1);
 }
 
 .immersive-chat-msg {
