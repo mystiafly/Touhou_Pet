@@ -171,6 +171,7 @@ class DesktopPet {
                 this.img.src = prefix + 'normal.png';
             }
             this.wallpaperUrl = data.wallpaper_url || "";
+            this.wallpaperFit = data.wallpaper_fit || "cover";
             this.enableGreeting = data.enable_greeting !== false;
             this.enableAutoSpeak = data.enable_auto_speak !== false;
             this.autoSpeakMultiplier = data.auto_speak_multiplier || 1.0;
@@ -599,6 +600,10 @@ class DesktopPet {
 
         if (this.immersiveWallpaper) {
             this.immersiveWallpaper.classList.remove('hidden');
+            const fitMode = this.wallpaperFit || 'cover';
+            this.immersiveWallpaper.style.backgroundSize = fitMode;
+            this.immersiveWallpaper.style.backgroundPosition = 'center';
+
             if (this.wallpaperUrl) {
                 this.immersiveWallpaper.style.backgroundImage = `url('${this.wallpaperUrl}')`;
             } else {

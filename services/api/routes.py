@@ -680,6 +680,7 @@ async def api_character_info():
         "images_dict": images_dict,
         "active_sprite_set": active_sprite_set,
         "wallpaper_url": wallpaper_url,
+        "wallpaper_fit": config.get("wallpaper_fit", "cover"),
         "enable_greeting": config.get("enable_greeting", True),
         "enable_auto_speak": config.get("enable_auto_speak", True),
         "auto_speak_multiplier": config.get("auto_speak_multiplier", 1.0),

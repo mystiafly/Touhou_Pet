@@ -295,10 +295,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 const immersiveWallpaperInput = document.getElementById('immersive-wallpaper-input');
+                const wallpaperFitSelect = document.getElementById('wallpaper-fit-select');
+                if (wallpaperFitSelect && configData.wallpaper_fit !== undefined) {
+                    wallpaperFitSelect.value = configData.wallpaper_fit;
+                }
                 if (immersiveWallpaperInput) {
                     const url = configData.immersive_wallpaper || configData.wallpaper_url || "";
                     immersiveWallpaperInput.value = url;
-                    updateWallpaperPreview(url);
+                    updateWallpaperPreview(url, configData.wallpaper_fit || 'cover');
                 }
                 
                 const greetingToggle = document.getElementById('greeting-toggle');
@@ -483,12 +487,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function updateWallpaperPreview(url) {
+    function updateWallpaperPreview(url, fitMode) {
         const previewImg = document.getElementById('wallpaper-preview-img');
         const previewPlaceholder = document.getElementById('wallpaper-preview-placeholder');
+        const wallpaperFitSelect = document.getElementById('wallpaper-fit-select');
+        const mode = fitMode || (wallpaperFitSelect ? wallpaperFitSelect.value : 'cover');
+
         if (previewImg && previewPlaceholder) {
             if (url && url.trim()) {
                 previewImg.src = url.trim();
+                if (mode === 'auto') {
+                    previewImg.style.objectFit = 'none';
+                } else if (mode === '100% 100%') {
+                    previewImg.style.objectFit = 'fill';
+                } else {
+                    previewImg.style.objectFit = mode;
+                }
                 previewImg.style.display = 'block';
                 previewPlaceholder.style.display = 'none';
             } else {
@@ -499,6 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const immersiveWallpaperInput = document.getElementById('immersive-wallpaper-input');
+    const wallpaperFitSelect = document.getElementById('wallpaper-fit-select');
     const previewWallpaperBtn = document.getElementById('preview-wallpaper-btn');
     const uploadWallpaperBtn = document.getElementById('upload-wallpaper-btn');
     const wallpaperFileInput = document.getElementById('wallpaper-file-input');
@@ -555,6 +570,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             } catch (e) {
                 console.error("保存沉浸壁纸失败:", e);
+            }
+        });
+    }
+
+    if (wallpaperFitSelect) {
+        wallpaperFitSelect.addEventListener('change', async () => {
+            const fitVal = wallpaperFitSelect.value;
+            const urlVal = immersiveWallpaperInput ? immersiveWallpaperInput.value.trim() : "";
+            updateWallpaperPreview(urlVal, fitVal);
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ wallpaper_fit: fitVal })
+                });
+            } catch (e) {
+                console.error("保存壁纸适应模式失败:", e);
             }
         });
     }

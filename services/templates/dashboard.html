@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>大贤者控制台 (Dashboard)</title>
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.20.1">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.21.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -274,6 +274,17 @@
                                 <i class="fas fa-eye"></i> 预览
                             </button>
                         </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;">
+                        <label for="wallpaper-fit-select" style="font-weight: 500; font-size: 14px; display: block; margin-bottom: 6px;">壁纸缩放/适应模式 (Wallpaper Fit)</label>
+                        <select id="wallpaper-fit-select" class="modern-select" style="width: 100%;">
+                            <option value="cover">铺满全屏 (默认，等比例放大裁剪填满全屏)</option>
+                            <option value="contain">完整显示 (等比例缩放完整保留原图，不裁剪放大)</option>
+                            <option value="100% 100%">拉伸铺满 (自适应屏幕宽高，不裁剪、不留空)</option>
+                            <option value="auto">原始大小居中 (完全按图片原分辨率显示，不被放大)</option>
+                        </select>
+                        <p class="help-text" style="margin-top: 6px;">如果上传的 GIF 或图片分辨率较小被过度放大致模糊，可调整为此处的“原始大小居中”或“拉伸铺满/完整显示”。</p>
                     </div>
                 </div>
 
@@ -1092,7 +1103,7 @@
     </div>
 </div>
 
-<script src="/static/js/dashboard.js?v=1.20.1"></script>
+<script src="/static/js/dashboard.js?v=1.21.0"></script>
 
 <!-- 视觉识图配置 Modal -->
 <div id="vision-tool-modal" class="modal-overlay hidden">
