@@ -653,7 +653,9 @@ class DesktopPet {
         if (particleCanvas) particleCanvas.classList.add('hidden');
         if (this.particleAnimFrame) cancelAnimationFrame(this.particleAnimFrame);
 
-        // 根据配置模式智能加载背景
+        // 决定画面缩放与拉伸适应模式 (根据用户在大贤者中选择的 Fit Mode，默认 contain 不裁剪不放大)
+        const fitMode = this.wallpaperFit || 'contain';
+
         if (bgMode === 'we_native' || bgMode === 'transparent') {
             // WE 原生渲染/透传模式：自动隐藏 Windows 桌面图标，形成 100% 纯净全屏观赏体验
             fetch('/api/wallpaper_engine/set_clean_desktop', {
@@ -665,8 +667,9 @@ class DesktopPet {
             // 解包 4K 超高清原图 + 流星粒子特效 + BGM
             if (this.immersiveWallpaper) {
                 this.immersiveWallpaper.classList.remove('hidden');
-                this.immersiveWallpaper.style.backgroundSize = 'cover';
+                this.immersiveWallpaper.style.backgroundSize = fitMode;
                 this.immersiveWallpaper.style.backgroundPosition = 'center';
+                this.immersiveWallpaper.style.backgroundRepeat = 'no-repeat';
                 this.immersiveWallpaper.style.backgroundImage = `url('${this.wallpaperUrl}')`;
             }
             this.startImmersiveParticleEffect();
@@ -680,6 +683,10 @@ class DesktopPet {
             if (this.immersiveVideo) {
                 this.immersiveVideo.classList.remove('hidden');
                 this.immersiveVideo.src = mediaUrl || this.wallpaperUrl;
+                if (fitMode === 'contain') this.immersiveVideo.style.objectFit = 'contain';
+                else if (fitMode === '100% 100%') this.immersiveVideo.style.objectFit = 'fill';
+                else if (fitMode === 'auto') this.immersiveVideo.style.objectFit = 'none';
+                else this.immersiveVideo.style.objectFit = 'cover';
                 this.immersiveVideo.play().catch(err => console.log("视频壁纸自动播放提示:", err));
             }
         } else if (bgMode === 'web' && mediaUrl) {
@@ -691,9 +698,9 @@ class DesktopPet {
             // 默认静态/GIF 图片壁纸
             if (this.immersiveWallpaper) {
                 this.immersiveWallpaper.classList.remove('hidden');
-                const fitMode = this.wallpaperFit || 'cover';
                 this.immersiveWallpaper.style.backgroundSize = fitMode;
                 this.immersiveWallpaper.style.backgroundPosition = 'center';
+                this.immersiveWallpaper.style.backgroundRepeat = 'no-repeat';
 
                 if (this.wallpaperUrl) {
                     this.immersiveWallpaper.style.backgroundImage = `url('${this.wallpaperUrl}')`;
