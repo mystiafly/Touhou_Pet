@@ -751,6 +751,32 @@ class DesktopPet {
         this.immersiveChatHistory.scrollTop = this.immersiveChatHistory.scrollHeight;
     }
 
+    appendLocalChatMessage(role, content) {
+        if (!this.immersiveChatHistory || !content) return;
+        const msgDiv = document.createElement('div');
+        const isUser = role === '你' || role === 'user';
+        msgDiv.className = `immersive-chat-msg ${isUser ? 'user' : 'assistant'}`;
+
+        const senderDiv = document.createElement('div');
+        senderDiv.className = 'immersive-chat-sender';
+        const now = new Date();
+        const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+        senderDiv.innerText = `${role} · ${timeStr}`;
+
+        const textDiv = document.createElement('div');
+        textDiv.className = 'immersive-chat-text';
+        textDiv.innerText = content;
+
+        msgDiv.appendChild(senderDiv);
+        msgDiv.appendChild(textDiv);
+        this.immersiveChatHistory.appendChild(msgDiv);
+
+        if (this.bubble) {
+            this.bubble.scrollTop = this.bubble.scrollHeight;
+        }
+        this.immersiveChatHistory.scrollTop = this.immersiveChatHistory.scrollHeight;
+    }
+
     updateImmersiveClock() {
         const now = new Date();
         const hours = String(now.getHours()).padStart(2, '0');
@@ -1055,11 +1081,6 @@ class DesktopPet {
         this.bubble.style.opacity = '1';
         this.bubble.style.pointerEvents = 'auto';
 
-        if (this.isImmersiveMode) {
-            this.fetchImmersiveChatHistory();
-            return;
-        }
-
         if (this.bubbleTimer) clearTimeout(this.bubbleTimer);
 
         // [新增] 智能时长计算逻辑
@@ -1094,12 +1115,11 @@ class DesktopPet {
         this.input.value = '';
         this.autoSpeakCount = 0;
         this.wakeUp(true); // 闈欓粯鍞ら啋 (鎺ヤ笅鏉ョ殑澶фā鍨嬪洖澶嶄細灞曠ず琛ㄦ儏涓庢皵娉?
-        this.resetAutoSpeakTimer();
-
-        this.showBubble("hmm...", -1); // 传入 -1 让气泡持续显示直到新消息覆盖
         if (this.isImmersiveMode) {
-            this.fetchImmersiveChatHistory();
+            this.appendLocalChatMessage("你", text);
         }
+
+        this.showBubble("hmm...", -1);
 
         try {
             const response = await fetch('/api/chat', {
@@ -1113,7 +1133,8 @@ class DesktopPet {
                 this.showBubble(data.reply);
                 this.setEmotion(data.emotion);
                 if (this.isImmersiveMode) {
-                    this.fetchImmersiveChatHistory();
+                    this.appendLocalChatMessage(this.charName || "桌宠", data.reply);
+                    setTimeout(() => this.fetchImmersiveChatHistory(), 1200);
                 }
 
                 // [鏂板] 濡傛灉鍚庣杩斿洖浜?ReAct 鐐规瓕鏁版嵁锛岀洿鎺ヨ皟鐢ㄦ挱鏀惧櫒鎾斁锛岃烦杩囬噸澶嶆悳绱?
@@ -1287,6 +1308,10 @@ class DesktopPet {
             if (data.success) {
                 this.showBubble(data.reply);
                 this.setEmotion(data.emotion);
+                if (this.isImmersiveMode) {
+                    this.appendLocalChatMessage(this.charName || "桌宠", data.reply);
+                    setTimeout(() => this.fetchImmersiveChatHistory(), 1200);
+                }
                 if (data.favorability !== undefined) {
                     this.favScore.innerText = data.favorability;
                 }
