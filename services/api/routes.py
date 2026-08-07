@@ -2208,6 +2208,87 @@ async def api_unpack_wallpaper_engine_item(request: Request):
     except Exception as e:
         return JSONResponse({"success": False, "message": str(e)}, status_code=500)
 
+import subprocess, ctypes
+
+def find_wallpaper_engine_exe():
+    candidate_paths = [
+        r'H:\SteamLibrary\steamapps\common\wallpaper_engine\wallpaper64.exe',
+        r'C:\Program Files (x86)\Steam\steamapps\common\wallpaper_engine\wallpaper64.exe',
+        r'C:\Program Files\Steam\steamapps\common\wallpaper_engine\wallpaper64.exe',
+        r'D:\SteamLibrary\steamapps\common\wallpaper_engine\wallpaper64.exe',
+        r'E:\SteamLibrary\steamapps\common\wallpaper_engine\wallpaper64.exe',
+        r'F:\SteamLibrary\steamapps\common\wallpaper_engine\wallpaper64.exe',
+        r'G:\SteamLibrary\steamapps\common\wallpaper_engine\wallpaper64.exe',
+        r'H:\SteamLibrary\steamapps\common\wallpaper_engine\wallpaper32.exe',
+        r'C:\Program Files (x86)\Steam\steamapps\common\wallpaper_engine\wallpaper32.exe',
+    ]
+    for p in candidate_paths:
+        if os.path.exists(p):
+            return p
+    return ""
+
+def set_desktop_icons_visible(visible: bool):
+    """通过 Win32 API 隐藏或恢复 Windows 桌面图标，实现纯净沉浸效果"""
+    try:
+        progman = ctypes.windll.user32.FindWindowW('Progman', None)
+        defview = ctypes.windll.user32.FindWindowExW(progman, 0, 'SHELLDLL_DefView', None)
+        if not defview:
+            workerw = 0
+            while True:
+                workerw = ctypes.windll.user32.FindWindowExW(0, workerw, 'WorkerW', None)
+                if not workerw:
+                    break
+                defview = ctypes.windll.user32.FindWindowExW(workerw, 0, 'SHELLDLL_DefView', None)
+                if defview:
+                    break
+        if defview:
+            show_cmd = 5 if visible else 0  # 5=SW_SHOW, 0=SW_HIDE
+            ctypes.windll.user32.ShowWindow(defview, show_cmd)
+            return True
+    except Exception as e:
+        print(f"[WIN32 ICON TOGGLE ERROR] {e}")
+    return False
+
+@router.post("/api/wallpaper_engine/apply_native")
+async def api_apply_wallpaper_engine_native(request: Request):
+    """调用 Wallpaper Engine 命令行 API 切换原生壁纸播放"""
+    from core.config_manager import save_config, get_config
+    try:
+        data = await request.json()
+        folder_path = data.get("folder_path", "")
+        project_json = os.path.join(folder_path, "project.json") if folder_path else ""
+        
+        we_exe = find_wallpaper_engine_exe()
+        if not we_exe:
+            return JSONResponse({"success": False, "message": "未在系统中未找到 Wallpaper Engine 可执行文件"}, status_code=404)
+        if not os.path.exists(project_json):
+            return JSONResponse({"success": False, "message": "壁纸 project.json 不存在"}, status_code=400)
+            
+        cmd = [we_exe, "-control", "openWallpaper", "-file", project_json]
+        subprocess.Popen(cmd)
+        
+        config = get_config()
+        config["immersive_bg_mode"] = "we_native"
+        config["immersive_we_folder"] = folder_path
+        if "preview_url" in data:
+            config["immersive_wallpaper"] = data["preview_url"]
+        save_config(config)
+        
+        return JSONResponse({"success": True, "we_exe": we_exe})
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
+@router.post("/api/wallpaper_engine/set_clean_desktop")
+async def api_set_clean_desktop(request: Request):
+    """进入/退出沉浸模式时，切换桌面图标显示状态以达到纯净观赏效果"""
+    try:
+        data = await request.json()
+        hide_icons = data.get("hide_icons", False)
+        ok = set_desktop_icons_visible(not hide_icons)
+        return JSONResponse({"success": ok})
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
 @router.get("/api/wallpaper_engine/media")
 def api_serve_wallpaper_engine_media(path: str = ""):
     """安全的本地壁纸引擎媒体文件代理与流式传输"""

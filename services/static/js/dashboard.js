@@ -679,62 +679,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         async function selectWEWallpaper(item) {
-            let mode = 'image';
-            let mediaUrl = item.media_url || item.preview_url;
-            let wallpaperUrl = item.preview_url;
-            let bgmUrl = item.extracted_bgm_url || "";
-            let noteText = "";
-
-            if (item.type === 'video') {
-                mode = 'video';
-                noteText = "已应用为【视频壁纸模式】，原生60帧无缝播放！";
-            } else if (item.type === 'web') {
-                mode = 'web';
-                noteText = "已应用为【网页壁纸模式】，原生HTML5/WebGL嵌入！";
-            } else if (item.type === 'scene') {
-                if (!item.extracted_bg_url) {
-                    try {
-                        const unpackRes = await fetch('/api/wallpaper_engine/unpack', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ folder_path: item.folder_path })
-                        });
-                        const unpackData = await unpackRes.json();
-                        if (unpackData.success) {
-                            item.extracted_bg_url = unpackData.extracted_bg_url;
-                            item.extracted_bgm_url = unpackData.extracted_bgm_url;
-                        }
-                    } catch (e) {
-                        console.error("按需解包失败:", e);
-                    }
-                }
-
-                mode = 'scene_extracted';
-                wallpaperUrl = item.extracted_bg_url || item.preview_url;
-                mediaUrl = wallpaperUrl;
-                bgmUrl = item.extracted_bgm_url || "";
-                noteText = "已成功应用为【独立 4K 沉浸壁纸模式】！\n\n画面已自动全屏遮罩（遮挡桌面图标与任务栏），并配合流星粒子动画与原版 BGM 音频，无需开启桌面透传或后台软件！";
-            } else {
-                mode = 'image';
-                mediaUrl = item.preview_url;
-                noteText = "已应用为【静态/GIF图片模式】。";
-            }
-
             try {
-                const res = await fetch('/api/character/save_immersive_config', {
+                const res = await fetch('/api/wallpaper_engine/apply_native', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        immersive_bg_mode: mode,
-                        immersive_media_url: mediaUrl,
-                        immersive_wallpaper: wallpaperUrl,
-                        immersive_bgm_url: bgmUrl
+                        folder_path: item.folder_path,
+                        preview_url: item.preview_url
                     })
                 });
                 const data = await res.json();
                 if (data.success) {
-                    updateWallpaperPreview(wallpaperUrl);
-                    alert(`已成功选择壁纸《${item.title}》！\n\n${noteText}`);
+                    updateWallpaperPreview(item.preview_url);
+                    alert(`已成功调用 Wallpaper Engine 引擎原生播放《${item.title}》！\n\n进入沉浸模式时，系统将自动隐藏桌面图标，呈现 100% 纯净无瑕的 3D 动态特效与音乐，桌宠和聊天框将完美覆盖浮于其上！`);
+                } else {
+                    alert(`调用 WE 失败: ${data.message || '未知错误'}`);
                 }
             } catch (err) {
                 console.error("保存 WE 壁纸配置失败:", err);

@@ -654,7 +654,14 @@ class DesktopPet {
         if (this.particleAnimFrame) cancelAnimationFrame(this.particleAnimFrame);
 
         // 根据配置模式智能加载背景
-        if (bgMode === 'scene_extracted') {
+        if (bgMode === 'we_native' || bgMode === 'transparent') {
+            // WE 原生渲染/透传模式：自动隐藏 Windows 桌面图标，形成 100% 纯净全屏观赏体验
+            fetch('/api/wallpaper_engine/set_clean_desktop', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ hide_icons: true })
+            }).catch(e => console.log(e));
+        } else if (bgMode === 'scene_extracted') {
             // 解包 4K 超高清原图 + 流星粒子特效 + BGM
             if (this.immersiveWallpaper) {
                 this.immersiveWallpaper.classList.remove('hidden');
@@ -680,8 +687,6 @@ class DesktopPet {
                 this.immersiveWeb.classList.remove('hidden');
                 this.immersiveWeb.src = mediaUrl;
             }
-        } else if (bgMode === 'transparent') {
-            // 透明穿透模式：隐藏所有背景遮罩，直接透传桌面原本运行的 Wallpaper Engine 动态动画
         } else {
             // 默认静态/GIF 图片壁纸
             if (this.immersiveWallpaper) {
@@ -728,6 +733,13 @@ class DesktopPet {
     exitImmersiveMode(notifyIPC = true) {
         if (!this.isImmersiveMode) return;
         this.isImmersiveMode = false;
+
+        // 退出沉浸模式时自动恢复 Windows 桌面图标
+        fetch('/api/wallpaper_engine/set_clean_desktop', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ hide_icons: false })
+        }).catch(e => console.log(e));
 
         const container = document.querySelector('.pet-container');
         if (container) {
