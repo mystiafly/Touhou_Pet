@@ -1,3 +1,3 @@
-Set objShell = CreateObject("WScript.Shell")
-WScript.Sleep 5000
-objShell.Run "cmd /c start """" ""start.bat""", 1, False
+Set objShell = CreateObject("Shell.Application")
+WScript.Sleep 2000
+objShell.ShellExecute "start.bat", "", "", "open", 1
