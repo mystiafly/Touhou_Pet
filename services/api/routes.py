@@ -1962,7 +1962,7 @@ def api_stats_dashboard():
 @router.post("/api/character/upload_wallpaper")
 async def api_upload_wallpaper(file: UploadFile = File(...)):
     """接收用户上传的壁纸文件，自动保存为当前角色的 wallpaper 并存入 assets 目录"""
-    import shutil
+    import shutil, time
     from core.config_manager import get_character_dir, get_active_character_id, save_config, get_config
     try:
         char_id = get_active_character_id()
@@ -1970,6 +1970,14 @@ async def api_upload_wallpaper(file: UploadFile = File(...)):
         assets_dir = os.path.join(char_dir, "assets")
         os.makedirs(assets_dir, exist_ok=True)
         
+        # 清理旧的 wallpaper.* 文件，防止不同格式冲突
+        for old_f in os.listdir(assets_dir):
+            if old_f.lower().startswith("wallpaper."):
+                try:
+                    os.remove(os.path.join(assets_dir, old_f))
+                except Exception:
+                    pass
+
         ext = os.path.splitext(file.filename)[1].lower() if file.filename else ".png"
         if not ext or ext not in ['.gif', '.png', '.jpg', '.jpeg', '.webp']:
             ext = '.gif' if file.content_type and 'gif' in file.content_type else '.png'
@@ -1980,7 +1988,9 @@ async def api_upload_wallpaper(file: UploadFile = File(...)):
         with open(target_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
             
-        wallpaper_url = f"/char_assets/{char_id}/assets/{target_filename}"
+        # 增加时间戳，强行刷新浏览器静态图片缓存
+        timestamp = int(time.time() * 1000)
+        wallpaper_url = f"/char_assets/{char_id}/assets/{target_filename}?t={timestamp}"
         
         config = get_config()
         config["immersive_wallpaper"] = wallpaper_url

@@ -588,10 +588,20 @@ class DesktopPet {
         }
     }
 
-    enterImmersiveMode() {
+    async enterImmersiveMode() {
         if (this.isImmersiveMode) return;
         this.isImmersiveMode = true;
         this.closeSettingsModal();
+
+        // 重新获取最新角色壁纸配置（防缓存/实时生效）
+        try {
+            const res = await fetch('/api/character_info');
+            const data = await res.json();
+            if (data.wallpaper_url) this.wallpaperUrl = data.wallpaper_url;
+            if (data.wallpaper_fit) this.wallpaperFit = data.wallpaper_fit;
+        } catch (e) {
+            console.error("更新沉浸壁纸配置失败:", e);
+        }
 
         const container = document.querySelector('.pet-container');
         if (container) {
