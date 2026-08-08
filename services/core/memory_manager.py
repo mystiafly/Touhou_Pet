@@ -7,6 +7,15 @@ from mem0 import Memory
 from core.config_manager import get_config, get_character_dir, get_file_path, get_active_character_id
 from core.profile_manager import get_favorability
 
+def set_hf_endpoint(endpoint: str):
+    """动态强刷环境变量与 huggingface_hub.constants.ENDPOINT 内部全局常量"""
+    os.environ["HF_ENDPOINT"] = endpoint
+    try:
+        import huggingface_hub.constants
+        huggingface_hub.constants.ENDPOINT = endpoint
+    except Exception:
+        pass
+
 memory_agent = None
 memory_agent_lock = threading.Lock()
 
@@ -191,12 +200,12 @@ def get_memory_agent():
             print("[MEM0] 向量记忆引擎初始化成功。")
             return memory_agent
         except Exception as ex:
-            print(f"[MEM0 WARNING] 默认镜像源初始化失败 ({ex})，正在自动尝试备用镜像源...")
+            print(f"[MEM0 WARNING] 默认镜像源初始化失败 ({ex})，正在自动尝试强刷新备用镜像源...")
             fallback_endpoints = ["https://huggingface.co", "https://hf-hub.com"]
             for alt_endpoint in fallback_endpoints:
                 try:
-                    print(f"[MEM0 RETRY] 切换备用模型下载源: {alt_endpoint} ...")
-                    os.environ["HF_ENDPOINT"] = alt_endpoint
+                    print(f"[MEM0 RETRY] 动态重置模型服务器为: {alt_endpoint} ...")
+                    set_hf_endpoint(alt_endpoint)
                     memory_agent = Memory.from_config(mem0_config)
                     print(f"[MEM0] 切换备用源 [{alt_endpoint}] 成功初始化向量记忆引擎！")
                     return memory_agent
