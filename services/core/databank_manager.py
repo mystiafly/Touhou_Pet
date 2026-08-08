@@ -163,40 +163,82 @@ def get_active_tables(user_message, current_pool=""):
             active_rows = sheet.get("content", [])
         elif entry_type == "keyword":
             content = sheet.get("content", [])
-            if not content or len(content) < 1:
+            if not content or len(content) <= 1:
                 continue
             
             headers = content[0]
+            data_rows = content[1:]
+            
             kws = [k.strip() for k in keywords_str.split(',') if k.strip()] if keywords_str else []
             
-            # 如果配置了 keywords 触发词，优先检查 keywords
-            if kws:
-                lower_kws = [k.lower() for k in kws]
-                for kw in lower_kws:
-                    if kw in search_text:
-                        is_active = True
-                        active_rows = content
+            # 分解关键词：区分是“列名”（指向目标列精细搜寻）还是普通的“触发关键字”
+            target_col_indices = []
+            plain_kws = []
+            
+            for kw in kws:
+                kw_lower = kw.lower()
+                matched_idx = None
+                for idx, h in enumerate(headers):
+                    if str(h).strip().lower() == kw_lower:
+                        matched_idx = idx
+                        break
+                if matched_idx is not None:
+                    target_col_indices.append(matched_idx)
+                else:
+                    plain_kws.append(kw_lower)
+            
+            # 1. 检查普通触发词是否命中 (如 "昨天", "日常", "摘要", "记录", "以前")
+            plain_kw_matched = False
+            if plain_kws:
+                for pkw in plain_kws:
+                    if pkw in search_text:
+                        plain_kw_matched = True
                         break
             
-            # 智能单元格双向包含匹配
-            if not is_active and len(content) > 1:
-                active_rows = [headers]
-                for row in content[1:]:
-                    row_matched = False
-                    for cell in row[1:]:
-                        cell_str = str(cell).strip().lower()
-                        if cell_str and (cell_str in search_text or search_text in cell_str):
-                            row_matched = True
-                            break
-                    if row_matched:
-                        active_rows.append(row)
+            # 2. 提取用户消息中的中文词组 n-grams (2-4字)
+            stop_words = {'的时候', '和我', '跟我', '了一下', '你可以', '你知不知道', '你知道', '怎么', '什么', '可以', '一下'}
+            user_ngrams = set()
+            clean_search = re.sub(r'[^\u4e00-\u9fa5a-zA-Z0-9]', '', search_text)
+            for l in [2, 3, 4]:
+                for i in range(len(clean_search) - l + 1):
+                    gram = clean_search[i:i+l]
+                    if gram not in stop_words:
+                        user_ngrams.add(gram)
+            
+            matched_data_rows = []
+            for row in data_rows:
+                row_matched = plain_kw_matched
                 
-                if len(active_rows) > 1:
-                    is_active = True
-                elif not kws:
-                    # 未设关键词的关键词表，默认无缝降级常驻暴露
-                    is_active = True
-                    active_rows = content
+                if not row_matched:
+                    # 确定要检索的列范围：指定了列名查目标列，否则查全行除row_id外
+                    check_cols = target_col_indices if target_col_indices else list(range(1, len(row)))
+                    
+                    for col_idx in check_cols:
+                        if col_idx < len(row):
+                            cell_val = str(row[col_idx]).strip().lower()
+                            if not cell_val:
+                                continue
+                            
+                            # 直接包含比对
+                            if cell_val in search_text or search_text in cell_val:
+                                row_matched = True
+                                break
+                            
+                            # 中文 n-gram 词组重合判定
+                            if user_ngrams and any(gram in cell_val for gram in user_ngrams):
+                                row_matched = True
+                                break
+                
+                if row_matched:
+                    matched_data_rows.append(row)
+            
+            if matched_data_rows:
+                is_active = True
+                active_rows = [headers] + matched_data_rows
+            elif not kws or plain_kw_matched:
+                # 若未配置关键词或全局命中了关键词，平滑降级展示全表/最新记录
+                is_active = True
+                active_rows = content
                         
         if is_active and active_rows:
             try:
