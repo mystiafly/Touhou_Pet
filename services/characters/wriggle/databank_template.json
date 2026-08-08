@@ -201,9 +201,19 @@
             "updateFrequency": -1
         },
         "exportConfig": {
-            "enabled": false,
-            "entryType": "keyword",
-            "keywords": ""
+            "enabled": true,
+            "splitByRow": false,
+            "entryName": "日常摘要表",
+            "entryType": "constant",
+            "keywords": "",
+            "preventRecursion": true,
+            "injectionTemplate": "",
+            "extraIndexEnabled": false,
+            "entryPlacement": {
+                "position": "at_depth_as_system",
+                "depth": 2,
+                "order": 10003
+            }
         },
         "orderNo": 4
     }

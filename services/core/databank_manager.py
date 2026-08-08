@@ -143,52 +143,60 @@ def get_active_tables(user_message, current_pool=""):
     
     for key, sheet in merged.items():
         export_config = sheet.get("exportConfig", {})
+        
+        # 1. 检查 enabled 标志 (若显式声明 enabled=False 则跳过)
+        if export_config.get("enabled") is False:
+            continue
+
         entry_type = export_config.get("entryType", "constant")
         keywords_str = export_config.get("keywords", "")
         
+        # 对日常摘要表 (sheet_summary) 强行常驻唤醒保活，确保聊天要点始终可被检索
+        if key == "sheet_summary":
+            entry_type = "constant"
+        
         is_active = False
+        active_rows = []
         
         if entry_type == "constant":
             is_active = True
             active_rows = sheet.get("content", [])
-        elif entry_type == "keyword" and keywords_str:
+        elif entry_type == "keyword":
             content = sheet.get("content", [])
             if not content or len(content) < 1:
                 continue
             
             headers = content[0]
-            kws = [k.strip() for k in keywords_str.split(',') if k.strip()]
+            kws = [k.strip() for k in keywords_str.split(',') if k.strip()] if keywords_str else []
             
-            # 检查 keywords 是否是指向某几列的列名
-            target_col_indices = []
-            for kw in kws:
-                if kw in headers:
-                    target_col_indices.append(headers.index(kw))
-            
-            if target_col_indices:
-                # 按列值去匹配
-                active_rows = [headers]
-                for row in content[1:]:
-                    row_matched = False
-                    for col_idx in target_col_indices:
-                        if col_idx < len(row):
-                            cell_val = str(row[col_idx]).strip().lower()
-                            if cell_val and cell_val in search_text:
-                                row_matched = True
-                                break
-                    if row_matched:
-                        active_rows.append(row)
-                
-                if len(active_rows) > 1:
-                    is_active = True
-            else:
-                # 兼容普通关键字触发（如果关键字不是列名）
+            # 如果配置了 keywords 触发词，优先检查 keywords
+            if kws:
                 lower_kws = [k.lower() for k in kws]
                 for kw in lower_kws:
                     if kw in search_text:
                         is_active = True
                         active_rows = content
                         break
+            
+            # 智能单元格双向包含匹配
+            if not is_active and len(content) > 1:
+                active_rows = [headers]
+                for row in content[1:]:
+                    row_matched = False
+                    for cell in row[1:]:
+                        cell_str = str(cell).strip().lower()
+                        if cell_str and (cell_str in search_text or search_text in cell_str):
+                            row_matched = True
+                            break
+                    if row_matched:
+                        active_rows.append(row)
+                
+                if len(active_rows) > 1:
+                    is_active = True
+                elif not kws:
+                    # 未设关键词的关键词表，默认无缝降级常驻暴露
+                    is_active = True
+                    active_rows = content
                         
         if is_active and active_rows:
             try:

@@ -45,7 +45,7 @@
             "enabled": true,
             "splitByRow": false,
             "entryName": "用户档案表",
-            "entryType": "constant",
+            "entryType": "keyword",
             "keywords": "",
             "preventRecursion": true,
             "injectionTemplate": "",
@@ -54,7 +54,9 @@
                 "position": "at_depth_as_system",
                 "depth": 2,
                 "order": 10001
-            }
+            },
+            "injectLimit": 10,
+            "injectStrategy": "recent"
         },
         "orderNo": 0
     },
@@ -97,7 +99,9 @@
                 "position": "at_depth_as_system",
                 "depth": 2,
                 "order": 10000
-            }
+            },
+            "injectLimit": 10,
+            "injectStrategy": "recent"
         },
         "orderNo": 1
     },
@@ -131,7 +135,7 @@
             "splitByRow": false,
             "entryName": "羁绊与纪念表",
             "entryType": "keyword",
-            "keywords": "",
+            "keywords": "事件摘要",
             "preventRecursion": true,
             "injectionTemplate": "",
             "extraIndexEnabled": false,
@@ -139,7 +143,9 @@
                 "position": "at_depth_as_system",
                 "depth": 2,
                 "order": 10002
-            }
+            },
+            "injectLimit": 10,
+            "injectStrategy": "random"
         },
         "orderNo": 2
     },
@@ -147,10 +153,10 @@
         "uid": "sheet_topics",
         "name": "备忘与话题表",
         "sourceData": {
-            "deleteNode": "已完成且失去记录价值的待办，或已经聊完且不再重要的话题。",
+            "deleteNode": "状态成为已完成后",
             "initNode": "可留空。",
             "insertNode": "当用户要求提醒某事，或者双方约定稍后聊某个话题，或有暂时搁置的任务时。",
-            "note": "记录短暂的任务、待办事项、或者承诺要完成的事情。\n状态请填入：[待办,进行中,已完成,已聊过]。",
+            "note": "记录短暂的任务、待办事项、或者承诺要完成的事情。\n事项内容填入：事项内容\n状态请填入：[待办,进行中,已完成,已聊过]。",
             "updateNode": "事项的状态发生改变时。",
             "columnRules": {}
         },
@@ -171,7 +177,9 @@
         "exportConfig": {
             "enabled": false,
             "entryType": "constant",
-            "keywords": ""
+            "keywords": "",
+            "injectLimit": 10,
+            "injectStrategy": "recent"
         },
         "orderNo": 3
     },
@@ -186,7 +194,8 @@
             "updateNode": "一般不更新，而是新增。若信息补充可合并到最新一条。",
             "columnRules": {
                 "时间段": "目前所处的大概时间段",
-                "时间点": "严格以当前的{年}-{月}-{日} {时}:{分}记录，例如：2026-7-30 1:33"
+                "时间点": "严格以当前的{年}-{月}-{日} {时}:{分}记录，例如：2026-7-30 1:33",
+                "关键字": "从摘要中挑取2-3个关键词语写入，用逗号分隔。例如：妈妈,拥抱。不要注入“用户”，“我”等常见无意义词汇。"
             }
         },
         "content": [
@@ -194,7 +203,8 @@
                 "row_id",
                 "时间段",
                 "聊天摘要",
-                "时间点"
+                "时间点",
+                "关键字"
             ]
         ],
         "updateConfig": {
@@ -205,9 +215,19 @@
             "updateFrequency": -1
         },
         "exportConfig": {
-            "enabled": false,
-            "entryType": "keyword",
-            "keywords": ""
+            "enabled": true,
+            "splitByRow": false,
+            "entryName": "日常摘要表",
+            "entryType": "constant",
+            "keywords": "",
+            "preventRecursion": true,
+            "injectionTemplate": "",
+            "extraIndexEnabled": false,
+            "entryPlacement": {
+                "position": "at_depth_as_system",
+                "depth": 2,
+                "order": 10003
+            }
         },
         "orderNo": 4
     }
