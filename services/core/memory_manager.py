@@ -191,7 +191,19 @@ def get_memory_agent():
             print("[MEM0] 向量记忆引擎初始化成功。")
             return memory_agent
         except Exception as ex:
-            print(f"[MEM0 ERROR] 初始化失败: {ex}")
+            print(f"[MEM0 WARNING] 默认镜像源初始化失败 ({ex})，正在自动尝试备用镜像源...")
+            fallback_endpoints = ["https://huggingface.co", "https://hf-hub.com"]
+            for alt_endpoint in fallback_endpoints:
+                try:
+                    print(f"[MEM0 RETRY] 切换备用模型下载源: {alt_endpoint} ...")
+                    os.environ["HF_ENDPOINT"] = alt_endpoint
+                    memory_agent = Memory.from_config(mem0_config)
+                    print(f"[MEM0] 切换备用源 [{alt_endpoint}] 成功初始化向量记忆引擎！")
+                    return memory_agent
+                except Exception as alt_ex:
+                    print(f"[MEM0 WARNING] 备用源 [{alt_endpoint}] 尝试失败: {alt_ex}")
+
+            print(f"[MEM0 ERROR] 无法连接向量模型服务器，本地记忆功能暂停使用。")
             return None
 
 def load_history():
