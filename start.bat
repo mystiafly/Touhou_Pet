@@ -3,6 +3,17 @@ chcp 65001 >nul
 set HF_ENDPOINT=https://hf-mirror.com
 cd /d "%~dp0"
 
+:: 检查是否未解压直接在 ZIP 预览中双击运行
+echo "%~dp0" | findstr /i "AppData\Local\Temp" >nul
+if not errorlevel 1 (
+    echo.
+    echo [ERROR] 检测到您可能直接在 ZIP 压缩包内部双击了 start.bat！
+    echo [ERROR] 请先将压缩包【完整解压】到电脑的普通文件夹中，然后再运行 start.bat。
+    echo.
+    pause
+    exit /b 1
+)
+
 echo [SYSTEM] Clearing orphaned ghost windows and port 5000...
 taskkill /F /IM electron.exe >nul 2>&1
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5000') do taskkill /f /pid %%a >nul 2>&1
@@ -94,5 +105,10 @@ echo.
 echo == Step 3/3 == Waking up Rumia. Please wait...
 echo.
 set HF_ENDPOINT=https://hf-mirror.com
-%PYTHON_EXE% run.py <nul
+%PYTHON_EXE% run.py
+if errorlevel 1 (
+    echo.
+    echo [ERROR] 桌宠运行中断或异常退出。请检查上方报错日志。
+    pause
+)
 
