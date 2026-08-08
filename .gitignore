@@ -44,3 +44,6 @@ legacy_backup/*
 # === Node.js ±„–Ø∞Ê ===
 .node_env/
 node_temp.zip
+
+logs/
+*.log

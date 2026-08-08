@@ -986,6 +986,28 @@ def perform_system_update_api():
     except Exception as e:
         return JSONResponse({"status": "error", "message": f"一键更新异常: {str(e)}"}, status_code=500)
 
+
+@router.get("/api/system/backend_log")
+def get_backend_log_api(lines: int = 200):
+    """读取后端实时全量输出日志 (logs/backend_output.log)"""
+    try:
+        root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        log_path = os.path.join(root_dir, "logs", "backend_output.log")
+        if not os.path.exists(log_path):
+            return {"status": "success", "lines": [], "path": os.path.abspath(log_path), "message": "日志文件尚未生成"}
+        
+        with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+            all_lines = f.readlines()
+            recent_lines = [l.rstrip() for l in all_lines[-lines:]]
+            return {
+                "status": "success",
+                "path": os.path.abspath(log_path),
+                "total_lines": len(all_lines),
+                "lines": recent_lines
+            }
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
 # 6. 主动说话接口 (自言自语)
 @router.post("/api/pet_speak")
 def pet_speak(payload: dict = Body(...), background_tasks: BackgroundTasks = BackgroundTasks()):

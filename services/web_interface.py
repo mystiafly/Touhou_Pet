@@ -9,30 +9,52 @@ from fastapi.staticfiles import StaticFiles
 
 import io
 
-# 解决 PyInstaller --windowed 模式下 sys.stdout / sys.stderr 丢失的问题，并将日志重定向到文件
-class LoggerWriter:
-    def __init__(self, filename):
-        self.file = open(filename, "a", encoding="utf-8")
+SERVICES_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(SERVICES_DIR)
+LOGS_DIR = os.path.join(ROOT_DIR, "logs")
+os.makedirs(LOGS_DIR, exist_ok=True)
+backend_log_file = os.path.join(LOGS_DIR, "backend_output.log")
+
+# 双写日志流：既实时输出到控制台黑框，又实时存盘到 logs/backend_output.log
+class TeeLogger:
+    def __init__(self, stream, log_filepath):
+        self.terminal = stream
+        self.log_filepath = log_filepath
+        self.file = open(log_filepath, "a", encoding="utf-8", buffering=1)
+
     def write(self, message):
-        self.file.write(message)
-        self.file.flush()
+        if self.terminal:
+            try:
+                self.terminal.write(message)
+                self.terminal.flush()
+            except Exception:
+                pass
+        try:
+            self.file.write(message)
+            self.file.flush()
+        except Exception:
+            pass
+
     def flush(self):
-        self.file.flush()
+        if self.terminal:
+            try:
+                self.terminal.flush()
+            except Exception:
+                pass
+        try:
+            self.file.flush()
+        except Exception:
+            pass
+
     def isatty(self):
-        return False
+        return getattr(self.terminal, 'isatty', lambda: False)()
+
     def reconfigure(self, **kwargs):
         pass
 
-import platform
-appdata_dir = os.environ.get('APPDATA') if platform.system() == 'Windows' else os.path.expanduser('~')
-log_dir = os.path.join(appdata_dir, "RumiaPet", "data")
-os.makedirs(log_dir, exist_ok=True)
-log_file = os.path.join(log_dir, "backend_error.log")
-
 if 'pytest' not in sys.modules:
-    if sys.stdout is None or not hasattr(sys.stdout, 'isatty') or not sys.stdout.isatty():
-        sys.stdout = LoggerWriter(log_file)
-        sys.stderr = sys.stdout
+    sys.stdout = TeeLogger(sys.stdout, backend_log_file)
+    sys.stderr = TeeLogger(sys.stderr, backend_log_file)
 
 # 重新配置 stdout/stderr 编码为 utf-8，防止 Windows 环境下打印 Emoji ⚠️ 触发 UnicodeEncodeError
 if hasattr(sys.stdout, 'reconfigure'):
@@ -40,7 +62,6 @@ if hasattr(sys.stdout, 'reconfigure'):
 if hasattr(sys.stderr, 'reconfigure'):
     sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 
-SERVICES_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(SERVICES_DIR)
 
 load_dotenv(os.path.join(os.path.dirname(SERVICES_DIR), '.env'))
