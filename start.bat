@@ -25,6 +25,14 @@ echo [WARNING] Local virtual environment (.venv) not found. Using global Python.
 :CHECK_PYTHON
 %PYTHON_EXE% -c "import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)" >nul 2>&1
 if errorlevel 1 goto DOWNLOAD_PYTHON
+
+:: 快速启动检查：如果核心依赖已安装，直接秒启动，不再重复跑 pip 下载检查
+%PYTHON_EXE% -c "import fastapi, langgraph, mem0, spacy, zh_core_web_sm" >nul 2>&1
+if not errorlevel 1 (
+    echo [SYSTEM] Dependencies verified! Instant booting...
+    goto QUICK_START
+)
+
 goto RUN_PIP
 
 :DOWNLOAD_PYTHON
@@ -81,6 +89,7 @@ if errorlevel 1 %PYTHON_EXE% -m pip install --force-reinstall flask openai pytho
 %PYTHON_EXE% -c "import mem0; print('-> Mem0 Memory Agent OK')" 2>nul
 if errorlevel 1 %PYTHON_EXE% -m pip install mem0ai sentence-transformers qdrant-client torch -i https://pypi.tuna.tsinghua.edu.cn/simple
 
+:QUICK_START
 echo.
 echo == Step 3/3 == Waking up Rumia. Please wait...
 echo.
