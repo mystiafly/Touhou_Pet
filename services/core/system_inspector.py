@@ -1,4 +1,5 @@
 import ctypes
+from ctypes import wintypes
 import psutil
 
 # 常用无意义的系统后台或桌面组件进程名单，不应对外暴露
@@ -15,23 +16,52 @@ IGNORED_PROCESSES = {
     "taskmgr.exe"
 }
 
+DWMWA_CLOAKED = 14
+
+def is_window_cloaked(hwnd) -> bool:
+    """检查窗口在 Windows 10/11 中是否处于被掩盖/挂起/后台休眠状态 (Cloaked)"""
+    try:
+        cloaked = wintypes.DWORD()
+        res = ctypes.windll.dwmapi.DwmGetWindowAttribute(
+            hwnd, DWMWA_CLOAKED, ctypes.byref(cloaked), ctypes.sizeof(cloaked)
+        )
+        if res == 0:
+            return cloaked.value != 0
+    except Exception:
+        pass
+    return False
+
 def get_active_programs() -> str:
     """
-    抓取当前系统中可见的活跃窗口标题及其进程名，用于向桌宠提供“用户在忙什么”的上下文。
-    返回一段拼接好的自然语言字符串描述。
+    抓取当前系统中真正物理可见且前台活跃的窗口标题及其进程名，用于向桌宠提供“用户在忙什么”的上下文。
+    精准剔除后台挂起、最小化、Cloaked (掩盖) 的 Edge/Chrome 历史标签残留窗口。
     """
     EnumWindows = ctypes.windll.user32.EnumWindows
     EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
     GetWindowText = ctypes.windll.user32.GetWindowTextW
     GetWindowTextLength = ctypes.windll.user32.GetWindowTextLengthW
     IsWindowVisible = ctypes.windll.user32.IsWindowVisible
+    IsIconic = ctypes.windll.user32.IsIconic
     GetWindowThreadProcessId = ctypes.windll.user32.GetWindowThreadProcessId
+    GetWindowLongW = ctypes.windll.user32.GetWindowLongW
+    GWL_EXSTYLE = -20
+    WS_EX_TOOLWINDOW = 0x00000080
 
     active_apps = []
     seen_titles = set()
 
     def foreach_window(hwnd, lParam):
-        if IsWindowVisible(hwnd):
+        # 1. 必须物理可见且未处于最小化状态
+        if IsWindowVisible(hwnd) and not IsIconic(hwnd):
+            # 2. 必须非 Cloaked 挂起掩盖状态 (精准过滤 Edge/Chrome 挂起背景标签页与 UWP 虚幻窗口)
+            if is_window_cloaked(hwnd):
+                return True
+
+            # 3. 过滤 ToolWindow 浮动工具窗
+            ex_style = GetWindowLongW(hwnd, GWL_EXSTYLE)
+            if ex_style & WS_EX_TOOLWINDOW:
+                return True
+
             length = GetWindowTextLength(hwnd)
             if length > 0:
                 buff = ctypes.create_unicode_buffer(length + 1)
