@@ -4,6 +4,7 @@ import sys
 
 # 默认设置 HuggingFace 镜像，防止国内下载模型超时失败
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 
 import time
 import signal
