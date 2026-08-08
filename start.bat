@@ -36,6 +36,7 @@ start /wait python_installer.exe /quiet InstallAllUsers=0 PrependPath=1 Include_
 del python_installer.exe
 echo [SYSTEM] Python installed! Re-checking...
 set PYTHON_EXE="%LocalAppData%\Programs\Python\Python311\python.exe"
+if not exist %PYTHON_EXE% set PYTHON_EXE=python
 %PYTHON_EXE% -c "import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)" >nul 2>&1
 if errorlevel 1 goto PYTHON_DL_ERROR
 goto RUN_PIP
@@ -46,9 +47,10 @@ pause
 exit /b 1
 
 :RUN_PIP
+cd /d "%~dp0"
 echo.
 echo == Step 1/3 == Checking and installing base dependencies...
-%PYTHON_EXE% -m pip install -r requirements.txt --timeout 1000 -i https://pypi.tuna.tsinghua.edu.cn/simple
+%PYTHON_EXE% -m pip install -r "%~dp0requirements.txt" --timeout 1000 -i https://pypi.tuna.tsinghua.edu.cn/simple
 if errorlevel 1 goto PIP_ERROR
 
 echo [SYSTEM] Checking spacy models...
