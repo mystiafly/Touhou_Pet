@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>大贤者控制台 (Dashboard)</title>
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.20.28">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.21.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -738,15 +738,41 @@
         <section id="about-view" class="content-section">
             <header class="section-header">
                 <h1>关于 (About)</h1>
-                <p>系统版本与基本信息</p>
+                <p>系统版本管理与远程仓库更新检测</p>
             </header>
             
             <div class="card-container">
                 <div class="settings-card" style="text-align: center; padding: 40px; grid-column: 1 / -1;">
                     <i class="fas fa-microchip glow-icon" style="font-size: 48px; margin-bottom: 20px;"></i>
                     <h2>大贤者系统 (Desktop Pet AI)</h2>
-                    <p style="font-size: 24px; color: #ffb86c; margin: 20px 0; font-family: 'Consolas', 'Courier New', monospace;">当前版本: v1.18.11</p>
-                    <p style="color: var(--text-muted);">Copyright &copy; 2026 Mystiafly & Antigravity</p>
+                    
+                    <div style="display: flex; justify-content: center; align-items: center; gap: 12px; margin: 20px 0;">
+                        <span id="current-version-badge" style="font-size: 22px; color: #ffb86c; font-family: 'Consolas', 'Courier New', monospace; font-weight: bold; background: rgba(255, 184, 108, 0.1); padding: 6px 16px; border-radius: 20px; border: 1px solid rgba(255, 184, 108, 0.3);">当前版本: v1.21.0</span>
+                        <span id="commit-hash-badge" style="font-size: 13px; color: #bd93f9; font-family: monospace; background: rgba(189, 147, 249, 0.1); padding: 4px 10px; border-radius: 12px;"></span>
+                    </div>
+
+                    <!-- 检测与更新动作按钮 -->
+                    <div style="margin: 25px 0 15px 0; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+                        <button id="btn-check-version-update" class="action-btn" style="padding: 10px 24px; font-size: 15px;">
+                            <i class="fas fa-sync-alt"></i> 检查远程更新
+                        </button>
+                        <button id="btn-perform-git-update" class="action-btn outline hidden" style="padding: 10px 24px; font-size: 15px; border-color: #50fa7b; color: #50fa7b;">
+                            <i class="fas fa-download"></i> 一键更新至最新版
+                        </button>
+                        <button id="btn-restart-app-after-update" class="action-btn hidden" style="padding: 10px 24px; font-size: 15px; background: #ff5555;">
+                            <i class="fas fa-power-off"></i> 重启桌宠生效
+                        </button>
+                    </div>
+
+                    <!-- 更新检测状态与日志展示容器 -->
+                    <div id="update-status-container" class="hidden" style="max-width: 650px; margin: 20px auto 0 auto; text-align: left; background: rgba(20, 20, 30, 0.6); padding: 18px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                        <div id="update-status-header" style="font-weight: bold; margin-bottom: 10px; font-size: 14px;"></div>
+                        <div id="update-changelog-list" style="font-size: 13px; color: #f8f8f2; font-family: 'Consolas', monospace; max-height: 180px; overflow-y: auto; line-height: 1.6; white-space: pre-wrap;"></div>
+                    </div>
+
+                    <p style="color: var(--text-muted); margin-top: 30px; font-size: 13px;">
+                        Copyright &copy; 2026 Mystiafly & Antigravity
+                    </p>
                 </div>
             </div>
         </section>
@@ -1143,7 +1169,7 @@
     </div>
 </div>
 
-<script src="/static/js/dashboard.js?v=1.20.28"></script>
+<script src="/static/js/dashboard.js?v=1.21.0"></script>
 
 <!-- 视觉识图配置 Modal -->
 <div id="vision-tool-modal" class="modal-overlay hidden">

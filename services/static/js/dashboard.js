@@ -3803,8 +3803,126 @@ function renderDashboardStats(stats) {
     });
 }
 
+// System Version and One-Click Update Management
+async function initAboutVersionView() {
+    const versionBadge = document.getElementById('current-version-badge');
+    const commitBadge = document.getElementById('commit-hash-badge');
+    const btnCheckUpdate = document.getElementById('btn-check-version-update');
+    const btnPerformUpdate = document.getElementById('btn-perform-git-update');
+    const btnRestartApp = document.getElementById('btn-restart-app-after-update');
+    const statusContainer = document.getElementById('update-status-container');
+    const statusHeader = document.getElementById('update-status-header');
+    const changelogList = document.getElementById('update-changelog-list');
+
+    if (!versionBadge || !btnCheckUpdate) return;
+
+    // Load initial local version info
+    try {
+        const res = await fetch('/api/system/version');
+        const data = await res.json();
+        if (data.status === 'success') {
+            versionBadge.textContent = `当前版本: v${data.version}`;
+            if (data.commit) {
+                commitBadge.textContent = `git (${data.commit})`;
+            }
+        }
+    } catch (e) {
+        console.error('加载系统版本信息失败:', e);
+    }
+
+    // Bind Check Update Click
+    btnCheckUpdate.addEventListener('click', async () => {
+        btnCheckUpdate.disabled = true;
+        btnCheckUpdate.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 连接远程仓库中...';
+        btnPerformUpdate.classList.add('hidden');
+        btnRestartApp.classList.add('hidden');
+        statusContainer.classList.remove('hidden');
+        statusHeader.style.color = '#bd93f9';
+        statusHeader.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> 正在向 GitHub 远程仓库获取更新，请稍候...';
+        changelogList.textContent = '';
+
+        try {
+            const res = await fetch('/api/system/check_update', { method: 'POST' });
+            const data = await res.json();
+
+            if (res.ok && data.status === 'success') {
+                if (data.has_update) {
+                    statusHeader.style.color = '#50fa7b';
+                    statusHeader.innerHTML = `<i class="fas fa-arrow-circle-up"></i> 发现新版本！远程最新版本为: v${data.latest_version} (HEAD: ${data.local_commit} -> Remote: ${data.remote_commit})`;
+                    if (data.commit_logs && data.commit_logs.length > 0) {
+                        changelogList.textContent = '【近期更新说明】:\n' + data.commit_logs.join('\n');
+                    } else {
+                        changelogList.textContent = '暂无详细更新日志描述。';
+                    }
+                    btnPerformUpdate.classList.remove('hidden');
+                } else {
+                    statusHeader.style.color = '#8be9fd';
+                    statusHeader.innerHTML = `<i class="fas fa-check-circle"></i> 当前已是最新版本 (v${data.current_version})！代码处于主分支最新状态。`;
+                    changelogList.textContent = '暂无待更新内容。';
+                }
+            } else {
+                statusHeader.style.color = '#ff5555';
+                statusHeader.innerHTML = `<i class="fas fa-exclamation-triangle"></i> 检测更新失败`;
+                changelogList.textContent = data.message || '网络连接超时或未配置 Git 环境。';
+            }
+        } catch (e) {
+            statusHeader.style.color = '#ff5555';
+            statusHeader.innerHTML = `<i class="fas fa-times-circle"></i> 请求发生错误`;
+            changelogList.textContent = e.toString();
+        } finally {
+            btnCheckUpdate.disabled = false;
+            btnCheckUpdate.innerHTML = '<i class="fas fa-sync-alt"></i> 检查远程更新';
+        }
+    });
+
+    // Bind Perform Update Click
+    btnPerformUpdate.addEventListener('click', async () => {
+        btnPerformUpdate.disabled = true;
+        btnPerformUpdate.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在安全更新代码...';
+        statusHeader.style.color = '#ffb86c';
+        statusHeader.innerHTML = '<i class="fas fa-download fa-spin"></i> 正在拉取远程最新增量代码 (git pull)...';
+
+        try {
+            const res = await fetch('/api/system/perform_update', { method: 'POST' });
+            const data = await res.json();
+
+            if (res.ok && data.status === 'success') {
+                statusHeader.style.color = '#50fa7b';
+                statusHeader.innerHTML = `<i class="fas fa-check-circle"></i> ${data.message}`;
+                changelogList.textContent = data.output || '更新成功！';
+                btnPerformUpdate.classList.add('hidden');
+                btnRestartApp.classList.remove('hidden');
+            } else {
+                statusHeader.style.color = '#ff5555';
+                statusHeader.innerHTML = `<i class="fas fa-exclamation-triangle"></i> 更新过程遭遇错误`;
+                changelogList.textContent = data.message || '更新失败。';
+            }
+        } catch (e) {
+            statusHeader.style.color = '#ff5555';
+            statusHeader.innerHTML = `<i class="fas fa-times-circle"></i> 更新请求异常`;
+            changelogList.textContent = e.toString();
+        } finally {
+            btnPerformUpdate.disabled = false;
+            btnPerformUpdate.innerHTML = '<i class="fas fa-download"></i> 一键更新至最新版';
+        }
+    });
+
+    // Bind Restart App Click
+    btnRestartApp.addEventListener('click', async () => {
+        if (confirm('确认立即重启桌宠应用以加载最新版本的代码吗？')) {
+            try {
+                await fetch('/api/restart', { method: 'POST' });
+                alert('系统正在重启中，请稍候...');
+            } catch (e) {
+                alert('触发重启时发生错误: ' + e.toString());
+            }
+        }
+    });
+}
+
 // Hook into nav logic
 document.addEventListener('DOMContentLoaded', () => {
+    initAboutVersionView();
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', (e) => {
             const target = item.getAttribute('data-target');

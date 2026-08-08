@@ -879,6 +879,113 @@ def post_test_vision(payload: dict = Body(...)):
     except Exception as e:
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
+# --------------------------------------------------------------------------
+# 系统版本与远程仓库一键更新 API
+# --------------------------------------------------------------------------
+
+@router.get("/api/system/version")
+def get_system_version_api():
+    """获取当前系统版本与 Git Commit"""
+    try:
+        root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        pkg_path = os.path.join(root_dir, "package.json")
+        version = "1.21.0"
+        if os.path.exists(pkg_path):
+            with open(pkg_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                version = data.get("version", version)
+        
+        commit_hash = ""
+        try:
+            import subprocess
+            res = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=root_dir, capture_output=True, text=True, timeout=3)
+            if res.returncode == 0:
+                commit_hash = res.stdout.strip()
+        except:
+            pass
+
+        return {"status": "success", "version": version, "commit": commit_hash}
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+
+@router.post("/api/system/check_update")
+def check_system_update_api():
+    """检测远程 GitHub 仓库最新版本与 Commit 日志"""
+    import subprocess
+    try:
+        root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        
+        pkg_path = os.path.join(root_dir, "package.json")
+        current_version = "1.21.0"
+        if os.path.exists(pkg_path):
+            with open(pkg_path, "r", encoding="utf-8") as f:
+                current_version = json.load(f).get("version", current_version)
+
+        fetch_res = subprocess.run(["git", "fetch", "origin", "main"], cwd=root_dir, capture_output=True, text=True, timeout=15)
+        if fetch_res.returncode != 0:
+            return JSONResponse({
+                "status": "error",
+                "message": f"无法连接远程仓库: {fetch_res.stderr.strip() or '请检查网络或 Git 配置'}"
+            }, status_code=400)
+
+        local_hash = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=root_dir, capture_output=True, text=True, timeout=5).stdout.strip()
+        remote_hash = subprocess.run(["git", "rev-parse", "--short", "origin/main"], cwd=root_dir, capture_output=True, text=True, timeout=5).stdout.strip()
+
+        has_update = (local_hash != remote_hash)
+
+        latest_version = current_version
+        try:
+            remote_pkg_str = subprocess.run(["git", "show", "origin/main:package.json"], cwd=root_dir, capture_output=True, text=True, timeout=5).stdout
+            if remote_pkg_str:
+                latest_version = json.loads(remote_pkg_str).get("version", current_version)
+        except:
+            pass
+
+        commit_logs = []
+        if has_update:
+            log_res = subprocess.run(
+                ["git", "log", "HEAD..origin/main", "-n", "10", "--pretty=format:%h - %s (%cr)"],
+                cwd=root_dir, capture_output=True, text=True, timeout=5
+            )
+            if log_res.returncode == 0 and log_res.stdout.strip():
+                commit_logs = log_res.stdout.strip().split("\n")
+
+        return {
+            "status": "success",
+            "has_update": has_update,
+            "current_version": current_version,
+            "latest_version": latest_version,
+            "local_commit": local_hash,
+            "remote_commit": remote_hash,
+            "commit_logs": commit_logs
+        }
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": f"检测更新异常: {str(e)}"}, status_code=500)
+
+
+@router.post("/api/system/perform_update")
+def perform_system_update_api():
+    """执行 git pull origin main 一键更新"""
+    import subprocess
+    try:
+        root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        pull_res = subprocess.run(["git", "pull", "origin", "main"], cwd=root_dir, capture_output=True, text=True, timeout=30)
+        
+        if pull_res.returncode == 0:
+            return {
+                "status": "success",
+                "message": "更新成功！增量代码已更新至最新状态。建议重启桌宠生效。",
+                "output": pull_res.stdout.strip()
+            }
+        else:
+            return JSONResponse({
+                "status": "error",
+                "message": f"更新失败: {pull_res.stderr.strip() or pull_res.stdout.strip()}"
+            }, status_code=500)
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": f"一键更新异常: {str(e)}"}, status_code=500)
+
 # 6. 主动说话接口 (自言自语)
 @router.post("/api/pet_speak")
 def pet_speak(payload: dict = Body(...), background_tasks: BackgroundTasks = BackgroundTasks()):
