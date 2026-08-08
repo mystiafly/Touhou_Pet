@@ -278,6 +278,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     postApiSelect.value = configData.post_api_provider;
                 }
                 
+                const flowModeToggle = document.getElementById('flow-mode-toggle');
+                if (flowModeToggle) {
+                    flowModeToggle.checked = !!configData.flow_mode;
+                }
+                
                 const mainDisplay = document.getElementById('main-api-provider-display');
                 if (mainDisplay) {
                     const selectedOpt = apiSelect.options[apiSelect.selectedIndex];
@@ -423,6 +428,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             } catch (e) {
                 console.error(e);
+            }
+        });
+    }
+
+    const flowModeToggle = document.getElementById('flow-mode-toggle');
+    if (flowModeToggle) {
+        flowModeToggle.addEventListener('change', async () => {
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ flow_mode: flowModeToggle.checked })
+                });
+            } catch (e) {
+                console.error("保存心流模式失败:", e);
             }
         });
     }

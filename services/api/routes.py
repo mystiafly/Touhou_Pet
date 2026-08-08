@@ -821,6 +821,7 @@ def get_config_api():
     config["pre_api_provider"] = config.get("pre_api_provider", "inherit")
     config["post_api_provider"] = config.get("post_api_provider", "inherit")
     config["vision_engine"] = config.get("vision_engine", "gemini")
+    config["flow_mode"] = config.get("flow_mode", False)
     config["success"] = True
     return config
 
@@ -837,6 +838,8 @@ def post_config_api(payload: dict = Body(...)):
             config_data["post_api_provider"] = payload["post_api_provider"].strip()
         if "vision_engine" in payload:
             config_data["vision_engine"] = payload["vision_engine"].strip()
+        if "flow_mode" in payload:
+            config_data["flow_mode"] = bool(payload["flow_mode"])
         if "enable_greeting" in payload:
             config_data["enable_greeting"] = bool(payload["enable_greeting"])
         if "enable_auto_speak" in payload:

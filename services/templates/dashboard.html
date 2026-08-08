@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>大贤者控制台 (Dashboard)</title>
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.20.23">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.20.24">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -161,6 +161,20 @@
                         </div>
                     </div>
                     <p class="help-text">AI 的思考广度与对话情绪特征将会实时发生改变。</p>
+                </div>
+
+                <div class="settings-card" style="border-left: 4px solid #f1fa8c;">
+                    <h3><i class="fas fa-bolt" style="color: #f1fa8c;"></i> 心流模式 (Flow Mode)</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                        <div style="flex: 1; padding-right: 15px;">
+                            <div style="font-weight: 600; color: #f8f8f2; font-size: 14px;">启用极速心流纯享对话</div>
+                            <div class="help-text" style="margin-top: 4px; line-height: 1.4; font-size: 12px;">开启后关停 Pre 前置模型，自然停用系统工具与日记检索，追求单次 LLM 直连推导，实现极速响应回复</div>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="flow-mode-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
                 </div>
 
                 <div class="settings-card danger-card">
@@ -1129,7 +1143,7 @@
     </div>
 </div>
 
-<script src="/static/js/dashboard.js?v=1.20.23"></script>
+<script src="/static/js/dashboard.js?v=1.20.24"></script>
 
 <!-- 视觉识图配置 Modal -->
 <div id="vision-tool-modal" class="modal-overlay hidden">

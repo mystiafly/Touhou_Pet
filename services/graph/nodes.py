@@ -328,6 +328,10 @@ def call_model_with_fallback(active_messages, provider_override, node_name="LLM"
             raise primary_ex
 
 def pre_llm_node(state: AgentState) -> Dict[str, Any]:
+    if get_config().get("flow_mode", False):
+        print("\n[PRE-LLM] 心流模式 (Flow Mode) 已开启，跳过 Pre 前置意图识别模型，直达主模型极速对话！\n")
+        return {"pre_llm_reply": "[NO_TOOLS_NEEDED]"}
+
     active_messages = build_pre_messages(state)
     if not active_messages:
         return {"pre_llm_reply": "[NO_TOOLS_NEEDED]"}
