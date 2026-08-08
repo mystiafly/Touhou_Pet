@@ -52,6 +52,22 @@ class TeeLogger:
     def reconfigure(self, **kwargs):
         pass
 
+def silence_noisy_third_party_loggers():
+    """彻底屏绝第三方库 (fastembed, huggingface_hub, qdrant_client, urllib3) 弹出的红字告警日志"""
+    import logging
+    for log_name in ["fastembed", "fastembed.common.model_management", "huggingface_hub", "qdrant_client", "urllib3", "httpx", "sentence_transformers"]:
+        logging.getLogger(log_name).setLevel(logging.CRITICAL)
+
+    try:
+        from loguru import logger
+        logger.disable("fastembed")
+        logger.disable("qdrant_client")
+        logger.disable("huggingface_hub")
+    except Exception:
+        pass
+
+silence_noisy_third_party_loggers()
+
 if 'pytest' not in sys.modules:
     sys.stdout = TeeLogger(sys.stdout, backend_log_file)
     sys.stderr = TeeLogger(sys.stderr, backend_log_file)
