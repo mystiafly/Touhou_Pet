@@ -3,15 +3,20 @@ chcp 65001 >nul
 set HF_ENDPOINT=https://hf-mirror.com
 cd /d "%~dp0"
 
+:: 【防闪退钛合金护航】如果是由用户双击启动的，自动使用 cmd /k 唤醒守护进程
+:: 无论发生何种崩溃、致命异常或语法错误，CMD 命令行黑框均绝对 100% 永久留存！
+if not "%~1"=="--guarded" (
+    cmd /k ""%~f0" --guarded %*"
+    exit /b
+)
+
 :: 检查是否未解压直接在 ZIP 预览中双击运行
 echo "%~dp0" | findstr /i "AppData\Local\Temp" >nul
 if not errorlevel 1 (
     echo.
     echo [ERROR] 检测到您可能直接在 ZIP 压缩包内部双击了 start.bat！
     echo [ERROR] 请先将压缩包【完整解压】到电脑的普通文件夹中，然后再运行 start.bat。
-    echo.
-    pause
-    exit /b 1
+    goto ALWAYS_FREEZE
 )
 
 echo [SYSTEM] Clearing orphaned ghost windows and port 5000...
@@ -62,8 +67,7 @@ goto RUN_PIP
 
 :PYTHON_DL_ERROR
 echo [ERROR] Automatic Python installation failed. Please download and install manually from https://www.python.org/
-pause
-exit /b 1
+goto ALWAYS_FREEZE
 
 :RUN_PIP
 cd /d "%~dp0"
@@ -88,8 +92,7 @@ goto CHECK_PACKAGES
 
 :PIP_ERROR
 echo [ERROR] Dependency installation failed.
-pause
-exit /b 1
+goto ALWAYS_FREEZE
 
 :CHECK_PACKAGES
 echo.
@@ -108,7 +111,16 @@ set HF_ENDPOINT=https://hf-mirror.com
 %PYTHON_EXE% run.py
 if errorlevel 1 (
     echo.
-    echo [ERROR] 桌宠运行中断或异常退出。请检查上方报错日志。
-    pause
+    echo [ERROR] 桌宠运行中断或异常退出。请查看上方报错日志信息。
+    goto ALWAYS_FREEZE
 )
+
+:ALWAYS_FREEZE
+echo.
+echo =======================================================
+echo [系统防护] 控制台已进入防闪退保活状态。
+echo 无论程序出现任何报错或退出，此黑框均不会自动关闭。请查看上方报错定位问题。
+echo =======================================================
+pause
+goto ALWAYS_FREEZE
 
