@@ -868,22 +868,12 @@ def post_test_vision(payload: dict = Body(...)):
         from tools.tool_executor import execute_vision_task_node
         engine = payload.get("engine", "gemini")
         
-        # 临时覆盖配置以进行测试
-        config_data = get_config()
-        original_engine = config_data.get("vision_engine")
-        config_data["vision_engine"] = engine
-        save_config(config_data)
-        
-        # 构造虚假 state 执行节点
-        fake_state = {"vision_task": "test"}
+        # 构造虚假 state 并指定测试引擎，免去写盘恢复的竞态死锁与还原覆盖问题
+        fake_state = {
+            "vision_task": "test",
+            "vision_engine_override": engine
+        }
         result = execute_vision_task_node(fake_state)
-        
-        # 恢复原有配置
-        if original_engine:
-            config_data["vision_engine"] = original_engine
-        else:
-            del config_data["vision_engine"]
-        save_config(config_data)
         
         return {"status": "success", "result": result.get("vision_result", "未返回结果")}
     except Exception as e:

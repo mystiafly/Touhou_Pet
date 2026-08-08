@@ -345,7 +345,7 @@ def execute_vision_task_node(state: AgentState) -> Dict[str, Any]:
         img_b64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
         config_data = get_config()
-        vision_engine = config_data.get("vision_engine", "gemini")
+        vision_engine = state.get("vision_engine_override") or config_data.get("vision_engine", "gemini")
         
         import time
         prompt = f"这是当前电脑屏幕的截图（当前时间: {time.strftime('%Y-%m-%d %H:%M:%S')}）。请仔细观察并简要描述屏幕上正在显示的内容、活跃的窗口，以及用户可能正在进行什么工作。如果多次看到类似的画面，请尽可能捕捉新的细节或变化。不要超过150字。"
