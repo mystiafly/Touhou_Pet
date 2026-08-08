@@ -730,6 +730,15 @@ class DesktopPet {
             }
         }
 
+        // [修复] 进入沉浸模式后角色模糊问题：强制重新加载当前表情立绘 src，促使浏览器在 2 倍放大后立即以高分辨率纹理渲染
+        const targetEmotion = this.currentEmotion || 'normal';
+        let list = this.images[targetEmotion] || this.images['normal'];
+        if (list && list.length > 0) {
+            const targetSrc = list[Math.floor(Math.random() * list.length)];
+            const separator = targetSrc.includes('?') ? '&' : '?';
+            this.img.src = targetSrc + separator + '_imm=1&t=' + Date.now();
+        }
+
         // 通知 Electron 主进程扩充窗口全屏
         if (window.__petIPC && typeof window.__petIPC.sendEnterImmersiveMode === 'function') {
             window.__petIPC.sendEnterImmersiveMode();

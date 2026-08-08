@@ -1296,6 +1296,11 @@ body.peeking-mode .log-container {
     transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important;
 }
 
+.pet-container.immersive-mode .character-wrapper img {
+    image-rendering: -webkit-optimize-contrast !important;
+    will-change: transform, opacity;
+}
+
 /* 沉浸模式下好感度图标隐藏 */
 .pet-container.immersive-mode #fav-container {
     display: none !important;
