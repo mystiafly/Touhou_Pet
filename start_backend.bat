@@ -8,6 +8,20 @@ for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5000') do taskkill /f /pid %
 
 set PYTHON_EXE=python
 
+if exist "%~dp0dist\backend\web_interface.exe" (
+    echo [SYSTEM] Standalone precompiled backend detected in dist/backend. Launching immediately...
+    cd /d "%~dp0dist\backend"
+    web_interface.exe
+    exit /b %ERRORLEVEL%
+)
+
+if exist "%~dp0backend\web_interface.exe" (
+    echo [SYSTEM] Standalone precompiled backend detected in backend. Launching immediately...
+    cd /d "%~dp0backend"
+    web_interface.exe
+    exit /b %ERRORLEVEL%
+)
+
 if not exist .venv\Scripts\python.exe goto NO_VENV
 set PYTHON_EXE=.venv\Scripts\python.exe
 echo [SYSTEM] Local virtual environment (.venv) detected. Using it!
