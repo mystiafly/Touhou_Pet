@@ -249,6 +249,17 @@ body, html {
     transform: rotate(90deg);
 }
 
+.icon-btn svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+    transition: fill 0.3s ease;
+}
+
+.icon-btn:hover svg {
+    fill: white;
+}
+
 #presets-btn:hover {
     transform: scale(1.15) !important;
 }
