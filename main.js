@@ -44,6 +44,19 @@ function createTray(win) {
             }
         },
         {
+            label: '打开日志目录',
+            click: () => {
+                const { shell } = require('electron');
+                const appData = process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming');
+                const logDir = path.join(appData, 'RumiaDesktopPet', 'logs');
+                if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
+                shell.openPath(logDir);
+            }
+        },
+        {
+            type: 'separator'
+        },
+        {
             label: '退出游戏',
             click: () => {
                 app.quit();
