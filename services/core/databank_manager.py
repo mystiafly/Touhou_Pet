@@ -74,6 +74,10 @@ def load_databank():
         elif state_content:
             final_content = state_content
             
+        # 如果是桌宠状态表且只有表头，自动预置初始状态行，防止 UI 空显与更新被吞
+        if key == "sheet_pet_status" and len(final_content) <= 1:
+            final_content.append(["1", "平静", "陪伴在用户身边", "50"])
+
         merged[key] = {
             "name": sheet.get("name", key),
             "exportConfig": sheet.get("exportConfig", {}),
@@ -379,7 +383,15 @@ def parse_and_execute_databank_commands(llm_output):
                                     row_idx = i
                                     break
                                     
-                        if 0 <= row_idx < len(content) and 0 <= col_idx < len(content[0]):
+                        # 自动补全/扩展缺失数据行
+                        if row_idx >= len(content):
+                            import uuid
+                            num_cols = len(content[0]) if content else 4
+                            while len(content) <= row_idx:
+                                new_row = [str(len(content)) if j == 0 else "" for j in range(num_cols)]
+                                content.append(new_row)
+
+                        if 0 <= row_idx < len(content) and 0 <= col_idx < len(content[row_idx]):
                             content[row_idx][col_idx] = new_value
                             modified = True
                             print(f"[DataBank] 更新: {sheet_id} 行{row_idx} 列{col_idx} -> {new_value}")

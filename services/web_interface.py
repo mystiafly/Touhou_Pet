@@ -1,5 +1,6 @@
 import os
 import sys
+import re
 
 # 设置 HuggingFace 国内镜像与离线模式，彻底屏绝 WinError 10060 网络超时错误
 os.environ["HF_ENDPOINT"] = os.getenv("HF_ENDPOINT", "https://hf-mirror.com")
@@ -45,7 +46,9 @@ class TeeLogger:
                 pass
         if self.file:
             try:
-                self.file.write(message)
+                # 过滤 ANSI 颜色转义字符 (例如 \x1b[32mINFO\x1b[0m)，确保 backend_output.log 纯净无乱码
+                clean_msg = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', message)
+                self.file.write(clean_msg)
                 self.file.flush()
             except Exception:
                 pass
