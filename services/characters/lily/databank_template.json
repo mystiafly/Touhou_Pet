@@ -218,8 +218,8 @@
             "enabled": true,
             "splitByRow": false,
             "entryName": "日常摘要表",
-            "entryType": "constant",
-            "keywords": "",
+            "entryType": "keyword",
+            "keywords": "聊天摘要,时间点,关键字",
             "preventRecursion": true,
             "injectionTemplate": "",
             "extraIndexEnabled": false,
@@ -227,7 +227,9 @@
                 "position": "at_depth_as_system",
                 "depth": 2,
                 "order": 10003
-            }
+            },
+            "injectLimit": 10,
+            "injectStrategy": "random"
         },
         "orderNo": 4
     }

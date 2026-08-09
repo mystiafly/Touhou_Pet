@@ -1,6 +1,7 @@
 const { app, BrowserWindow, screen, ipcMain, Tray, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 
 // 关闭不必要的安全警告输出，保持控制台整洁
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
@@ -20,9 +21,10 @@ if (!gotTheLock) {
 
 function logDebug(msg) {
     try {
-        const logDir = app ? path.join(app.getPath('userData'), 'logs') : __dirname;
+        const appData = process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming');
+        const logDir = path.join(appData, 'RumiaDesktopPet', 'logs');
         if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
-        fs.appendFileSync(path.join(logDir, 'edge_debug.log'), `[${new Date().toISOString()}] ${msg}\n`);
+        fs.appendFileSync(path.join(logDir, 'electron_debug.log'), `[${new Date().toISOString()}] ${msg}\n`);
     } catch(e) {}
 }
 
@@ -267,54 +269,53 @@ ipcMain.on('open-settings-window', (event) => {
 function createWindow() {
     const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 
-    // 閸掓稑缂撳ù蹇氼潔閸ｃ劎鐛ラ崣?
-    const win = new BrowserWindow({
-        width: 400,  // 濡楀苯鐤囩粣妤€褰涚€硅棄瀹?
-        height: 600, // 濡楀苯鐤囩粣妤€褰涙妯哄 (娴?500px 鐠嬪啫銇囬懛?600px 娴犮儳鏆€閸戠儤娲挎径姘嚠鐠囨繄鈹栭梻?
-        x: width - 450, // 姒涙顓婚崙铏瑰箛閸︺劌褰告稉瀣潡
-        y: height - 650, // 鎼存洟鍎寸€靛綊缍堟担宥囩枂闁倿鍘ょ拫鍐彯 100px
-        frame: false,       // 閺冪姾绔熷?
-        transparent: true,  // 闁繑妲戦懗灞炬珯
-        alwaysOnTop: true,  // 婵绮撶純顕€銆?
-        skipTaskbar: true,  // true 以防止在任务栏显示，并配合 toolbar 抵抗 Win+D (显示桌面)
-        type: 'toolbar',    // 设置为 toolbar 级别，避免被系统级“显示桌面”最小化
-        resizable: false,   // 缁備焦顒涢弨鐟板綁婢堆冪毈
+    mainWindow = new BrowserWindow({
+        width: 400,
+        height: 600,
+        x: width - 450,
+        y: height - 650,
+        frame: false,
+        transparent: true,
+        alwaysOnTop: true,
+        skipTaskbar: false,
+        type: 'toolbar',
+        resizable: false,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
             preload: path.join(__dirname, 'preload.js')
         }
     });
+
+    const win = mainWindow;
+    createTray(win);
     
     // 强制把窗口层级提升到最高，避免被全屏游戏或应用遮挡
     win.setAlwaysOnTop(true, 'screen-saver');
 
-    // 閸旂姾娴?Flask/FastAPI 閻ㄥ嫭顢戠€圭娀銆夐棃?(閺€顖涘瘮閸氬骸褰撮幈銏犳儙閸斻劍妫ら梽鎰板櫢鐠囨洜娲块崚鎷岀箾閹恒儲鍨氶崝?
     const petUrl = 'http://127.0.0.1:5000/pet?t=' + Date.now();
     function loadPetPage() {
         win.webContents.session.clearCache().then(() => {
             win.loadURL(petUrl).then(() => {
-                console.log(`[ELECTRON] Page loaded successfully`);
+                logDebug(`[ELECTRON] Page loaded successfully`);
             }).catch(err => {
-                console.log(`[ELECTRON] Page load failed, retrying in 1.5s...`);
+                logDebug(`[ELECTRON] Page load failed, retrying in 1.5s...`);
                 setTimeout(loadPetPage, 1500);
             });
         });
     }
     loadPetPage();
 
-    // 定时向渲染进程推送系统级全局鼠标坐标 (每 50ms 一次，解决 Windows 11 下 setIgnoreMouseEvents 导致 mousemove 停止触发的系统 Bug)
     const mouseTimer = setInterval(() => {
         if (win && !win.isDestroyed()) {
             const point = screen.getCursorScreenPoint();
             win.webContents.send('global-mouse-move', point);
-            
-            // 悬浮弹回逻辑已根据用户要求移除，现在只能通过点击或拖拽出来
         }
     }, 50);
 
     win.on('closed', () => {
         clearInterval(mouseTimer);
+        mainWindow = null;
     });
 
     if (!app.isPackaged) {
@@ -329,11 +330,14 @@ app.whenReady().then(() => {
         const { execSync, exec, spawn } = require('child_process');
         // 先清理旧端口
         try {
-            execSync('for /f "tokens=5" %a in (\'netstat -aon ^| findstr :5000\') do taskkill /f /pid %a', { shell: 'cmd.exe', stdio: 'ignore' });
+            execSync('powershell -Command "Get-NetTCPConnection -LocalPort 5000 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }"', { stdio: 'ignore' });
         } catch(e) {}
         
         const baseDir = process.resourcesPath;
+        const rootDir = path.dirname(baseDir);
         const exePaths = [
+            path.join(rootDir, 'dist', 'backend', 'web_interface.exe'),
+            path.join(rootDir, 'backend', 'web_interface.exe'),
             path.join(baseDir, 'dist', 'backend', 'web_interface.exe'),
             path.join(baseDir, 'backend', 'web_interface.exe')
         ];
@@ -355,11 +359,7 @@ app.whenReady().then(() => {
             });
             backendProcess.unref();
         } else {
-            const batPath = path.join(baseDir, 'start_backend.bat');
-            if (fs.existsSync(batPath)) {
-                logDebug(`[PACKAGED] Spawning backend script: ${batPath}`);
-                exec(`start "Touhou Pet Backend" cmd.exe /c "${batPath}"`, { cwd: baseDir });
-            }
+            logDebug(`[PACKAGED ERROR] Backend EXE not found in paths: ${JSON.stringify(exePaths)}`);
         }
     }
     createWindow();

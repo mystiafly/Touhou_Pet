@@ -2,7 +2,7 @@
 from PyInstaller.utils.hooks import collect_all
 from PyInstaller.utils.hooks import copy_metadata
 
-datas = [('services/characters', 'characters'), ('services/global_presets', 'global_presets'), ('services/global_config.json', '.'), ('services/templates', 'templates'), ('services/static', 'static')]
+datas = [('build/clean_data/characters', 'characters'), ('build/clean_data/global_presets', 'global_presets'), ('build/clean_data/global_config.json', '.'), ('services/templates', 'templates'), ('services/static', 'static')]
 binaries = []
 hiddenimports = ['en_core_web_sm']
 datas += copy_metadata('en_core_web_sm')

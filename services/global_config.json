@@ -1,0 +1,46 @@
+{
+  "active_character": "mystia",
+  "custom_engines": [
+    {
+      "id": "custom_801a15f1",
+      "name": "deep",
+      "model_name": "deepseek-v4-pro",
+      "base_url": "https://api.deepseek.com/v1",
+      "api_key": ""
+    },
+    {
+      "id": "custom_a4de4782",
+      "name": "DeepSeekFU",
+      "model_name": "deepseek-v4-flash",
+      "base_url": "https://api.deepseek.com/v1",
+      "api_key": ""
+    },
+    {
+      "id": "custom_c435569a",
+      "name": "db",
+      "model_name": "doubao-seed-evolving",
+      "base_url": "https://ark.cn-beijing.volces.com/api/v3",
+      "api_key": ""
+    },
+    {
+      "id": "custom_a2cbd4a0",
+      "name": "flash1",
+      "model_name": "deepseek-v4-flash",
+      "base_url": "https://api.deepseek.com/v1",
+      "api_key": ""
+    }
+  ],
+  "api_provider": "custom_801a15f1",
+  "app_launcher": {
+    "记事本": "C:\\Windows\\System32\\notepad.exe",
+    "网易云音乐": "H:\\CloudMusic\\cloudmusic.exe",
+    "网易云": "H:\\CloudMusic\\cloudmusic.exe",
+    "守望先锋": "H:\\Overwatch\\Overwatch Launcher.exe",
+    "MC": "H:\\MC\\Plain Craft Launcher 2.exe",
+    "我的世界": "H:\\MC\\Plain Craft Launcher 2.exe",
+    "PCL": "H:\\MC\\Plain Craft Launcher 2.exe"
+  },
+  "pre_api_provider": "custom_a4de4782",
+  "post_api_provider": "custom_a2cbd4a0",
+  "vision_engine": "custom_c435569a"
+}

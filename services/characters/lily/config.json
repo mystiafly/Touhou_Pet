@@ -8,9 +8,25 @@
     "2026-07-28",
     "2026-07-29",
     "2026-07-30",
-    "2026-07-31"
+    "2026-07-31",
+    "2026-08-01",
+    "2026-08-02",
+    "2026-08-03",
+    "2026-08-04",
+    "2026-08-05",
+    "2026-08-06",
+    "2026-08-07",
+    "2026-08-08"
   ],
   "user_prompt": "我是在外界捡到你的外界男性，你不知为何掉出了幻想乡，暂时被我救助",
   "active_sprite_set": "lilyblack",
-  "preset_block_english": true
+  "preset_block_english": true,
+  "bubble_duration_multiplier": 10.0,
+  "enable_greeting": false,
+  "immersive_wallpaper": "/api/wallpaper_engine/media?path=H%3A%5CSteamLibrary%5Csteamapps%5Cworkshop%5Ccontent%5C431960%5C3413996080%5Cextracted%5Cbase_bg.png&t=1786142984",
+  "immersive_bg_mode": "scene_extracted",
+  "immersive_media_url": "/api/wallpaper_engine/media?path=H%3A%5CSteamLibrary%5Csteamapps%5Cworkshop%5Ccontent%5C431960%5C3413996080%5Cextracted%5Cbase_bg.png&t=1786142984",
+  "immersive_bgm_url": "/api/wallpaper_engine/media?path=H%3A%5CSteamLibrary%5Csteamapps%5Cworkshop%5Ccontent%5C431960%5C3413996080%5Cextracted%5Cbgm.mp3&t=1786142984",
+  "immersive_we_folder": "H:\\SteamLibrary\\steamapps\\workshop\\content\\431960\\2780410014",
+  "flow_mode": true
 }

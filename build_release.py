@@ -58,30 +58,35 @@ def main():
     installer_dir = os.path.join(dist_dir, "installer")
     
     # 1. 构建 Python 后端
-    print("\n>>> [1/3] 正在使用 PyInstaller 构建 Python 预编译后端 (onedir)...")
-    
-    pyinstaller_cmd = [
-        sys.executable, "-m", "PyInstaller",
-        "--noconfirm",
-        "web_interface.spec"
-    ]
-    
-    try:
-        subprocess.run(pyinstaller_cmd, cwd=root_dir, check=True)
-    except subprocess.CalledProcessError as e:
-        print("\n[ERROR] Python 后端构建失败:", e)
-        sys.exit(1)
-        
-    old_backend = os.path.join(dist_dir, "web_interface")
     new_backend = os.path.join(dist_dir, "backend")
-    if os.path.exists(old_backend):
-        if os.path.exists(new_backend):
-            shutil.rmtree(new_backend)
-        os.rename(old_backend, new_backend)
-        print("Python 后端构建并重命名为 dist/backend 完成！")
+    existing_exe = os.path.join(new_backend, "web_interface.exe")
+    force_rebuild = "--rebuild-backend" in sys.argv
+    
+    if os.path.exists(existing_exe) and not force_rebuild:
+        print("\n>>> [1/3] [极速模式] 检测到已存在预编译后端 dist/backend，跳过 PyInstaller 耗时构建...")
     else:
-        print(f"\n[ERROR] 未找到生成的后端目录: {old_backend}")
-        sys.exit(1)
+        print("\n>>> [1/3] 正在使用 PyInstaller 构建 Python 预编译后端 (onedir)...")
+        pyinstaller_cmd = [
+            sys.executable, "-m", "PyInstaller",
+            "--noconfirm",
+            "web_interface.spec"
+        ]
+        
+        try:
+            subprocess.run(pyinstaller_cmd, cwd=root_dir, check=True)
+        except subprocess.CalledProcessError as e:
+            print("\n[ERROR] Python 后端构建失败:", e)
+            sys.exit(1)
+            
+        old_backend = os.path.join(dist_dir, "web_interface")
+        if os.path.exists(old_backend):
+            if os.path.exists(new_backend):
+                shutil.rmtree(new_backend)
+            os.rename(old_backend, new_backend)
+            print("Python 后端构建并重命名为 dist/backend 完成！")
+        elif not os.path.exists(existing_exe):
+            print(f"\n[ERROR] 未找到生成的后端目录: {old_backend}")
+            sys.exit(1)
     
     npx_cmd = "npx.cmd" if os.name == 'nt' else "npx"
     
@@ -92,7 +97,9 @@ def main():
         "productName": "Rumia Desktop Pet (Full)",
         "artifactName": "Rumia Desktop Pet Full Setup ${version}.${ext}",
         "extraFiles": [
-            {"from": ".node_env", "to": ".node_env"},
+            {"from": "dist/backend", "to": "dist/backend"}
+        ],
+        "extraResources": [
             {"from": "dist/backend", "to": "dist/backend"}
         ]
     }
