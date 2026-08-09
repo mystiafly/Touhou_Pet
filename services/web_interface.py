@@ -63,9 +63,10 @@ class TeeLogger:
     def reconfigure(self, **kwargs):
         pass
 
+import logging
+
 def silence_noisy_third_party_loggers():
     """彻底屏绝第三方库 (fastembed, huggingface_hub, qdrant_client, urllib3) 弹出的红字告警日志"""
-    import logging
     for log_name in ["fastembed", "fastembed.common.model_management", "huggingface_hub", "qdrant_client", "urllib3", "httpx", "sentence_transformers"]:
         logging.getLogger(log_name).setLevel(logging.CRITICAL)
 
@@ -76,6 +77,24 @@ def silence_noisy_third_party_loggers():
         logger.disable("huggingface_hub")
     except Exception:
         pass
+
+def setup_backend_logging():
+    try:
+        os.makedirs(LOGS_DIR, exist_ok=True)
+        file_handler = logging.FileHandler(backend_log_file, encoding='utf-8', mode='a')
+        file_handler.setFormatter(logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s'))
+        
+        root_logger = logging.getLogger()
+        root_logger.setLevel(logging.INFO)
+        root_logger.addHandler(file_handler)
+
+        for name in ["uvicorn", "uvicorn.access", "uvicorn.error", "fastapi"]:
+            lg = logging.getLogger(name)
+            lg.addHandler(file_handler)
+    except Exception as e:
+        print(f"[WARN] setup_backend_logging error: {e}")
+
+setup_backend_logging()
 
 silence_noisy_third_party_loggers()
 
