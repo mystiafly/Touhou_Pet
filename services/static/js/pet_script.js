@@ -1453,7 +1453,8 @@ class DesktopPet {
             });
             const data = await response.json();
             if (data.success) {
-                this.showBubble(data.reply);
+                // 自动开机打招呼的气泡传入 duration = -1 (常驻显示，直到用户主动说话顶掉)
+                this.showBubble(data.reply, -1);
                 this.setEmotion(data.emotion);
                 if (data.favorability !== undefined) {
                     this.favScore.innerText = data.favorability;
@@ -1517,7 +1518,8 @@ class DesktopPet {
             });
             const data = await response.json();
             if (data.success) {
-                this.showBubble(data.reply);
+                // 自动主动说话的气泡传入 duration = -1 (常驻显示，不自动闭合，直到用户主动说话顶掉)
+                this.showBubble(data.reply, -1);
                 this.setEmotion(data.emotion);
                 if (this.isImmersiveMode) {
                     this.appendLocalChatMessage(this.charName || "桌宠", data.reply);
