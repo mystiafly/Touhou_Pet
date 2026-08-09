@@ -27,8 +27,11 @@ def schedule_timer(minutes: int, memo: str):
     def timer_callback():
         add_event("timer_alert", {"memo": memo})
         print(f"[Timer] Timer finished! Added event for memo: {memo}")
-        with open("timer_debug.log", "a", encoding="utf-8") as f:
-            f.write(f"[{time.time()}] Timer finished! Added event for memo: {memo}\n")
+        try:
+            with open("timer_debug.log", "a", encoding="utf-8") as f:
+                f.write(f"[{time.time()}] Timer finished! Added event for memo: {memo}\n")
+        except Exception:
+            pass
 
     # For safety, cap at 120 minutes
     if minutes > 120:
@@ -38,8 +41,11 @@ def schedule_timer(minutes: int, memo: str):
 
     seconds = minutes * 60
     print(f"[Timer] Scheduled timer for {minutes} minutes (Memo: {memo})")
-    with open("timer_debug.log", "a", encoding="utf-8") as f:
-        f.write(f"[{time.time()}] Scheduled timer for {minutes} minutes (Memo: {memo})\n")
+    try:
+        with open("timer_debug.log", "a", encoding="utf-8") as f:
+            f.write(f"[{time.time()}] Scheduled timer for {minutes} minutes (Memo: {memo})\n")
+    except Exception:
+        pass
     
     t = threading.Timer(seconds, timer_callback)
     t.daemon = True

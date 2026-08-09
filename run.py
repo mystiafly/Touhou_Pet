@@ -111,7 +111,10 @@ def main():
     if not os.path.exists(node_modules_dir):
         print("\n[SYSTEM] 初次运行或未检测到前端依赖 (node_modules)，正在自动为您执行 npm install，请稍候...")
         try:
-            subprocess.call([npm_cmd, 'install'], cwd=root_dir, shell=False)
+            npm_env = os.environ.copy()
+            npm_env["ELECTRON_MIRROR"] = "https://npmmirror.com/mirrors/electron/"
+            npm_env["npm_config_registry"] = "https://registry.npmmirror.com"
+            subprocess.call([npm_cmd, 'install'], cwd=root_dir, shell=False, env=npm_env)
         except FileNotFoundError:
             print("\n[ERROR] 未找到 npm 命令！请确认您是否已经安装了 Node.js (https://nodejs.org) 并已将其添加到 PATH。")
             flask_process.terminate()

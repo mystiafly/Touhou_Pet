@@ -1,6 +1,12 @@
-# web_interface.py - Web界面后端 (FastAPI 架构升级版) - Refactored Entry Point
 import os
 import sys
+import re
+
+# 设置 HuggingFace 国内镜像与离线模式，彻底屏绝 WinError 10060 网络超时错误
+os.environ["HF_ENDPOINT"] = os.getenv("HF_ENDPOINT", "https://hf-mirror.com")
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+
 import threading
 import uvicorn
 from dotenv import load_dotenv
@@ -10,9 +16,15 @@ from fastapi.staticfiles import StaticFiles
 import io
 
 SERVICES_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = os.path.dirname(SERVICES_DIR)
-LOGS_DIR = os.path.join(ROOT_DIR, "logs")
-os.makedirs(LOGS_DIR, exist_ok=True)
+sys.path.append(SERVICES_DIR)
+
+from core.config_manager import USER_DATA_DIR, SERVICES_DIR
+
+LOGS_DIR = os.path.join(USER_DATA_DIR, "logs")
+try:
+    os.makedirs(LOGS_DIR, exist_ok=True)
+except Exception:
+    pass
 backend_log_file = os.path.join(LOGS_DIR, "backend_output.log")
 
 # 双写日志流：既实时输出到控制台黑框，又实时存盘到 logs/backend_output.log
@@ -20,7 +32,10 @@ class TeeLogger:
     def __init__(self, stream, log_filepath):
         self.terminal = stream
         self.log_filepath = log_filepath
-        self.file = open(log_filepath, "a", encoding="utf-8", buffering=1)
+        try:
+            self.file = open(log_filepath, "a", encoding="utf-8", buffering=1)
+        except Exception:
+            self.file = None
 
     def write(self, message):
         if self.terminal:
@@ -29,11 +44,14 @@ class TeeLogger:
                 self.terminal.flush()
             except Exception:
                 pass
-        try:
-            self.file.write(message)
-            self.file.flush()
-        except Exception:
-            pass
+        if self.file:
+            try:
+                # 过滤 ANSI 颜色转义字符 (例如 \x1b[32mINFO\x1b[0m)，确保 backend_output.log 纯净无乱码
+                clean_msg = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', message)
+                self.file.write(clean_msg)
+                self.file.flush()
+            except Exception:
+                pass
 
     def flush(self):
         if self.terminal:
@@ -41,10 +59,11 @@ class TeeLogger:
                 self.terminal.flush()
             except Exception:
                 pass
-        try:
-            self.file.flush()
-        except Exception:
-            pass
+        if self.file:
+            try:
+                self.file.flush()
+            except Exception:
+                pass
 
     def isatty(self):
         return getattr(self.terminal, 'isatty', lambda: False)()
@@ -52,9 +71,10 @@ class TeeLogger:
     def reconfigure(self, **kwargs):
         pass
 
+import logging
+
 def silence_noisy_third_party_loggers():
     """彻底屏绝第三方库 (fastembed, huggingface_hub, qdrant_client, urllib3) 弹出的红字告警日志"""
-    import logging
     for log_name in ["fastembed", "fastembed.common.model_management", "huggingface_hub", "qdrant_client", "urllib3", "httpx", "sentence_transformers"]:
         logging.getLogger(log_name).setLevel(logging.CRITICAL)
 
@@ -65,6 +85,24 @@ def silence_noisy_third_party_loggers():
         logger.disable("huggingface_hub")
     except Exception:
         pass
+
+def setup_backend_logging():
+    try:
+        os.makedirs(LOGS_DIR, exist_ok=True)
+        file_handler = logging.FileHandler(backend_log_file, encoding='utf-8', mode='a')
+        file_handler.setFormatter(logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s'))
+        
+        root_logger = logging.getLogger()
+        root_logger.setLevel(logging.INFO)
+        root_logger.addHandler(file_handler)
+
+        for name in ["uvicorn", "uvicorn.access", "uvicorn.error", "fastapi"]:
+            lg = logging.getLogger(name)
+            lg.addHandler(file_handler)
+    except Exception as e:
+        print(f"[WARN] setup_backend_logging error: {e}")
+
+setup_backend_logging()
 
 silence_noisy_third_party_loggers()
 
@@ -91,8 +129,8 @@ app = FastAPI(title="Desktop Pet Backend", version="0.3.0")
 # 挂载静态文件目录 (services/static -> /static)
 app.mount("/static", StaticFiles(directory=os.path.join(SERVICES_DIR, "static")), name="static")
 
-# 挂载角色资源目录(services/characters -> /char_assets)
-app.mount("/char_assets", StaticFiles(directory=os.path.join(SERVICES_DIR, "characters")), name="char_assets")
+# 挂载角色资源目录(USER_DATA_DIR/characters -> /char_assets)
+app.mount("/char_assets", StaticFiles(directory=os.path.join(USER_DATA_DIR, "characters")), name="char_assets")
 
 # 挂载路由
 app.include_router(router)
