@@ -1,6 +1,11 @@
-# web_interface.py - Web界面后端 (FastAPI 架构升级版) - Refactored Entry Point
 import os
 import sys
+
+# 设置 HuggingFace 国内镜像与离线模式，彻底屏绝 WinError 10060 网络超时错误
+os.environ["HF_ENDPOINT"] = os.getenv("HF_ENDPOINT", "https://hf-mirror.com")
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+
 import threading
 import uvicorn
 from dotenv import load_dotenv

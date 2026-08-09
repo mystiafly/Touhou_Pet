@@ -3,6 +3,11 @@ import json
 import shutil
 import sys
 
+# 设置 HuggingFace 国内镜像与离线模式，彻底屏绝 WinError 10060 网络超时错误
+os.environ["HF_ENDPOINT"] = os.getenv("HF_ENDPOINT", "https://hf-mirror.com")
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+
 SERVICES_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 if getattr(sys, 'frozen', False):
@@ -11,12 +16,31 @@ if getattr(sys, 'frozen', False):
 else:
     USER_DATA_DIR = SERVICES_DIR
 
+# 绑定本地内嵌 HuggingFace 缓存路径
+LOCAL_MODELS_DIR = os.path.join(USER_DATA_DIR, "models")
+os.environ["HF_HOME"] = os.getenv("HF_HOME", LOCAL_MODELS_DIR)
+
 def init_user_data_dir():
     """初始化 AppData 用户目录，在打包部署时从应用包中解压并初始化出厂设置"""
     try:
         os.makedirs(USER_DATA_DIR, exist_ok=True)
         os.makedirs(os.path.join(USER_DATA_DIR, "logs"), exist_ok=True)
+        os.makedirs(LOCAL_MODELS_DIR, exist_ok=True)
         
+        # 0. 自动同步内嵌模型文件 (sentence-transformers/all-MiniLM-L6-v2)
+        src_models = os.path.join(SERVICES_DIR, "models")
+        if os.path.exists(src_models):
+            for item in os.listdir(src_models):
+                s_item = os.path.join(src_models, item)
+                d_item = os.path.join(LOCAL_MODELS_DIR, item)
+                if not os.path.exists(d_item):
+                    try:
+                        if os.path.isdir(s_item):
+                            shutil.copytree(s_item, d_item)
+                        else:
+                            shutil.copy2(s_item, d_item)
+                    except Exception: pass
+
         if getattr(sys, 'frozen', False):
             # 1. 自动同步/解压 global_config.json
             dst_global = os.path.join(USER_DATA_DIR, "global_config.json")

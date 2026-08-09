@@ -47,3 +47,5 @@ node_temp.zip
 
 logs/
 *.log
+
+services/models/
