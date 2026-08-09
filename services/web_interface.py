@@ -10,9 +10,15 @@ from fastapi.staticfiles import StaticFiles
 import io
 
 SERVICES_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = os.path.dirname(SERVICES_DIR)
-LOGS_DIR = os.path.join(ROOT_DIR, "logs")
-os.makedirs(LOGS_DIR, exist_ok=True)
+sys.path.append(SERVICES_DIR)
+
+from core.config_manager import USER_DATA_DIR, SERVICES_DIR
+
+LOGS_DIR = os.path.join(USER_DATA_DIR, "logs")
+try:
+    os.makedirs(LOGS_DIR, exist_ok=True)
+except Exception:
+    pass
 backend_log_file = os.path.join(LOGS_DIR, "backend_output.log")
 
 # 双写日志流：既实时输出到控制台黑框，又实时存盘到 logs/backend_output.log
@@ -20,7 +26,10 @@ class TeeLogger:
     def __init__(self, stream, log_filepath):
         self.terminal = stream
         self.log_filepath = log_filepath
-        self.file = open(log_filepath, "a", encoding="utf-8", buffering=1)
+        try:
+            self.file = open(log_filepath, "a", encoding="utf-8", buffering=1)
+        except Exception:
+            self.file = None
 
     def write(self, message):
         if self.terminal:
@@ -29,11 +38,12 @@ class TeeLogger:
                 self.terminal.flush()
             except Exception:
                 pass
-        try:
-            self.file.write(message)
-            self.file.flush()
-        except Exception:
-            pass
+        if self.file:
+            try:
+                self.file.write(message)
+                self.file.flush()
+            except Exception:
+                pass
 
     def flush(self):
         if self.terminal:
@@ -41,10 +51,11 @@ class TeeLogger:
                 self.terminal.flush()
             except Exception:
                 pass
-        try:
-            self.file.flush()
-        except Exception:
-            pass
+        if self.file:
+            try:
+                self.file.flush()
+            except Exception:
+                pass
 
     def isatty(self):
         return getattr(self.terminal, 'isatty', lambda: False)()
@@ -91,8 +102,8 @@ app = FastAPI(title="Desktop Pet Backend", version="0.3.0")
 # 挂载静态文件目录 (services/static -> /static)
 app.mount("/static", StaticFiles(directory=os.path.join(SERVICES_DIR, "static")), name="static")
 
-# 挂载角色资源目录(services/characters -> /char_assets)
-app.mount("/char_assets", StaticFiles(directory=os.path.join(SERVICES_DIR, "characters")), name="char_assets")
+# 挂载角色资源目录(USER_DATA_DIR/characters -> /char_assets)
+app.mount("/char_assets", StaticFiles(directory=os.path.join(USER_DATA_DIR, "characters")), name="char_assets")
 
 # 挂载路由
 app.include_router(router)

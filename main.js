@@ -5,8 +5,25 @@ const fs = require('fs');
 // 关闭不必要的安全警告输出，保持控制台整洁
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
 
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+    app.quit();
+} else {
+    app.on('second-instance', (event, commandLine, workingDirectory) => {
+        if (mainWindow) {
+            if (mainWindow.isMinimized()) mainWindow.restore();
+            mainWindow.show();
+            mainWindow.focus();
+        }
+    });
+}
+
 function logDebug(msg) {
-    fs.appendFileSync(path.join(__dirname, 'edge_debug.log'), `[${new Date().toISOString()}] ${msg}\n`);
+    try {
+        const logDir = app ? path.join(app.getPath('userData'), 'logs') : __dirname;
+        if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
+        fs.appendFileSync(path.join(logDir, 'edge_debug.log'), `[${new Date().toISOString()}] ${msg}\n`);
+    } catch(e) {}
 }
 
 // 保持对 window 对象的全局引用
@@ -309,16 +326,41 @@ let backendProcess = null;
 
 app.whenReady().then(() => {
     if (app.isPackaged) {
-        const { execSync, exec } = require('child_process');
+        const { execSync, exec, spawn } = require('child_process');
         // 先清理旧端口
         try {
             execSync('for /f "tokens=5" %a in (\'netstat -aon ^| findstr :5000\') do taskkill /f /pid %a', { shell: 'cmd.exe', stdio: 'ignore' });
         } catch(e) {}
         
-        // 透明可见极客模式：弹出一个新的可见CMD窗口 (运行完毕自动关闭)
-        exec('start "Touhou Pet Backend" cmd.exe /c start_backend.bat', {
-            cwd: __dirname
-        });
+        const baseDir = process.resourcesPath;
+        const exePaths = [
+            path.join(baseDir, 'dist', 'backend', 'web_interface.exe'),
+            path.join(baseDir, 'backend', 'web_interface.exe')
+        ];
+        
+        let foundBackendExe = null;
+        for (const p of exePaths) {
+            if (fs.existsSync(p)) {
+                foundBackendExe = p;
+                break;
+            }
+        }
+        
+        if (foundBackendExe) {
+            logDebug(`[PACKAGED] Spawning precompiled backend EXE: ${foundBackendExe}`);
+            backendProcess = spawn(foundBackendExe, [], {
+                cwd: path.dirname(foundBackendExe),
+                detached: true,
+                stdio: 'ignore'
+            });
+            backendProcess.unref();
+        } else {
+            const batPath = path.join(baseDir, 'start_backend.bat');
+            if (fs.existsSync(batPath)) {
+                logDebug(`[PACKAGED] Spawning backend script: ${batPath}`);
+                exec(`start "Touhou Pet Backend" cmd.exe /c "${batPath}"`, { cwd: baseDir });
+            }
+        }
     }
     createWindow();
 });

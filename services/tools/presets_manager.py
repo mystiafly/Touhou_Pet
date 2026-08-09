@@ -1,7 +1,7 @@
 import os
 import json
 import re
-from core.config_manager import get_file_path, get_config
+from core.config_manager import get_file_path, get_config, USER_DATA_DIR, SERVICES_DIR
 from core.llm_client import get_llm_client_and_model
 
 SERVICES_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -117,7 +117,9 @@ def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
         except Exception as e:
             print(f"[PRESETS ERROR] 读取自定义预设文件失败，将跳过自定义预设: {e}")
 
-    global_presets_file = os.path.join(SERVICES_DIR, "global_presets", "global_presets.json")
+    global_presets_file = os.path.join(USER_DATA_DIR, "global_presets", "global_presets.json")
+    if not os.path.exists(global_presets_file):
+        global_presets_file = os.path.join(SERVICES_DIR, "global_presets", "global_presets.json")
     if os.path.exists(global_presets_file):
         try:
             with open(global_presets_file, 'r', encoding='utf-8') as f:

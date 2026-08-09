@@ -583,10 +583,10 @@ async def api_characters_import(
 ):
     import os, shutil, zipfile
     from tempfile import mkdtemp
-    from core.config_manager import SERVICES_DIR
+    from core.config_manager import USER_DATA_DIR, SERVICES_DIR
 
-    char_dir = os.path.join(SERVICES_DIR, "characters", char_id)
-    img_dir = os.path.join(SERVICES_DIR, "static", "images", char_id)
+    char_dir = os.path.join(USER_DATA_DIR, "characters", char_id)
+    img_dir = os.path.join(USER_DATA_DIR, "static", "images", char_id)
     
     if os.path.exists(char_dir):
         return JSONResponse({"status": "error", "message": f"角色ID {char_id} 已存在，请更换！"}, status_code=400)
@@ -1538,8 +1538,10 @@ def preview_prompt():
 @router.get("/api/presets/list")
 def api_presets_list():
     import json
-    from core.config_manager import SERVICES_DIR, get_character_dir
-    global_file = os.path.join(SERVICES_DIR, "global_presets", "global_presets.json")
+    from core.config_manager import USER_DATA_DIR, SERVICES_DIR, get_character_dir
+    global_file = os.path.join(USER_DATA_DIR, "global_presets", "global_presets.json")
+    if not os.path.exists(global_file):
+        global_file = os.path.join(SERVICES_DIR, "global_presets", "global_presets.json")
     custom_file = os.path.join(get_character_dir(), "presets", "custom_presets.json")
     
     global_presets = []
@@ -1567,9 +1569,9 @@ class PresetSaveRequest(BaseModel):
 @router.post("/api/presets/save")
 def api_presets_save(req: PresetSaveRequest):
     import json
-    from core.config_manager import SERVICES_DIR, get_character_dir
+    from core.config_manager import USER_DATA_DIR, SERVICES_DIR, get_character_dir
     if req.type == "global":
-        dir_path = os.path.join(SERVICES_DIR, "global_presets")
+        dir_path = os.path.join(USER_DATA_DIR, "global_presets")
         file_path = os.path.join(dir_path, "global_presets.json")
     else:
         dir_path = os.path.join(get_character_dir(), "presets")
@@ -1615,9 +1617,9 @@ class PresetDeleteRequest(BaseModel):
 @router.post("/api/presets/delete")
 def api_presets_delete(req: PresetDeleteRequest):
     import json
-    from core.config_manager import SERVICES_DIR, get_character_dir
+    from core.config_manager import USER_DATA_DIR, SERVICES_DIR, get_character_dir
     if req.type == "global":
-        file_path = os.path.join(SERVICES_DIR, "global_presets", "global_presets.json")
+        file_path = os.path.join(USER_DATA_DIR, "global_presets", "global_presets.json")
     else:
         file_path = os.path.join(get_character_dir(), "presets", "custom_presets.json")
         
@@ -1650,10 +1652,10 @@ async def import_worldbook(file: UploadFile = File(...), type: str = Form("custo
         if not isinstance(entries, dict):
             return JSONResponse({"success": False, "error": "无效的世界书格式：entries 不是字典"})
             
-        from core.config_manager import get_file_path
+        from core.config_manager import get_file_path, USER_DATA_DIR, SERVICES_DIR
         
         if type == "global":
-            custom_presets_file = os.path.join(SERVICES_DIR, "global_presets", "global_presets.json")
+            custom_presets_file = os.path.join(USER_DATA_DIR, "global_presets", "global_presets.json")
         else:
             custom_presets_file = get_file_path("presets/custom_presets.json")
         

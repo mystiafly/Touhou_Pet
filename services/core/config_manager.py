@@ -1,8 +1,52 @@
 import os
 import json
+import shutil
+import sys
 
 SERVICES_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-GLOBAL_CONFIG_FILE = os.path.join(SERVICES_DIR, "global_config.json")
+
+if getattr(sys, 'frozen', False):
+    app_data = os.getenv('APPDATA') or os.path.expanduser('~')
+    USER_DATA_DIR = os.path.join(app_data, 'RumiaDesktopPet')
+else:
+    USER_DATA_DIR = SERVICES_DIR
+
+def init_user_data_dir():
+    """初始化 AppData 用户目录，在打包部署时从应用包中解压并初始化出厂设置"""
+    try:
+        os.makedirs(USER_DATA_DIR, exist_ok=True)
+        os.makedirs(os.path.join(USER_DATA_DIR, "logs"), exist_ok=True)
+        
+        if getattr(sys, 'frozen', False):
+            # 1. 自动同步/解压 global_config.json
+            dst_global = os.path.join(USER_DATA_DIR, "global_config.json")
+            if not os.path.exists(dst_global):
+                src_global = os.path.join(SERVICES_DIR, "global_config.json")
+                if os.path.exists(src_global):
+                    try: shutil.copy2(src_global, dst_global)
+                    except Exception: pass
+                    
+            # 2. 自动解压/出厂 characters 角色预设包
+            dst_chars = os.path.join(USER_DATA_DIR, "characters")
+            if not os.path.exists(dst_chars):
+                src_chars = os.path.join(SERVICES_DIR, "characters")
+                if os.path.exists(src_chars):
+                    try: shutil.copytree(src_chars, dst_chars)
+                    except Exception: pass
+
+            # 3. 自动解压/出厂 global_presets 场景感应预设
+            dst_presets = os.path.join(USER_DATA_DIR, "global_presets")
+            if not os.path.exists(dst_presets):
+                src_presets = os.path.join(SERVICES_DIR, "global_presets")
+                if os.path.exists(src_presets):
+                    try: shutil.copytree(src_presets, dst_presets)
+                    except Exception: pass
+    except Exception as e:
+        print(f"[WARN] init_user_data_dir Warning: {e}")
+
+init_user_data_dir()
+
+GLOBAL_CONFIG_FILE = os.path.join(USER_DATA_DIR, "global_config.json")
 
 def get_active_character_id():
     if os.path.exists(GLOBAL_CONFIG_FILE):
@@ -15,7 +59,7 @@ def get_active_character_id():
 
 def get_character_dir():
     char_id = get_active_character_id()
-    d = os.path.join(SERVICES_DIR, "characters", char_id)
+    d = os.path.join(USER_DATA_DIR, "characters", char_id)
     os.makedirs(d, exist_ok=True)
     return d
 
