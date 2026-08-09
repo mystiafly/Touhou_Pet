@@ -52,6 +52,12 @@ def main():
     print("开始构建 Rumia Desktop Pet 官方双版本发行版...")
     print("==================================================")
     
+    # 引导 7-Zip 临时压缩缓存文件使用空间充足的 H 盘 (35GB 剩余空间)，防止 G 盘爆掉
+    temp_dir = "H:\\temp"
+    os.makedirs(temp_dir, exist_ok=True)
+    os.environ["TEMP"] = temp_dir
+    os.environ["TMP"] = temp_dir
+    
     clean_data_dir = sanitize_data_for_packaging()
     root_dir = os.path.abspath(os.path.dirname(__file__))
     dist_dir = os.path.join(root_dir, "dist")
@@ -99,9 +105,13 @@ def main():
         "extraFiles": [
             {"from": "dist/backend", "to": "dist/backend"}
         ],
-        "extraResources": [
-            {"from": "dist/backend", "to": "dist/backend"}
-        ]
+        "nsis": {
+            "oneClick": False,
+            "allowToChangeInstallationDirectory": True,
+            "createDesktopShortcut": True,
+            "createStartMenuShortcut": True,
+            "shortcutName": "Rumia Desktop Pet"
+        }
     }
     full_cfg_path = os.path.join(root_dir, "build_full.json")
     with open(full_cfg_path, "w", encoding="utf-8") as f:
@@ -125,7 +135,14 @@ def main():
         "artifactName": "Rumia Desktop Pet Lite Setup ${version}.${ext}",
         "extraFiles": [
             {"from": ".node_env", "to": ".node_env"}
-        ]
+        ],
+        "nsis": {
+            "oneClick": False,
+            "allowToChangeInstallationDirectory": True,
+            "createDesktopShortcut": True,
+            "createStartMenuShortcut": True,
+            "shortcutName": "Rumia Desktop Pet Lite"
+        }
     }
     lite_cfg_path = os.path.join(root_dir, "build_lite.json")
     with open(lite_cfg_path, "w", encoding="utf-8") as f:
