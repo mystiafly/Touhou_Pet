@@ -200,6 +200,13 @@ def get_memory_agent():
             print("[MEM0] 向量记忆引擎初始化成功。")
             return memory_agent
         except Exception as ex:
+            err_msg = str(ex)
+            if "already accessed" in err_msg.lower() or "another instance" in err_msg.lower():
+                print(f"[QDRANT LOCK ERROR] 检测到 Qdrant 向量数据库目录正在被另一个后台进程占用！")
+                print(f"[QDRANT SUGGESTION] 请在任务管理器中关闭残留的多余 python.exe 进程后重启桌宠。")
+                print(f"[MEM0 ERROR] 本地向量记忆引擎暂时关闭（等待后台进程关闭后自动恢复）。")
+                return None
+
             print(f"[MEM0 WARNING] 默认镜像源初始化失败 ({ex})，正在自动尝试强刷新备用镜像源...")
             fallback_endpoints = ["https://huggingface.co", "https://hf-hub.com"]
             for alt_endpoint in fallback_endpoints:
@@ -210,6 +217,10 @@ def get_memory_agent():
                     print(f"[MEM0] 切换备用源 [{alt_endpoint}] 成功初始化向量记忆引擎！")
                     return memory_agent
                 except Exception as alt_ex:
+                    alt_msg = str(alt_ex)
+                    if "already accessed" in alt_msg.lower() or "another instance" in alt_msg.lower():
+                        print(f"[QDRANT LOCK ERROR] 检测到 Qdrant 向量数据库目录锁冲突，已暂停本地记忆。")
+                        return None
                     print(f"[MEM0 WARNING] 备用源 [{alt_endpoint}] 尝试失败: {alt_ex}")
 
             print(f"[MEM0 ERROR] 无法连接向量模型服务器，本地记忆功能暂停使用。")
