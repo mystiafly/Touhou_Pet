@@ -34,15 +34,20 @@ def recall_memories_node(state: AgentState) -> Dict[str, Any]:
         agent = get_memory_agent()
         if agent:
             try:
-                results = agent.search(compiled_query, filters={"user_id": "player_01"}, limit=3, threshold=0.45)
+                # 降低匹配门槛并允许双重模糊召回，确保中文短文本能稳定召回记忆
+                results = agent.search(compiled_query, filters={"user_id": "player_01"}, limit=5, threshold=0.15)
                 results_list = results.get("results", []) if isinstance(results, dict) else (results if isinstance(results, list) else [])
+                if not results_list and user_msg:
+                    results = agent.search(user_msg, filters={"user_id": "player_01"}, limit=5, threshold=0.10)
+                    results_list = results.get("results", []) if isinstance(results, dict) else (results if isinstance(results, list) else [])
+
                 if results_list:
                     for r in results_list:
                         if isinstance(r, dict) and 'memory' in r:
                             date_meta = r.get("metadata", {}).get("date", "unknown_date") if r.get("metadata") else "unknown_date"
                             recalled.append(f"[ID: {date_meta}] {r['memory']}")
             except Exception as me:
-                pass
+                print(f"[RECALL MEMORY WARN] {me}")
                 
     active_tables = get_active_tables(user_msg, current_pool="\n".join([msg.get("content", "") for msg in history[-4:]]))
         

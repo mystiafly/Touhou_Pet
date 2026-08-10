@@ -49,3 +49,7 @@ logs/
 *.log
 
 services/models/
+
+build/
+dist/
+services/models/
