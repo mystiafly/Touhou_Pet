@@ -1491,6 +1491,30 @@ def delete_memory_node(memory_id: str):
         print(f"[API ERROR] Failed to delete memory node: {ex}")
         return JSONResponse({"success": False, "error": str(ex)}, status_code=500)
 
+@router.post("/api/settings/memory_seed")
+def seed_memory_node(payload: dict = Body(...)):
+    """向人格海向量库中主动注入回忆节点"""
+    try:
+        mem_text = payload.get("memory", "").strip()
+        if not mem_text:
+            return JSONResponse({"success": False, "error": "记忆文本内容不能为空"}, status_code=400)
+            
+        agent = get_memory_agent()
+        if not agent:
+            return JSONResponse({"success": False, "error": "记忆系统未初始化"}, status_code=500)
+            
+        char_id = get_active_character_id()
+        agent.add(
+            mem_text,
+            user_id="player_01",
+            metadata={"date": datetime.now().strftime("%Y-%m-%d"), "character": char_id, "source": "api_seed"},
+            infer=False
+        )
+        return {"success": True, "message": f"成功向 [{char_id}] 人格海注入回忆节点：'{mem_text[:20]}...'" }
+    except Exception as ex:
+        print(f"[API ERROR] Failed to seed memory node: {ex}")
+        return JSONResponse({"success": False, "error": str(ex)}, status_code=500)
+
 # 10. 手动触发记忆蒸馏接口
 @router.post("/api/settings/memory_distill_now")
 def manual_distill_now(payload: dict = Body(default={})):
