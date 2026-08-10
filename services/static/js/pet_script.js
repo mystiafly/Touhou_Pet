@@ -119,6 +119,7 @@ class DesktopPet {
         this.activeLogTab = "chat";
         this.isSleeping = false;
         this.isMinimized = false;
+        this.isChatting = false;
         this.sleepTimer = null;
         this.autoSpeakCount = 0;
 
@@ -264,6 +265,12 @@ class DesktopPet {
     init() {
         this.input.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.sendMessage();
+        });
+        this.input.addEventListener('focus', () => {
+            this.resetAutoSpeakTimer();
+        });
+        this.input.addEventListener('input', () => {
+            this.resetAutoSpeakTimer();
         });
 
         this.initSettings();
@@ -1322,6 +1329,8 @@ class DesktopPet {
 
         this.input.value = '';
         this.autoSpeakCount = 0;
+        this.isChatting = true;
+        this.resetAutoSpeakTimer();
         this.wakeUp(true); // 闈欓粯鍞ら啋 (鎺ヤ笅鏉ョ殑澶фā鍨嬪洖澶嶄細灞曠ず琛ㄦ儏涓庢皵娉?
         if (this.isImmersiveMode) {
             this.appendLocalChatMessage("你", text);
@@ -1373,6 +1382,9 @@ class DesktopPet {
             console.error("[CHAT ERROR] 聊天请求失败:", e);
             this.showBubble("听不到... (网络错误)");
             this.setEmotion('crying');
+        } finally {
+            this.isChatting = false;
+            this.resetAutoSpeakTimer();
         }
     }
 
@@ -1467,6 +1479,7 @@ class DesktopPet {
 
     // [新增] 处理本地快速点击互动
     handlePetClick() {
+        this.resetAutoSpeakTimer();
         if (this.isPeeking) {
             this.isPeeking = false;
             if (typeof petIPC !== 'undefined' && typeof petIPC.sendPetRestore === 'function') {
@@ -1504,7 +1517,7 @@ class DesktopPet {
     }
 
     async triggerPetSpeak() {
-        if (this.isPeeking || this.isSleeping) {
+        if (this.isPeeking || this.isSleeping || this.isChatting) {
             if (!this.isSleeping) this.resetAutoSpeakTimer();
             return;
         }
