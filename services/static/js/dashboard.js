@@ -1596,7 +1596,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let network = null;
     let selectedNodeId = null;
     const manualDistillBtn = document.getElementById('manual-distill-btn');
-    const seedTestBtn = document.getElementById('seed-test-btn');
     const refreshGraphBtn = document.getElementById('refresh-graph-btn');
     const deleteNodeBtn = document.getElementById('delete-node-btn');
     const graphSearchInput = document.getElementById('graph-search-input');
@@ -1624,7 +1623,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div style="color: #8be9fd; padding: 60px 20px; text-align: center;">
                         <i class="fas fa-water" style="font-size: 3em; color: rgba(139,233,253,0.4); margin-bottom: 15px;"></i>
                         <h3 style="margin: 5px 0;">当前角色人格海尚处于沉睡状态（0 个记忆节点）</h3>
-                        <p style="color: #aaa; font-size: 0.9em;">快去和桌宠聊聊天，或者点击上方【注入测试回忆】唤醒她的人格海星图吧！</p>
+                        <p style="color: #aaa; font-size: 0.9em;">快去和桌宠聊聊天，或者点击上方【整理今日回忆】提炼属于她的人格海星图吧！</p>
                     </div>`;
                 return;
             }
@@ -1670,7 +1669,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // 搜索过滤支持
             if (graphSearchInput) {
                 graphSearchInput.oninput = () => {
-                    const query = graphSearchInput.value.trim().lower();
+                    const query = graphSearchInput.value.trim().toLowerCase();
                     if (!query) return;
                     const matchedNodes = nodes.get().filter(n => 
                         (n.label && n.label.toLowerCase().includes(query)) || 
@@ -1711,10 +1710,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    async function manualDistill(isTest = false) {
-        if (!isTest && !await window.asyncConfirm("这将会消耗部分 API Token 将今天的聊天记录压缩为日记记忆实体，是否继续？")) return;
+    async function manualDistill() {
+        if (!await window.asyncConfirm("这将会消耗部分 API Token 将今天的聊天记录压缩为日记记忆实体，是否继续？")) return;
         
-        const btn = isTest ? seedTestBtn : manualDistillBtn;
+        const btn = manualDistillBtn;
         if (!btn) return;
         const oldHtml = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在处理...';
@@ -1724,7 +1723,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/settings/memory_distill_now', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ seed_test: isTest })
+                body: JSON.stringify({ seed_test: false })
             });
             const data = await res.json();
             if (data.success) {
@@ -1741,8 +1740,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    if (manualDistillBtn) manualDistillBtn.addEventListener('click', () => manualDistill(false));
-    if (seedTestBtn) seedTestBtn.addEventListener('click', () => manualDistill(true));
+    if (manualDistillBtn) manualDistillBtn.addEventListener('click', () => manualDistill());
 
     // 绑定 Nav Item 点击自动加载人格海
     const graphNavItem = document.querySelector('.nav-item[data-target="graph-view"]');
