@@ -1260,7 +1260,7 @@ def get_memory_graph():
             if not isinstance(item, dict):
                 continue
             m_id = item.get("id")
-            m_text = item.get("memory")
+            m_text = item.get("memory") or item.get("data") or ""
             m_meta = item.get("metadata", {})
             m_date = m_meta.get("date", "未知日期") if isinstance(m_meta, dict) else "未知日期"
             
@@ -1269,10 +1269,13 @@ def get_memory_graph():
                 
             valid_memory_ids.add(m_id)
             
+            clean_text = str(m_text).replace('\n', ' ').strip()
+            label_text = clean_text[:22] + "..." if len(clean_text) > 22 else clean_text
+            
             fact_node = {
                 "id": m_id,
-                "label": m_text[:25] + "..." if len(m_text) > 25 else m_text,
-                "title": f"记忆日期: {m_date}\n详细内容: {m_text}",
+                "label": label_text,
+                "title": f"记忆日期: {m_date}\n详细内容: {clean_text}",
                 "color": {
                     "background": "rgba(255, 121, 198, 0.85)",
                     "border": "#ff79c6",
@@ -1287,8 +1290,8 @@ def get_memory_graph():
                 },
                 "font": {"color": "#ffffff", "size": 12},
                 "shape": "box",
-                "margin": 10,
-                "shadow": {"enabled": True, "color": "rgba(255, 121, 198, 0.3)", "size": 8}
+                "margin": 8,
+                "shadow": {"enabled": True, "color": "rgba(255, 121, 198, 0.3)", "size": 6}
             }
             nodes.append(fact_node)
             fact_nodes_map[m_id] = fact_node
@@ -1435,7 +1438,7 @@ def manual_distill_now(payload: dict = Body(default={})):
 
         print(f"[MANUAL DISTILL] Distilling today's chat logs ({today_str})...")
         agent.add(
-            today_diary,
+            compressed_diary,
             user_id="player_01",
             metadata={"date": today_str},
             infer=False
