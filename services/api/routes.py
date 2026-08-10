@@ -1369,6 +1369,23 @@ def get_memory_graph():
         print(f"[API ERROR] Failed to fetch memory graph: {ex}")
         return JSONResponse({"success": False, "error": str(ex)}, status_code=500)
 
+# 9.5 删除特定记忆节点接口
+@router.delete("/api/settings/memory_node/{memory_id}")
+def delete_memory_node(memory_id: str):
+    """从 Qdrant 人格海向量库中擦除特定记忆节点"""
+    try:
+        agent = get_memory_agent()
+        if not agent:
+            return JSONResponse({"success": False, "error": "记忆系统未初始化"}, status_code=500)
+            
+        if hasattr(agent, "delete"):
+            agent.delete(memory_id)
+            return {"success": True, "message": "已成功从人格海中擦除该条回忆节点！"}
+        return JSONResponse({"success": False, "error": "记忆底层未实现删除方法"}, status_code=500)
+    except Exception as ex:
+        print(f"[API ERROR] Failed to delete memory node: {ex}")
+        return JSONResponse({"success": False, "error": str(ex)}, status_code=500)
+
 # 10. 手动触发记忆蒸馏接口
 @router.post("/api/settings/memory_distill_now")
 def manual_distill_now(payload: dict = Body(default={})):
