@@ -1360,13 +1360,115 @@ def get_memory_graph():
                         "width": 1.5,
                         "smooth": {"type": "curvedCW", "roundness": 0.2}
                     })
+
+        # 3. 统计对话与记忆中的高频短语 (Phrase Frequency & Hotspot Analysis)
+        phrase_nodes_map = {}
+        try:
+            import glob
+            from collections import Counter
+            import re
+            from core.config_manager import get_character_dir
+            
+            char_dir = get_character_dir()
+            history_dir = os.path.join(char_dir, "daily_history")
+            
+            all_corpus_text = []
+            
+            # 从历史对话 log 中调取文本
+            if os.path.exists(history_dir):
+                for log_file in glob.glob(os.path.join(history_dir, "chat_log_*.txt")):
+                    for enc in ['utf-8', 'gbk', 'utf-8-sig']:
+                        try:
+                            with open(log_file, 'r', encoding=enc) as lf:
+                                all_corpus_text.append(lf.read())
+                            break
+                        except Exception:
+                            continue
+            
+            # 加上 Qdrant 所有记忆切片文本
+            for m_item in memories_list:
+                if isinstance(m_item, dict):
+                    all_corpus_text.append(str(m_item.get("memory") or m_item.get("data") or ""))
                     
+            full_corpus = " ".join(all_corpus_text)
+            
+            # 提取 2~6 字关键词/短语
+            raw_words = re.findall(r'[\u4e00-\u9fa5]{2,6}', full_corpus)
+            stopwords = {
+                '桌宠', '用户', '今天', '这个', '什么', '可以', '知道', '感觉', '觉得', '主人',
+                '自己', '没有', '可能', '怎么', '状态', '动作', '回复', '时间', '发现', '表达',
+                '能够', '或者', '应该', '如果', '出现', '属于', '看到', '进行', '提示', '方式',
+                '翅尖', '轻戳', '主动', '就是', '那么', '出来', '东西', '开始', '好像', '最后',
+                '继续', '然后', '已经', '现在', '还是', '过去', '其实', '只要', '必须', '用户刚',
+                '下意识', '反应是', '物理动作', '回复内容', '黑幕', '角色'
+            }
+            filtered_words = [w for w in raw_words if w not in stopwords and len(w) >= 2]
+            word_counts = Counter(filtered_words).most_common(25)
+            
+            for phrase, count in word_counts:
+                phrase_node_id = f"phrase_{phrase}"
+                
+                # 计算关联的 Qdrant 记忆节点
+                linked_mids = []
+                for mid, f_node in fact_nodes_map.items():
+                    if phrase in f_node.get("title", "") or phrase in f_node.get("label", ""):
+                        linked_mids.append(mid)
+                        
+                # 根据词频动态计算节点大小 (Size)
+                node_size = min(12 + int(count * 1.2), 34)
+                is_hot = count >= 8
+                
+                bg_color = "rgba(241, 250, 140, 0.9)" if is_hot else "rgba(139, 233, 253, 0.75)"
+                border_color = "#f1fa8c" if is_hot else "#8be9fd"
+                
+                phrase_node = {
+                    "id": phrase_node_id,
+                    "label": f"🔥 {phrase} ({count})" if is_hot else f"{phrase}",
+                    "title": f"🔥 高频热词: {phrase}\n📊 历史出现频次: {count} 次\n🔗 关联记忆数: {len(linked_mids)} 条",
+                    "color": {
+                        "background": bg_color,
+                        "border": border_color,
+                        "highlight": {"background": bg_color, "border": "#ff79c6"},
+                        "hover": {"background": bg_color, "border": "#ff79c6"}
+                    },
+                    "font": {
+                        "color": "#1e1e2e" if is_hot else "#ffffff",
+                        "size": 13 if is_hot else 11,
+                        "bold": is_hot
+                    },
+                    "shape": "dot",
+                    "size": node_size,
+                    "shadow": {
+                        "enabled": True,
+                        "color": "rgba(241, 250, 140, 0.4)" if is_hot else "rgba(139, 233, 253, 0.3)",
+                        "size": 10 if is_hot else 6
+                    }
+                }
+                nodes.append(phrase_node)
+                phrase_nodes_map[phrase_node_id] = phrase_node
+                
+                # 建立虚线连接到记忆节点
+                for mid in linked_mids:
+                    edges.append({
+                        "from": phrase_node_id,
+                        "to": mid,
+                        "color": {
+                            "color": "rgba(241, 250, 140, 0.5)" if is_hot else "rgba(139, 233, 253, 0.3)",
+                            "highlight": "rgba(255, 121, 198, 0.8)"
+                        },
+                        "width": 2 if is_hot else 1,
+                        "dashes": True
+                    })
+        except Exception as pe:
+            print(f"[MEMORY GRAPH] Phrase frequency extraction error: {pe}")
+
         return {
             "success": True,
             "nodes": nodes,
             "edges": edges,
             "facts_count": len(valid_memory_ids),
-            "entities_count": len(entity_nodes_map)
+            "entities_count": len(entity_nodes_map),
+            "phrases_count": len(phrase_nodes_map)
         }
     except Exception as ex:
         print(f"[API ERROR] Failed to fetch memory graph: {ex}")
