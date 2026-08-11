@@ -45,6 +45,9 @@ window.__petIPC = {
     },
     onImmersiveModeState: (callback) => {
         ipcRenderer.on('immersive-mode-state', (event, state) => callback(state));
+    },
+    captureImmersiveScreenshot: () => {
+        return ipcRenderer.invoke('capture-immersive-screenshot');
     }
 };
 

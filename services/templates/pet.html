@@ -21,12 +21,19 @@
         <div id="immersive-clock-time">00:00</div>
         <div id="immersive-clock-date">2026年08月08日 星期六</div>
         <div class="immersive-controls-row">
+            <button id="immersive-screenshot-btn" class="immersive-bgm-btn" title="一键超高清截屏 (快捷键: P 或 F12)">
+                <i class="fas fa-camera"></i> <span>高清截图</span>
+            </button>
             <button id="immersive-bgm-toggle-btn" class="immersive-bgm-btn hidden" title="切换背景音乐开关">
                 <i class="fas fa-volume-up"></i> <span id="immersive-bgm-status-text">BGM</span>
             </button>
         </div>
-        <div class="immersive-exit-hint"><i class="fas fa-keyboard"></i> 按 ESC 键退出沉浸模式</div>
+        <div class="immersive-exit-hint"><i class="fas fa-keyboard"></i> 按 ESC 退出 | 按 P 键一键截图</div>
     </div>
+
+    <!-- 沉浸模式截屏快门闪光与 Toast 提醒 -->
+    <div id="immersive-flash-overlay" class="immersive-flash-overlay hidden"></div>
+    <div id="immersive-toast" class="immersive-toast hidden"></div>
 
     <div id="debug-coord-panel" style="display: none; position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.85); color: #50fa7b; font-family: monospace; font-size: 11px; z-index: 99999; pointer-events: none; padding: 6px; border-radius: 4px; border: 1px solid #ff5555; line-height: 1.4;">
         Mouse: <span id="debug-mouse-val">N/A</span><br>

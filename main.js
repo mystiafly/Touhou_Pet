@@ -1,4 +1,4 @@
-const { app, BrowserWindow, screen, ipcMain, Tray, Menu } = require('electron');
+const { app, BrowserWindow, screen, ipcMain, Tray, Menu, clipboard } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -110,7 +110,8 @@ ipcMain.on('enter-immersive-mode', (event) => {
         win.isImmersiveMode = true;
         const display = screen.getDisplayMatching(win.getBounds());
         win.setBounds(display.bounds);
-        win.setAlwaysOnTop(true, 'screen-saver');
+        // 使用 floating 级别，便于 Windows 自带截屏(Win+Shift+S)或微信/QQ截图唤起在最顶层
+        win.setAlwaysOnTop(true, 'floating');
         win.setIgnoreMouseEvents(false);
         win.webContents.send('immersive-mode-state', true);
     }
@@ -134,6 +135,34 @@ ipcMain.on('exit-immersive-mode', (event) => {
         }
         win.setAlwaysOnTop(true, 'screen-saver');
         win.webContents.send('immersive-mode-state', false);
+    }
+});
+
+// 监听沉浸模式一键超高清截屏请求
+ipcMain.handle('capture-immersive-screenshot', async (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win) return { success: false, message: 'Window not found' };
+
+    try {
+        const image = await win.webContents.capturePage();
+        clipboard.writeImage(image);
+
+        const desktopPath = app.getPath('desktop');
+        const now = new Date();
+        const timestamp = now.getFullYear() +
+            String(now.getMonth() + 1).padStart(2, '0') +
+            String(now.getDate()).padStart(2, '0') + '_' +
+            String(now.getHours()).padStart(2, '0') +
+            String(now.getMinutes()).padStart(2, '0') +
+            String(now.getSeconds()).padStart(2, '0');
+        const filename = `DeskPet_Immersive_${timestamp}.png`;
+        const filePath = path.join(desktopPath, filename);
+
+        fs.writeFileSync(filePath, image.toPNG());
+        return { success: true, filePath: filePath, filename: filename };
+    } catch (e) {
+        console.error("截屏失败:", e);
+        return { success: false, message: e.toString() };
     }
 });
 

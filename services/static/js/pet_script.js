@@ -607,10 +607,15 @@ class DesktopPet {
 
         this.initImmersiveBGM();
 
-        // 按 ESC 键退出沉浸模式
+        // 按 ESC 键退出沉浸模式，按 P 键 / F12 / PrintScreen 一键高清截屏
         window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.isImmersiveMode) {
-                this.exitImmersiveMode();
+            if (this.isImmersiveMode) {
+                if (e.key === 'Escape') {
+                    this.exitImmersiveMode();
+                } else if (e.key === 'p' || e.key === 'P' || e.key === 'F12' || e.key === 'PrintScreen') {
+                    e.preventDefault();
+                    this.takeImmersiveScreenshot();
+                }
             }
         });
 
@@ -629,6 +634,13 @@ class DesktopPet {
         if (bgmToggleBtn) {
             bgmToggleBtn.addEventListener('click', () => {
                 this.toggleBGM();
+            });
+        }
+
+        const screenshotBtn = document.getElementById('immersive-screenshot-btn');
+        if (screenshotBtn) {
+            screenshotBtn.addEventListener('click', () => {
+                this.takeImmersiveScreenshot();
             });
         }
     }
@@ -1146,6 +1158,51 @@ class DesktopPet {
             this.activeParallaxBgElement.style.transform = '';
             this.activeParallaxBgElement = null;
         }
+    }
+
+    async takeImmersiveScreenshot() {
+        if (!this.isImmersiveMode) return;
+
+        // 模拟真实相机的快门闪光反馈
+        const flash = document.getElementById('immersive-flash-overlay');
+        if (flash) {
+            flash.classList.remove('hidden');
+            flash.classList.add('active');
+            setTimeout(() => {
+                flash.classList.remove('active');
+                setTimeout(() => flash.classList.add('hidden'), 150);
+            }, 100);
+        }
+
+        // 调用 Electron 原生 CapturePage 截取全屏高清画面
+        if (window.__petIPC && typeof window.__petIPC.captureImmersiveScreenshot === 'function') {
+            try {
+                const res = await window.__petIPC.captureImmersiveScreenshot();
+                if (res && res.success) {
+                    this.showImmersiveToast(`📸 截图已保存至桌面，并自动复制到剪贴板！`);
+                } else {
+                    this.showImmersiveToast(`⚠️ 截图失败: ${res ? res.message : '未知错误'}`);
+                }
+            } catch (err) {
+                console.error("截图异常:", err);
+                this.showImmersiveToast(`⚠️ 截图发生错误，请重试`);
+            }
+        } else {
+            this.showImmersiveToast(`当前环境请使用系统截屏 (Win+Shift+S) 或微信/QQ截屏`);
+        }
+    }
+
+    showImmersiveToast(msg) {
+        const toast = document.getElementById('immersive-toast');
+        if (!toast) return;
+        toast.innerText = msg;
+        toast.classList.remove('hidden');
+        toast.style.opacity = '1';
+        if (this.toastTimeout) clearTimeout(this.toastTimeout);
+        this.toastTimeout = setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.classList.add('hidden'), 300);
+        }, 3200);
     }
 
     async fetchImmersiveChatHistory() {
