@@ -155,10 +155,6 @@ def get_active_tables(user_message, current_pool=""):
         entry_type = export_config.get("entryType", "constant")
         keywords_str = export_config.get("keywords", "")
         
-        # 对日常摘要表 (sheet_summary) 强行常驻唤醒保活，确保聊天要点始终可被检索
-        if key == "sheet_summary":
-            entry_type = "constant"
-        
         is_active = False
         active_rows = []
         
