@@ -163,6 +163,20 @@
                     <p class="help-text">AI 的思考广度与对话情绪特征将会实时发生改变。</p>
                 </div>
 
+                <div class="settings-card" style="border-left: 4px solid #8be9fd;">
+                    <h3><i class="fas fa-layer-group" style="color: #8be9fd;"></i> 对话流阶梯划分 (Context Step Tier)</h3>
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label for="history-step-multiplier-select">动态调节对话流阶梯倍率:</label>
+                        <select id="history-step-multiplier-select" class="modern-select">
+                            <option value="1">1x 默认阶梯 (8 ~ 16 轮) - 兼顾连贯记忆与低 API 消耗</option>
+                            <option value="2">2x 扩容阶梯 (16 ~ 32 轮) - 适合中长篇对话保持深度记忆</option>
+                            <option value="4">4x 海量阶梯 (32 ~ 64 轮) - 适合长篇沉浸多轮互动叙事</option>
+                            <option value="8">8x 极致阶梯 (64 ~ 128 轮) - 适合超大上下文模型与极长篇连贯</option>
+                        </select>
+                    </div>
+                    <p class="help-text">动态调节对话上下文的阶梯划分范围。未满最大轮数时保持 100% 缓存匹配，超限后硬剪回最小轮数。</p>
+                </div>
+
                 <div class="settings-card" style="border-left: 4px solid #f1fa8c;">
                     <h3><i class="fas fa-bolt" style="color: #f1fa8c;"></i> 心流模式 (Flow Mode)</h3>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">

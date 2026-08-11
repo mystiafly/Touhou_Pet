@@ -283,6 +283,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     flowModeToggle.checked = !!configData.flow_mode;
                 }
                 
+                const historyStepSelect = document.getElementById('history-step-multiplier-select');
+                if (historyStepSelect && configData.history_step_multiplier !== undefined) {
+                    historyStepSelect.value = configData.history_step_multiplier.toString();
+                }
+                
                 const mainDisplay = document.getElementById('main-api-provider-display');
                 if (mainDisplay) {
                     const selectedOpt = apiSelect.options[apiSelect.selectedIndex];
@@ -462,6 +467,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             } catch (e) {
                 console.error("保存心流模式失败:", e);
+            }
+        });
+    }
+
+    const historyStepSelect = document.getElementById('history-step-multiplier-select');
+    if (historyStepSelect) {
+        historyStepSelect.addEventListener('change', async () => {
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ history_step_multiplier: parseInt(historyStepSelect.value) })
+                });
+            } catch (e) {
+                console.error("保存阶梯倍率失败:", e);
             }
         });
     }

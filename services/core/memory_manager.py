@@ -278,18 +278,40 @@ def save_history(messages):
     except IOError as e:
         print(f"警告：保存历史文件失败。错误：{e}")
 
+def get_history_step_multiplier() -> int:
+    """获取当前配置的历史轮数阶梯倍率 (1, 2, 4, 8)，默认为 1"""
+    try:
+        config_data = get_config()
+        mult = int(config_data.get("history_step_multiplier", 1))
+        if mult in [1, 2, 4, 8]:
+            return mult
+        return 1
+    except Exception:
+        return 1
+
+def get_history_rounds_bounds():
+    """计算当前生效的阶梯轮数范围 (min_rounds, max_rounds)"""
+    mult = get_history_step_multiplier()
+    base_min = 8
+    base_max = 16
+    return base_min * mult, base_max * mult
+
 def trim_history(messages):
     """
     阶梯式上下文裁剪逻辑 (Stepped Context Windowing)
-    为最大化利用 Prompt Caching，在历史未满 MAX_HISTORY_ROUNDS 时，
-    不移出老对话（保持 append-only，以实现后续请求的 100% 缓存匹配）；
-    一旦超过最大轮数，则一次性硬裁剪剪回 MIN_HISTORY_ROUNDS，重新建立新一轮的增长缓存。
+    为最大化利用 Prompt Caching，动态根据配置的阶梯倍率 (x1, x2, x4, x8) 计算 (min_rounds, max_rounds)。
+    在历史未满 max_rounds 时不移出老对话（保持 append-only，以实现后续请求的 100% 缓存匹配）；
+    一旦超过最大轮数，则一次性硬裁剪剪回 min_rounds，重新建立新一轮的增长缓存。
     """
     if len(messages) <= 1:
         return messages
     system_message = messages[0]
     dialogue = messages[1:]
-    if len(dialogue) > MAX_HISTORY_ROUNDS * 2:
-        dialogue = dialogue[-(MIN_HISTORY_ROUNDS * 2):]
-        print(f"[CONTEXT TRIM] 对话历史已满 {MAX_HISTORY_ROUNDS} 轮，触发阶梯式裁剪，硬剪回最近 {MIN_HISTORY_ROUNDS} 轮对话以重置并重建 Prompt Cache。")
+    
+    min_rounds, max_rounds = get_history_rounds_bounds()
+    
+    if len(dialogue) > max_rounds * 2:
+        dialogue = dialogue[-(min_rounds * 2):]
+        mult = get_history_step_multiplier()
+        print(f"[CONTEXT TRIM] 对话历史已满 {max_rounds} 轮 (x{mult} 阶梯)，触发阶梯式裁剪，硬剪回最近 {min_rounds} 轮对话以重置并重建 Prompt Cache。")
     return [system_message] + dialogue

@@ -826,6 +826,7 @@ def get_config_api():
     config["post_api_provider"] = config.get("post_api_provider", "inherit")
     config["vision_engine"] = config.get("vision_engine", "gemini")
     config["flow_mode"] = config.get("flow_mode", False)
+    config["history_step_multiplier"] = config.get("history_step_multiplier", 1)
     config["success"] = True
     return config
 
@@ -844,6 +845,13 @@ def post_config_api(payload: dict = Body(...)):
             config_data["vision_engine"] = payload["vision_engine"].strip()
         if "flow_mode" in payload:
             config_data["flow_mode"] = bool(payload["flow_mode"])
+        if "history_step_multiplier" in payload:
+            try:
+                val = int(payload["history_step_multiplier"])
+                if val in [1, 2, 4, 8]:
+                    config_data["history_step_multiplier"] = val
+            except Exception:
+                pass
         if "enable_greeting" in payload:
             config_data["enable_greeting"] = bool(payload["enable_greeting"])
         if "enable_auto_speak" in payload:
