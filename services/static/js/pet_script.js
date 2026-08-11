@@ -605,6 +605,8 @@ class DesktopPet {
         this.immersiveClockTime = document.getElementById('immersive-clock-time');
         this.immersiveClockDate = document.getElementById('immersive-clock-date');
 
+        this.initImmersiveBGM();
+
         // 按 ESC 键退出沉浸模式
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.isImmersiveMode) {
@@ -622,6 +624,136 @@ class DesktopPet {
         }
     }
 
+    initImmersiveBGM() {
+        const bgmToggleBtn = document.getElementById('immersive-bgm-toggle-btn');
+        if (bgmToggleBtn) {
+            bgmToggleBtn.addEventListener('click', () => {
+                this.toggleBGM();
+            });
+        }
+    }
+
+    fadePlayBGM(bgmUrl) {
+        if (!bgmUrl) return;
+
+        if (this.bgmFadeInterval) {
+            clearInterval(this.bgmFadeInterval);
+            this.bgmFadeInterval = null;
+        }
+
+        if (!this.bgmAudio) {
+            this.bgmAudio = new Audio();
+        }
+
+        const isSameSrc = this.bgmAudio.src && this.bgmAudio.src.includes(bgmUrl);
+        if (!isSameSrc) {
+            this.bgmAudio.src = bgmUrl;
+        }
+
+        this.bgmAudio.loop = true;
+        this.bgmAudio.volume = 0;
+
+        const targetVol = 0.8;
+        const fadeDuration = 1800;
+        const stepTime = 50;
+        const volStep = targetVol / (fadeDuration / stepTime);
+
+        this.bgmAudio.play().then(() => {
+            this.updateBGMButtonState(true);
+            this.bgmFadeInterval = setInterval(() => {
+                if (!this.bgmAudio) {
+                    clearInterval(this.bgmFadeInterval);
+                    return;
+                }
+                if (this.bgmAudio.volume + volStep < targetVol) {
+                    this.bgmAudio.volume += volStep;
+                } else {
+                    this.bgmAudio.volume = targetVol;
+                    clearInterval(this.bgmFadeInterval);
+                    this.bgmFadeInterval = null;
+                }
+            }, stepTime);
+        }).catch(err => {
+            console.log("BGM 自动播放受限:", err);
+            this.updateBGMButtonState(false);
+        });
+    }
+
+    fadeStopBGM(pauseOnly = false) {
+        if (!this.bgmAudio) return;
+
+        if (this.bgmFadeInterval) {
+            clearInterval(this.bgmFadeInterval);
+            this.bgmFadeInterval = null;
+        }
+
+        const currentVol = this.bgmAudio.volume;
+        if (currentVol <= 0.05 || this.bgmAudio.paused) {
+            this.bgmAudio.pause();
+            if (!pauseOnly) this.bgmAudio.src = "";
+            this.updateBGMButtonState(false);
+            return;
+        }
+
+        const fadeDuration = 500;
+        const stepTime = 50;
+        const volStep = currentVol / (fadeDuration / stepTime);
+
+        this.bgmFadeInterval = setInterval(() => {
+            if (!this.bgmAudio) {
+                clearInterval(this.bgmFadeInterval);
+                return;
+            }
+            if (this.bgmAudio.volume - volStep > 0) {
+                this.bgmAudio.volume -= volStep;
+            } else {
+                this.bgmAudio.volume = 0;
+                this.bgmAudio.pause();
+                if (!pauseOnly) {
+                    this.bgmAudio.src = "";
+                }
+                clearInterval(this.bgmFadeInterval);
+                this.bgmFadeInterval = null;
+                this.updateBGMButtonState(false);
+            }
+        }, stepTime);
+    }
+
+    toggleBGM() {
+        if (!this.bgmAudio || !this.bgmAudio.src) {
+            if (this.currentBgmUrl) {
+                this.fadePlayBGM(this.currentBgmUrl);
+            }
+            return;
+        }
+
+        if (this.bgmAudio.paused || this.bgmAudio.volume === 0) {
+            this.fadePlayBGM(this.currentBgmUrl || this.bgmAudio.src);
+        } else {
+            this.fadeStopBGM(true);
+        }
+    }
+
+    updateBGMButtonState(isPlaying) {
+        const btn = document.getElementById('immersive-bgm-toggle-btn');
+        if (!btn) return;
+
+        if (isPlaying) {
+            btn.classList.remove('hidden', 'muted');
+            btn.innerHTML = '<i class="fas fa-volume-up"></i> <span>BGM 开启</span>';
+            btn.title = "点击暂停/静音沉浸音乐";
+        } else {
+            if (this.currentBgmUrl) {
+                btn.classList.remove('hidden');
+                btn.classList.add('muted');
+                btn.innerHTML = '<i class="fas fa-volume-mute"></i> <span>BGM 静音</span>';
+                btn.title = "点击播放/开启沉浸音乐";
+            } else {
+                btn.classList.add('hidden');
+            }
+        }
+    }
+
     async enterImmersiveMode() {
         if (this.isImmersiveMode) return;
         this.isImmersiveMode = true;
@@ -631,6 +763,7 @@ class DesktopPet {
         let bgMode = 'image';
         let mediaUrl = '';
         let bgmUrl = '';
+        let enableBgm = true;
         try {
             const res = await fetch('/api/character_info');
             const data = await res.json();
@@ -639,9 +772,11 @@ class DesktopPet {
             if (data.immersive_bg_mode) bgMode = data.immersive_bg_mode;
             if (data.immersive_media_url) mediaUrl = data.immersive_media_url;
             if (data.immersive_bgm_url) bgmUrl = data.immersive_bgm_url;
+            if (data.enable_immersive_bgm !== undefined) enableBgm = data.enable_immersive_bgm;
         } catch (e) {
             console.error("更新沉浸壁纸配置失败:", e);
         }
+        this.currentBgmUrl = bgmUrl;
 
         const container = document.querySelector('.pet-container');
         if (container) {
@@ -670,7 +805,7 @@ class DesktopPet {
                 body: JSON.stringify({ hide_icons: true })
             }).catch(e => console.log(e));
         } else if (bgMode === 'scene_extracted') {
-            // 解包 4K 超高清原图 + 流星粒子特效 + BGM
+            // 解包 4K 超高清原图 + 流星粒子特效
             if (this.immersiveWallpaper) {
                 this.immersiveWallpaper.classList.remove('hidden');
                 this.immersiveWallpaper.style.backgroundSize = fitMode;
@@ -679,12 +814,6 @@ class DesktopPet {
                 this.immersiveWallpaper.style.backgroundImage = `url('${this.wallpaperUrl}')`;
             }
             this.startImmersiveParticleEffect();
-            if (bgmUrl) {
-                if (!this.bgmAudio) this.bgmAudio = new Audio();
-                this.bgmAudio.src = bgmUrl;
-                this.bgmAudio.loop = true;
-                this.bgmAudio.play().catch(e => console.log("BGM 自动播放受限:", e));
-            }
         } else if (bgMode === 'video' && (mediaUrl || this.wallpaperUrl)) {
             if (this.immersiveVideo) {
                 this.immersiveVideo.classList.remove('hidden');
@@ -714,6 +843,13 @@ class DesktopPet {
                     this.immersiveWallpaper.style.backgroundImage = `linear-gradient(135deg, #1e1e2e, #282a36, #44475a)`;
                 }
             }
+        }
+
+        // 统一沉浸背景音乐播放与按钮状态更新（淡入循环）
+        if (bgmUrl && enableBgm) {
+            this.fadePlayBGM(bgmUrl);
+        } else {
+            this.updateBGMButtonState(false);
         }
 
         if (this.immersiveChatPanel) {
@@ -780,10 +916,8 @@ class DesktopPet {
             this.particleAnimFrame = null;
         }
 
-        if (this.bgmAudio) {
-            this.bgmAudio.pause();
-            this.bgmAudio.src = "";
-        }
+        // 退出沉浸模式时平滑淡出背景音乐
+        this.fadeStopBGM(false);
 
         if (this.immersiveVideo) {
             this.immersiveVideo.classList.add('hidden');

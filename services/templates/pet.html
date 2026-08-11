@@ -16,10 +16,15 @@
     <video id="immersive-video-wallpaper" class="immersive-media hidden" autoplay loop muted playsinline></video>
     <iframe id="immersive-web-wallpaper" class="immersive-media hidden" frameborder="0"></iframe>
 
-    <!-- 沉浸模式右上角时间日期控件 -->
+    <!-- 沉浸模式右上角时间日期与音乐控件 -->
     <div id="immersive-clock-container" class="immersive-clock-container hidden">
         <div id="immersive-clock-time">00:00</div>
         <div id="immersive-clock-date">2026年08月08日 星期六</div>
+        <div class="immersive-controls-row">
+            <button id="immersive-bgm-toggle-btn" class="immersive-bgm-btn hidden" title="切换背景音乐开关">
+                <i class="fas fa-volume-up"></i> <span id="immersive-bgm-status-text">BGM</span>
+            </button>
+        </div>
         <div class="immersive-exit-hint"><i class="fas fa-keyboard"></i> 按 ESC 键退出沉浸模式</div>
     </div>
 

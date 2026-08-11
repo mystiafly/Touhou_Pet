@@ -710,6 +710,7 @@ async def api_character_info():
         "immersive_bg_mode": config.get("immersive_bg_mode", "image"),
         "immersive_media_url": config.get("immersive_media_url", ""),
         "immersive_bgm_url": config.get("immersive_bgm_url", ""),
+        "enable_immersive_bgm": config.get("enable_immersive_bgm", True),
         "enable_greeting": config.get("enable_greeting", True),
         "enable_auto_speak": config.get("enable_auto_speak", True),
         "auto_speak_multiplier": config.get("auto_speak_multiplier", 1.0),
@@ -2225,6 +2226,48 @@ async def api_upload_wallpaper(file: UploadFile = File(...)):
     except Exception as e:
         return JSONResponse({"success": False, "message": str(e)}, status_code=500)
 
+@router.post("/api/character/upload_bgm")
+async def api_upload_bgm(file: UploadFile = File(...)):
+    """接收用户上传的沉浸模式 BGM 音乐文件，保存至 assets 目录并更新配置"""
+    import shutil, time
+    from core.config_manager import get_character_dir, get_active_character_id, save_config, get_config
+    try:
+        char_id = get_active_character_id()
+        char_dir = get_character_dir()
+        assets_dir = os.path.join(char_dir, "assets")
+        os.makedirs(assets_dir, exist_ok=True)
+        
+        # 清理旧的 bgm.* 文件，防止格式冲突
+        for old_f in os.listdir(assets_dir):
+            if old_f.lower().startswith("bgm."):
+                try:
+                    os.remove(os.path.join(assets_dir, old_f))
+                except Exception:
+                    pass
+
+        ext = os.path.splitext(file.filename)[1].lower() if file.filename else ".mp3"
+        if not ext or ext not in ['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac']:
+            ext = '.mp3'
+            
+        target_filename = f"bgm{ext}"
+        target_path = os.path.join(assets_dir, target_filename)
+        
+        with open(target_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        # 增加时间戳，强行刷新浏览器静态音频缓存
+        timestamp = int(time.time() * 1000)
+        bgm_url = f"/char_assets/{char_id}/assets/{target_filename}?t={timestamp}"
+        
+        config = get_config()
+        config["immersive_bgm_url"] = bgm_url
+        config["enable_immersive_bgm"] = True
+        save_config(config)
+        
+        return JSONResponse({"success": True, "bgm_url": bgm_url})
+    except Exception as e:
+        return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
 # --------------------------------------------------------------------------
 # Steam Wallpaper Engine (WE) 工坊支持与管理接口
 # --------------------------------------------------------------------------
@@ -2530,6 +2573,8 @@ async def api_save_immersive_config(request: Request):
             config["immersive_media_url"] = data["immersive_media_url"]
         if "immersive_bgm_url" in data:
             config["immersive_bgm_url"] = data["immersive_bgm_url"]
+        if "enable_immersive_bgm" in data:
+            config["enable_immersive_bgm"] = bool(data["enable_immersive_bgm"])
         if "wallpaper_fit" in data:
             config["wallpaper_fit"] = data["wallpaper_fit"]
             

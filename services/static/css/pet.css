@@ -1282,6 +1282,52 @@ body.peeking-mode .log-container {
     font-weight: 500;
 }
 
+.immersive-controls-row {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    pointer-events: auto;
+}
+
+.immersive-bgm-btn {
+    background: rgba(40, 42, 54, 0.65);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ff79c6;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    pointer-events: auto !important;
+}
+
+.immersive-bgm-btn:hover {
+    background: rgba(255, 121, 198, 0.25);
+    border-color: #ff79c6;
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(255, 121, 198, 0.4);
+}
+
+.immersive-bgm-btn.muted {
+    color: rgba(255, 255, 255, 0.6);
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(20, 20, 30, 0.5);
+}
+
+.immersive-bgm-btn.muted:hover {
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
 .immersive-exit-hint {
     font-size: 13px;
     color: rgba(255, 255, 255, 0.65);

@@ -309,6 +309,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     immersiveWallpaperInput.value = url;
                     updateWallpaperPreview(url, configData.wallpaper_fit || 'cover');
                 }
+
+                const bgmInput = document.getElementById('immersive-bgm-input');
+                if (bgmInput && configData.immersive_bgm_url !== undefined) {
+                    bgmInput.value = configData.immersive_bgm_url;
+                }
+                const bgmToggle = document.getElementById('immersive-bgm-toggle');
+                if (bgmToggle) {
+                    bgmToggle.checked = configData.enable_immersive_bgm !== false;
+                }
                 
                 const greetingToggle = document.getElementById('greeting-toggle');
                 if (greetingToggle) {
@@ -601,6 +610,109 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (e) {
                 console.error("保存沉浸壁纸失败:", e);
             }
+        });
+    }
+
+    const uploadBgmBtn = document.getElementById('upload-bgm-btn');
+    const bgmFileInput = document.getElementById('bgm-file-input');
+    const immersiveBgmInput = document.getElementById('immersive-bgm-input');
+    const immersiveBgmToggle = document.getElementById('immersive-bgm-toggle');
+    const testBgmBtn = document.getElementById('test-bgm-btn');
+    const dashboardBgmPreview = document.getElementById('dashboard-bgm-preview');
+
+    if (uploadBgmBtn && bgmFileInput) {
+        uploadBgmBtn.addEventListener('click', () => {
+            bgmFileInput.click();
+        });
+
+        bgmFileInput.addEventListener('change', async () => {
+            if (!bgmFileInput.files || bgmFileInput.files.length === 0) return;
+            const file = bgmFileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const origHtml = uploadBgmBtn.innerHTML;
+            uploadBgmBtn.disabled = true;
+            uploadBgmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 上传中...';
+
+            try {
+                const response = await fetch('/api/character/upload_bgm', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.success && data.bgm_url) {
+                    if (immersiveBgmInput) {
+                        immersiveBgmInput.value = data.bgm_url;
+                    }
+                    if (immersiveBgmToggle) {
+                        immersiveBgmToggle.checked = true;
+                    }
+                    alert("背景音乐上传并自动应用成功！");
+                } else {
+                    alert("音乐上传失败: " + (data.message || "未知错误"));
+                }
+            } catch (e) {
+                console.error("音乐上传出错:", e);
+                alert("音乐上传出错，请重试！");
+            } finally {
+                uploadBgmBtn.disabled = false;
+                uploadBgmBtn.innerHTML = origHtml;
+                bgmFileInput.value = '';
+            }
+        });
+    }
+
+    if (immersiveBgmInput) {
+        immersiveBgmInput.addEventListener('change', async () => {
+            const val = immersiveBgmInput.value.trim();
+            try {
+                await fetch('/api/character/save_immersive_config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ immersive_bgm_url: val })
+                });
+            } catch (e) {
+                console.error("保存 BGM 失败:", e);
+            }
+        });
+    }
+
+    if (immersiveBgmToggle) {
+        immersiveBgmToggle.addEventListener('change', async () => {
+            try {
+                await fetch('/api/character/save_immersive_config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ enable_immersive_bgm: immersiveBgmToggle.checked })
+                });
+            } catch (e) {
+                console.error("保存 BGM 开关失败:", e);
+            }
+        });
+    }
+
+    if (testBgmBtn && dashboardBgmPreview) {
+        testBgmBtn.addEventListener('click', () => {
+            const url = immersiveBgmInput ? immersiveBgmInput.value.trim() : "";
+            if (!url) {
+                alert("请先选择或输入音乐 URL / 路径！");
+                return;
+            }
+            if (!dashboardBgmPreview.paused && dashboardBgmPreview.src.includes(url)) {
+                dashboardBgmPreview.pause();
+                testBgmBtn.innerHTML = '<i class="fas fa-play"></i> 试听';
+            } else {
+                dashboardBgmPreview.src = url;
+                dashboardBgmPreview.play().then(() => {
+                    testBgmBtn.innerHTML = '<i class="fas fa-pause"></i> 停止';
+                }).catch(e => {
+                    alert("播放试听音频失败: " + e.toString());
+                });
+            }
+        });
+        dashboardBgmPreview.addEventListener('ended', () => {
+            testBgmBtn.innerHTML = '<i class="fas fa-play"></i> 试听';
         });
     }
 

@@ -302,6 +302,37 @@
                     </div>
                 </div>
 
+                <!-- 专属沉浸背景音乐 (BGM) 卡片 -->
+                <div class="settings-card" style="grid-column: 1 / -1;">
+                    <h3><i class="fas fa-music" style="color: #ff79c6;"></i> 专属沉浸背景音乐 (BGM)</h3>
+                    <p class="help-text" style="margin-bottom: 12px;">进入沉浸模式后，系统会自动淡入并循环播放此处配置的背景音乐。支持上传本地音频文件 (MP3/WAV/OGG/FLAC/M4A/AAC) 或直接填写网络/本地 URL。</p>
+                    
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+                        <div>
+                            <label style="font-weight: 500; font-size: 14px;">开启沉浸模式背景音乐自动播放</label>
+                            <p class="help-text" style="margin-top: 5px;">开启后，每次进入全屏沉浸模式都会自动淡入播放背景音乐。</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="immersive-bgm-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <input type="file" id="bgm-file-input" accept="audio/*,.mp3,.wav,.ogg,.flac,.m4a,.aac" style="display: none;">
+                            <button id="upload-bgm-btn" class="action-btn primary-btn" style="white-space: nowrap; background: linear-gradient(135deg, #ff79c6, #bd93f9); border: none; color: #fff; padding: 8px 16px;">
+                                <i class="fas fa-file-audio"></i> 选择本地音乐文件...
+                            </button>
+                            <input type="text" id="immersive-bgm-input" class="modern-input" placeholder="例如：/char_assets/rumia/assets/bgm.mp3 或网络音乐链接" style="flex: 1; min-width: 240px;">
+                            <button id="test-bgm-btn" class="action-btn outline" style="white-space: nowrap;">
+                                <i class="fas fa-play"></i> 试听
+                            </button>
+                        </div>
+                        <audio id="dashboard-bgm-preview" style="display: none;"></audio>
+                    </div>
+                </div>
+
                 <!-- 壁纸实时预览卡片 -->
                 <div class="settings-card" style="grid-column: 1 / -1;">
                     <h3><i class="fas fa-desktop"></i> 壁纸实时预览</h3>
