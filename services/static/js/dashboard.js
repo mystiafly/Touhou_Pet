@@ -338,6 +338,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (parallaxToggle) {
                     parallaxToggle.checked = !!configData.enable_immersive_parallax;
                 }
+
+                const screenshotBtnToggle = document.getElementById('immersive-effect-screenshot-btn');
+                if (screenshotBtnToggle) {
+                    screenshotBtnToggle.checked = !!configData.enable_immersive_screenshot_btn;
+                }
                 
                 const greetingToggle = document.getElementById('greeting-toggle');
                 if (greetingToggle) {
@@ -768,6 +773,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             } catch (e) {
                 console.error("保存视差移动开关失败:", e);
+            }
+        });
+    }
+
+    const screenshotBtnToggle = document.getElementById('immersive-effect-screenshot-btn');
+    if (screenshotBtnToggle) {
+        screenshotBtnToggle.addEventListener('change', async () => {
+            try {
+                await fetch('/api/character/save_immersive_config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ enable_immersive_screenshot_btn: screenshotBtnToggle.checked })
+                });
+            } catch (e) {
+                console.error("保存截图按钮显示开关失败:", e);
             }
         });
     }

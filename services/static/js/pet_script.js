@@ -790,6 +790,16 @@ class DesktopPet {
             if (data.enable_immersive_starlight !== undefined) enableStarlight = data.enable_immersive_starlight;
             if (data.enable_immersive_meteors !== undefined) enableMeteors = data.enable_immersive_meteors;
             if (data.enable_immersive_parallax !== undefined) enableParallax = data.enable_immersive_parallax;
+            if (data.enable_immersive_screenshot_btn !== undefined) {
+                const screenshotBtn = document.getElementById('immersive-screenshot-btn');
+                if (screenshotBtn) {
+                    if (data.enable_immersive_screenshot_btn) {
+                        screenshotBtn.classList.remove('hidden');
+                    } else {
+                        screenshotBtn.classList.add('hidden');
+                    }
+                }
+            }
         } catch (e) {
             console.error("更新沉浸壁纸配置失败:", e);
         }

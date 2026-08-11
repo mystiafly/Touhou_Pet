@@ -714,6 +714,7 @@ async def api_character_info():
         "enable_immersive_starlight": config.get("enable_immersive_starlight", False),
         "enable_immersive_meteors": config.get("enable_immersive_meteors", False),
         "enable_immersive_parallax": config.get("enable_immersive_parallax", False),
+        "enable_immersive_screenshot_btn": config.get("enable_immersive_screenshot_btn", False),
         "enable_greeting": config.get("enable_greeting", True),
         "enable_auto_speak": config.get("enable_auto_speak", True),
         "auto_speak_multiplier": config.get("auto_speak_multiplier", 1.0),
@@ -2592,6 +2593,8 @@ async def api_save_immersive_config(request: Request):
             config["enable_immersive_meteors"] = bool(data["enable_immersive_meteors"])
         if "enable_immersive_parallax" in data:
             config["enable_immersive_parallax"] = bool(data["enable_immersive_parallax"])
+        if "enable_immersive_screenshot_btn" in data:
+            config["enable_immersive_screenshot_btn"] = bool(data["enable_immersive_screenshot_btn"])
         if "wallpaper_fit" in data:
             config["wallpaper_fit"] = data["wallpaper_fit"]
             

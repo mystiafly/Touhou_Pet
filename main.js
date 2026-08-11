@@ -110,8 +110,8 @@ ipcMain.on('enter-immersive-mode', (event) => {
         win.isImmersiveMode = true;
         const display = screen.getDisplayMatching(win.getBounds());
         win.setBounds(display.bounds);
-        // 使用 floating 级别，便于 Windows 自带截屏(Win+Shift+S)或微信/QQ截图唤起在最顶层
-        win.setAlwaysOnTop(true, 'floating');
+        // 恢复锁屏/屏保级最顶层优先级
+        win.setAlwaysOnTop(true, 'screen-saver');
         win.setIgnoreMouseEvents(false);
         win.webContents.send('immersive-mode-state', true);
     }
