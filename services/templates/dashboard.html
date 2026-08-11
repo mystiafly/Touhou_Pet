@@ -345,6 +345,48 @@
                         </div>
                         <audio id="dashboard-bgm-preview" style="display: none;"></audio>
                     </div>
+                <!-- 沉浸视觉与互动特效卡片 -->
+                <div class="settings-card" style="grid-column: 1 / -1; border-left: 4px solid #50fa7b;">
+                    <h3><i class="fas fa-magic" style="color: #50fa7b;"></i> 沉浸视觉与互动特效</h3>
+                    <p class="help-text" style="margin-bottom: 15px;">在全屏沉浸模式下叠加炫酷的氛围视觉效果与动态互动反馈。</p>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
+                        <!-- 星光特效 -->
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 15px; display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <div style="font-weight: 600; font-size: 14px; color: #f8f8f2;"><i class="fas fa-star" style="color: #f1fa8c; margin-right: 6px;"></i> 星光闪烁 (Starlight)</div>
+                                <div class="help-text" style="margin-top: 4px; font-size: 12px;">背景漫天柔和星光随呼吸脉动闪烁</div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="immersive-effect-starlight">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+
+                        <!-- 流星特效 -->
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 15px; display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <div style="font-weight: 600; font-size: 14px; color: #f8f8f2;"><i class="fas fa-meteor" style="color: #8be9fd; margin-right: 6px;"></i> 划过流星 (Meteors)</div>
+                                <div class="help-text" style="margin-top: 4px; font-size: 12px;">夜空中偶尔拖着尾迹划过的浪漫流星</div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="immersive-effect-meteors">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+
+                        <!-- 鼠标视差移动特效 -->
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 15px; display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <div style="font-weight: 600; font-size: 14px; color: #f8f8f2;"><i class="fas fa-mouse-pointer" style="color: #ff79c6; margin-right: 6px;"></i> 鼠标视差悬浮 (Mouse Parallax)</div>
+                                <div class="help-text" style="margin-top: 4px; font-size: 12px;">开启后背景自动放大1.08倍，并随鼠标反向物理视差挪动</div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="immersive-effect-parallax">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 壁纸实时预览卡片 -->

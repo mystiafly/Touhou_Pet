@@ -711,6 +711,9 @@ async def api_character_info():
         "immersive_media_url": config.get("immersive_media_url", ""),
         "immersive_bgm_url": config.get("immersive_bgm_url", ""),
         "enable_immersive_bgm": config.get("enable_immersive_bgm", True),
+        "enable_immersive_starlight": config.get("enable_immersive_starlight", False),
+        "enable_immersive_meteors": config.get("enable_immersive_meteors", False),
+        "enable_immersive_parallax": config.get("enable_immersive_parallax", False),
         "enable_greeting": config.get("enable_greeting", True),
         "enable_auto_speak": config.get("enable_auto_speak", True),
         "auto_speak_multiplier": config.get("auto_speak_multiplier", 1.0),
@@ -2583,6 +2586,12 @@ async def api_save_immersive_config(request: Request):
             config["immersive_bgm_url"] = data["immersive_bgm_url"]
         if "enable_immersive_bgm" in data:
             config["enable_immersive_bgm"] = bool(data["enable_immersive_bgm"])
+        if "enable_immersive_starlight" in data:
+            config["enable_immersive_starlight"] = bool(data["enable_immersive_starlight"])
+        if "enable_immersive_meteors" in data:
+            config["enable_immersive_meteors"] = bool(data["enable_immersive_meteors"])
+        if "enable_immersive_parallax" in data:
+            config["enable_immersive_parallax"] = bool(data["enable_immersive_parallax"])
         if "wallpaper_fit" in data:
             config["wallpaper_fit"] = data["wallpaper_fit"]
             

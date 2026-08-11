@@ -323,6 +323,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (bgmToggle) {
                     bgmToggle.checked = configData.enable_immersive_bgm !== false;
                 }
+
+                const starlightToggle = document.getElementById('immersive-effect-starlight');
+                if (starlightToggle) {
+                    starlightToggle.checked = !!configData.enable_immersive_starlight;
+                }
+
+                const meteorsToggle = document.getElementById('immersive-effect-meteors');
+                if (meteorsToggle) {
+                    meteorsToggle.checked = !!configData.enable_immersive_meteors;
+                }
+
+                const parallaxToggle = document.getElementById('immersive-effect-parallax');
+                if (parallaxToggle) {
+                    parallaxToggle.checked = !!configData.enable_immersive_parallax;
+                }
                 
                 const greetingToggle = document.getElementById('greeting-toggle');
                 if (greetingToggle) {
@@ -708,6 +723,51 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             } catch (e) {
                 console.error("保存 BGM 开关失败:", e);
+            }
+        });
+    }
+
+    const starlightToggle = document.getElementById('immersive-effect-starlight');
+    if (starlightToggle) {
+        starlightToggle.addEventListener('change', async () => {
+            try {
+                await fetch('/api/character/save_immersive_config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ enable_immersive_starlight: starlightToggle.checked })
+                });
+            } catch (e) {
+                console.error("保存星光特效开关失败:", e);
+            }
+        });
+    }
+
+    const meteorsToggle = document.getElementById('immersive-effect-meteors');
+    if (meteorsToggle) {
+        meteorsToggle.addEventListener('change', async () => {
+            try {
+                await fetch('/api/character/save_immersive_config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ enable_immersive_meteors: meteorsToggle.checked })
+                });
+            } catch (e) {
+                console.error("保存流星特效开关失败:", e);
+            }
+        });
+    }
+
+    const parallaxToggle = document.getElementById('immersive-effect-parallax');
+    if (parallaxToggle) {
+        parallaxToggle.addEventListener('change', async () => {
+            try {
+                await fetch('/api/character/save_immersive_config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ enable_immersive_parallax: parallaxToggle.checked })
+                });
+            } catch (e) {
+                console.error("保存视差移动开关失败:", e);
             }
         });
     }

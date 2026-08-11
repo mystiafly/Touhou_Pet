@@ -759,11 +759,13 @@ class DesktopPet {
         this.isImmersiveMode = true;
         this.closeSettingsModal();
 
-        // 重新获取最新角色壁纸与 WE 壁纸配置（防缓存/实时生效）
         let bgMode = 'image';
         let mediaUrl = '';
         let bgmUrl = '';
         let enableBgm = true;
+        let enableStarlight = false;
+        let enableMeteors = false;
+        let enableParallax = false;
         try {
             const res = await fetch('/api/character_info');
             const data = await res.json();
@@ -773,6 +775,9 @@ class DesktopPet {
             if (data.immersive_media_url) mediaUrl = data.immersive_media_url;
             if (data.immersive_bgm_url) bgmUrl = data.immersive_bgm_url;
             if (data.enable_immersive_bgm !== undefined) enableBgm = data.enable_immersive_bgm;
+            if (data.enable_immersive_starlight !== undefined) enableStarlight = data.enable_immersive_starlight;
+            if (data.enable_immersive_meteors !== undefined) enableMeteors = data.enable_immersive_meteors;
+            if (data.enable_immersive_parallax !== undefined) enableParallax = data.enable_immersive_parallax;
         } catch (e) {
             console.error("更新沉浸壁纸配置失败:", e);
         }
@@ -783,6 +788,9 @@ class DesktopPet {
             container.classList.add('immersive-mode');
         }
 
+        // 停止上一次残留的特效与监听
+        this.stopImmersiveEffects();
+
         // 隐藏所有壁纸组件，避免层叠冲突
         if (this.immersiveWallpaper) this.immersiveWallpaper.classList.add('hidden');
         if (this.immersiveVideo) {
@@ -790,12 +798,11 @@ class DesktopPet {
             this.immersiveVideo.pause();
         }
         if (this.immersiveWeb) this.immersiveWeb.classList.add('hidden');
-        const particleCanvas = document.getElementById('immersive-particle-canvas');
-        if (particleCanvas) particleCanvas.classList.add('hidden');
-        if (this.particleAnimFrame) cancelAnimationFrame(this.particleAnimFrame);
 
         // 决定画面缩放与拉伸适应模式 (根据用户在大贤者中选择的 Fit Mode，默认 contain 不裁剪不放大)
         const fitMode = this.wallpaperFit || 'contain';
+
+        let activeBgElement = null;
 
         if (bgMode === 'we_native' || bgMode === 'transparent') {
             // WE 原生渲染/透传模式：自动隐藏 Windows 桌面图标，形成 100% 纯净全屏观赏体验
@@ -805,15 +812,18 @@ class DesktopPet {
                 body: JSON.stringify({ hide_icons: true })
             }).catch(e => console.log(e));
         } else if (bgMode === 'scene_extracted') {
-            // 解包 4K 超高清原图 + 流星粒子特效
+            // 解包 4K 超高清原图
             if (this.immersiveWallpaper) {
                 this.immersiveWallpaper.classList.remove('hidden');
                 this.immersiveWallpaper.style.backgroundSize = fitMode;
                 this.immersiveWallpaper.style.backgroundPosition = 'center';
                 this.immersiveWallpaper.style.backgroundRepeat = 'no-repeat';
                 this.immersiveWallpaper.style.backgroundImage = `url('${this.wallpaperUrl}')`;
+                activeBgElement = this.immersiveWallpaper;
             }
-            this.startImmersiveParticleEffect();
+            // Scene 模式默认推荐带有星光与流星
+            enableStarlight = true;
+            enableMeteors = true;
         } else if (bgMode === 'video' && (mediaUrl || this.wallpaperUrl)) {
             if (this.immersiveVideo) {
                 this.immersiveVideo.classList.remove('hidden');
@@ -823,11 +833,13 @@ class DesktopPet {
                 else if (fitMode === 'auto') this.immersiveVideo.style.objectFit = 'none';
                 else this.immersiveVideo.style.objectFit = 'cover';
                 this.immersiveVideo.play().catch(err => console.log("视频壁纸自动播放提示:", err));
+                activeBgElement = this.immersiveVideo;
             }
         } else if (bgMode === 'web' && mediaUrl) {
             if (this.immersiveWeb) {
                 this.immersiveWeb.classList.remove('hidden');
                 this.immersiveWeb.src = mediaUrl;
+                activeBgElement = this.immersiveWeb;
             }
         } else {
             // 默认静态/GIF 图片壁纸
@@ -842,8 +854,12 @@ class DesktopPet {
                 } else {
                     this.immersiveWallpaper.style.backgroundImage = `linear-gradient(135deg, #1e1e2e, #282a36, #44475a)`;
                 }
+                activeBgElement = this.immersiveWallpaper;
             }
         }
+
+        // 统一装载沉浸模式独立视觉特效 (星光、流星、鼠标视差移动)
+        this.startImmersiveEffects(enableStarlight, enableMeteors, enableParallax, activeBgElement);
 
         // 统一沉浸背景音乐播放与按钮状态更新（淡入循环）
         if (bgmUrl && enableBgm) {
@@ -909,12 +925,8 @@ class DesktopPet {
             this.immersiveWallpaper.classList.add('hidden');
         }
 
-        const particleCanvas = document.getElementById('immersive-particle-canvas');
-        if (particleCanvas) particleCanvas.classList.add('hidden');
-        if (this.particleAnimFrame) {
-            cancelAnimationFrame(this.particleAnimFrame);
-            this.particleAnimFrame = null;
-        }
+        // 停止特效粒子与视差监听
+        this.stopImmersiveEffects();
 
         // 退出沉浸模式时平滑淡出背景音乐
         this.fadeStopBGM(false);
@@ -952,83 +964,188 @@ class DesktopPet {
         }
     }
 
-    startImmersiveParticleEffect() {
+    startImmersiveEffects(enableStarlight, enableMeteors, enableParallax, activeBgElement) {
+        // 1. 先清理旧的特效与监听
+        this.stopImmersiveEffects();
+
+        // 2. 特效 Canvas (星光与流星)
         const canvas = document.getElementById('immersive-particle-canvas');
-        if (!canvas) return;
-        canvas.classList.remove('hidden');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        const ctx = canvas.getContext('2d');
+        if (canvas && (enableStarlight || enableMeteors)) {
+            canvas.classList.remove('hidden');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            const ctx = canvas.getContext('2d');
 
-        const stars = [];
-        for (let i = 0; i < 90; i++) {
-            stars.push({
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height * 0.75,
-                size: Math.random() * 2.2 + 0.5,
-                alpha: Math.random(),
-                speed: Math.random() * 0.02 + 0.005
-            });
-        }
-
-        const shootingStars = [];
-        function createShootingStar() {
-            if (shootingStars.length < 3 && Math.random() < 0.25) {
-                shootingStars.push({
-                    x: Math.random() * canvas.width * 0.8,
-                    y: Math.random() * canvas.height * 0.4,
-                    length: Math.random() * 90 + 50,
-                    speed: Math.random() * 9 + 5,
-                    dx: Math.random() * 5 + 4,
-                    dy: Math.random() * 2.5 + 2,
-                    alpha: 1
-                });
+            // 星光粒子生成
+            const stars = [];
+            if (enableStarlight) {
+                const count = Math.floor((canvas.width * canvas.height) / 11000);
+                for (let i = 0; i < count; i++) {
+                    stars.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        radius: Math.random() * 1.8 + 0.5,
+                        alpha: Math.random() * 0.8 + 0.2,
+                        speed: (Math.random() * 0.025 + 0.008) * (Math.random() > 0.5 ? 1 : -1)
+                    });
+                }
             }
-        }
 
-        const self = this;
-        function animate() {
-            if (!self.isImmersiveMode) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // 流星粒子生成
+            const meteors = [];
+            let lastMeteorSpawnTime = Date.now();
 
-            // 绘制闪烁群星
-            stars.forEach(s => {
-                s.alpha += s.speed;
-                if (s.alpha > 1 || s.alpha < 0.15) s.speed = -s.speed;
-                ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(s.alpha)})`;
-                ctx.beginPath();
-                ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-                ctx.fill();
-            });
+            const spawnMeteor = () => {
+                if (!enableMeteors) return;
+                const now = Date.now();
+                if (now - lastMeteorSpawnTime > Math.random() * 3000 + 1800) {
+                    lastMeteorSpawnTime = now;
+                    meteors.push({
+                        x: Math.random() * canvas.width * 0.8 + canvas.width * 0.1,
+                        y: Math.random() * (canvas.height * 0.35),
+                        length: Math.random() * 95 + 55,
+                        speed: Math.random() * 8 + 6,
+                        angle: Math.PI / 4 + (Math.random() - 0.5) * 0.2,
+                        alpha: 1.0
+                    });
+                }
+            };
 
-            // 绘制划过夜空的流星雨
-            createShootingStar();
-            for (let i = shootingStars.length - 1; i >= 0; i--) {
-                const st = shootingStars[i];
-                st.x += st.dx;
-                st.y += st.dy;
-                st.alpha -= 0.012;
+            const animateCanvas = () => {
+                if (!this.isImmersiveMode) return;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                if (st.alpha <= 0 || st.x > canvas.width || st.y > canvas.height) {
-                    shootingStars.splice(i, 1);
-                    continue;
+                // 渲染星光闪烁
+                if (enableStarlight) {
+                    stars.forEach(star => {
+                        star.alpha += star.speed;
+                        if (star.alpha > 0.95 || star.alpha < 0.15) {
+                            star.speed = -star.speed;
+                        }
+                        ctx.save();
+                        ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0.1, Math.min(1, star.alpha))})`;
+                        ctx.shadowBlur = 6;
+                        ctx.shadowColor = "rgba(241, 250, 140, 0.8)";
+                        ctx.beginPath();
+                        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.restore();
+                    });
                 }
 
-                const grad = ctx.createLinearGradient(st.x, st.y, st.x - st.dx * 12, st.y - st.dy * 12);
-                grad.addColorStop(0, `rgba(255, 255, 255, ${st.alpha})`);
-                grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                // 渲染浪漫流星
+                if (enableMeteors) {
+                    spawnMeteor();
+                    for (let i = meteors.length - 1; i >= 0; i--) {
+                        const m = meteors[i];
+                        m.x += Math.cos(m.angle) * m.speed;
+                        m.y += Math.sin(m.angle) * m.speed;
+                        m.alpha -= 0.014;
 
-                ctx.strokeStyle = grad;
-                ctx.lineWidth = 2.2;
-                ctx.beginPath();
-                ctx.moveTo(st.x, st.y);
-                ctx.lineTo(st.x - st.dx * 12, st.y - st.dy * 12);
-                ctx.stroke();
-            }
+                        if (m.alpha <= 0 || m.x > canvas.width || m.y > canvas.height) {
+                            meteors.splice(i, 1);
+                            continue;
+                        }
 
-            self.particleAnimFrame = requestAnimationFrame(animate);
+                        const tailX = m.x - Math.cos(m.angle) * m.length;
+                        const tailY = m.y - Math.sin(m.angle) * m.length;
+
+                        ctx.save();
+                        const grad = ctx.createLinearGradient(m.x, m.y, tailX, tailY);
+                        grad.addColorStop(0, `rgba(255, 255, 255, ${m.alpha})`);
+                        grad.addColorStop(0.35, `rgba(139, 233, 253, ${m.alpha * 0.75})`);
+                        grad.addColorStop(1, 'rgba(139, 233, 253, 0)');
+
+                        ctx.strokeStyle = grad;
+                        ctx.lineWidth = 2.4;
+                        ctx.lineCap = 'round';
+                        ctx.beginPath();
+                        ctx.moveTo(m.x, m.y);
+                        ctx.lineTo(tailX, tailY);
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                }
+
+                this.particleAnimFrame = requestAnimationFrame(animateCanvas);
+            };
+
+            animateCanvas();
         }
-        animate();
+
+        // 3. 鼠标视差悬浮移动特效 (Mouse Parallax Effect)
+        if (enableParallax && activeBgElement) {
+            this.activeParallaxBgElement = activeBgElement;
+            this.parallaxTargetX = 0;
+            this.parallaxTargetY = 0;
+            this.parallaxCurrentX = 0;
+            this.parallaxCurrentY = 0;
+
+            // 视差模式开启后，显示的图片自动放大 1.08 倍，以防边缘挪动时露出空白
+            activeBgElement.style.transformOrigin = 'center center';
+
+            this.parallaxMouseMoveHandler = (e) => {
+                const centerX = window.innerWidth / 2;
+                const centerY = window.innerHeight / 2;
+                const normX = (e.clientX - centerX) / centerX; // -1 ~ 1
+                const normY = (e.clientY - centerY) / centerY; // -1 ~ 1
+
+                // 鼠标在上面 (normY < 0) -> 图片向移动下 (targetY > 0)
+                // 鼠标在左边 (normX < 0) -> 图片向右移动 (targetX > 0)
+                this.parallaxTargetX = -normX * 24;
+                this.parallaxTargetY = -normY * 24;
+            };
+
+            window.addEventListener('mousemove', this.parallaxMouseMoveHandler);
+
+            const animateParallax = () => {
+                if (!this.isImmersiveMode || !this.activeParallaxBgElement) return;
+
+                // 软滑缓动 Interpolation (lerp 0.08)
+                this.parallaxCurrentX += (this.parallaxTargetX - this.parallaxCurrentX) * 0.08;
+                this.parallaxCurrentY += (this.parallaxTargetY - this.parallaxCurrentY) * 0.08;
+
+                const curX = this.parallaxCurrentX.toFixed(2);
+                const curY = this.parallaxCurrentY.toFixed(2);
+
+                this.activeParallaxBgElement.style.transform = `scale(1.08) translate(${curX}px, ${curY}px)`;
+
+                this.parallaxAnimFrame = requestAnimationFrame(animateParallax);
+            };
+
+            animateParallax();
+        }
+    }
+
+    stopImmersiveEffects() {
+        // 停止特效 Canvas 粒子动画
+        if (this.particleAnimFrame) {
+            cancelAnimationFrame(this.particleAnimFrame);
+            this.particleAnimFrame = null;
+        }
+
+        const canvas = document.getElementById('immersive-particle-canvas');
+        if (canvas) {
+            canvas.classList.add('hidden');
+            const ctx = canvas.getContext('2d');
+            if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // 停止视差动画与监听
+        if (this.parallaxAnimFrame) {
+            cancelAnimationFrame(this.parallaxAnimFrame);
+            this.parallaxAnimFrame = null;
+        }
+
+        if (this.parallaxMouseMoveHandler) {
+            window.removeEventListener('mousemove', this.parallaxMouseMoveHandler);
+            this.parallaxMouseMoveHandler = null;
+        }
+
+        if (this.activeParallaxBgElement) {
+            this.activeParallaxBgElement.style.transform = '';
+            this.activeParallaxBgElement = null;
+        }
     }
 
     async fetchImmersiveChatHistory() {
