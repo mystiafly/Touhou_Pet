@@ -219,8 +219,8 @@ def get_active_tables(user_message, current_pool=""):
                             if not cell_val:
                                 continue
                             
-                            # 直接包含比对
-                            if cell_val in search_text or search_text in cell_val:
+                            # 直接包含比对 (要求单元格文本至少 2 个字符，防止单字如"妈"引发误匹配)
+                            if (len(cell_val) >= 2 and cell_val in search_text) or (len(search_text) >= 2 and search_text in cell_val):
                                 row_matched = True
                                 break
                             
