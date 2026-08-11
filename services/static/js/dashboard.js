@@ -344,6 +344,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     blockEnglishToggle.checked = configData.preset_block_english === true;
                 }
 
+                const charNameInput = document.getElementById('character-name-input');
+                if (charNameInput && configData.character_name !== undefined) {
+                    charNameInput.value = configData.character_name;
+                }
+
+                const charIdInput = document.getElementById('character-id-input');
+                if (charIdInput && configData.character_id !== undefined) {
+                    charIdInput.value = configData.character_id;
+                }
+
                 if (configData.theme_color) {
                     applyDashboardThemeColor(configData.theme_color);
                     document.querySelectorAll('.theme-color-swatch').forEach(s => {
@@ -931,6 +941,62 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             } catch (e) {
                 console.error(e);
+            }
+        });
+    const saveCharIdentityBtn = document.getElementById('save-character-identity-btn');
+    if (saveCharIdentityBtn) {
+        saveCharIdentityBtn.addEventListener('click', async () => {
+            const charNameInput = document.getElementById('character-name-input');
+            const charIdInput = document.getElementById('character-id-input');
+            const newName = charNameInput ? charNameInput.value.trim() : "";
+            const newId = charIdInput ? charIdInput.value.trim().toLowerCase() : "";
+
+            if (!newName) {
+                alert("角色中文名称不能为空！");
+                return;
+            }
+            if (!newId) {
+                alert("角色英文标识不能为空！");
+                return;
+            }
+            if (!/^[a-z0-9_]+$/.test(newId)) {
+                alert("角色英文标识仅允许小写英文字母、数字和下划线！");
+                return;
+            }
+
+            try {
+                saveCharIdentityBtn.disabled = true;
+                saveCharIdentityBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+
+                const response = await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        character_name: newName,
+                        character_id: newId
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    if (data.require_restart) {
+                        alert("角色英文标识 (ID) 已修改，相关配置文件与素材目录已自动同步重命名！程序将自动重启装载新目录。");
+                        if (window.electronAPI) {
+                            window.electronAPI.restartApp();
+                        } else {
+                            location.reload();
+                        }
+                    } else {
+                        alert("角色名称与标识设置保存成功！");
+                        loadConfig();
+                    }
+                } else {
+                    alert("保存失败: " + (data.message || data.error));
+                }
+            } catch (e) {
+                alert("保存发生异常: " + e.toString());
+            } finally {
+                saveCharIdentityBtn.disabled = false;
+                saveCharIdentityBtn.innerHTML = '<i class="fas fa-save"></i> 保存角色名称与英文标识';
             }
         });
     }

@@ -484,6 +484,27 @@
                         </label>
                     </div>
                 </div>
+
+                <div class="settings-card" style="border: 1px dashed rgba(139, 233, 253, 0.4); background: rgba(30, 31, 41, 0.5);">
+                    <h3 style="color: #ffb86c;"><i class="fas fa-boxes"></i> 角色包制造与标识设定 (Character Pack & Identity)</h3>
+                    <p class="help-text" style="margin-bottom: 15px;">更改当前角色的中文显示名称与系统英文唯一标识 (Character ID)，方便造角色包及导出配置。</p>
+                    
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label for="character-name-input" style="font-weight: 500; font-size: 14px; display: block;">角色中文名称 (Character Display Name)</label>
+                        <input type="text" id="character-name-input" class="modern-input" placeholder="例如：露米娅" style="width: 100%; margin-top: 6px;">
+                        <p class="help-text">桌宠在聊天、气泡及控制台显示的中文名字。</p>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label for="character-id-input" style="font-weight: 500; font-size: 14px; display: block;">角色英文标识 (Character ID / Directory Name)</label>
+                        <input type="text" id="character-id-input" class="modern-input" placeholder="例如：rumia" style="width: 100%; margin-top: 6px;">
+                        <p class="help-text" style="color: #ffb86c;">⚠️ 必须为纯小写英文字母与下划线（例如 rumia, cirno）。修改后系统将自动重命名角色配置与图片资源目录。</p>
+                    </div>
+
+                    <button id="save-character-identity-btn" class="action-btn primary" style="margin-top: 5px;">
+                        <i class="fas fa-save"></i> 保存角色名称与英文标识
+                    </button>
+                </div>
             </div>
         </section>
 

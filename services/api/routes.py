@@ -809,7 +809,10 @@ async def api_tools():
 @router.get("/api/settings/config")
 def get_config_api():
     """获取本地大模型提供商配置"""
+    char_id = get_active_character_id()
     config = get_config()
+    config["character_id"] = config.get("character_id", char_id)
+    config["character_name"] = config.get("character_name", char_id)
     config["has_deepseek"] = bool(os.getenv("DEEPSEEK_API_KEY"))
     config["has_gemini"] = bool(os.getenv("GEMINI_API_KEY"))
     config["enable_auto_speak"] = config.get("enable_auto_speak", True)
@@ -827,7 +830,7 @@ def get_config_api():
 
 @router.post("/api/settings/config")
 def post_config_api(payload: dict = Body(...)):
-    """保存大模型提供商配置"""
+    """保存大模型提供商配置及角色基础设定"""
     try:
         config_data = get_config()
         if "api_provider" in payload:
@@ -856,8 +859,59 @@ def post_config_api(payload: dict = Body(...)):
             config_data["preset_block_english"] = bool(payload["preset_block_english"])
         if "app_launcher" in payload:
             config_data["app_launcher"] = payload["app_launcher"]
+
+        if "character_name" in payload:
+            cname = str(payload["character_name"]).strip()
+            if cname:
+                config_data["character_name"] = cname
+
+        require_restart = False
+        if "character_id" in payload:
+            new_char_id = str(payload["character_id"]).strip().lower()
+            old_char_id = get_active_character_id()
+            if new_char_id and new_char_id != old_char_id:
+                import re
+                if not re.match(r'^[a-z0-9_]+$', new_char_id):
+                    return JSONResponse({"success": False, "status": "error", "message": "角色英文标识仅允许小写英文字母、数字和下划线！"}, status_code=400)
+                
+                from core.config_manager import USER_DATA_DIR, SERVICES_DIR, GLOBAL_CONFIG_FILE
+                chars_root = os.path.join(USER_DATA_DIR, "characters")
+                old_dir = os.path.join(chars_root, old_char_id)
+                new_dir = os.path.join(chars_root, new_char_id)
+
+                if os.path.exists(new_dir):
+                    return JSONResponse({"success": False, "status": "error", "message": f"角色英文标识 '{new_char_id}' 已存在，请换一个名称！"}, status_code=400)
+                
+                if os.path.exists(old_dir):
+                    os.rename(old_dir, new_dir)
+                else:
+                    os.makedirs(new_dir, exist_ok=True)
+
+                old_img_dir = os.path.join(SERVICES_DIR, "static", "images", old_char_id)
+                new_img_dir = os.path.join(SERVICES_DIR, "static", "images", new_char_id)
+                if os.path.exists(old_img_dir) and not os.path.exists(new_img_dir):
+                    try:
+                        os.rename(old_img_dir, new_img_dir)
+                    except Exception:
+                        pass
+
+                config_data["character_id"] = new_char_id
+                
+                g_cfg = {}
+                if os.path.exists(GLOBAL_CONFIG_FILE):
+                    try:
+                        with open(GLOBAL_CONFIG_FILE, 'r', encoding='utf-8') as gf:
+                            g_cfg = json.load(gf)
+                    except Exception:
+                        pass
+                g_cfg["active_character"] = new_char_id
+                with open(GLOBAL_CONFIG_FILE, 'w', encoding='utf-8') as gf:
+                    json.dump(g_cfg, gf, ensure_ascii=False, indent=2)
+
+                require_restart = True
+
         save_config(config_data)
-        return {"success": True, "status": "success", "message": "配置已成功保存"}
+        return {"success": True, "status": "success", "message": "配置已成功保存", "require_restart": require_restart}
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
 
