@@ -276,9 +276,21 @@ def build_post_messages(state: AgentState) -> list:
     if not databank_rules:
         return []
 
+    from datetime import datetime
+    from time_system import get_current_time_stage
+    now = datetime.now()
+    now_date_str = now.strftime("%Y-%m-%d %H:%M")
+    now_full_date = now.strftime("%Y年%m月%d日 %H:%M")
+    weekday_str = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"][now.weekday()]
+    _, stage_name = get_current_time_stage()
+
     system_prompt = (
         "[POST-LLM TASK: DATABANK UPDATER]\n"
         "你负责在后台异步更新系统的 DataBank。阅读刚才发生的用户和桌宠之间的对话，判断是否有新信息需要更新到数据库表格中。\n\n"
+        f"【当前现实系统精确时间】\n"
+        f"- 当前精准时间点: {now_date_str} ({now_full_date} {weekday_str})\n"
+        f"- 当前大致时间段: {stage_name}\n"
+        "⚠️ 注意：若有表格需要填入 [时间点]、[时间段] 或 [时间]，必须严格参照上方提供的【当前现实系统精确时间】记录，绝对禁止捏造、猜测或使用过期的虚假日期！\n\n"
         f"{databank_rules}\n\n"
         "【规则】\n"
         "1. 如果需要更新，请输出包含 ```databank 的代码块，按照规则指定的格式进行更新。\n"
