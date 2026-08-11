@@ -1055,6 +1055,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error(e);
             }
         });
+    }
+
     const saveCharIdentityBtn = document.getElementById('save-character-identity-btn');
     if (saveCharIdentityBtn) {
         saveCharIdentityBtn.addEventListener('click', async () => {
@@ -3000,8 +3002,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('加载工具列表报错:', e);
             container.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #ff6b8b;">网络或系统错误，加载失败。</div>';
         }
-    }
-
+    };
 });
 
 // ==========================================
