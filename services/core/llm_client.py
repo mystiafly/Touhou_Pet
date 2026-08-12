@@ -17,9 +17,9 @@ def get_llm_client_and_model(provider_override: str = None):
         custom_engines = get_custom_engines()
         for engine in custom_engines:
             if engine.get("id") == provider:
-                api_key = engine.get("api_key", "sk-local")
+                api_key = engine.get("api_key")
                 if not api_key:
-                    api_key = "sk-local"
+                    api_key = config_data.get("engine_api_key") or config_data.get("deepseek_api_key") or os.getenv("DEEPSEEK_API_KEY") or "sk-local"
                 model_name = engine.get("model_name", "custom-model")
                 return OpenAI(
                     api_key=api_key,
