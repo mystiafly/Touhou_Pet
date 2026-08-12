@@ -24,13 +24,15 @@ MIN_HISTORY_ROUNDS = 8
 MAX_HISTORY_ROUNDS = 16
 
 def get_memory_agent():
-    """线程安全获取 Mem0 记忆引擎实例"""
+    """线程安全获取 Mem0 记忆引擎实例 (自动感知当前激活的角色)"""
     global memory_agent
-    if memory_agent is not None:
+    current_char = get_active_character_id()
+    if memory_agent is not None and getattr(memory_agent, "_active_char_id", None) == current_char:
         return memory_agent
         
     with memory_agent_lock:
-        if memory_agent is not None:
+        current_char = get_active_character_id()
+        if memory_agent is not None and getattr(memory_agent, "_active_char_id", None) == current_char:
             return memory_agent
             
         config_data = get_config()
@@ -197,7 +199,8 @@ def get_memory_agent():
         try:
             print(f"[MEM0] 正在以 {provider.upper()} 架构初始化 Qdrant 向量记忆引擎...")
             memory_agent = Memory.from_config(mem0_config)
-            print("[MEM0] 向量记忆引擎初始化成功。")
+            memory_agent._active_char_id = current_char
+            print(f"[MEM0] 向量记忆引擎初始化成功 (角色: {current_char})。")
             return memory_agent
         except Exception as ex:
             err_msg = str(ex)

@@ -29,6 +29,12 @@ goto CHECK_PYTHON
 
 :NO_VENV
 echo [WARNING] Local virtual environment (.venv) not found. Using global Python.
+if exist "%LocalAppData%\Programs\Python\Python311\python.exe" set PYTHON_EXE="%LocalAppData%\Programs\Python\Python311\python.exe"
+if exist "%LocalAppData%\Programs\Python\Python312\python.exe" set PYTHON_EXE="%LocalAppData%\Programs\Python\Python312\python.exe"
+if exist "%LocalAppData%\Programs\Python\Python310\python.exe" set PYTHON_EXE="%LocalAppData%\Programs\Python\Python310\python.exe"
+if exist "%ProgramFiles%\Python311\python.exe" set PYTHON_EXE="%ProgramFiles%\Python311\python.exe"
+if exist "%ProgramFiles%\Python312\python.exe" set PYTHON_EXE="%ProgramFiles%\Python312\python.exe"
+if exist "%ProgramFiles%\Python310\python.exe" set PYTHON_EXE="%ProgramFiles%\Python310\python.exe"
 
 :CHECK_PYTHON
 %PYTHON_EXE% -c "import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)" >nul 2>&1

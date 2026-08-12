@@ -1,0 +1,18 @@
+{
+  "electronVersion": "28.3.3",
+  "productName": "Rumia Desktop Pet (Lite)",
+  "artifactName": "Rumia Desktop Pet Lite Setup ${version}.${ext}",
+  "extraFiles": [
+    {
+      "from": ".node_env",
+      "to": ".node_env"
+    }
+  ],
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "Rumia Desktop Pet Lite"
+  }
+}
