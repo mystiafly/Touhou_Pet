@@ -2,6 +2,9 @@ const { app, BrowserWindow, screen, ipcMain, Tray, Menu, clipboard } = require('
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const http = require('http');
+
+let autoHiddenByGame = false;
 
 // 关闭不必要的安全警告输出，保持控制台整洁
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
@@ -39,6 +42,7 @@ function createTray(win) {
         {
             label: '显示桌宠',
             click: () => {
+                autoHiddenByGame = false;
                 win.show();
                 win.webContents.send('window-state-changed', 'restored');
             }
@@ -67,6 +71,7 @@ function createTray(win) {
     tray.setContextMenu(contextMenu);
 
     tray.on('double-click', () => {
+        autoHiddenByGame = false;
         win.show();
         win.webContents.send('window-state-changed', 'restored');
     });
@@ -355,8 +360,41 @@ function createWindow() {
         }
     }, 50);
 
+    const gameCheckTimer = setInterval(() => {
+        if (!win || win.isDestroyed()) return;
+
+        http.get('http://127.0.0.1:5000/api/system/check_fullscreen_game', (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                try {
+                    const json = JSON.parse(data);
+                    if (json.status === 'success') {
+                        const isFullscreen = !!json.is_fullscreen;
+                        const isEnabled = json.auto_minimize_enabled !== false;
+
+                        if (isEnabled && isFullscreen) {
+                            if (win.isVisible() && !autoHiddenByGame) {
+                                autoHiddenByGame = true;
+                                win.hide();
+                                win.webContents.send('window-state-changed', 'minimized');
+                                logDebug('[GAME MODE] 检测到前台全屏游戏运行，桌宠已自动隐身至系统托盘');
+                            }
+                        } else if (autoHiddenByGame) {
+                            autoHiddenByGame = false;
+                            win.show();
+                            win.webContents.send('window-state-changed', 'restored');
+                            logDebug('[GAME MODE] 全屏游戏已退出/切出，桌宠恢复展示');
+                        }
+                    }
+                } catch(e) {}
+            });
+        }).on('error', () => {});
+    }, 1500);
+
     win.on('closed', () => {
         clearInterval(mouseTimer);
+        clearInterval(gameCheckTimer);
         mainWindow = null;
     });
 

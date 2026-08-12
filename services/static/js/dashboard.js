@@ -353,6 +353,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (autoSpeakToggle) {
                     autoSpeakToggle.checked = configData.enable_auto_speak !== false;
                 }
+
+                const autoMinimizeGameToggle = document.getElementById('auto-minimize-fullscreen-game-toggle');
+                if (autoMinimizeGameToggle) {
+                    autoMinimizeGameToggle.checked = configData.auto_minimize_on_fullscreen_game !== false;
+                }
                 
                 const autoSpeakMultiplier = document.getElementById('auto-speak-multiplier');
                 if (autoSpeakMultiplier && configData.auto_speak_multiplier) {
@@ -1090,6 +1095,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ enable_auto_speak: autoSpeakToggle.checked })
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        });
+    }
+
+    const autoMinimizeGameToggle = document.getElementById('auto-minimize-fullscreen-game-toggle');
+    if (autoMinimizeGameToggle) {
+        autoMinimizeGameToggle.addEventListener('change', async () => {
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ auto_minimize_on_fullscreen_game: autoMinimizeGameToggle.checked })
                 });
             } catch (e) {
                 console.error(e);

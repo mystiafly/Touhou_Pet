@@ -93,7 +93,7 @@ def get_file_path(filename):
 GLOBAL_KEYS = {
     "api_provider", "engine_base_url", "engine_api_key", "engine_model_name",
     "engines", "pre_api_provider", "post_api_provider", "app_launcher",
-    "vision_engine", "active_character", "custom_engines"
+    "vision_engine", "active_character", "custom_engines", "auto_minimize_on_fullscreen_game"
 }
 
 def get_config():
@@ -127,6 +127,8 @@ def get_config():
     merged = {**global_config, **char_config}
     if "api_provider" not in merged:
         merged["api_provider"] = "gemini"
+    if "auto_minimize_on_fullscreen_game" not in merged:
+        merged["auto_minimize_on_fullscreen_game"] = True
     return merged
 
 def save_config(config_data):

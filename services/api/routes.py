@@ -975,6 +975,22 @@ def get_system_version_api():
     except Exception as e:
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
+@router.get("/api/system/check_fullscreen_game")
+def check_fullscreen_game_api():
+    """检测当前是否有全屏独占/无边框全屏游戏处于前台，用于全屏游戏时自动挂起桌宠至系统托盘"""
+    try:
+        from core.system_inspector import is_fullscreen_game_active
+        config = get_config()
+        auto_minimize_enabled = config.get("auto_minimize_on_fullscreen_game", True)
+        is_fs = is_fullscreen_game_active()
+        return {
+            "status": "success",
+            "is_fullscreen": is_fs,
+            "auto_minimize_enabled": auto_minimize_enabled
+        }
+    except Exception as e:
+        return {"status": "error", "is_fullscreen": False, "auto_minimize_enabled": False, "message": str(e)}
+
 
 @router.post("/api/system/check_update")
 def check_system_update_api():
