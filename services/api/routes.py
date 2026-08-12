@@ -991,6 +991,84 @@ def check_fullscreen_game_api():
     except Exception as e:
         return {"status": "error", "is_fullscreen": False, "auto_minimize_enabled": False, "message": str(e)}
 
+@router.get("/api/system/export_logs")
+def export_system_logs_api():
+    """打包导出所有系统日志 (backend_output.log, electron_debug.log, 历史日志与环境诊断报告)"""
+    import io
+    import zipfile
+    from datetime import datetime
+    from fastapi.responses import Response
+
+    try:
+        from core.config_manager import USER_DATA_DIR, SERVICES_DIR, get_config, get_active_character_id
+        
+        log_dirs_to_check = [
+            os.path.join(USER_DATA_DIR, "logs"),
+            os.path.join(SERVICES_DIR, "logs"),
+            os.path.join(os.path.dirname(SERVICES_DIR), "logs")
+        ]
+        
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            added_files = set()
+            
+            for ldir in log_dirs_to_check:
+                if os.path.exists(ldir) and os.path.isdir(ldir):
+                    for root, _, files in os.walk(ldir):
+                        for file in files:
+                            full_path = os.path.join(root, file)
+                            arcname = os.path.relpath(full_path, start=os.path.dirname(ldir))
+                            if arcname not in added_files:
+                                try:
+                                    zip_file.write(full_path, arcname)
+                                    added_files.add(arcname)
+                                except Exception:
+                                    pass
+
+            data_log = os.path.join(os.path.dirname(SERVICES_DIR), "data", "bg_task_log.txt")
+            if os.path.exists(data_log) and "logs/bg_task_log.txt" not in added_files:
+                zip_file.write(data_log, "logs/bg_task_log.txt")
+
+            try:
+                pkg_path = os.path.join(os.path.dirname(SERVICES_DIR), "package.json")
+                ver = "未知"
+                if os.path.exists(pkg_path):
+                    with open(pkg_path, "r", encoding="utf-8") as f:
+                        ver = json.load(f).get("version", ver)
+                        
+                cfg = get_config()
+                diag_info = [
+                    "==================================================",
+                    "  Rumia DeskPet System Diagnostic Report",
+                    "==================================================",
+                    f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                    f"App Version: v{ver}",
+                    f"Active Character: {get_active_character_id()}",
+                    f"API Provider: {cfg.get('api_provider', 'unknown')}",
+                    f"Model Name: {cfg.get('engine_model_name', 'default')}",
+                    f"Operating System: {sys.platform} ({os.name})",
+                    f"Python Version: {sys.version.split()[0]}",
+                    f"User Data Dir: {USER_DATA_DIR}",
+                    "=================================================="
+                ]
+                zip_file.writestr("logs/system_info.txt", "\n".join(diag_info))
+            except Exception:
+                pass
+
+        zip_buffer.seek(0)
+        timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"Rumia_DeskPet_Logs_{timestamp_str}.zip"
+        
+        return Response(
+            content=zip_buffer.getvalue(),
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}"
+            }
+        )
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": f"打包导出日志失败: {str(e)}"}, status_code=500)
+
 
 @router.post("/api/system/check_update")
 def check_system_update_api():

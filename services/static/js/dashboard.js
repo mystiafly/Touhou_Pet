@@ -4280,6 +4280,21 @@ async function initAboutVersionView() {
             }
         }
     });
+
+    // Bind Export Logs Click
+    const handleExportLogs = () => {
+        window.location.href = '/api/system/export_logs';
+    };
+
+    const btnExportLogs = document.getElementById('btn-export-all-logs');
+    if (btnExportLogs) {
+        btnExportLogs.addEventListener('click', handleExportLogs);
+    }
+
+    const btnExportLogsCard = document.getElementById('btn-export-all-logs-card');
+    if (btnExportLogsCard) {
+        btnExportLogsCard.addEventListener('click', handleExportLogs);
+    }
 }
 
 // Hook into nav logic

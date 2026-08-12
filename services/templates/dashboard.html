@@ -921,6 +921,9 @@
                         <button id="btn-check-version-update" class="action-btn" style="padding: 10px 24px; font-size: 15px;">
                             <i class="fas fa-sync-alt"></i> 检查远程更新
                         </button>
+                        <button id="btn-export-all-logs" class="action-btn outline" style="padding: 10px 24px; font-size: 15px; border-color: #8be9fd; color: #8be9fd;">
+                            <i class="fas fa-file-archive"></i> 打包导出系统日志
+                        </button>
                         <button id="btn-perform-git-update" class="action-btn outline hidden" style="padding: 10px 24px; font-size: 15px; border-color: #50fa7b; color: #50fa7b;">
                             <i class="fas fa-download"></i> 一键更新至最新版
                         </button>
@@ -938,6 +941,23 @@
                     <p style="color: var(--text-muted); margin-top: 30px; font-size: 13px;">
                         Copyright &copy; 2026 Mystiafly & Antigravity
                     </p>
+                </div>
+
+                <div class="settings-card" style="grid-column: 1 / -1; border-left: 4px solid #8be9fd;">
+                    <h3><i class="fas fa-file-archive" style="color: #8be9fd;"></i> 系统日志与环境诊断导出</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-top: 10px;">
+                        <div style="flex: 1; min-width: 280px;">
+                            <p class="help-text" style="margin: 0; line-height: 1.5; color: #f8f8f2; font-size: 13px;">
+                                打包导出包含全套后端日志 (<code>backend_output.log</code>)、桌面主进程日志 (<code>electron_debug.log</code>)、后台任务日志及实时环境诊断报告 (<code>system_info.txt</code>)。
+                            </p>
+                            <p class="help-text" style="margin-top: 6px; margin-bottom: 0; font-size: 12px; color: var(--text-muted);">
+                                💡 <strong>用途：</strong> 当您遇到桌宠运行异常、模型调用报错或寻求反馈时，可导出 ZIP 压缩包直接提交给开发者进行故障排查。
+                            </p>
+                        </div>
+                        <button id="btn-export-all-logs-card" class="action-btn" style="display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #8be9fd, #50fa7b); color: #0f172a; font-weight: 700; padding: 10px 20px; border-radius: 8px; white-space: nowrap; box-shadow: 0 4px 14px rgba(139, 233, 253, 0.3);">
+                            <i class="fas fa-download" style="margin-right: 8px;"></i> 打包导出 ZIP 日志
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>
