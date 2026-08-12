@@ -993,7 +993,7 @@ def check_fullscreen_game_api():
 
 @router.get("/api/system/export_logs")
 def export_system_logs_api():
-    """打包导出所有系统日志 (backend_output.log, electron_debug.log, 历史日志与环境诊断报告)"""
+    """打包导出所有系统日志 (同时全量兼容项目源码版与 AppData 安装包版)"""
     import io
     import zipfile
     from datetime import datetime
@@ -1002,35 +1002,55 @@ def export_system_logs_api():
     try:
         from core.config_manager import USER_DATA_DIR, SERVICES_DIR, get_config, get_active_character_id
         
-        log_dirs_to_check = [
-            os.path.join(USER_DATA_DIR, "logs"),
-            os.path.join(SERVICES_DIR, "logs"),
-            os.path.join(os.path.dirname(SERVICES_DIR), "logs")
+        appdata_base = os.path.join(os.getenv('APPDATA') or os.path.expanduser('~'), 'RumiaDesktopPet')
+        project_root = os.path.dirname(SERVICES_DIR)
+
+        candidate_dirs = [
+            (os.path.join(appdata_base, "logs"), "appdata_logs"),
+            (os.path.join(SERVICES_DIR, "logs"), "services_logs"),
+            (os.path.join(project_root, "logs"), "root_logs"),
         ]
-        
+
+        candidate_files = [
+            (os.path.join(project_root, "backend_output.log"), "project_dev/backend_output.log"),
+            (os.path.join(project_root, "log.txt"), "project_dev/log.txt"),
+            (os.path.join(project_root, "data", "bg_task_log.txt"), "project_dev/bg_task_log.txt"),
+            (os.path.join(appdata_base, "backend_output.log"), "appdata/backend_output.log"),
+            (os.path.join(appdata_base, "electron_debug.log"), "appdata/electron_debug.log"),
+            (os.path.join(appdata_base, "data", "bg_task_log.txt"), "appdata/bg_task_log.txt"),
+        ]
+
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-            added_files = set()
-            
-            for ldir in log_dirs_to_check:
+            added_paths = set()
+
+            for ldir, tag in candidate_dirs:
                 if os.path.exists(ldir) and os.path.isdir(ldir):
                     for root, _, files in os.walk(ldir):
                         for file in files:
-                            full_path = os.path.join(root, file)
-                            arcname = os.path.relpath(full_path, start=os.path.dirname(ldir))
-                            if arcname not in added_files:
+                            full_path = os.path.abspath(os.path.join(root, file))
+                            if full_path not in added_paths:
                                 try:
+                                    rel_name = os.path.relpath(full_path, start=ldir)
+                                    arcname = f"logs/{tag}/{rel_name}"
                                     zip_file.write(full_path, arcname)
-                                    added_files.add(arcname)
+                                    added_paths.add(full_path)
                                 except Exception:
                                     pass
 
-            data_log = os.path.join(os.path.dirname(SERVICES_DIR), "data", "bg_task_log.txt")
-            if os.path.exists(data_log) and "logs/bg_task_log.txt" not in added_files:
-                zip_file.write(data_log, "logs/bg_task_log.txt")
+            for fpath, tag in candidate_files:
+                full_path = os.path.abspath(fpath)
+                if os.path.exists(full_path) and os.path.isfile(full_path) and full_path not in added_paths:
+                    try:
+                        arcname = f"logs/{tag}"
+                        zip_file.write(full_path, arcname)
+                        added_paths.add(full_path)
+                    except Exception:
+                        pass
 
             try:
-                pkg_path = os.path.join(os.path.dirname(SERVICES_DIR), "package.json")
+                is_frozen = getattr(sys, 'frozen', False)
+                pkg_path = os.path.join(project_root, "package.json")
                 ver = "未知"
                 if os.path.exists(pkg_path):
                     with open(pkg_path, "r", encoding="utf-8") as f:
@@ -1043,12 +1063,15 @@ def export_system_logs_api():
                     "==================================================",
                     f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
                     f"App Version: v{ver}",
+                    f"Is Standalone Executable (Frozen): {is_frozen}",
                     f"Active Character: {get_active_character_id()}",
                     f"API Provider: {cfg.get('api_provider', 'unknown')}",
                     f"Model Name: {cfg.get('engine_model_name', 'default')}",
                     f"Operating System: {sys.platform} ({os.name})",
                     f"Python Version: {sys.version.split()[0]}",
-                    f"User Data Dir: {USER_DATA_DIR}",
+                    f"User Data Dir (%APPDATA%): {USER_DATA_DIR}",
+                    f"Project Source Dir: {SERVICES_DIR}",
+                    f"Total Collected Log Files: {len(added_paths)}",
                     "=================================================="
                 ]
                 zip_file.writestr("logs/system_info.txt", "\n".join(diag_info))
