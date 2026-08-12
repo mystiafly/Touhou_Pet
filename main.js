@@ -24,8 +24,13 @@ if (!gotTheLock) {
 
 function logDebug(msg) {
     try {
-        const appData = process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming');
-        const logDir = path.join(appData, 'RumiaDesktopPet', 'logs');
+        let logDir;
+        if (app.isPackaged) {
+            const appData = process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming');
+            logDir = path.join(appData, 'RumiaDesktopPet', 'logs');
+        } else {
+            logDir = path.join(__dirname, 'logs');
+        }
         if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
         fs.appendFileSync(path.join(logDir, 'electron_debug.log'), `[${new Date().toISOString()}] ${msg}\n`);
     } catch(e) {}
