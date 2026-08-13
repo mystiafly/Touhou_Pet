@@ -3,23 +3,22 @@ chcp 65001 >nul
 set HF_ENDPOINT=https://hf-mirror.com
 cd /d "%~dp0"
 
-:: 【防闪退钛合金护航】如果是由用户双击启动的，自动使用 cmd /k 唤醒守护进程
-:: 无论发生何种崩溃、致命异常或语法错误，CMD 命令行黑框均绝对 100% 永久留存！
+:: Auto-guarded process launcher to prevent console auto-close on crash
 if not "%~1"=="--guarded" (
     cmd /k ""%~f0" --guarded %*"
     exit /b
 )
 
-:: 检查是否未解压直接在 ZIP 预览中双击运行
+:: Check if running directly inside ZIP preview
 echo "%~dp0" | findstr /i "AppData\Local\Temp" >nul
 if not errorlevel 1 (
     echo.
-    echo [ERROR] 检测到您可能直接在 ZIP 压缩包内部双击了 start.bat！
-    echo [ERROR] 请先将压缩包【完整解压】到电脑的普通文件夹中，然后再运行 start.bat。
+    echo [ERROR] Detected running inside ZIP preview!
+    echo [ERROR] Please extract the full ZIP folder before running start.bat.
     goto ALWAYS_FREEZE
 )
 
-echo [SYSTEM] Clearing orphaned ghost windows and port 5000...
+echo [SYSTEM] Clearing old processes and port 5000...
 taskkill /F /IM electron.exe >nul 2>&1
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5000') do taskkill /f /pid %%a >nul 2>&1
 
@@ -36,7 +35,7 @@ echo [SYSTEM] Local virtual environment (.venv) detected. Using it!
 goto CHECK_PYTHON
 
 :NO_VENV
-echo [WARNING] Local virtual environment (.venv) not found. Using global Python.
+echo [WARNING] Local .venv not found. Using global Python.
 if exist "%LocalAppData%\Programs\Python\Python311\python.exe" set PYTHON_EXE="%LocalAppData%\Programs\Python\Python311\python.exe"
 if exist "%LocalAppData%\Programs\Python\Python312\python.exe" set PYTHON_EXE="%LocalAppData%\Programs\Python\Python312\python.exe"
 if exist "%LocalAppData%\Programs\Python\Python310\python.exe" set PYTHON_EXE="%LocalAppData%\Programs\Python\Python310\python.exe"
@@ -48,7 +47,6 @@ if exist "%ProgramFiles%\Python310\python.exe" set PYTHON_EXE="%ProgramFiles%\Py
 %PYTHON_EXE% -c "import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)" >nul 2>&1
 if errorlevel 1 goto DOWNLOAD_PYTHON
 
-:: 快速启动检查：如果核心依赖已安装，直接秒启动，不再重复跑 pip 下载检查
 %PYTHON_EXE% -c "import fastapi, langgraph, mem0, spacy, zh_core_web_sm" >nul 2>&1
 if not errorlevel 1 (
     echo [SYSTEM] Dependencies verified! Instant booting...
@@ -58,10 +56,10 @@ if not errorlevel 1 (
 goto RUN_PIP
 
 :DOWNLOAD_PYTHON
-echo [SYSTEM] Python 3.10+ not detected. Automatically downloading and installing Python 3.11...
+echo [SYSTEM] Python 3.10+ not detected. Automatically downloading Python 3.11...
 curl.exe -L -o python_installer.exe https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe
 if errorlevel 1 goto PYTHON_DL_ERROR
-echo [SYSTEM] Download successful! Installing in background (takes ~1 minute, DO NOT CLOSE)...
+echo [SYSTEM] Download successful! Installing in background...
 start /wait python_installer.exe /quiet InstallAllUsers=0 PrependPath=1 Include_test=0
 del python_installer.exe
 echo [SYSTEM] Python installed! Re-checking...
@@ -72,25 +70,25 @@ if errorlevel 1 goto PYTHON_DL_ERROR
 goto RUN_PIP
 
 :PYTHON_DL_ERROR
-echo [ERROR] Automatic Python installation failed. Please download and install manually from https://www.python.org/
+echo [ERROR] Automatic Python installation failed. Please install manually.
 goto ALWAYS_FREEZE
 
 :RUN_PIP
 cd /d "%~dp0"
 echo.
-echo == Step 1/3 == Checking and installing base dependencies...
+echo == Step 1/3 == Installing base dependencies...
 %PYTHON_EXE% -m pip install -r "%~dp0requirements.txt" --timeout 1000 -i https://pypi.tuna.tsinghua.edu.cn/simple
 if errorlevel 1 goto PIP_ERROR
 
 echo [SYSTEM] Checking spacy models...
 %PYTHON_EXE% -c "import zh_core_web_sm" >nul 2>&1
 if errorlevel 1 (
-    echo [SYSTEM] Downloading zh_core_web_sm, this only happens once...
+    echo [SYSTEM] Downloading zh_core_web_sm...
     %PYTHON_EXE% -m pip install https://ghfast.top/https://github.com/explosion/spacy-models/releases/download/zh_core_web_sm-3.8.0/zh_core_web_sm-3.8.0-py3-none-any.whl
 )
 %PYTHON_EXE% -c "import en_core_web_sm" >nul 2>&1
 if errorlevel 1 (
-    echo [SYSTEM] Downloading en_core_web_sm, this only happens once...
+    echo [SYSTEM] Downloading en_core_web_sm...
     %PYTHON_EXE% -m pip install https://ghfast.top/https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
 )
 
@@ -117,16 +115,15 @@ set HF_ENDPOINT=https://hf-mirror.com
 %PYTHON_EXE% run.py
 if errorlevel 1 (
     echo.
-    echo [ERROR] 桌宠运行中断或异常退出。请查看上方报错日志信息。
+    echo [ERROR] Desktop pet execution interrupted. See logs above.
     goto ALWAYS_FREEZE
 )
 
 :ALWAYS_FREEZE
 echo.
 echo =======================================================
-echo [系统防护] 控制台已进入防闪退保活状态。
-echo 无论程序出现任何报错或退出，此黑框均不会自动关闭。请查看上方报错定位问题。
+echo [SYSTEM] Console locked to prevent auto-close.
+echo Check the logs above to resolve issues.
 echo =======================================================
 pause
 goto ALWAYS_FREEZE
-
