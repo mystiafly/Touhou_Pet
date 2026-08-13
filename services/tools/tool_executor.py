@@ -317,7 +317,7 @@ def execute_rename_task_node(state: AgentState) -> Dict[str, Any]:
     return {"rename_result": "，".join(result_msgs), "rename_task_user": None, "rename_task_pet": None}
 
 def execute_vision_task_node(state: AgentState) -> Dict[str, Any]:
-    """工具节点：屏幕视觉识别"""
+    """工具节点：屏幕视觉识别 (带自适应 4 次重试与降分辨率降采样阶梯策略)"""
     vision_task = state.get("vision_task")
     if not vision_task:
         return {"vision_result": None}
@@ -331,99 +331,119 @@ def execute_vision_task_node(state: AgentState) -> Dict[str, Any]:
         from io import BytesIO
         import requests
         import json
+        import time
 
-        # 截取全屏 (支持多显示器)
-        img = ImageGrab.grab(all_screens=True)
-        # 压缩图像大小以适应 API
-        img.thumbnail((1024, 1024))
-        
-        buffered = BytesIO()
-        # 转换为 RGB (去掉 alpha 通道，以兼容 jpeg)
-        if img.mode != "RGB":
-            img = img.convert("RGB")
-        img.save(buffered, format="JPEG", quality=80)
-        img_b64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
+        # 截取原始全屏 (支持多显示器)
+        raw_img = ImageGrab.grab(all_screens=True)
+        if raw_img.mode != "RGB":
+            raw_img = raw_img.convert("RGB")
 
         config_data = get_config()
         vision_engine = state.get("vision_engine_override") or config_data.get("vision_engine", "gemini")
         
-        import time
         prompt = f"这是当前电脑屏幕的截图（当前时间: {time.strftime('%Y-%m-%d %H:%M:%S')}）。请仔细观察并简要描述屏幕上正在显示的内容、活跃的窗口，以及用户可能正在进行什么工作。如果多次看到类似的画面，请尽可能捕捉新的细节或变化。不要超过150字。"
 
+        # 4次阶梯重试策略：前2次正常识别(1024x1024), 第3次降低一倍(512x512), 第4次再降低一倍(256x256)
+        attempts_plan = [
+            {"attempt": 1, "max_dim": 1024, "quality": 80, "label": "第1次正常识别 (1024x1024)"},
+            {"attempt": 2, "max_dim": 1024, "quality": 80, "label": "第2次正常重试 (1024x1024)"},
+            {"attempt": 3, "max_dim": 512,  "quality": 75, "label": "第3次降分辨率重试 (512x512, 降低一倍)"},
+            {"attempt": 4, "max_dim": 256,  "quality": 70, "label": "第4次极简分辨率重试 (256x256, 再降低一倍)"},
+        ]
+
         description = ""
+        last_error = ""
 
-        if vision_engine == "gemini":
-            gemini_key = os.getenv("GEMINI_API_KEY")
-            if not gemini_key:
-                return {"vision_result": "未配置 GEMINI_API_KEY，无法使用默认的 Gemini 视觉引擎。"}
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
-            payload = {
-                "contents": [{
-                    "parts": [
-                        {"text": prompt},
-                        {"inlineData": {"mimeType": "image/jpeg", "data": img_b64}}
-                    ]
-                }],
-                "generationConfig": {
-                    "temperature": 0.7
-                }
-            }
-            resp = requests.post(url, json=payload, timeout=60)
-            if resp.status_code == 200:
-                data = resp.json()
-                description = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-            else:
-                return {"vision_result": f"Gemini API 请求失败: HTTP {resp.status_code}"}
-        else:
-            # 自定义引擎处理 (兼容 OpenAI 格式的 Vision API)
-            if vision_engine.startswith("custom_"):
-                custom_engines = get_custom_engines()
-                engine_conf = next((e for e in custom_engines if e["id"] == vision_engine), None)
-            else:
-                engine_conf = None
+        def generate_img_b64(source_img, max_dim, quality):
+            img_copy = source_img.copy()
+            img_copy.thumbnail((max_dim, max_dim))
+            buf = BytesIO()
+            img_copy.save(buf, format="JPEG", quality=quality)
+            return base64.b64encode(buf.getvalue()).decode("utf-8")
 
-            if not engine_conf:
-                return {"vision_result": f"找不到所选的视觉引擎配置: {vision_engine}"}
-                
-            base_url = engine_conf["base_url"].rstrip("/")
-            api_key = engine_conf.get("api_key", "")
-            model_name = engine_conf["model_name"]
-            
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {api_key}"
-            }
-            payload = {
-                "model": model_name,
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": prompt},
-                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_b64}"}}
-                        ]
+        for plan in attempts_plan:
+            try:
+                print(f"[VISION MONITOR] 正在尝试识图 [{plan['label']}]...")
+                img_b64 = generate_img_b64(raw_img, plan["max_dim"], plan["quality"])
+
+                if vision_engine == "gemini":
+                    gemini_key = os.getenv("GEMINI_API_KEY")
+                    if not gemini_key:
+                        return {"vision_result": "未配置 GEMINI_API_KEY，无法使用默认的 Gemini 视觉引擎。"}
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+                    payload = {
+                        "contents": [{
+                            "parts": [
+                                {"text": prompt},
+                                {"inlineData": {"mimeType": "image/jpeg", "data": img_b64}}
+                            ]
+                        }],
+                        "generationConfig": {
+                            "temperature": 0.7
+                        }
                     }
-                ],
-                "max_tokens": 300,
-                "temperature": 0.7
-            }
-            
-            # 使用 /chat/completions 兼容端点
-            endpoint = f"{base_url}/chat/completions"
-            resp = requests.post(endpoint, headers=headers, json=payload, timeout=60)
-            if resp.status_code == 200:
-                data = resp.json()
-                description = data.get("choices", [{}])[0].get("message", {}).get("content", "")
-            else:
-                return {"vision_result": f"视觉 API 请求失败: HTTP {resp.status_code}, {resp.text}。由于识图失败，你什么都没看到。"}
+                    resp = requests.post(url, json=payload, timeout=45)
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        description = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                    else:
+                        last_error = f"Gemini API 请求失败: HTTP {resp.status_code}"
+                else:
+                    if vision_engine.startswith("custom_"):
+                        custom_engines = get_custom_engines()
+                        engine_conf = next((e for e in custom_engines if e["id"] == vision_engine), None)
+                    else:
+                        engine_conf = None
 
-        if not description:
-            return {"vision_result": "未能从视觉模型获取有效响应。由于识图失败，你什么都没看到。"}
+                    if not engine_conf:
+                        return {"vision_result": f"找不到所选的视觉引擎配置: {vision_engine}"}
 
-        print(f"[MONITOR] 屏幕识别成功: {description[:100]}...")
-        return {"vision_result": f"屏幕画面分析结果：\n{description}"}
+                    base_url = engine_conf["base_url"].rstrip("/")
+                    api_key = engine_conf.get("api_key", "")
+                    model_name = engine_conf["model_name"]
+
+                    headers = {
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {api_key}"
+                    }
+                    payload = {
+                        "model": model_name,
+                        "messages": [
+                            {
+                                "role": "user",
+                                "content": [
+                                    {"type": "text", "text": prompt},
+                                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_b64}"}}
+                                ]
+                            }
+                        ],
+                        "max_tokens": 300,
+                        "temperature": 0.7
+                    }
+
+                    endpoint = f"{base_url}/chat/completions"
+                    resp = requests.post(endpoint, headers=headers, json=payload, timeout=45)
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        description = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                    else:
+                        last_error = f"视觉 API 请求失败: HTTP {resp.status_code}, {resp.text}"
+
+                if description and description.strip():
+                    print(f"[VISION MONITOR] 识图在 [{plan['label']}] 成功获取有效响应: {description[:80]}...")
+                    return {"vision_result": f"屏幕画面分析结果：\n{description.strip()}"}
+                else:
+                    print(f"[VISION WARNING] [{plan['label']}] 返回空结果或未解析到文本，准备触发重试机制...")
+
+            except Exception as attempt_ex:
+                last_error = str(attempt_ex)
+                print(f"[VISION WARNING] [{plan['label']}] 请求抛出异常: {attempt_ex}，准备尝试下一次降级重试...")
+
+        final_msg = f"经过 4 次阶梯重试（含降分辨率降采样），未能从视觉模型获取有效响应。最后报错信息: {last_error or '无响应'}"
+        print(f"[VISION ERROR] {final_msg}")
+        return {"vision_result": f"{final_msg}。由于识图失败，你什么都没看到。"}
 
     except Exception as e:
-        err_msg = f"执行屏幕截取或请求 API 时出错: {str(e)}。由于识图失败，你什么都没看到。"
+        err_msg = f"执行屏幕截取或初始化 API 时出错: {str(e)}。由于识图失败，你什么都没看到。"
         print(f"[MONITOR] {err_msg}")
         return {"vision_result": err_msg}
