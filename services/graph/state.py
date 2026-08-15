@@ -17,6 +17,7 @@ class AgentState(TypedDict):
     emotion: str
     score: int
     clean_content: str
+    thought: Optional[str]
     browser_task: Optional[str]
     browser_result: Optional[str]
     music_task: Optional[str]

@@ -60,7 +60,17 @@
 
     <!-- 头顶气泡 -->
     <div id="speech-bubble" class="bubble" style="opacity: 0;">
+        <button id="bubble-thought-btn" class="bubble-thought-btn hidden" title="观察角色思维链">
+            <i class="fas fa-brain"></i>
+        </button>
         <p id="bubble-content">...</p>
+        <div id="bubble-thought-box" class="bubble-thought-box hidden">
+            <div class="bubble-thought-header">
+                <span class="thought-title"><i class="fas fa-brain"></i> 角色内心思维链</span>
+                <span id="close-thought-btn" class="close-thought-btn" title="收起">&times;</span>
+            </div>
+            <div id="bubble-thought-content" class="bubble-thought-content"></div>
+        </div>
     </div>
 
     <div class="character-wrapper">

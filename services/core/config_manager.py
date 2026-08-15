@@ -93,7 +93,8 @@ def get_file_path(filename):
 GLOBAL_KEYS = {
     "api_provider", "engine_base_url", "engine_api_key", "engine_model_name",
     "engines", "pre_api_provider", "post_api_provider", "app_launcher",
-    "vision_engine", "active_character", "custom_engines", "auto_minimize_on_fullscreen_game"
+    "vision_engine", "active_character", "custom_engines", "auto_minimize_on_fullscreen_game",
+    "show_thought_button"
 }
 
 def get_config():

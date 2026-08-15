@@ -371,6 +371,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     bubbleDurationMultiplier.value = "1.0";
                 }
 
+                const showThoughtBtnToggle = document.getElementById('show-thought-button-toggle');
+                if (showThoughtBtnToggle) {
+                    showThoughtBtnToggle.checked = configData.show_thought_button !== false;
+                }
+
                 const presetMaxDepth = document.getElementById('preset-max-depth');
                 if (presetMaxDepth && configData.preset_max_depth !== undefined) {
                     presetMaxDepth.value = configData.preset_max_depth.toString();
@@ -1140,6 +1145,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ bubble_duration_multiplier: parseFloat(bubbleDurationMultiplier.value) })
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        });
+    }
+
+    const showThoughtBtnToggle = document.getElementById('show-thought-button-toggle');
+    if (showThoughtBtnToggle) {
+        showThoughtBtnToggle.addEventListener('change', async () => {
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ show_thought_button: showThoughtBtnToggle.checked })
                 });
             } catch (e) {
                 console.error(e);

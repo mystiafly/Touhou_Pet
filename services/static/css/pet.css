@@ -155,19 +155,122 @@ body, html {
     font-size: 0.95em;
 }
 
-/* 气泡精致暗粉色滚动条样式移至内层文本 */
-#bubble-content::-webkit-scrollbar {
-    width: 6px;
+/* 气泡右上角思维链微按钮 */
+.bubble-thought-btn {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid var(--theme-main);
+    color: var(--theme-main);
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    z-index: 5;
 }
-#bubble-content::-webkit-scrollbar-track {
+
+.bubble-thought-btn:hover {
+    background: var(--theme-main);
+    color: #fff;
+    transform: scale(1.15);
+    box-shadow: 0 0 10px var(--theme-main);
+}
+
+.bubble-thought-btn.active {
+    background: var(--theme-main);
+    color: #fff;
+}
+
+.bubble-thought-btn.hidden {
+    display: none !important;
+}
+
+/* 气泡思维链展开抽屉 */
+.bubble-thought-box {
+    margin-top: 10px;
+    padding: 8px 10px;
+    background: rgba(15, 15, 25, 0.9);
+    border: 1px dashed var(--theme-main);
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #e0e0f0;
+    max-height: 200px;
+    overflow-y: auto;
+    pointer-events: auto;
+    animation: fadeInThought 0.25s ease-out;
+}
+
+.bubble-thought-box.hidden {
+    display: none !important;
+}
+
+.bubble-thought-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 5px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    font-size: 11px;
+    font-weight: bold;
+    color: var(--theme-main);
+}
+
+.bubble-thought-header .close-thought-btn {
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    color: #aaa;
+    transition: color 0.2s;
+}
+
+.bubble-thought-header .close-thought-btn:hover {
+    color: #fff;
+}
+
+.bubble-thought-content {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: inherit;
+    color: #d8d8e8;
+}
+
+.bubble-thought-content .thought-step-num {
+    color: var(--theme-main);
+    font-weight: 600;
+}
+
+@keyframes fadeInThought {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 气泡精致暗粉色滚动条样式移至内层文本 */
+#bubble-content::-webkit-scrollbar,
+.bubble-thought-box::-webkit-scrollbar {
+    width: 5px;
+}
+#bubble-content::-webkit-scrollbar-track,
+.bubble-thought-box::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.2);
     border-radius: 10px;
 }
-#bubble-content::-webkit-scrollbar-thumb {
+#bubble-content::-webkit-scrollbar-thumb,
+.bubble-thought-box::-webkit-scrollbar-thumb {
     background: var(--theme-main);
     border-radius: 10px;
 }
-#bubble-content::-webkit-scrollbar-thumb:hover {
+#bubble-content::-webkit-scrollbar-thumb:hover,
+.bubble-thought-box::-webkit-scrollbar-thumb:hover {
     background: var(--theme-hover);
 }
 

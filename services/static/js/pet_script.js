@@ -100,6 +100,12 @@ class DesktopPet {
         this.input = document.getElementById('pet-input');
         this.bubble = document.getElementById('speech-bubble');
         this.bubbleContent = document.getElementById('bubble-content');
+        this.thoughtBtn = document.getElementById('bubble-thought-btn');
+        this.thoughtBox = document.getElementById('bubble-thought-box');
+        this.thoughtContent = document.getElementById('bubble-thought-content');
+        this.closeThoughtBtn = document.getElementById('close-thought-btn');
+        this.currentThought = '';
+        this.showThoughtButton = true;
         this.img = document.getElementById('pet-img');
         this.favScore = document.getElementById('fav-score');
         this.favContainer = document.getElementById('fav-container');
@@ -179,6 +185,7 @@ class DesktopPet {
             this.wallpaperFit = data.wallpaper_fit || "cover";
             this.enableGreeting = data.enable_greeting !== false;
             this.enableAutoSpeak = data.enable_auto_speak !== false;
+            this.showThoughtButton = data.show_thought_button !== false;
             this.autoSpeakMultiplier = data.auto_speak_multiplier || 1.0;
             this.bubbleDurationMultiplier = data.bubble_duration_multiplier || 1.0;
             
@@ -275,6 +282,19 @@ class DesktopPet {
 
         this.initSettings();
         this.initPresets();
+
+        if (this.thoughtBtn) {
+            this.thoughtBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleThoughtBox();
+            });
+        }
+        if (this.closeThoughtBtn) {
+            this.closeThoughtBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.closeThoughtBox();
+            });
+        }
 
         if (this.toggleChatBtn) {
             this.toggleChatBtn.addEventListener('click', () => {
@@ -1589,9 +1609,9 @@ class DesktopPet {
         }, 150);
     }
 
-// [淇敼] 鏄剧ず姘旀场 (duration 濡傛灉涓嶄紶鎴栦紶 null锛屽垯鑷姩璁＄畻)
-    showBubble(text, duration = null, isHtml = false) {
-        // [鏂板] 缃戞槗浜戠偣姝岄殣钘忔寚浠よВ鏋愭嫤鎴?
+// [修改] 显示气泡 (duration 如果不传或传 null，则自动计算，thought 为可选思维链内容)
+    showBubble(text, duration = null, isHtml = false, thought = null) {
+        // [新增] 网易云点歌隐藏指令解析拦截
         const musicRegex = /\[MUSIC_PLAY:\s*(.*?)\s*\]/;
         const match = text.match(musicRegex);
         if (match) {
@@ -1613,6 +1633,21 @@ class DesktopPet {
         this.bubbleContent.scrollTop = 0;
         this.bubble.style.opacity = '1';
         this.bubble.style.pointerEvents = 'auto';
+
+        // 思维链观察微按钮控制
+        this.currentThought = thought || "";
+        if (this.thoughtBtn) {
+            if (this.currentThought && this.showThoughtButton !== false) {
+                this.thoughtBtn.classList.remove('hidden');
+                this.thoughtBtn.classList.remove('active');
+            } else {
+                this.thoughtBtn.classList.add('hidden');
+                this.thoughtBtn.classList.remove('active');
+            }
+        }
+        if (this.thoughtBox) {
+            this.thoughtBox.classList.add('hidden');
+        }
 
         if (this.bubbleTimer) clearTimeout(this.bubbleTimer);
 
@@ -1641,6 +1676,44 @@ class DesktopPet {
         }
     }
 
+    toggleThoughtBox() {
+        if (!this.thoughtBox || !this.currentThought) return;
+        const isHidden = this.thoughtBox.classList.contains('hidden');
+        if (isHidden) {
+            this.openThoughtBox();
+        } else {
+            this.closeThoughtBox();
+        }
+    }
+
+    openThoughtBox() {
+        if (!this.thoughtBox || !this.currentThought) return;
+        
+        // 格式化思维链文本 (美化 1. 情绪本能 / 2. 规则审查 / 3. 输出规划)
+        let formatted = this.currentThought
+            .replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/(\d+[\.、]\s*【?[^：:\n]+[：:]?)/g, '<span class="thought-step-num">$1</span>');
+
+        this.thoughtContent.innerHTML = formatted;
+        this.thoughtBox.classList.remove('hidden');
+        if (this.thoughtBtn) this.thoughtBtn.classList.add('active');
+
+        // 展开思维链时，延长气泡留存时间至 60 秒，保证用户从容阅读
+        if (this.bubbleTimer) clearTimeout(this.bubbleTimer);
+        this.bubble.style.opacity = '1';
+        this.bubble.style.pointerEvents = 'auto';
+        this.bubbleTimer = setTimeout(() => {
+            this.bubble.style.opacity = '0';
+            this.bubble.style.pointerEvents = 'none';
+        }, 60000);
+    }
+
+    closeThoughtBox() {
+        if (!this.thoughtBox) return;
+        this.thoughtBox.classList.add('hidden');
+        if (this.thoughtBtn) this.thoughtBtn.classList.remove('active');
+    }
+
     async sendMessage() {
         const text = this.input.value.trim();
         if (!text) return;
@@ -1649,7 +1722,7 @@ class DesktopPet {
         this.autoSpeakCount = 0;
         this.isChatting = true;
         this.resetAutoSpeakTimer();
-        this.wakeUp(true); // 闈欓粯鍞ら啋 (鎺ヤ笅鏉ョ殑澶фā鍨嬪洖澶嶄細灞曠ず琛ㄦ儏涓庢皵娉?
+        this.wakeUp(true); // 静默唤醒 (接下来的大模型回复会展示表情与气泡)
         if (this.isImmersiveMode) {
             this.appendLocalChatMessage("你", text);
         }
@@ -1665,7 +1738,7 @@ class DesktopPet {
             const data = await response.json();
 
             if (data.success) {
-                this.showBubble(data.reply);
+                this.showBubble(data.reply, null, false, data.thought);
                 this.setEmotion(data.emotion);
                 if (this.isImmersiveMode) {
                     this.appendLocalChatMessage(this.charName || "桌宠", data.reply);
@@ -1784,7 +1857,7 @@ class DesktopPet {
             const data = await response.json();
             if (data.success) {
                 // 自动开机打招呼的气泡传入 duration = -1 (常驻显示，直到用户主动说话顶掉)
-                this.showBubble(data.reply, -1);
+                this.showBubble(data.reply, -1, false, data.thought);
                 this.setEmotion(data.emotion);
                 if (data.favorability !== undefined) {
                     this.favScore.innerText = data.favorability;
@@ -1850,7 +1923,7 @@ class DesktopPet {
             const data = await response.json();
             if (data.success) {
                 // 自动主动说话的气泡传入 duration = -1 (常驻显示，不自动闭合，直到用户主动说话顶掉)
-                this.showBubble(data.reply, -1);
+                this.showBubble(data.reply, -1, false, data.thought);
                 this.setEmotion(data.emotion);
                 if (this.isImmersiveMode) {
                     this.appendLocalChatMessage(this.charName || "桌宠", data.reply);

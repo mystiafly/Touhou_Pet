@@ -9,7 +9,7 @@ from core.config_manager import get_config, get_active_character_id
 from core.llm_client import get_langchain_model
 from tools.presets_manager import load_and_trigger_presets
 from core.databank_manager import get_active_tables, get_databank_rules_for_llm, parse_and_execute_databank_commands
-from tools.tool_executor import parse_reply
+from tools.tool_executor import parse_reply, extract_character_thought
 
 from time_system import get_time_greeting_prompt
 from real_world_system import get_meta_context_for_chat
@@ -497,13 +497,15 @@ def main_llm_node(state: AgentState) -> Dict[str, Any]:
             raw_reply = "<character_thought>\n大模型连续5次拒绝输出思维链，已被系统强制拦截。\n</character_thought>\n[crying][0](大模型连续5次格式异常，消息已被大贤者系统安全拦截。)"
 
     emotion, score, clean_content = parse_reply(raw_reply)
+    thought = extract_character_thought(raw_reply)
     
     return {
         "main_llm_reply": raw_reply,
         "raw_reply": raw_reply, # for compatibility with old graph state outputs if needed
         "emotion": emotion,
         "score": score,
-        "clean_content": clean_content
+        "clean_content": clean_content,
+        "thought": thought
     }
 
 def execute_launcher_task_node(state: AgentState) -> Dict[str, Any]:

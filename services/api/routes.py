@@ -265,9 +265,12 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
                 "lyric": music_res["lyric"]
             }
 
+        thought = final_state.get("thought", "")
+
         return {
             "success": True,
             "reply": clean_content,
+            "thought": thought,
             "emotion": emotion,
             "favorability": current_fav,
             "fav_change": change,
@@ -826,6 +829,7 @@ def get_config_api():
     config["user_prompt"] = config.get("user_prompt", "")
     config["preset_max_depth"] = config.get("preset_max_depth", 2)
     config["preset_block_english"] = config.get("preset_block_english", False)
+    config["show_thought_button"] = config.get("show_thought_button", True)
     config["pre_api_provider"] = config.get("pre_api_provider", "inherit")
     config["post_api_provider"] = config.get("post_api_provider", "inherit")
     config["vision_engine"] = config.get("vision_engine", "gemini")
@@ -860,6 +864,8 @@ def post_config_api(payload: dict = Body(...)):
             config_data["enable_greeting"] = bool(payload["enable_greeting"])
         if "enable_auto_speak" in payload:
             config_data["enable_auto_speak"] = bool(payload["enable_auto_speak"])
+        if "show_thought_button" in payload:
+            config_data["show_thought_button"] = bool(payload["show_thought_button"])
         if "auto_speak_multiplier" in payload:
             config_data["auto_speak_multiplier"] = float(payload["auto_speak_multiplier"])
         if "bubble_duration_multiplier" in payload:
@@ -1306,6 +1312,7 @@ def pet_speak(payload: dict = Body(...), background_tasks: BackgroundTasks = Bac
         return {
             "success": True,
             "reply": clean_content,
+            "thought": final_state.get("thought", ""),
             "emotion": emotion,
             "favorability": current_fav,
             "fav_change": change,
