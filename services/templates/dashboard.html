@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>大贤者控制台 (Dashboard)</title>
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.22.0">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.22.2">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -29,6 +29,9 @@
             <a href="#" class="nav-item" data-target="allocation-view">
                 <i class="fas fa-network-wired"></i> 大模型分配
             </a>
+            <a href="#" class="nav-item" data-target="basic-settings-view">
+                <i class="fas fa-sliders-h"></i> 基础设置
+            </a>
             <a href="#" class="nav-item" data-target="create-soul-view">
                 <i class="fas fa-magic"></i> 孕育新灵魂
             </a>
@@ -46,8 +49,8 @@
             </a>
 
             <div style="font-size: 12px; color: #ff79c6; margin: 20px 0 5px 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">当前角色专属设定</div>
-            <a href="#" class="nav-item" data-target="basic-settings-view">
-                <i class="fas fa-cog"></i> 基础设置
+            <a href="#" class="nav-item" data-target="character-settings-view">
+                <i class="fas fa-user-cog"></i> 角色设置
             </a>
             <a href="#" class="nav-item" data-target="immersive-settings-view">
                 <i class="fas fa-expand-alt"></i> 沉浸模式
@@ -265,6 +268,123 @@
             </div>
         </section>
 
+        <!-- 基础设置视图 (大贤者全局设定) -->
+        <section id="basic-settings-view" class="content-section">
+            <header class="section-header">
+                <h1>基础设置</h1>
+                <p>管理大贤者系统全局交互行为、气泡表现、全屏挂起与预设扩散规则</p>
+            </header>
+            
+            <div class="card-container">
+                <div class="settings-card">
+                    <h3><i class="fas fa-comment-dots"></i> 交流行为</h3>
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <label style="font-weight: 500; font-size: 14px;">打招呼开关</label>
+                            <p class="help-text" style="margin-top: 5px;">开启后，桌宠在每次启动时都会主动向你发送第一条消息。</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="greeting-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    
+                    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 15px 0;">
+                    
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <label style="font-weight: 500; font-size: 14px;">自动随时间说话</label>
+                            <p class="help-text" style="margin-top: 5px;">开启后，桌宠在闲置一段时间后会主动自言自语找你搭话。</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="auto-speak-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="auto-speak-multiplier" style="font-weight: 500; font-size: 14px; display: block;">自动说话间隔时间倍率</label>
+                        <select id="auto-speak-multiplier" class="modern-select" style="margin-top: 8px; width: 100%;">
+                            <option value="0.2">0.2x (极短等待)</option>
+                            <option value="0.5">0.5x (较短等待)</option>
+                            <option value="0.7">0.7x (稍短等待)</option>
+                            <option value="1.0">1.0x (默认等待)</option>
+                            <option value="1.5">1.5x (较长等待)</option>
+                        </select>
+                        <p class="help-text">倍率越小，桌宠憋不住找你搭话所需的时间就越短。</p>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="bubble-duration-multiplier" style="font-weight: 500; font-size: 14px; display: block;">气泡持续时间倍率</label>
+                        <select id="bubble-duration-multiplier" class="modern-select" style="margin-top: 8px; width: 100%;">
+                            <option value="1.0">1.0x (默认时长)</option>
+                            <option value="2.0">2.0x (较长显示)</option>
+                            <option value="3.0">3.0x (长久显示)</option>
+                            <option value="5.0">5.0x (超长显示)</option>
+                            <option value="10.0">10.0x (极长显示)</option>
+                        </select>
+                        <p class="help-text">控制桌宠说话时文字气泡停留的时间，如果阅读速度较慢可以适当调大。</p>
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 15px 0;">
+
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <label style="font-weight: 500; font-size: 14px;">显示气泡思维链观察按钮</label>
+                            <p class="help-text" style="margin-top: 5px;">开启后，当桌宠产生内心思维链 (&lt;character_thought&gt;) 时，气泡右上角会显示 🧠 按钮，点击可展开透视角色的情绪本能、规则审查与行动规划。</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="show-thought-button-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-card" style="border-left: 4px solid #50fa7b;">
+                    <h3><i class="fas fa-gamepad" style="color: #50fa7b;"></i> 全屏游戏挂起模式</h3>
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <label style="font-weight: 500; font-size: 14px;">检测到全屏游戏自动最小化到托盘</label>
+                            <p class="help-text" style="margin-top: 5px;">默认开启。当检测到守望先锋、CS2、无畏契约、原神等全屏/无边框游戏处于前台焦点时，桌宠自动隐身至系统托盘，彻底消除鼠标跟枪延迟与 DWM 渲染干扰；切出或关闭游戏后自动恢复展示。</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="auto-minimize-fullscreen-game-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-card">
+                    <h3><i class="fas fa-book"></i> 世界书与预设管理</h3>
+                    
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="preset-max-depth" style="font-weight: 500; font-size: 14px; display: block;">递归链式触发最大深度</label>
+                        <select id="preset-max-depth" class="modern-select" style="margin-top: 8px; width: 100%;">
+                            <option value="1">1层 (仅直接命中)</option>
+                            <option value="2">2层 (推荐/默认)</option>
+                            <option value="3">3层 (较深联想)</option>
+                            <option value="4">4层 (深层联想)</option>
+                            <option value="5">5层 (极度扩散)</option>
+                        </select>
+                        <p class="help-text">限制世界书词条相互引用的最大深度，数值越高引申的背景设定越多，但过高可能导致上下文爆炸。</p>
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 15px 0;">
+
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <label style="font-weight: 500; font-size: 14px;">屏蔽纯英文联想 (防误触)</label>
+                            <p class="help-text" style="margin-top: 5px;">开启后，预设触发词如果是纯英文字母将不会被触发。有效防止“Son”等短语被“persona”误触碰。</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="block-english-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- 立绘设置视图 -->
         <section id="sprite-settings-view" class="content-section">
             <header class="section-header">
@@ -461,11 +581,11 @@
             </div>
         </section>
 
-        <!-- 4. 基础设置视图 -->
-        <section id="basic-settings-view" class="content-section">
+        <!-- 角色设置视图 (当前角色专属设定) -->
+        <section id="character-settings-view" class="content-section">
             <header class="section-header">
-                <h1>基础设置</h1>
-                <p>调整当前灵魂载体的常规行为偏好与人设</p>
+                <h1>角色设置</h1>
+                <p>调整当前灵魂载体的核心人设、User 提示词、角色色调与标识</p>
             </header>
             
             <div class="card-container">
@@ -521,113 +641,6 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <div class="settings-card">
-                    <h3><i class="fas fa-comment-dots"></i> 交流行为</h3>
-                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
-                        <div>
-                            <label style="font-weight: 500; font-size: 14px;">打招呼开关</label>
-                            <p class="help-text" style="margin-top: 5px;">开启后，桌宠在每次启动时都会主动向你发送第一条消息。</p>
-                        </div>
-                        <label class="switch">
-                            <input type="checkbox" id="greeting-toggle">
-                            <span class="slider round"></span>
-                        </label>
-                    </div>
-                    
-                    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 15px 0;">
-                    
-                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
-                        <div>
-                            <label style="font-weight: 500; font-size: 14px;">自动随时间说话</label>
-                            <p class="help-text" style="margin-top: 5px;">开启后，桌宠在闲置一段时间后会主动自言自语找你搭话。</p>
-                        </div>
-                        <label class="switch">
-                            <input type="checkbox" id="auto-speak-toggle">
-                            <span class="slider round"></span>
-                        </label>
-                    </div>
-
-                    <div class="form-group" style="margin-top: 15px;">
-                        <label for="auto-speak-multiplier" style="font-weight: 500; font-size: 14px; display: block;">自动说话间隔时间倍率</label>
-                        <select id="auto-speak-multiplier" class="modern-select" style="margin-top: 8px; width: 100%;">
-                            <option value="0.2">0.2x (极短等待)</option>
-                            <option value="0.5">0.5x (较短等待)</option>
-                            <option value="0.7">0.7x (稍短等待)</option>
-                            <option value="1.0">1.0x (默认等待)</option>
-                            <option value="1.5">1.5x (较长等待)</option>
-                        </select>
-                        <p class="help-text">倍率越小，桌宠憋不住找你搭话所需的时间就越短。</p>
-                    </div>
-
-                    <div class="form-group" style="margin-top: 15px;">
-                        <label for="bubble-duration-multiplier" style="font-weight: 500; font-size: 14px; display: block;">气泡持续时间倍率</label>
-                        <select id="bubble-duration-multiplier" class="modern-select" style="margin-top: 8px; width: 100%;">
-                            <option value="1.0">1.0x (默认时长)</option>
-                            <option value="2.0">2.0x (较长显示)</option>
-                            <option value="3.0">3.0x (长久显示)</option>
-                            <option value="5.0">5.0x (超长显示)</option>
-                            <option value="10.0">10.0x (极长显示)</option>
-                        </select>
-                        <p class="help-text">控制桌宠说话时文字气泡停留的时间，如果阅读速度较慢可以适当调大。</p>
-                    </div>
-
-                    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 15px 0;">
-
-                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
-                        <div>
-                            <label style="font-weight: 500; font-size: 14px;">显示气泡思维链观察按钮</label>
-                            <p class="help-text" style="margin-top: 5px;">开启后，当桌宠产生内心思维链 (&lt;character_thought&gt;) 时，气泡右上角会显示 🧠 按钮，点击可展开透视角色的情绪本能、规则审查与行动规划。</p>
-                        </div>
-                        <label class="switch">
-                            <input type="checkbox" id="show-thought-button-toggle">
-                            <span class="slider round"></span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="settings-card" style="border-left: 4px solid #50fa7b;">
-                    <h3><i class="fas fa-gamepad" style="color: #50fa7b;"></i> 全屏游戏挂起模式</h3>
-                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
-                        <div>
-                            <label style="font-weight: 500; font-size: 14px;">检测到全屏游戏自动最小化到托盘</label>
-                            <p class="help-text" style="margin-top: 5px;">默认开启。当检测到守望先锋、CS2、无畏契约、原神等全屏/无边框游戏处于前台焦点时，桌宠自动隐身至系统托盘，彻底消除鼠标跟枪延迟与 DWM 渲染干扰；切出或关闭游戏后自动恢复展示。</p>
-                        </div>
-                        <label class="switch">
-                            <input type="checkbox" id="auto-minimize-fullscreen-game-toggle">
-                            <span class="slider round"></span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="settings-card">
-                    <h3><i class="fas fa-book"></i> 世界书与预设管理</h3>
-                    
-                    <div class="form-group" style="margin-top: 15px;">
-                        <label for="preset-max-depth" style="font-weight: 500; font-size: 14px; display: block;">递归链式触发最大深度</label>
-                        <select id="preset-max-depth" class="modern-select" style="margin-top: 8px; width: 100%;">
-                            <option value="1">1层 (仅直接命中)</option>
-                            <option value="2">2层 (推荐/默认)</option>
-                            <option value="3">3层 (较深联想)</option>
-                            <option value="4">4层 (深层联想)</option>
-                            <option value="5">5层 (极度扩散)</option>
-                        </select>
-                        <p class="help-text">限制世界书词条相互引用的最大深度，数值越高引申的背景设定越多，但过高可能导致上下文爆炸。</p>
-                    </div>
-
-                    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 15px 0;">
-
-                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
-                        <div>
-                            <label style="font-weight: 500; font-size: 14px;">屏蔽纯英文联想 (防误触)</label>
-                            <p class="help-text" style="margin-top: 5px;">开启后，预设触发词如果是纯英文字母将不会被触发。有效防止“Son”等短语被“persona”误触碰。</p>
-                        </div>
-                        <label class="switch">
-                            <input type="checkbox" id="block-english-toggle">
-                            <span class="slider round"></span>
-                        </label>
                     </div>
                 </div>
 
@@ -1367,7 +1380,7 @@
     </div>
 </div>
 
-<script src="/static/js/dashboard.js?v=1.22.0"></script>
+<script src="/static/js/dashboard.js?v=1.22.2"></script>
 
 <!-- 视觉识图配置 Modal -->
 <div id="vision-tool-modal" class="modal-overlay hidden">
