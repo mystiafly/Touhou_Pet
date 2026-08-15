@@ -93,8 +93,17 @@ def get_file_path(filename):
 GLOBAL_KEYS = {
     "api_provider", "engine_base_url", "engine_api_key", "engine_model_name",
     "engines", "pre_api_provider", "post_api_provider", "app_launcher",
-    "vision_engine", "active_character", "custom_engines", "auto_minimize_on_fullscreen_game",
-    "show_thought_button"
+    "vision_engine", "active_character", "custom_engines",
+    "enable_greeting", "enable_auto_speak", "auto_speak_multiplier",
+    "bubble_duration_multiplier", "show_thought_button",
+    "auto_minimize_on_fullscreen_game", "preset_max_depth", "preset_block_english",
+    "flow_mode", "history_step_multiplier"
+}
+
+CHARACTER_CONFIG_WHITELIST = {
+    "character_id", "character_name", "persona_prompt", "user_prompt",
+    "theme_color", "active_skin", "wallpaper_url", "wallpaper_fit",
+    "bgm_url", "immersive_effects", "created_at", "version"
 }
 
 def get_config():

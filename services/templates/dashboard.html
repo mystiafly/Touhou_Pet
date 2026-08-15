@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>大贤者控制台 (Dashboard)</title>
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.22.2">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.22.3">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -835,15 +835,20 @@
                     <h3><i class="fas fa-file-archive"></i> 导入角色卡 (压缩包)</h3>
                     
                     <div class="form-group" style="margin-top: 15px;">
-                        <label for="import-char-id" style="font-weight: 500; font-size: 14px;">英文 ID (必填)</label>
-                        <input type="text" id="import-char-id" class="modern-input" placeholder="例如：wriggle_test" style="margin-top: 8px; width: 100%;">
-                        <p class="help-text">底层英文ID文件夹名（通常填入角色英文名），不可与现有角色重复。</p>
+                        <label for="import-char-file" style="font-weight: 500; font-size: 14px;">角色卡文件 (.zip)</label>
+                        <input type="file" id="import-char-file" class="modern-input" accept=".zip,.rumia" style="margin-top: 8px; width: 100%;">
+                        <p class="help-text">请选择符合标准的角色卡压缩包，系统将自动预检包内元数据。</p>
+                    </div>
+
+                    <div id="import-preview-badge" style="display: none; margin-top: 12px; padding: 12px; background: rgba(80, 250, 123, 0.1); border: 1px solid rgba(80, 250, 123, 0.3); border-radius: 8px;">
+                        <div style="font-weight: 600; color: #50fa7b; font-size: 14px;" id="import-detected-title">✨ 已识别角色</div>
+                        <div style="font-size: 12px; color: #f8f8f2; margin-top: 4px;" id="import-detected-desc"></div>
                     </div>
 
                     <div class="form-group" style="margin-top: 15px;">
-                        <label for="import-char-file" style="font-weight: 500; font-size: 14px;">角色卡文件 (.zip)</label>
-                        <input type="file" id="import-char-file" class="modern-input" accept=".zip,.rumia" style="margin-top: 8px; width: 100%;">
-                        <p class="help-text">请选择符合标准的角色卡压缩包。</p>
+                        <label for="import-char-id" style="font-weight: 500; font-size: 14px;">安装英文 ID (必填)</label>
+                        <input type="text" id="import-char-id" class="modern-input" placeholder="例如：wriggle_test" style="margin-top: 8px; width: 100%;">
+                        <p class="help-text">底层英文ID文件夹名（通常填入角色英文名），不可与现有角色重复。</p>
                     </div>
 
                     <button id="import-btn" class="action-btn" style="margin-top: 20px; width: 100%; justify-content: center;">
@@ -857,7 +862,7 @@
                     <h3><i class="fas fa-file-export"></i> 导出当前灵魂 (压缩包)</h3>
                     
                     <p style="font-size: 13px; color: var(--text-secondary); margin-top: 10px; margin-bottom: 20px;">
-                        导出将自动包含当前的 <code>config.json</code>、所有 <code>prompt</code>、环境预设、专属预设，以及资源贴图。您可以将导出的压缩包分享给其他人使用“导入模式”进行加载。
+                        导出将自动包含纯净的 <code>config.json</code>（已自动剔除全局设置与敏感Key）、角色人设词、专属预设、互动应付词 (<code>reactions.json</code>)，以及立绘和背景资源。
                     </p>
 
                     <div class="form-group" style="margin-top: 15px;">
@@ -1380,7 +1385,7 @@
     </div>
 </div>
 
-<script src="/static/js/dashboard.js?v=1.22.2"></script>
+<script src="/static/js/dashboard.js?v=1.22.3"></script>
 
 <!-- 视觉识图配置 Modal -->
 <div id="vision-tool-modal" class="modal-overlay hidden">

@@ -1320,6 +1320,45 @@ document.addEventListener('DOMContentLoaded', () => {
         modeDeleteBtn.addEventListener('click', () => switchMode(modeDeleteBtn, formDeleteMode));
     }
 
+    // 监听角色卡文件选择并预检
+    const importFileInput = document.getElementById('import-char-file');
+    const importCharIdInput = document.getElementById('import-char-id');
+    const importPreviewBadge = document.getElementById('import-preview-badge');
+    const importDetectedTitle = document.getElementById('import-detected-title');
+    const importDetectedDesc = document.getElementById('import-detected-desc');
+
+    if (importFileInput) {
+        importFileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) {
+                if (importPreviewBadge) importPreviewBadge.style.display = 'none';
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                const res = await fetch('/api/characters/inspect_zip', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    if (data.character_id && importCharIdInput) {
+                        importCharIdInput.value = data.character_id;
+                    }
+                    if (importPreviewBadge) {
+                        importPreviewBadge.style.display = 'block';
+                        importDetectedTitle.textContent = `✨ 已识别角色: 【${data.character_name || data.character_id}】 (ID: ${data.character_id})`;
+                        importDetectedDesc.textContent = data.persona_prompt ? `核心人设: ${data.persona_prompt}...` : '标准角色卡，准备就绪';
+                    }
+                }
+            } catch (err) {
+                console.warn('Inspect zip failed:', err);
+            }
+        });
+    }
+
     // 处理导入角色卡
     const importBtn = document.getElementById('import-btn');
     if (importBtn) {

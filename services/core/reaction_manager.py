@@ -21,6 +21,20 @@ def load_reactions(char_id):
                 return json.load(f)
         except Exception as e:
             print(f"[REACTION] Failed to load reactions: {e}")
+
+    # 备选回退：检查角色目录下的 reactions.json (支持角色包解压或初始内置)
+    try:
+        from core.config_manager import USER_DATA_DIR, SERVICES_DIR
+        for base in [USER_DATA_DIR, SERVICES_DIR]:
+            fallback = os.path.join(base, "characters", char_id, "reactions.json")
+            if os.path.exists(fallback):
+                with open(fallback, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    save_reactions(char_id, data)
+                    return data
+    except Exception:
+        pass
+
     return None
 
 def save_reactions(char_id, data):

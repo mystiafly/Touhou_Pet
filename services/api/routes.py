@@ -525,9 +525,10 @@ async def api_characters_generate(req: CharacterGenRequest):
 
 @router.post("/api/characters/export")
 async def api_characters_export(request: Request, background_tasks: BackgroundTasks):
-    import os, shutil, zipfile
+    import os, shutil, zipfile, json
     from tempfile import mkdtemp
-    from core.config_manager import SERVICES_DIR
+    from core.config_manager import USER_DATA_DIR, SERVICES_DIR, GLOBAL_KEYS, CHARACTER_CONFIG_WHITELIST
+    from core.reaction_manager import get_reactions_file
     
     try:
         data = await request.json()
@@ -538,7 +539,10 @@ async def api_characters_export(request: Request, background_tasks: BackgroundTa
         if not char_id:
             return JSONResponse({"status": "error", "message": "Missing char_id"}, status_code=400)
             
-        char_dir = os.path.join(SERVICES_DIR, "characters", char_id)
+        # 寻找角色源目录 (优先 USER_DATA_DIR，其次 SERVICES_DIR)
+        char_dir = os.path.join(USER_DATA_DIR, "characters", char_id)
+        if not os.path.exists(char_dir):
+            char_dir = os.path.join(SERVICES_DIR, "characters", char_id)
         if not os.path.exists(char_dir):
             return JSONResponse({"status": "error", "message": "角色不存在"}, status_code=404)
             
@@ -547,11 +551,12 @@ async def api_characters_export(request: Request, background_tasks: BackgroundTa
         
         def ignore_export_files(src, names):
             ignored = []
-            # 永远忽略 Qdrant 的锁文件，避免在 Windows 上引发 WinError 33 进程占用冲突
-            if ".lock" in names:
-                ignored.append(".lock")
+            for n in names:
+                # 永久过滤排除锁文件、临时文件与运行期缓存数据库 (如 checkpoints.db)
+                if n in (".lock", "__pycache__", ".DS_Store", "Thumbs.db") or n.startswith("checkpoints.db") or n.endswith(".tmp"):
+                    ignored.append(n)
                 
-            # 仅在根目录匹配时排除特定的未勾选内容
+            # 仅在角色根目录匹配时排除特定的未勾选内容
             if os.path.abspath(src) == os.path.abspath(char_dir):
                 if not export_memory:
                     ignored.extend(["dialog_history.json", "favorability.json", "daily_history", "qdrant_db"])
@@ -559,9 +564,41 @@ async def api_characters_export(request: Request, background_tasks: BackgroundTa
                     ignored.append("databank_state.json")
             return ignored
             
-        # 复制整个专属角色文件夹作为基础，并应用忽略规则
+        # 1. 复制专属角色文件夹作为基础，并应用忽略规则
         shutil.copytree(char_dir, export_folder, ignore=ignore_export_files)
         
+        # 2. 净化导出的 config.json，剔除全局设置与私有 API Key
+        config_path = os.path.join(export_folder, "config.json")
+        clean_config = {}
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    raw_cfg = json.load(f)
+                for k, v in raw_cfg.items():
+                    if k in CHARACTER_CONFIG_WHITELIST and k not in GLOBAL_KEYS:
+                        clean_config[k] = v
+                clean_config["character_id"] = raw_cfg.get("character_id", char_id)
+                clean_config["character_name"] = raw_cfg.get("character_name", char_id)
+                clean_config["persona_prompt"] = raw_cfg.get("persona_prompt", "")
+                clean_config["user_prompt"] = raw_cfg.get("user_prompt", "")
+                clean_config["theme_color"] = raw_cfg.get("theme_color", "#ff6b8b")
+                
+                with open(config_path, 'w', encoding='utf-8') as f:
+                    json.dump(clean_config, f, ensure_ascii=False, indent=2)
+            except Exception as ce:
+                print(f"[EXPORT] 净化 config.json 失败: {ce}")
+
+        # 3. 自动打包点击互动应付词 reactions.json
+        reaction_src = get_reactions_file(char_id)
+        if not os.path.exists(reaction_src):
+            reaction_src = os.path.join(char_dir, "reactions.json")
+        if os.path.exists(reaction_src):
+            try:
+                shutil.copy2(reaction_src, os.path.join(export_folder, "reactions.json"))
+            except Exception as re:
+                print(f"[EXPORT] 打包 reactions.json 失败: {re}")
+                
+        # 4. 生成 zip 压缩包
         zip_path = os.path.join(temp_dir, f"{char_id}_export.zip")
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
             for root, dirs, files in os.walk(export_folder):
@@ -579,35 +616,74 @@ async def api_characters_export(request: Request, background_tasks: BackgroundTa
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
 
+@router.post("/api/characters/inspect_zip")
+async def api_characters_inspect_zip(file: UploadFile = File(...)):
+    """预检上传的角色卡压缩包，自动提取 character_id, character_name, persona_prompt 等元信息"""
+    import zipfile, json, io
+    try:
+        contents = await file.read()
+        zip_buffer = io.BytesIO(contents)
+        with zipfile.ZipFile(zip_buffer, 'r') as zip_ref:
+            config_entry = None
+            for name in zip_ref.namelist():
+                if name.endswith("config.json") and not name.startswith("__MACOSX"):
+                    config_entry = name
+                    break
+            if config_entry:
+                config_data = json.loads(zip_ref.read(config_entry).decode('utf-8'))
+                char_id = config_data.get("character_id", "")
+                char_name = config_data.get("character_name", "")
+                if not char_id:
+                    parts = config_entry.split('/')
+                    if len(parts) > 1 and parts[0]:
+                        char_id = parts[0]
+                return JSONResponse({
+                    "status": "success",
+                    "character_id": char_id,
+                    "character_name": char_name,
+                    "persona_prompt": config_data.get("persona_prompt", "")[:120]
+                })
+        return JSONResponse({"status": "error", "message": "压缩包内未找到 config.json"}, status_code=400)
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+
 @router.post("/api/characters/import")
 async def api_characters_import(
     char_id: str = Form(...),
     file: UploadFile = File(...)
 ):
-    import os, shutil, zipfile
+    import os, shutil, zipfile, json, re
     from tempfile import mkdtemp
-    from core.config_manager import USER_DATA_DIR, SERVICES_DIR
+    from core.config_manager import USER_DATA_DIR, SERVICES_DIR, GLOBAL_KEYS, CHARACTER_CONFIG_WHITELIST
+    from core.reaction_manager import save_reactions
+
+    char_id = char_id.strip()
+    if not char_id or not re.match(r'^[a-zA-Z0-9_\-]+$', char_id):
+        return JSONResponse({"status": "error", "message": "角色ID必须由英文字母、数字或下划线组成！"}, status_code=400)
 
     char_dir = os.path.join(USER_DATA_DIR, "characters", char_id)
-    img_dir = os.path.join(USER_DATA_DIR, "static", "images", char_id)
-    
     if os.path.exists(char_dir):
-        return JSONResponse({"status": "error", "message": f"角色ID {char_id} 已存在，请更换！"}, status_code=400)
+        return JSONResponse({"status": "error", "message": f"角色ID '{char_id}' 已存在，请更换或先在控制台删除旧角色！"}, status_code=400)
         
     temp_dir = mkdtemp()
     try:
         zip_path = os.path.join(temp_dir, "upload.zip")
-        
         with open(zip_path, "wb") as f:
             shutil.copyfileobj(file.file, f)
             
         extract_dir = os.path.join(temp_dir, "extract")
         os.makedirs(extract_dir, exist_ok=True)
         
+        # 安全解压 (Zip Slip 防护)
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall(extract_dir)
+            for member in zip_ref.infolist():
+                target_path = os.path.abspath(os.path.join(extract_dir, member.filename))
+                if not target_path.startswith(os.path.abspath(extract_dir)):
+                    raise Exception("非法压缩包：存在跨目录路径穿越风险！")
+                zip_ref.extract(member, extract_dir)
             
-        # 智能查找包裹根目录（config.json 所在的目录）
+        # 智能查找角色根目录 (包含 config.json 的目录)
         found_root = None
         for root, dirs, files in os.walk(extract_dir):
             if "config.json" in files:
@@ -615,27 +691,43 @@ async def api_characters_import(
                 break
                 
         if not found_root:
-            shutil.rmtree(temp_dir)
-            return JSONResponse({"status": "error", "message": "压缩包内未找到 config.json (不支持旧版导入)"}, status_code=400)
+            return JSONResponse({"status": "error", "message": "压缩包内未找到 config.json (无效的角色卡)"}, status_code=400)
             
         extract_dir = found_root
         
+        # 1. 复制整个目录到 USER_DATA_DIR/characters/<char_id>
         shutil.copytree(extract_dir, char_dir)
         
-        # 将图片复制到 static/images 下提供前端兼容
-        os.makedirs(img_dir, exist_ok=True)
-        assets_dir = os.path.join(char_dir, "assets")
-        if os.path.exists(assets_dir):
-            for sub in os.listdir(assets_dir):
-                sub_dir = os.path.join(assets_dir, sub)
-                if os.path.exists(sub_dir):
-                    for item in os.listdir(sub_dir):
-                        s = os.path.join(sub_dir, item)
-                        d = os.path.join(img_dir, item)
-                        if os.path.isfile(s):
-                            shutil.copy2(s, d)
-                            
-        return JSONResponse({"status": "success", "message": "导入成功！"})
+        # 2. 净化并校准 config.json
+        config_path = os.path.join(char_dir, "config.json")
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    imported_cfg = json.load(f)
+                clean_cfg = {}
+                for k, v in imported_cfg.items():
+                    if k in CHARACTER_CONFIG_WHITELIST and k not in GLOBAL_KEYS:
+                        clean_cfg[k] = v
+                clean_cfg["character_id"] = char_id
+                if "character_name" not in clean_cfg or not clean_cfg["character_name"]:
+                    clean_cfg["character_name"] = char_id
+                    
+                with open(config_path, 'w', encoding='utf-8') as f:
+                    json.dump(clean_cfg, f, ensure_ascii=False, indent=2)
+            except Exception as ce:
+                print(f"[IMPORT] 校验 config.json 失败: {ce}")
+
+        # 3. 如果包含 reactions.json，同步释放到数据目录
+        reaction_file = os.path.join(char_dir, "reactions.json")
+        if os.path.exists(reaction_file):
+            try:
+                with open(reaction_file, 'r', encoding='utf-8') as rf:
+                    rdata = json.load(rf)
+                save_reactions(char_id, rdata)
+            except Exception as re:
+                print(f"[IMPORT] 释放 reactions.json 失败: {re}")
+
+        return JSONResponse({"status": "success", "message": f"角色 '{char_id}' 导入成功！"})
     except Exception as e:
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
     finally:
