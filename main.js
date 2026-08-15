@@ -309,8 +309,19 @@ ipcMain.on('open-settings-window', (event) => {
         }
     });
 
-    const dashboardUrl = 'http://127.0.0.1:5000/dashboard?t=' + Date.now();
-    settingsWin.loadURL(dashboardUrl);
+    function loadDashboardPage() {
+        if (!settingsWin || settingsWin.isDestroyed()) return;
+        const dashboardUrl = 'http://127.0.0.1:5000/dashboard?t=' + Date.now();
+        settingsWin.loadURL(dashboardUrl).catch(err => {
+            logDebug(`[SETTINGS] Dashboard load failed, retrying in 1.5s: ${err.message}`);
+            setTimeout(() => {
+                if (settingsWin && !settingsWin.isDestroyed()) {
+                    loadDashboardPage();
+                }
+            }, 1500);
+        });
+    }
+    loadDashboardPage();
     
     settingsWin.on('closed', () => {
         settingsWin = null;
