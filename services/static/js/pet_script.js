@@ -1752,26 +1752,30 @@ class DesktopPet {
 
                 // 2. 澶勭悊濂芥劅搴?(涓嶈鍐嶈皟鐢?showBubble 浜嗭紒)
                 if (data.favorability !== undefined) {
-                    // 鍏堟洿鏂版樉绀虹殑鏁板€?
                     this.favScore.innerText = data.favorability;
 
-                    // 瑙嗚鍙嶉锛氬湪宸︿笂瑙掓暟瀛楁梺杈规樉绀?(+1) 鎴?(-1)
                     if (data.fav_change > 0) {
-                        // 鍙樻垚绫讳技 "61 (+1)" 鐨勬牱瀛愶紝鐢ㄧ孩鑹查珮浜?
                         this.favScore.innerHTML = `${data.favorability} <span style="color: #ff3366; font-size: 14px; margin-left:5px;">(+1)</span>`;
-                        // 2绉掑悗鎭㈠姝ｅ父
                         setTimeout(() => this.favScore.innerText = data.favorability, 2000);
-
                     } else if (data.fav_change < 0) {
-                        // 鍙樻垚绫讳技 "60 (-1)" 鐨勬牱瀛愶紝鐢ㄧ伆鑹叉垨钃濊壊
                         this.favScore.innerHTML = `${data.favorability} <span style="color: #888; font-size: 14px; margin-left:5px;">(-1)</span>`;
                         setTimeout(() => this.favScore.innerText = data.favorability, 2000);
                     }
                 }
+            } else {
+                // 收到报错或欠费通知 (显示在气泡和思维链中)
+                const errorReply = data.reply || (data.error ? `发生错误: ${data.error}` : "大模型好像断开连接了...");
+                const errorThought = data.thought || (data.error ? `【系统异常】${data.error}` : "");
+                const errorEmotion = data.emotion || 'crying';
+                this.showBubble(errorReply, null, false, errorThought);
+                this.setEmotion(errorEmotion);
+                if (this.isImmersiveMode) {
+                    this.appendLocalChatMessage(this.charName || "桌宠", errorReply);
+                }
             }
         } catch (e) {
             console.error("[CHAT ERROR] 聊天请求失败:", e);
-            this.showBubble("听不到... (网络错误)");
+            this.showBubble("呜...大模型连接断开了 (网络或服务异常)", 8000);
             this.setEmotion('crying');
         } finally {
             this.isChatting = false;
@@ -1783,9 +1787,6 @@ class DesktopPet {
         if (this.autoSpeakTimer) clearTimeout(this.autoSpeakTimer);
         if (this.isMinimized || !this.enableAutoSpeak || this.isSleeping) return;
         
-        // [修复] 根据设定的频率倍率动态调整睡眠阈值。
-        // 倍率大于1时（低频），减少需要的次数以保证在一小时左右入睡。
-        // 倍率小于1时（高频），最多只允许6次，防止连续说十几次话太烦人。
         let requiredCount = 6;
         if (this.autoSpeakMultiplier > 1.0) {
             requiredCount = Math.max(1, Math.round(6 / this.autoSpeakMultiplier));
@@ -1796,23 +1797,18 @@ class DesktopPet {
             return;
         }
 
-        // 鏃堕棿璁剧疆 (鍗曚綅: 姣)
-        // 绗竴闃舵锛?-3娆★級锛?-15鍒嗛挓锛岀浜岄樁娈碉紙4-6娆★級锛?0-40鍒嗛挓
         let minTime = (this.autoSpeakCount < 3) ? 8 * 60 * 1000 : 30 * 60 * 1000;
         let maxTime = (this.autoSpeakCount < 3) ? 15 * 60 * 1000 : 40 * 60 * 1000;
 
         let delay = Math.floor(Math.random() * (maxTime - minTime + 1)) + minTime;
-        // 应用用户设定的倍率
         if (this.autoSpeakMultiplier) {
             delay = Math.floor(delay * this.autoSpeakMultiplier);
         }
         this.autoSpeakTimer = setTimeout(() => this.triggerPetSpeak(), delay);
     }
 
-    // [鏂板] 杈惧埌鏈€澶ц嚜瑷€鑷娆℃暟鍚庡紑鍚?10 鍒嗛挓鍊掕鏃剁潯鐪?
     scheduleSleepTimer() {
         if (this.sleepTimer) clearTimeout(this.sleepTimer);
-        // 10 鍒嗛挓 = 10 * 60 * 1000 姣
         const sleepDelay = 10 * 60 * 1000;
         console.log("桌宠完成了最后一次自言自语，开启 10 分钟闲置睡眠定时器...");
         this.sleepTimer = setTimeout(() => {
@@ -1840,35 +1836,41 @@ class DesktopPet {
         }
     }
 
-    // [新增] 启动时打招呼
+    // 启动时打招呼
     async greetUser() {
-        if (this.isSleeping) return; // 睡觉时被打招呼不回应，因为刚启动
+        if (this.isSleeping) return;
         console.log("正在请求开机问候...");
-        // 先显示等待，提升体验，设置为-1持续显示直到后端返回覆盖
         this.showBubble("...", -1);
 
         try {
             const response = await fetch('/api/pet_speak', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                // 浼犲弬 type: 'greeting'
                 body: JSON.stringify({ type: 'greeting', count: 0 })
             });
             const data = await response.json();
             if (data.success) {
-                // 自动开机打招呼的气泡传入 duration = -1 (常驻显示，直到用户主动说话顶掉)
                 this.showBubble(data.reply, -1, false, data.thought);
                 this.setEmotion(data.emotion);
                 if (data.favorability !== undefined) {
                     this.favScore.innerText = data.favorability;
                 }
+            } else {
+                // 开机打招呼遇上欠费或配置错误
+                const errorReply = data.reply || (data.error ? `启动问候失败: ${data.error}` : "打招呼失败 (大模型服务异常)");
+                const errorThought = data.thought || (data.error ? `【开机异常】${data.error}` : "");
+                const errorEmotion = data.emotion || 'crying';
+                this.showBubble(errorReply, 10000, false, errorThought);
+                this.setEmotion(errorEmotion);
             }
         } catch (e) {
             console.error("打招呼失败:", e);
+            this.showBubble("呜...无法连接到后台大模型服务 (网络错误)", 8000);
+            this.setEmotion('crying');
         }
     }
 
-    // [新增] 处理本地快速点击互动
+    // 处理本地快速点击互动
     handlePetClick() {
         this.resetAutoSpeakTimer();
         if (this.isPeeking) {
@@ -1879,7 +1881,6 @@ class DesktopPet {
         }
         if (!this.reactionLines) return;
         if (this.isSleeping) {
-            // 在睡眠状态下点击不会唤醒，只会发困倦台词
             let lines = this.reactionLines['sleeping'] || ["呼呼呼... (正在做梦)"];
             let randomLine = lines[Math.floor(Math.random() * lines.length)];
             this.showBubble(randomLine, 1500);
@@ -1890,16 +1891,13 @@ class DesktopPet {
         let lines = this.reactionLines[emotion] || this.reactionLines['normal'] || ["哼！"];
         let randomLine = lines[Math.floor(Math.random() * lines.length)];
         
-        // 极速弹出气泡（1.5秒）
         this.showBubble(randomLine, 1500);
         if (this.isImmersiveMode) {
             this.appendLocalChatMessage("你 (动作)", `(戳了戳${this.charName || "桌宠"})`, true);
             this.appendLocalChatMessage(this.charName || "桌宠", randomLine);
         }
-        // 随机切换差分动作
         this.setEmotion(emotion);
         
-        // 后台静默注入状态机记忆流，不唤醒大模型
         fetch('/api/action_sync', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -1922,7 +1920,6 @@ class DesktopPet {
             });
             const data = await response.json();
             if (data.success) {
-                // 自动主动说话的气泡传入 duration = -1 (常驻显示，不自动闭合，直到用户主动说话顶掉)
                 this.showBubble(data.reply, -1, false, data.thought);
                 this.setEmotion(data.emotion);
                 if (this.isImmersiveMode) {
@@ -1931,6 +1928,9 @@ class DesktopPet {
                 if (data.favorability !== undefined) {
                     this.favScore.innerText = data.favorability;
                 }
+            } else if (data.is_error && data.reply) {
+                this.showBubble(data.reply, 10000, false, data.thought);
+                this.setEmotion(data.emotion || 'crying');
             }
         } catch (e) {
             console.error(e);

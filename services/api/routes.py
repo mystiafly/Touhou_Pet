@@ -281,10 +281,13 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
 
     except Exception as e:
         import traceback
+        from core.llm_client import format_llm_error
         print("\n" + "="*20 + " [API CHAT ERROR BACKTRACE] " + "="*20)
         traceback.print_exc()
         print("="*68 + "\n")
-        return JSONResponse({"error": str(e)}, status_code=500)
+        char_name = get_config().get("character_name", "桌宠")
+        err_payload = format_llm_error(e, char_name=char_name)
+        return JSONResponse(err_payload, status_code=200)
 
 # 4. 清理对话历史接口
 @router.post("/api/clear")
@@ -1413,10 +1416,13 @@ def pet_speak(payload: dict = Body(...), background_tasks: BackgroundTasks = Bac
 
     except Exception as e:
         import traceback
+        from core.llm_client import format_llm_error
         print("\n" + "="*20 + " [PET SPEAK ERROR BACKTRACE] " + "="*20)
         traceback.print_exc()
         print("="*70 + "\n")
-        return JSONResponse({"error": str(e)}, status_code=500)
+        char_name = get_config().get("character_name", "桌宠")
+        err_payload = format_llm_error(e, char_name=char_name)
+        return JSONResponse(err_payload, status_code=200)
 
 # 7. 秘密日记日期列表接口
 @router.get("/api/settings/logs")
