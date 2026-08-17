@@ -49,8 +49,13 @@ def parse_reply(text):
         except:
             pass
 
-    # 移除内部思维链的标签及其内容 (如 <character_thought>...</character_thought>, <think>...</think>, <thought>...</thought> 或 <tucao>)
-    text = re.sub(r'<(?:think|character_thought|thought|tucao)[^>]*>.*?</(?:think|character_thought|thought|tucao)>', '', text, flags=re.IGNORECASE | re.DOTALL)
+    # 移除内部思维链的标签及其内容 (高鲁棒性容错：标准闭合、反斜杠闭合、重复开标签容错)
+    # a. 标准闭合标签与反斜杠闭合 </character_thought> 或 <\character_thought>
+    text = re.sub(r'<(?:think|character_thought|thought|tucao)[^>]*>.*?</?\\?(?:think|character_thought|thought|tucao)>', '', text, flags=re.IGNORECASE | re.DOTALL)
+    # b. 两个连续开标签容错 <character_thought> ... <character_thought> (模型漏写了斜杠)
+    text = re.sub(r'<(?P<tag>character_thought|thought|think|tucao)[^>]*>.*?<(?P=tag)>', '', text, flags=re.IGNORECASE | re.DOTALL)
+    # c. 剥除所有剩余的孤立 XML 思维链标签残留
+    text = re.sub(r'</?(?:think|character_thought|thought|tucao)[^>]*>', '', text, flags=re.IGNORECASE)
 
     # 3. 清理除了系统级别工具任务标签以外的所有方括号标签，保障对白内容绝对不泄露格式标签
     # 采用负向先行断言正则，智能跳过各类工具和指令标签的清洗
@@ -60,12 +65,33 @@ def parse_reply(text):
 
 
 def extract_character_thought(text: str) -> str:
-    """提取大模型回复中的思维链 (包含 <character_thought>...</character_thought>, <thought>...</thought>, 或 <think>...</think>)"""
+    """提取大模型回复中的思维链 (高鲁棒性自愈，自动容错漏斜杠、重复开标签等格式畸变)"""
     if not text or not isinstance(text, str):
         return ""
-    thought_match = re.search(r'<(?:character_thought|thought|think)[^>]*>(.*?)</(?:character_thought|thought|think)>', text, flags=re.IGNORECASE | re.DOTALL)
-    if thought_match:
-        return thought_match.group(1).strip()
+    
+    # 1. 优先尝试标准闭合标签匹配 </...>
+    standard_match = re.search(r'<(?:character_thought|thought|think|tucao)[^>]*>(.*?)</(?:character_thought|thought|think|tucao)>', text, flags=re.IGNORECASE | re.DOTALL)
+    if standard_match:
+        return standard_match.group(1).strip()
+
+    # 2. 容错匹配：两个相同的开标签 <character_thought> ... <character_thought>
+    double_open_match = re.search(r'<(?P<tag>character_thought|thought|think|tucao)[^>]*>(?P<content>.*?)<(?P=tag)>', text, flags=re.IGNORECASE | re.DOTALL)
+    if double_open_match:
+        return double_open_match.group("content").strip()
+
+    # 3. 容错匹配：反斜杠闭合 <\character_thought>
+    backslash_match = re.search(r'<(?:character_thought|thought|think|tucao)[^>]*>(.*?)</?\\(?:character_thought|thought|think|tucao)>', text, flags=re.IGNORECASE | re.DOTALL)
+    if backslash_match:
+        return backslash_match.group(1).strip()
+
+    # 4. 容错匹配：以开标签开头但在情绪标签 [normal] 前未显式闭合
+    open_tag_match = re.search(r'<(?:character_thought|thought|think|tucao)[^>]*>(.*)', text, flags=re.IGNORECASE | re.DOTALL)
+    if open_tag_match:
+        remaining = open_tag_match.group(1).strip()
+        split_match = re.search(r'\[(?:normal|angry|shy|crying|sleeping|开心|生气|害羞|大哭|睡觉)\]', remaining, flags=re.IGNORECASE)
+        if split_match:
+            return remaining[:split_match.start()].strip()
+
     return ""
 
 def execute_browser_task_node(state: AgentState) -> Dict[str, Any]:
