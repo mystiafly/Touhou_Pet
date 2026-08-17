@@ -129,17 +129,7 @@ class DesktopPet {
         this.sleepTimer = null;
         this.autoSpeakCount = 0;
 
-        this.playerBar = document.getElementById('music-player-bar');
         this.inputBar = document.querySelector('.input-bar');
-        this.musicTitle = document.getElementById('music-title');
-        this.musicArtist = document.getElementById('music-artist');
-        this.liveLyrics = document.getElementById('live-lyrics');
-        this.musicToggleBtn = document.getElementById('music-toggle-btn');
-        this.musicStopBtn = document.getElementById('music-stop-btn');
-
-        this.musicAudio = new Audio();
-        this.lyricsArray = [];
-        this.musicIsPlaying = false;
 
         this.loadCharacterInfo().then(() => {
             this.preloadImages();
@@ -319,34 +309,6 @@ class DesktopPet {
         }
 
         this.resetAutoSpeakTimer();
-
-        // [鏂板] 缃戞槗浜戝濯掍綋鎾斁浜嬩欢缁戝畾
-        if (this.musicToggleBtn) {
-            this.musicToggleBtn.addEventListener('click', () => this.toggleMusic());
-        }
-        if (this.musicStopBtn) {
-            this.musicStopBtn.addEventListener('click', () => this.stopMusic());
-        }
-        this.musicAudio.addEventListener('timeupdate', () => this.updateLyrics());
-        this.musicAudio.addEventListener('ended', () => this.stopMusic());
-        this.musicAudio.addEventListener('error', () => {
-            const err = this.musicAudio.error;
-            let errMsg = "未知播放错误";
-            if (err) {
-                errMsg = `Code ${err.code}: ${err.message || "Src Not Supported / Network Issue"}`;
-            }
-            console.error("音乐播放错误:", errMsg);
-            this.liveLyrics.innerText = `播放出错: ${errMsg}`;
-            this.musicIsPlaying = false;
-            this.musicToggleBtn.innerHTML = '<i class="fas fa-play"></i>';
-        });
-
-        // 鐐瑰嚮韬綋浜掑姩 (鐜板湪淇敼涓猴細鐐瑰嚮涓嶅敜閱掞紝鍙兘閫氳繃鑱婂ぉ鍞ら啋)
-        this.img.addEventListener('click', () => {
-            // if (this.isSleeping) {
-            //     this.wakeUp(false);
-            // }
-        });
 
         this.loadStatus();
 
@@ -1609,18 +1571,7 @@ class DesktopPet {
         }, 150);
     }
 
-// [修改] 显示气泡 (duration 如果不传或传 null，则自动计算，thought 为可选思维链内容)
     showBubble(text, duration = null, isHtml = false, thought = null) {
-        // [新增] 网易云点歌隐藏指令解析拦截
-        const musicRegex = /\[MUSIC_PLAY:\s*(.*?)\s*\]/;
-        const match = text.match(musicRegex);
-        if (match) {
-            const musicQuery = match[1];
-            text = text.replace(musicRegex, "").trim();
-            console.log(`[MUSIC CONTROLLER] 拦截到大模型点歌指令: ${musicQuery}`);
-            this.searchAndPlayMusic(musicQuery);
-        }
-
         let htmlText;
         if (isHtml) {
             htmlText = text;
@@ -1744,13 +1695,7 @@ class DesktopPet {
                     this.appendLocalChatMessage(this.charName || "桌宠", data.reply);
                 }
 
-                // [鏂板] 濡傛灉鍚庣杩斿洖浜?ReAct 鐐规瓕鏁版嵁锛岀洿鎺ヨ皟鐢ㄦ挱鏀惧櫒鎾斁锛岃烦杩囬噸澶嶆悳绱?
-                if (data.music_play) {
-                    console.log(`[MUSIC PLAYER] 接收到 ReAct 点歌数据:`, data.music_play);
-                    this.playMusicDirectly(data.music_play);
-                }
-
-                // 2. 澶勭悊濂芥劅搴?(涓嶈鍐嶈皟鐢?showBubble 浜嗭紒)
+                // 2. 处理好感度
                 if (data.favorability !== undefined) {
                     this.favScore.innerText = data.favorability;
 
@@ -2238,207 +2183,7 @@ class DesktopPet {
             }
         });
     }
-
-    // [鏂板] 鐩存帴鎾斁鍚庣閫氳繃 ReAct 妫€绱㈣繑鍥炵殑姝屾洸鏁版嵁锛岀粫杩囬噸澶嶆悳绱㈡楠?
-    playMusicDirectly(musicPlay) {
-        if (!this.playerBar || !this.musicAudio) return;
-        console.log(`[MUSIC PLAYER] 开始直接播歌: ${musicPlay.name} - ${musicPlay.artists}`);
-        
-        this.liveLyrics.innerText = "姝ｅ湪寮€濮嬫挱鏀?..";
-        this.musicTitle.innerText = musicPlay.name;
-        this.musicArtist.innerText = musicPlay.artists;
-        this.playerBar.classList.remove('hidden');
-        if (this.inputBar) this.inputBar.classList.add('with-music');
-        
-        try {
-            // 瑙ｆ瀽姝岃瘝
-            this.parseLrc(musicPlay.lyric || "");
-            
-            // 鎾斁闊抽
-            this.musicAudio.src = musicPlay.url;
-            this.musicAudio.play().catch(e => {
-                console.error("[MUSIC PLAYER ERROR] play failed:", e);
-                this.liveLyrics.innerText = `播放失败: ${e.message || e}`;
-            });
-            
-            this.musicIsPlaying = true;
-            this.musicToggleBtn.innerHTML = '<i class="fas fa-pause"></i>';
-        } catch (e) {
-            console.error("[MUSIC PLAYER ERROR] playMusicDirectly exception:", e);
-                this.liveLyrics.innerText = `播歌异常: ${e.message || e}`;
-        }
-    }
-
-    // [鏂板] 缃戞槗浜戦煶涔愬師鐢熸帶鍒舵牳蹇冮€昏緫
-    async searchAndPlayMusic(query) {
-        if (!this.playerBar || !this.musicAudio) return;
-        
-        console.log(`[MUSIC PLAYER] 开始搜索并点播: ${query}`);
-            this.liveLyrics.innerText = "正在搜索音乐，请稍候...";
-        this.musicTitle.innerText = "姝ｅ湪鎼滅储...";
-        this.musicArtist.innerText = "-";
-        this.playerBar.classList.remove('hidden');
-        if (this.inputBar) this.inputBar.classList.add('with-music');
-        
-        try {
-            // 1. 璋冪敤鍚庣鎼滅储
-            const searchResp = await fetch(`/api/music/search?q=${encodeURIComponent(query)}`);
-            const searchData = await searchResp.json();
-            
-            if (!searchData.success || !searchData.songs || searchData.songs.length === 0) {
-                this.liveLyrics.innerText = "没找到这首歌，换一首试试吧";
-                this.musicTitle.innerText = "无结果";
-                setTimeout(() => this.stopMusic(), 4000);
-                return;
-            }
-            
-            const song = searchData.songs[0];
-            this.musicTitle.innerText = song.name;
-            this.musicArtist.innerText = song.artists;
-            this.liveLyrics.innerText = "正在加载音频流...";
-            
-            // 2. 鍔犺浇姝岃瘝鍜屾挱鏀剧洿閾?
-            const [urlResp, lyricResp] = await Promise.all([
-                fetch(`/api/music/url?id=${song.id}`),
-                fetch(`/api/music/lyric?id=${song.id}`)
-            ]);
-            
-            const urlData = await urlResp.json();
-            const lyricData = await lyricResp.json();
-            
-            if (!urlData.success || !urlData.url) {
-                this.liveLyrics.innerText = "音频加载失败，可能因版权受限...";
-                setTimeout(() => this.stopMusic(), 4000);
-                return;
-            }
-            
-            // 瑙ｆ瀽姝岃瘝
-            this.parseLrc(lyricData.lyric || "");
-            
-            // 鎾斁闊抽
-            this.musicAudio.src = urlData.url;
-            await this.musicAudio.play();
-            
-            this.musicIsPlaying = true;
-            this.musicToggleBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                console.log(`[MUSIC PLAYER] 成功播放: ${song.name} - ${song.artist}`);
-            
-        } catch (e) {
-                console.error("[MUSIC PLAYER ERROR] 播放异常:", e);
-                this.liveLyrics.innerText = `播放异常: ${e.message || e}`;
-            setTimeout(() => this.stopMusic(), 6000);
-        }
-    }
-
-    // 瑙ｆ瀽LRC鏍煎紡姝岃瘝 [mm:ss.xx] 姝岃瘝鍐呭
-    parseLrc(lyricText) {
-        this.lyricsArray = [];
-        if (!lyricText) {
-            this.lyricsArray.push({ time: 0, text: "（纯音乐，无歌词）" });
-            return;
-        }
-        
-        const lines = lyricText.split("\n");
-        const timeReg = /\[(\d+):(\d+)(?:\.(\d+))?\]/g;
-        
-        for (let line of lines) {
-            line = line.trim();
-            if (!line) continue;
-            
-            // 鏈夊彲鑳芥湁澶氫釜鏃堕棿鏍囩鍦ㄤ竴琛岋紝閲嶇疆姝ｅ垯鍖归厤绱㈠紩
-            timeReg.lastIndex = 0;
-            
-            // 鎻愬彇姝岃瘝鏂囨湰閮ㄥ垎 (鍘绘帀鎵€鏈夌殑 [xx:xx.xx] 鏃堕棿鏍囩)
-            const text = line.replace(/\[\d+:\d+(?:\.\d+)?\]/g, "").trim();
-            
-            let match;
-            // 閲嶆柊閬嶅巻鏌ユ壘杩欒閲屾墍鏈夊尮閰嶇殑鏃堕棿鐐?
-            timeReg.lastIndex = 0;
-            while ((match = timeReg.exec(line)) !== null) {
-                const min = parseInt(match[1], 10);
-                const sec = parseInt(match[2], 10);
-                const ms = match[3] ? parseInt(match[3].substring(0, 2), 10) : 0;
-                const totalSeconds = min * 60 + sec + ms / 100;
-                
-                this.lyricsArray.push({
-                    time: totalSeconds,
-                    text: text || "~~~" // 留白行替换为波浪号
-                });
-            }
-        }
-        
-        // 鎸夌収鏃堕棿鎴冲崌搴忔帓搴?
-        this.lyricsArray.sort((a, b) => a.time - b.time);
-        
-        if (this.lyricsArray.length === 0) {
-            this.lyricsArray.push({ time: 0, text: "（歌词格式暂不支持解析）" });
-        }
-    }
-
-    // 鍚屾鍒锋柊姝岃瘝鏄剧ず
-    updateLyrics() {
-        if (!this.musicAudio || this.lyricsArray.length === 0) return;
-        const currentTime = this.musicAudio.currentTime;
-        
-        // 瀵绘壘鏈€鎺ヨ繎褰撳墠鎾斁鏃堕棿鐨勬瓕璇嶈
-        let activeIdx = 0;
-        for (let i = 0; i < this.lyricsArray.length; i++) {
-            if (currentTime >= this.lyricsArray[i].time) {
-                activeIdx = i;
-            } else {
-                break;
-            }
-        }
-        
-        const activeLyric = this.lyricsArray[activeIdx].text;
-        // 浠呭綋姝岃瘝鍐呭纭疄鍙戠敓鍙樺寲鏃舵墠鏇存柊DOM锛岄伩鍏嶆棤璋撴覆鏌?
-        if (this.liveLyrics.innerText !== activeLyric) {
-            this.liveLyrics.innerText = activeLyric;
-        }
-    }
-
-    // 鎾斁/鏆傚仠鍒囨崲
-    toggleMusic() {
-        if (!this.musicAudio || !this.musicAudio.src) return;
-        
-        if (this.musicIsPlaying) {
-            this.musicAudio.pause();
-            this.musicIsPlaying = false;
-            this.musicToggleBtn.innerHTML = '<i class="fas fa-play"></i>';
-            console.log("[MUSIC PLAYER] 暂停播放");
-        } else {
-            this.musicAudio.play().then(() => {
-                this.musicIsPlaying = true;
-                this.musicToggleBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                console.log("[MUSIC PLAYER] 恢复播放");
-            }).catch(e => {
-                console.error("恢复播放失败:", e);
-            });
-        }
-    }
-
-    // 鍋滄鎾斁骞堕殣钘忔挱鏀惧櫒
-    stopMusic() {
-        if (this.musicAudio) {
-            this.musicAudio.pause();
-            this.musicAudio.src = ""; // 彻底切断音频连接，释放流资源
-        }
-        this.musicIsPlaying = false;
-        this.lyricsArray = [];
-        if (this.musicToggleBtn) {
-            this.musicToggleBtn.innerHTML = '<i class="fas fa-play"></i>';
-        }
-        if (this.liveLyrics) {
-            this.liveLyrics.innerText = `让${this.charName}唱首歌给你听吧...`;
-        }
-        if (this.playerBar) {
-            this.playerBar.classList.add('hidden');
-        }
-        if (this.inputBar) {
-            this.inputBar.classList.remove('with-music');
-        }
-        console.log("[MUSIC PLAYER] 停止播放并收起控制面板");
-    }
+}
 }
 
 document.addEventListener('DOMContentLoaded', () => {

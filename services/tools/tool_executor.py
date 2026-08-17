@@ -54,7 +54,7 @@ def parse_reply(text):
 
     # 3. 清理除了系统级别工具任务标签以外的所有方括号标签，保障对白内容绝对不泄露格式标签
     # 采用负向先行断言正则，智能跳过各类工具和指令标签的清洗
-    clean_content = re.sub(r'\[(?!BROWSER_TASK|MUSIC_PLAY|LAUNCH_APP|SEARCH_ENGINE|UPDATE_USER_NAME|UPDATE_PET_NAME|SLEEP_NOW|CLEAN_MEMORY)[^\]]+\]', '', text).strip()
+    clean_content = re.sub(r'\[(?!BROWSER_TASK|LAUNCH_APP|SEARCH_ENGINE|SLEEP_NOW|CLEAN_MEMORY|ANALYZE_SCREEN|READ_PROCESS)[^\]]+\]', '', text).strip()
 
     return emotion, score, clean_content
 
@@ -67,43 +67,6 @@ def extract_character_thought(text: str) -> str:
     if thought_match:
         return thought_match.group(1).strip()
     return ""
-
-
-def execute_music_task_node(state: AgentState) -> Dict[str, Any]:
-    """工具节点：在图内部同步查询网易云音乐 API，预加载播放链接与歌词"""
-    music_query = state.get("music_task")
-    if not music_query:
-        return {"music_result": None}
-        
-    print(f"[REACT MUSIC NODE] 开始为查询词执行网易云点歌: {music_query}")
-    try:
-        from external_api import netease_music
-        songs = netease_music.search_music(music_query, limit=1)
-        if not songs:
-            print(f"[REACT MUSIC NODE] 未找到相关歌曲: {music_query}")
-            return {"music_result": {"error": f"未找到关于 '{music_query}' 的歌曲，请让用户换个歌名搜索哦"}}
-            
-        song = songs[0]
-        song_id = song["id"]
-        song_name = song["name"]
-        song_artists = song["artists"]
-        
-        # 预加载音频流和歌词
-        play_url = netease_music.get_play_url(song_id)
-        lyric_text = netease_music.get_lyric(song_id)
-        
-        result = {
-            "id": song_id,
-            "name": song_name,
-            "artists": song_artists,
-            "url": play_url,
-            "lyric": lyric_text
-        }
-        print(f"[REACT MUSIC NODE] 点歌成功: {song_name} - {song_artists}")
-        return {"music_result": result}
-    except Exception as ex:
-        print(f"[REACT MUSIC NODE ERROR] 点歌失败: {ex}")
-        return {"music_result": {"error": f"点歌系统访问异常: {str(ex)}"}}
 
 def execute_browser_task_node(state: AgentState) -> Dict[str, Any]:
     """工具节点：在大脑内部管理浏览器自动化任务的触发"""
@@ -307,23 +270,6 @@ def execute_launcher_task_node(state: AgentState) -> Dict[str, Any]:
         print("="*65 + "\n")
         return {"launcher_result": f"启动失败：{err_msg}"}
 
-def execute_rename_task_node(state: AgentState) -> Dict[str, Any]:
-    """💡 ReAct 节点：执行改名指令"""
-    new_user = state.get("rename_task_user")
-    new_pet = state.get("rename_task_pet")
-    
-    result_msgs = []
-    if new_user is not None:
-        update_user_profile_key("user_called_as", new_user)
-        result_msgs.append(f"用户的名字/称呼已变更为【{new_user}】")
-    if new_pet is not None:
-        char_id = get_active_character_id()
-        update_user_profile_key(f"{char_id}_called_as", new_pet)
-        result_msgs.append(f"桌宠的名字已变更为【{new_pet}】")
-        
-    if not result_msgs:
-        return {"rename_result": "未能解析到新称呼。"}
-    return {"rename_result": "，".join(result_msgs), "rename_task_user": None, "rename_task_pet": None}
 
 def execute_vision_task_node(state: AgentState) -> Dict[str, Any]:
     """工具节点：屏幕视觉识别 (带自适应 4 次重试与降分辨率降采样阶梯策略)"""

@@ -73,14 +73,11 @@ def build_pre_messages(state: AgentState) -> list:
         "【可用工具与语法】\n"
         f"1. 启动应用: 当前系统支持启动的应用有: {available_apps_str}。如果用户明确要求打开这些应用，你必须输出 `[LAUNCH_APP: 应用名称]`。\n"
         "2. 网页搜索/浏览器: 如果用户有搜索网页、查资料、看新闻等意图，输出 `[BROWSER_TASK: 搜索关键词]` 或 `[SEARCH_ENGINE: 搜索词]` (不弹窗只在后台查)。\n"
-        "3. 音乐播放: 如果用户想听歌，输出 `[MUSIC_PLAY: 歌名]` (不弹窗)。\n"
-        "4. 本地应用拉起: 如果用户明确要求打开电脑里的某个软件，请先思考这是否可能是他配置过的常用软件缩写（如“网易云”、“记事本”）。如果确定要打开，输出 `[LAUNCH_APP: 软件名]`。\n"
-        "5. 睡眠控制：如果用户明确命令你去睡觉、休息，输出 `[SLEEP_NOW]`。\n"
-        "6. 更改称呼: 如果用户要求改变你对他的称呼，输出 `[UPDATE_USER_NAME: 新称呼]`。\n"
-        "7. 更改自己的名字: 如果用户要求你改名，输出 `[UPDATE_PET_NAME: 新名字]`。\n"
-        "8. 视觉识图: 如果用户要求你看看屏幕上有什么，或者让你识图，输出 `[ANALYZE_SCREEN]`。\n"
-        "9. 进程探测: 如果用户问你在忙什么、玩什么游戏，或者让你看看他电脑里开着什么软件，输出 `[READ_PROCESS]`。\n"
-        "10. 长期记忆检索: 如果检测到下面的【相关记忆检索结果】中的内容与当前用户的话题有实质性关联（例如提及了过去的某件事、某个约定或情感），你必须输出对应的 `[SELECT_MEMORY: ID]` 来在后续环节调取完整日记。\n\n"
+        "3. 本地应用拉起: 如果用户明确要求打开电脑里的某个软件（如“网易云”、“记事本”等），请先思考这是否可能是他配置过的常用软件缩写。如果确定要打开，输出 `[LAUNCH_APP: 软件名]`。\n"
+        "4. 睡眠控制：如果用户明确命令你去睡觉、休息，输出 `[SLEEP_NOW]`。\n"
+        "5. 视觉识图: 如果用户要求你看看屏幕上有什么，或者让你识图，输出 `[ANALYZE_SCREEN]`。\n"
+        "6. 进程探测: 如果用户问你在忙什么、玩什么游戏，或者让你看看他电脑里开着什么软件，输出 `[READ_PROCESS]`。\n"
+        "7. 长期记忆检索: 如果检测到下面的【相关记忆检索结果】中的内容与当前用户的话题有实质性关联（例如提及了过去的某件事、某个约定或情感），你必须输出对应的 `[SELECT_MEMORY: ID]` 来在后续环节调取完整日记。\n\n"
         "【规则】\n"
         "1. 如果检测到工具意图，请仅输出上述的一个或多个标签，不需要任何多余解释！绝对禁止进行角色扮演！\n"
         "2. 如果未检测到任何需要工具协助的意图（且不需要调取长记忆），请仅输出 `[NO_TOOLS_NEEDED]`。\n"
@@ -373,21 +370,9 @@ def parse_pre_response_node(state: AgentState) -> Dict[str, Any]:
     search_match = re.search(r'\[SEARCH_ENGINE:\s*(.*?)\]', raw_reply, re.IGNORECASE)
     if search_match: search_task = search_match.group(1).strip()
         
-    music_task = None
-    music_match = re.search(r'\[MUSIC_PLAY:\s*(.*?)\]', raw_reply, re.IGNORECASE)
-    if music_match: music_task = music_match.group(1).strip()
-        
     launcher_task = None
     launcher_match = re.search(r'\[LAUNCH_APP:\s*(.*?)\]', raw_reply, re.IGNORECASE)
     if launcher_match: launcher_task = launcher_match.group(1).strip()
-        
-    rename_task_user = None
-    user_name_match = re.search(r'\[UPDATE_USER_NAME:\s*(.*?)\]', raw_reply, re.IGNORECASE)
-    if user_name_match: rename_task_user = user_name_match.group(1).strip()
-        
-    rename_task_pet = None
-    pet_name_match = re.search(r'\[UPDATE_PET_NAME:\s*(.*?)\]', raw_reply, re.IGNORECASE)
-    if pet_name_match: rename_task_pet = pet_name_match.group(1).strip()
         
     vision_task = None
     vision_match = re.search(r'\[ANALYZE_SCREEN\]', raw_reply, re.IGNORECASE)
@@ -427,10 +412,7 @@ def parse_pre_response_node(state: AgentState) -> Dict[str, Any]:
     return {
         "browser_task": browser_task,
         "search_task": search_task,
-        "music_task": music_task,
         "launcher_task": launcher_task,
-        "rename_task_user": rename_task_user,
-        "rename_task_pet": rename_task_pet,
         "vision_task": vision_task,
         "clean_memory_task": clean_memory_task,
         "process_task": process_task,
@@ -439,13 +421,6 @@ def parse_pre_response_node(state: AgentState) -> Dict[str, Any]:
 
 def collect_tool_feedback_node(state: AgentState) -> Dict[str, Any]:
     tool_feedback = []
-    if state.get("music_result"):
-        res = state.get("music_result")
-        if res.get("success"):
-            tool_feedback.append(f"【系统反馈】已找到音乐 '{res.get('name')}' by {res.get('artists')}，并在后台开始播放。")
-        else:
-            tool_feedback.append(f"【系统反馈】未找到音乐: {state.get('music_task')}")
-            
     if state.get("browser_result"):
         tool_feedback.append(f"【系统反馈-网页内容】\n{state.get('browser_result')}")
         
@@ -454,9 +429,6 @@ def collect_tool_feedback_node(state: AgentState) -> Dict[str, Any]:
         
     if state.get("launcher_result"):
         tool_feedback.append(f"【系统反馈-应用启动】\n{state.get('launcher_result')}")
-        
-    if state.get("rename_result"):
-        tool_feedback.append(f"【系统反馈-称呼更改】\n{state.get('rename_result')}")
         
     if state.get("vision_result"):
         tool_feedback.append(f"【系统反馈-屏幕画面解析】\n{state.get('vision_result')}")
@@ -585,10 +557,6 @@ def update_history_node(state: AgentState) -> Dict[str, Any]:
     }
 
 def should_execute_tools(state: AgentState) -> str:
-    if (state.get("rename_task_user") is not None or state.get("rename_task_pet") is not None) and state.get("rename_result") is None:
-        return "execute_rename_task"
-    if state.get("music_task") and state.get("music_result") is None:
-        return "execute_music_task"
     if state.get("browser_task") and state.get("browser_result") is None:
         return "execute_browser_task"
     if state.get("search_task") and state.get("search_result") is None:

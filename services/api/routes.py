@@ -15,7 +15,6 @@ from graph.workflow import chat_workflow
 from graph.nodes import post_llm_node, update_history_node
 from workers.distillation import generate_pet_diary
 from tools.presets_manager import get_self_talk_presets_file
-from external_api import netease_music
 from time_system import get_time_greeting_prompt
 from core.databank_manager import load_databank, save_databank_state_sheet, save_databank_template_raw, get_databank_paths
 from core.stats_manager import stats_manager
@@ -191,14 +190,10 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
             "clean_content": "",
             "browser_task": None,
             "browser_result": None,
-            "music_task": None,
-            "music_result": None,
             "launcher_task": None,
             "launcher_result": None,
             "search_task": None,
             "search_result": None,
-            "rename_task_pet": None,
-            "rename_result": None,
             "vision_task": None,
             "vision_result": None,
             "request_type": "chat",
@@ -247,23 +242,9 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
                 lf.write(f"[{time_str}] {char_name}({emotion}): {clean_content}\n")
                 if browser_task:
                     lf.write(f"           [触发网页操作: {browser_task}]\n")
-                music_res = final_state.get("music_result")
-                if music_res and "error" not in music_res:
-                    lf.write(f"           [触发点歌: {music_res['name']} - {music_res['artists']}]\n")
                 lf.write("\n")
         except Exception as log_ex:
             print(f"写入每日聊天日志失败: {log_ex}")
-
-        # 如果点歌成功，提取音乐载荷返回给前端播放器
-        music_play = None
-        music_res = final_state.get("music_result")
-        if music_res and "error" not in music_res:
-            music_play = {
-                "name": music_res["name"],
-                "artists": music_res["artists"],
-                "url": music_res["url"],
-                "lyric": music_res["lyric"]
-            }
 
         thought = final_state.get("thought", "")
 
@@ -275,7 +256,6 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
             "favorability": current_fav,
             "fav_change": change,
             "history_count": len(updated_history) - 1,
-            "music_play": music_play,
             "force_sleep": force_sleep
         }
 
@@ -871,12 +851,6 @@ async def api_tools():
             "icon": "fas fa-globe"
         },
         {
-            "name": "播放音乐",
-            "command": "[MUSIC_PLAY: 歌曲名称 歌手名]",
-            "description": "自动在网易云音乐后台点播并播放指定的歌曲。",
-            "icon": "fas fa-music"
-        },
-        {
             "name": "睡眠挂机",
             "command": "[SLEEP_NOW]",
             "description": "让桌宠进入深度睡眠模式，停止主动说话和后台自言自语，直到被再次唤醒。",
@@ -887,18 +861,6 @@ async def api_tools():
             "command": "[TIMER_TASK: 分钟数, 提醒事项]",
             "description": "设定一个未来的倒计时，在时间到达时强制唤醒桌宠主动开口提醒用户。",
             "icon": "fas fa-clock"
-        },
-        {
-            "name": "更改用户称呼",
-            "command": "[UPDATE_USER_NAME: 新称呼]",
-            "description": "如果用户要求改变对他的称呼，可以调用此工具进行修改。",
-            "icon": "fas fa-user-tag"
-        },
-        {
-            "name": "更改桌宠名字",
-            "command": "[UPDATE_PET_NAME: 新名字]",
-            "description": "如果用户要求改变桌宠自己的名字，调用此工具生效。",
-            "icon": "fas fa-id-badge"
         },
         {
             "name": "视觉识图",
@@ -1393,15 +1355,10 @@ def pet_speak(payload: dict = Body(...), background_tasks: BackgroundTasks = Bac
             "clean_content": "",
             "browser_task": None,
             "browser_result": None,
-            "music_task": None,
-            "music_result": None,
             "launcher_task": None,
             "launcher_result": None,
             "search_task": None,
             "search_result": None,
-            "rename_task_user": None,
-            "rename_task_pet": None,
-            "rename_result": None,
             "vision_task": None,
             "vision_result": None,
             "request_type": request_type
@@ -1771,27 +1728,6 @@ def manual_distill_now(payload: dict = Body(default={})):
         print(f"[API ERROR] Manual distill failed: {ex}")
         return JSONResponse({"success": False, "error": str(ex)}, status_code=500)
 
-# === 网易云音乐原生控制 API ===
-@router.get("/api/music/search")
-def music_search(q: str):
-    """搜索网易云音乐单曲"""
-    if not q or not q.strip():
-        return {"success": False, "error": "Query cannot be empty"}
-    songs = netease_music.search_music(q)
-    return {"success": True, "songs": songs}
-
-@router.get("/api/music/lyric")
-def music_lyric(id: int):
-    """根据歌曲ID获取LRC歌词"""
-    lyric = netease_music.get_lyric(id)
-    return {"success": True, "lyric": lyric}
-
-@router.get("/api/music/url")
-def music_url(id: int):
-    """获取歌曲播放直链"""
-    url = netease_music.get_play_url(id)
-    return {"success": True, "url": url}
-
 # 11. 退出游戏接口
 @router.post("/api/settings/exit")
 def exit_game():
@@ -1824,15 +1760,10 @@ def preview_prompt():
         "clean_content": "",
         "browser_task": None,
         "browser_result": None,
-        "music_task": None,
-        "music_result": None,
         "launcher_task": None,
         "launcher_result": None,
         "search_task": None,
         "search_result": None,
-        "rename_task_user": None,
-        "rename_task_pet": None,
-        "rename_result": None,
         "request_type": "chat"
     }
     

@@ -303,9 +303,7 @@ body, html {
     box-sizing: border-box;
 }
 
-.input-bar.with-music {
-    bottom: 60px; /* 当音乐播放器显示时，向上移动 */
-}
+
 
 .pet-container:hover .input-bar,
 .input-bar:focus-within {
@@ -1059,154 +1057,7 @@ body, html {
     margin-top: 10px;
 }
 
-/* 网易云音乐悬浮播放器栏 */
-.music-player-bar {
-    position: absolute;
-    bottom: 8px; /* 移至最底部 */
-    left: 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: calc(100% - 24px);
-    height: 44px;
-    padding: 0 10px;
-    box-sizing: border-box;
-    background: rgba(25, 20, 25, 0.75);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--theme-glow-03);
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    z-index: 99;
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    animation: slideUpPlayer 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 
-    /* 允许点击穿透修复 */
-    pointer-events: auto;
-    -webkit-app-region: no-drag;
-}
-
-.music-player-bar.hidden {
-    display: none !important;
-}
-
-@keyframes slideUpPlayer {
-    from {
-        transform: translateY(10px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-.music-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 28%;
-    overflow: hidden;
-}
-
-.pulse-icon {
-    color: var(--theme-main);
-    font-size: 14px;
-    animation: pulseGlow 1.5s infinite ease-in-out;
-}
-
-@keyframes pulseGlow {
-    0%, 100% {
-        transform: scale(1);
-        text-shadow: 0 0 2px var(--theme-glow-03);
-    }
-    50% {
-        transform: scale(1.15);
-        text-shadow: 0 0 10px var(--theme-glow-09);
-        color: var(--theme-text-bright);
-    }
-}
-
-.music-text {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-#music-title {
-    font-size: 11px;
-    font-weight: bold;
-    color: #ffffff;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-#music-artist {
-    font-size: 9px;
-    color: var(--theme-main);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    opacity: 0.8;
-}
-
-.lyric-container {
-    flex-grow: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0 12px;
-    overflow: hidden;
-    width: 44%;
-}
-
-#live-lyrics {
-    font-size: 11px;
-    color: #ffd8a8;
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    text-shadow: 0 0 6px var(--theme-glow-05);
-    font-family: "Microsoft YaHei", sans-serif;
-}
-
-.music-controls {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    width: 28%;
-    justify-content: flex-end;
-}
-
-.ctrl-btn {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    background: rgba(255, 255, 255, 0.05);
-    color: #ffffff;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    transition: all 0.2s ease;
-}
-
-.ctrl-btn:hover {
-    background: var(--theme-glow-02);
-    border-color: var(--theme-glow-05);
-    box-shadow: 0 0 8px var(--theme-glow-04);
-    transform: scale(1.08);
-}
-
-.ctrl-btn.danger-btn:hover {
-    background: rgba(255, 50, 50, 0.2);
-    border-color: rgba(255, 50, 50, 0.5);
-    box-shadow: 0 0 8px rgba(255, 50, 50, 0.4);
-}
 
 /* =========================================================
    Peeking Mode
@@ -1214,7 +1065,6 @@ body, html {
 body.peeking-mode .input-bar,
 body.peeking-mode .bubble,
 body.peeking-mode .fav-container,
-body.peeking-mode .music-player-bar,
 body.peeking-mode #settings-modal,
 body.peeking-mode #presets-popup,
 body.peeking-mode .log-container {

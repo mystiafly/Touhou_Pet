@@ -20,8 +20,6 @@ class AgentState(TypedDict):
     thought: Optional[str]
     browser_task: Optional[str]
     browser_result: Optional[str]
-    music_task: Optional[str]
-    music_result: Optional[dict]
     launcher_task: Optional[str]
     launcher_result: Optional[str]
     search_task: Optional[str]
@@ -31,10 +29,6 @@ class AgentState(TypedDict):
     process_task: Optional[bool]
     process_result: Optional[str]
 
-    # 修改备注/名字工具
-    rename_task_user: Optional[str]
-    rename_task_pet: Optional[str]
-    rename_result: Optional[str]
     vision_task: Optional[str]
     vision_result: Optional[str]
     clean_memory_task: Optional[bool]
