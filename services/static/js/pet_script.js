@@ -2184,7 +2184,6 @@ class DesktopPet {
         });
     }
 }
-}
 
 document.addEventListener('DOMContentLoaded', () => {
     new DesktopPet();
