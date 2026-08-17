@@ -925,6 +925,7 @@ def get_config_api():
     config["preset_max_depth"] = config.get("preset_max_depth", 2)
     config["preset_block_english"] = config.get("preset_block_english", False)
     config["show_thought_button"] = config.get("show_thought_button", True)
+    config["auto_start_on_boot"] = config.get("auto_start_on_boot", False)
     config["pre_api_provider"] = config.get("pre_api_provider", "inherit")
     config["post_api_provider"] = config.get("post_api_provider", "inherit")
     config["vision_engine"] = config.get("vision_engine", "gemini")
@@ -932,6 +933,32 @@ def get_config_api():
     config["history_step_multiplier"] = config.get("history_step_multiplier", 1)
     config["success"] = True
     return config
+
+def sync_windows_autostart_registry(enable: bool):
+    """在 Windows 注册表中同步自启动项"""
+    import sys
+    if sys.platform != "win32":
+        return
+    try:
+        import winreg
+        key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
+        app_name = "RumiaDesktopPet"
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_SET_VALUE) as key:
+            if enable:
+                if getattr(sys, 'frozen', False):
+                    exe_path = f'"{sys.executable}"'
+                else:
+                    # 优先检测 Electron 可执行文件或项目启动主脚本
+                    from core.config_manager import SERVICES_DIR
+                    exe_path = f'"{sys.executable}" "{os.path.abspath(os.path.join(SERVICES_DIR, "..", "main.js"))}"'
+                winreg.SetValueEx(key, app_name, 0, winreg.REG_SZ, exe_path)
+            else:
+                try:
+                    winreg.DeleteValue(key, app_name)
+                except FileNotFoundError:
+                    pass
+    except Exception as re:
+        print(f"[AUTOSTART REGISTRY SYNC WARN] {re}")
 
 @router.post("/api/settings/config")
 def post_config_api(payload: dict = Body(...)):
@@ -961,6 +988,9 @@ def post_config_api(payload: dict = Body(...)):
             config_data["enable_auto_speak"] = bool(payload["enable_auto_speak"])
         if "show_thought_button" in payload:
             config_data["show_thought_button"] = bool(payload["show_thought_button"])
+        if "auto_start_on_boot" in payload:
+            config_data["auto_start_on_boot"] = bool(payload["auto_start_on_boot"])
+            sync_windows_autostart_registry(config_data["auto_start_on_boot"])
         if "auto_speak_multiplier" in payload:
             config_data["auto_speak_multiplier"] = float(payload["auto_speak_multiplier"])
         if "bubble_duration_multiplier" in payload:

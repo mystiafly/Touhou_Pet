@@ -48,6 +48,12 @@ window.__petIPC = {
     },
     captureImmersiveScreenshot: () => {
         return ipcRenderer.invoke('capture-immersive-screenshot');
+    },
+    setAutostart: (enable) => {
+        return ipcRenderer.invoke('set-autostart', enable);
+    },
+    getAutostart: () => {
+        return ipcRenderer.invoke('get-autostart');
     }
 };
 

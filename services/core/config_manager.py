@@ -97,7 +97,7 @@ GLOBAL_KEYS = {
     "enable_greeting", "enable_auto_speak", "auto_speak_multiplier",
     "bubble_duration_multiplier", "show_thought_button",
     "auto_minimize_on_fullscreen_game", "preset_max_depth", "preset_block_english",
-    "flow_mode", "history_step_multiplier"
+    "flow_mode", "history_step_multiplier", "auto_start_on_boot"
 }
 
 CHARACTER_CONFIG_WHITELIST = {
@@ -139,6 +139,8 @@ def get_config():
         merged["api_provider"] = "gemini"
     if "auto_minimize_on_fullscreen_game" not in merged:
         merged["auto_minimize_on_fullscreen_game"] = True
+    if "auto_start_on_boot" not in merged:
+        merged["auto_start_on_boot"] = False
     return merged
 
 def save_config(config_data):

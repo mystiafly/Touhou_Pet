@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>大贤者控制台 (Dashboard)</title>
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.22.4">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.23.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -378,6 +378,20 @@
                         </div>
                         <label class="switch">
                             <input type="checkbox" id="block-english-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-card" style="border-left: 4px solid #bd93f9;">
+                    <h3><i class="fas fa-power-off" style="color: #bd93f9;"></i> 系统与运行偏好</h3>
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <label style="font-weight: 500; font-size: 14px;">开机自启动</label>
+                            <p class="help-text" style="margin-top: 5px;">开启后，桌宠将在 Windows 开机登录系统时自动启动并在桌面陪伴你。默认关闭。</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="auto-start-toggle">
                             <span class="slider round"></span>
                         </label>
                     </div>
@@ -1385,7 +1399,7 @@
     </div>
 </div>
 
-<script src="/static/js/dashboard.js?v=1.22.4"></script>
+<script src="/static/js/dashboard.js?v=1.23.0"></script>
 
 <!-- 视觉识图配置 Modal -->
 <div id="vision-tool-modal" class="modal-overlay hidden">

@@ -376,6 +376,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     showThoughtBtnToggle.checked = configData.show_thought_button !== false;
                 }
 
+                const autoStartToggle = document.getElementById('auto-start-toggle');
+                if (autoStartToggle) {
+                    autoStartToggle.checked = configData.auto_start_on_boot === true;
+                }
+
                 const presetMaxDepth = document.getElementById('preset-max-depth');
                 if (presetMaxDepth && configData.preset_max_depth !== undefined) {
                     presetMaxDepth.value = configData.preset_max_depth.toString();
@@ -1161,6 +1166,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ show_thought_button: showThoughtBtnToggle.checked })
                 });
+            } catch (e) {
+                console.error(e);
+            }
+        });
+    }
+
+    const autoStartToggle = document.getElementById('auto-start-toggle');
+    if (autoStartToggle) {
+        autoStartToggle.addEventListener('change', async () => {
+            try {
+                const enable = autoStartToggle.checked;
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ auto_start_on_boot: enable })
+                });
+                if (window.__petIPC && typeof window.__petIPC.setAutostart === 'function') {
+                    await window.__petIPC.setAutostart(enable);
+                }
             } catch (e) {
                 console.error(e);
             }

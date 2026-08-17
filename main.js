@@ -176,6 +176,57 @@ ipcMain.handle('capture-immersive-screenshot', async (event) => {
     }
 });
 
+// 开机自启动管理
+function applyAutoStartSetting(enable) {
+    try {
+        const exePath = app.isPackaged ? process.execPath : process.argv[0];
+        const args = app.isPackaged ? [] : [path.join(__dirname, 'main.js')];
+        app.setLoginItemSettings({
+            openAtLogin: !!enable,
+            openAsHidden: false,
+            path: exePath,
+            args: args
+        });
+        logDebug(`[AUTOSTART] setLoginItemSettings openAtLogin=${enable}, path=${exePath}`);
+        return app.getLoginItemSettings().openAtLogin;
+    } catch(e) {
+        logDebug(`[AUTOSTART ERROR] ${e.message}`);
+        return false;
+    }
+}
+
+function syncInitialAutoStart() {
+    try {
+        let globalConfigPath;
+        if (app.isPackaged) {
+            const appData = process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming');
+            globalConfigPath = path.join(appData, 'RumiaDesktopPet', 'global_config.json');
+        } else {
+            globalConfigPath = path.join(__dirname, 'services', 'global_config.json');
+        }
+        if (fs.existsSync(globalConfigPath)) {
+            const cfg = JSON.parse(fs.readFileSync(globalConfigPath, 'utf-8'));
+            if (cfg.auto_start_on_boot !== undefined) {
+                applyAutoStartSetting(!!cfg.auto_start_on_boot);
+            }
+        }
+    } catch(e) {
+        logDebug(`[AUTOSTART SYNC WARN] ${e.message}`);
+    }
+}
+
+ipcMain.handle('set-autostart', (event, enable) => {
+    return applyAutoStartSetting(enable);
+});
+
+ipcMain.handle('get-autostart', (event) => {
+    try {
+        return app.getLoginItemSettings().openAtLogin;
+    } catch(e) {
+        return false;
+    }
+});
+
 
 
 // 监听由点击触发的恢复事件（点出来）
@@ -458,6 +509,7 @@ app.whenReady().then(() => {
             logDebug(`[PACKAGED ERROR] Backend EXE not found in paths: ${JSON.stringify(exePaths)}`);
         }
     }
+    syncInitialAutoStart();
     createWindow();
 });
 
