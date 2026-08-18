@@ -12,16 +12,17 @@ class SoullinkLive2DDriver {
         this.model = null;
         this.currentModelUrl = null;
         this.targetEmotion = "normal";
-        this.currentVAD = { v: 0.0, a: 0.0, d: 0.0 }; // Valence, Arousal, Dominance
-        this.targetVAD = { v: 0.0, a: 0.0, d: 0.0 };
+        this.currentVAD = { v: 0.1, a: 0.0, d: 0.0 }; // Valence, Arousal, Dominance
+        this.targetVAD = { v: 0.1, a: 0.0, d: 0.0 };
         this.isLoaded = false;
         
         // Lip-Sync Web Audio
         this.audioCtx = null;
         this.analyser = null;
-        this.audioSourceNode = null;
-        this.isLipSyncActive = false;
-        this.lipSyncRaf = null;
+        this.isSpeaking = false;
+        this.currentMouthOpen = 0.0;
+        this.targetMouthOpen = 0.0;
+        this.lipSyncParamIds = ['ParamMouthOpenY', 'ParamA', 'PARAM_MOUTH_OPEN_Y', 'PARAM_A', 'ParamMouthA'];
 
         // VAD 情绪映射坐标系
         this.EMOTION_VAD_MAP = {
@@ -40,9 +41,8 @@ class SoullinkLive2DDriver {
      * 初始化 Pixi Application 并加载指定的 Live2D 模型
      * @param {HTMLCanvasElement} canvas 
      * @param {string} modelUrl 
-     * @param {Object} options 
      */
-    async load(canvas, modelUrl, options = {}) {
+    async load(canvas, modelUrl) {
         if (!canvas || !modelUrl) return false;
         if (this.currentModelUrl === modelUrl && this.model) {
             return true;
@@ -59,11 +59,11 @@ class SoullinkLive2DDriver {
             // 1. 初始化 PIXI 应用
             const parent = canvas.parentElement || document.body;
             const width = Math.max(320, canvas.clientWidth || parent.clientWidth || 320);
-            const height = Math.max(380, canvas.clientHeight || parent.clientHeight || 380);
+            const height = Math.max(360, canvas.clientHeight || parent.clientHeight || 360);
 
             this.app = new PIXI.Application({
                 view: canvas,
-                backgroundAlpha: 0, // PIXI v7 核心透明配置（修复黑色底色）
+                backgroundAlpha: 0, // PIXI v7 核心透明配置
                 clearBeforeRender: true,
                 autoDensity: true,
                 antialias: true,
@@ -90,25 +90,42 @@ class SoullinkLive2DDriver {
                 return false;
             }
 
-            // 3. 计算自适应缩放并居中
+            // 3. 检测模型内置的 LipSync 参数组
+            this.discoverModelCapabilities();
+
+            // 4. 计算自适应缩放并居中
             this.app.stage.addChild(this.model);
             this.resizeModel(width, height);
 
-            // 4. 注册 Ticker 驱动微表情与呼吸插值
+            // 5. 挂载每帧参数注入 Hook (在 Motion 计算之后注入，防止被动作覆写)
+            if (this.model.internalModel) {
+                this.model.internalModel.on('afterMotionUpdate', () => {
+                    this.applyParametersOnMotionUpdate();
+                });
+            }
+
+            // 6. 注册 Ticker 驱动微表情与音频插值
             this.app.ticker.add((delta) => this.onTick(delta));
 
-            // 5. 绑定点击互动
+            // 7. 绑定点击互动
             this.model.on('hit', (hitAreas) => {
                 console.log(`[SOULLINK LIVE2D] Hit:`, hitAreas);
-                if (hitAreas.includes('head') || hitAreas.includes('Head')) {
-                    this.triggerRandomMotion(['tap_head', 'touch_head', 'flick_head']);
-                } else if (hitAreas.includes('body') || hitAreas.includes('Body')) {
-                    this.triggerRandomMotion(['tap_body', 'touch_body', 'shake']);
+                if (hitAreas.some(h => /head|face/i.test(h))) {
+                    this.triggerRandomMotion(['tap_head', 'touch_head', 'flick_head', '']);
+                } else if (hitAreas.some(h => /body|chest|arm/i.test(h))) {
+                    this.triggerRandomMotion(['tap_body', 'touch_body', 'shake', '']);
+                } else {
+                    this.triggerRandomMotion();
                 }
             });
 
             this.isLoaded = true;
             console.log(`[SOULLINK LIVE2D] 模型加载成功: ${modelUrl}`);
+
+            // 播放初始动作与表情
+            this.triggerRandomMotion();
+            this.setEmotion('normal');
+
             return true;
         } catch (e) {
             console.error(`[SOULLINK LIVE2D ERROR] 加载模型失败:`, e);
@@ -117,14 +134,36 @@ class SoullinkLive2DDriver {
     }
 
     /**
-     * 自适应调整模型尺寸与居中位置（适度放大，让模型主体饱满充盈窗口）
+     * 自动解析模型的内置参数名与可用表情/动作组
+     */
+    discoverModelCapabilities() {
+        if (!this.model || !this.model.internalModel) return;
+        const settings = this.model.internalModel.settings;
+        if (!settings) return;
+
+        // 提取 LipSync 参数 Ids
+        if (settings.groups) {
+            for (const g of settings.groups) {
+                if (g.Name === 'LipSync' && Array.isArray(g.Ids)) {
+                    for (const id of g.Ids) {
+                        if (!this.lipSyncParamIds.includes(id)) {
+                            this.lipSyncParamIds.unshift(id);
+                        }
+                    }
+                }
+            }
+        }
+        console.log("[SOULLINK LIVE2D] 识别到的口型同步参数:", this.lipSyncParamIds);
+    }
+
+    /**
+     * 自适应调整模型尺寸与居中位置
      */
     resizeModel(viewWidth, viewHeight) {
         if (!this.model) return;
         const rawW = this.model.width || 1;
         const rawH = this.model.height || 1;
 
-        // 计算饱满缩放比：充分利用视口高度，使模型大小与 300px PNG 立绘高度相当
         const scaleX = (viewWidth * 1.35) / rawW;
         const scaleY = (viewHeight * 1.35) / rawH;
         const finalScale = Math.min(scaleX, scaleY);
@@ -132,7 +171,7 @@ class SoullinkLive2DDriver {
         this.model.scale.set(finalScale);
         this.model.anchor.set(0.5, 0.5);
         this.model.x = viewWidth / 2;
-        this.model.y = viewHeight / 2 + 15; // 居中偏下，贴合输入栏
+        this.model.y = viewHeight / 2 + 15;
     }
 
     /**
@@ -144,18 +183,51 @@ class SoullinkLive2DDriver {
         const target = this.EMOTION_VAD_MAP[this.targetEmotion] || this.EMOTION_VAD_MAP.normal;
         this.targetVAD = { ...target };
 
-        // 尝试触发内置的命名表情 (如果模型自带 Expression)
-        if (this.model && this.model.internalModel && this.model.internalModel.motionManager) {
-            try {
-                this.model.expression(this.targetEmotion);
-            } catch (e) {
-                // 模型未定义对应名字的表情时忽略
+        if (!this.model || !this.model.internalModel) return;
+
+        // 1. 尝试触发内置的命名表情或索引
+        try {
+            const expressions = this.model.internalModel.settings.expressions || [];
+            let matchedExp = null;
+
+            if (expressions.length > 0) {
+                const emotionKey = this.targetEmotion.toLowerCase();
+                // 优先根据名称/文件名匹配
+                for (let i = 0; i < expressions.length; i++) {
+                    const exp = expressions[i];
+                    const name = (exp.Name || exp.name || "").toLowerCase();
+                    const file = (exp.File || exp.file || "").toLowerCase();
+                    if (
+                        name.includes(emotionKey) || file.includes(emotionKey) ||
+                        (emotionKey === 'happy' && (name.includes('smile') || name.includes('02') || i === 1)) ||
+                        (emotionKey === 'angry' && (name.includes('anger') || name.includes('03') || i === 2)) ||
+                        (emotionKey === 'shy' && (name.includes('blush') || name.includes('04') || i === 3)) ||
+                        (emotionKey === 'crying' && (name.includes('sad') || name.includes('05') || i === 4)) ||
+                        (emotionKey === 'sleeping' && (name.includes('sleep') || name.includes('06') || i === 5))
+                    ) {
+                        matchedExp = exp.Name || i;
+                        break;
+                    }
+                }
+
+                if (matchedExp !== null) {
+                    this.model.expression(matchedExp);
+                } else if (emotionKey === 'normal' && expressions.length > 0) {
+                    this.model.expression(expressions[0].Name || 0);
+                }
             }
+        } catch (e) {
+            console.warn("[SOULLINK LIVE2D] 表情切换提示:", e);
+        }
+
+        // 2. 触发对应的肢体微动作
+        if (this.targetEmotion !== 'normal' && this.targetEmotion !== 'sleeping') {
+            this.triggerRandomMotion();
         }
     }
 
     /**
-     * 每帧执行 VAD 连续情感平滑过渡与 FACS 微表情参数注入
+     * 每帧执行 VAD 连续情感平滑过渡与口型振幅计算
      */
     onTick(delta) {
         if (!this.model || !this.isLoaded) return;
@@ -166,58 +238,94 @@ class SoullinkLive2DDriver {
         this.currentVAD.a += (this.targetVAD.a - this.currentVAD.a) * lerpFactor;
         this.currentVAD.d += (this.targetVAD.d - this.currentVAD.d) * lerpFactor;
 
-        const v = this.currentVAD.v; // -1.0 ~ 1.0 (消极 ~ 积极)
-        const a = this.currentVAD.a; // -1.0 ~ 1.0 (低唤醒 ~ 高激动)
-        const d = this.currentVAD.d; // -1.0 ~ 1.0 (顺从/自闭 ~ 自信/傲娇)
-
-        const coreModel = this.model.internalModel ? this.model.internalModel.coreModel : null;
-        if (!coreModel) return;
-
-        // 2. FACS 肌肉单元驱动 (Facial Action Coding System)
-        try {
-            // 嘴形嘴角弯曲度 (ParamMouthForm: 1为微笑向上，-1为撇嘴向下)
-            const targetMouthForm = Math.max(-1, Math.min(1, v * 1.2));
-            this.applyParam(coreModel, ['ParamMouthForm', 'PARAM_MOUTH_FORM'], targetMouthForm, 0.1);
-
-            // 脸红 (ParamCheek: 0为正常，1为脸红害羞)
-            const isShyOrHappy = (this.targetEmotion === 'shy') ? 0.9 : (v > 0.5 ? 0.4 : 0);
-            this.applyParam(coreModel, ['ParamCheek', 'PARAM_CHEEK'], isShyOrHappy, 0.05);
-
-            // 眉毛高度与倾斜 (ParamBrowLY, ParamBrowRY, ParamBrowLAngle)
-            if (this.targetEmotion === 'angry') {
-                this.applyParam(coreModel, ['ParamBrowLY', 'ParamBrowRY', 'PARAM_BROW_L_Y', 'PARAM_BROW_R_Y'], -0.6, 0.1);
-                this.applyParam(coreModel, ['ParamBrowLAngle', 'ParamBrowRAngle', 'PARAM_BROW_L_ANGLE'], -0.8, 0.1);
-            } else if (this.targetEmotion === 'crying') {
-                this.applyParam(coreModel, ['ParamBrowLY', 'ParamBrowRY', 'PARAM_BROW_L_Y', 'PARAM_BROW_R_Y'], -0.3, 0.1);
-                this.applyParam(coreModel, ['ParamBrowLAngle', 'ParamBrowRAngle', 'PARAM_BROW_L_ANGLE'], 0.7, 0.1);
+        // 2. 口型振幅计算 (Analyser 能量 + 语音声学自然波动双重驱动)
+        if (this.isSpeaking) {
+            let audioVolume = 0.5;
+            if (this.analyser) {
+                const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+                this.analyser.getByteFrequencyData(dataArray);
+                let sum = 0;
+                for (let i = 0; i < dataArray.length; i++) {
+                    sum += dataArray[i];
+                }
+                const avg = sum / dataArray.length;
+                if (avg > 5) {
+                    audioVolume = Math.min(1.0, avg / 50.0);
+                }
             }
 
-            // 睡眠状态闭眼
-            if (this.targetEmotion === 'sleeping') {
-                this.applyParam(coreModel, ['ParamEyeLOpen', 'ParamEyeROpen', 'PARAM_EYE_L_OPEN', 'PARAM_EYE_R_OPEN'], 0.0, 0.15);
+            // 结合语音发音自然开合正弦波 (音节张合)
+            const time = Date.now() / 1000;
+            const phonemeWave = (Math.sin(time * 18) * 0.4 + 0.6) * (Math.sin(time * 7) * 0.2 + 0.8);
+            this.targetMouthOpen = Math.min(1.0, Math.max(0.1, audioVolume * phonemeWave));
+        } else {
+            this.targetMouthOpen = 0.0;
+        }
+
+        this.currentMouthOpen += (this.targetMouthOpen - this.currentMouthOpen) * 0.35;
+    }
+
+    /**
+     * 在动作系统更新完成后注入 Live2D 参数 (确保口型与微表情不被 Motion 覆盖)
+     */
+    applyParametersOnMotionUpdate() {
+        if (!this.model || !this.model.internalModel || !this.model.internalModel.coreModel) return;
+        const coreModel = this.model.internalModel.coreModel;
+
+        const v = this.currentVAD.v;
+        const mouthOpen = this.currentMouthOpen;
+
+        try {
+            // 1. 口型参数强制注入 (多参数兼容)
+            for (const paramId of this.lipSyncParamIds) {
+                this.setCoreParam(coreModel, paramId, mouthOpen);
+            }
+
+            // 2. FACS 肌肉单元与微表情注入
+            const targetMouthForm = Math.max(-1, Math.min(1, v * 1.2));
+            this.setCoreParam(coreModel, 'ParamMouthForm', targetMouthForm);
+            this.setCoreParam(coreModel, 'PARAM_MOUTH_FORM', targetMouthForm);
+
+            // 脸红
+            const isShyOrHappy = (this.targetEmotion === 'shy') ? 0.9 : (v > 0.5 ? 0.4 : 0);
+            this.setCoreParam(coreModel, 'ParamCheek', isShyOrHappy);
+            this.setCoreParam(coreModel, 'PARAM_CHEEK', isShyOrHappy);
+
+            // 眉毛与眨眼
+            if (this.targetEmotion === 'angry') {
+                this.setCoreParam(coreModel, 'ParamBrowLY', -0.6);
+                this.setCoreParam(coreModel, 'ParamBrowRY', -0.6);
+                this.setCoreParam(coreModel, 'ParamBrowLAngle', -0.8);
+                this.setCoreParam(coreModel, 'ParamBrowRAngle', -0.8);
+            } else if (this.targetEmotion === 'crying') {
+                this.setCoreParam(coreModel, 'ParamBrowLY', -0.3);
+                this.setCoreParam(coreModel, 'ParamBrowRY', -0.3);
+                this.setCoreParam(coreModel, 'ParamBrowLAngle', 0.7);
+                this.setCoreParam(coreModel, 'ParamBrowRAngle', 0.7);
+            } else if (this.targetEmotion === 'sleeping') {
+                this.setCoreParam(coreModel, 'ParamEyeLOpen', 0.0);
+                this.setCoreParam(coreModel, 'ParamEyeROpen', 0.0);
             }
         } catch (e) {
-            // 个别模型可能没有某些标准参数，安全忽略
+            // 忽略个别模型没有的参数
         }
     }
 
     /**
-     * 安全注入模型参数
+     * 安全写入 CoreModel 参数
      */
-    applyParam(coreModel, paramNames, targetValue, lerpWeight = 0.1) {
+    setCoreParam(coreModel, paramName, value) {
         if (!coreModel) return;
-        for (const name of paramNames) {
-            try {
-                if (typeof coreModel.getParameterValueById === 'function') {
-                    const currentVal = coreModel.getParameterValueById(name);
-                    if (currentVal !== undefined && !isNaN(currentVal)) {
-                        const nextVal = currentVal + (targetValue - currentVal) * lerpWeight;
-                        coreModel.setParameterValueById(name, nextVal);
-                        return;
-                    }
+        try {
+            if (typeof coreModel.setParameterValueById === 'function') {
+                coreModel.setParameterValueById(paramName, value);
+            } else if (typeof coreModel.setParameterValueByIndex === 'function') {
+                const idx = coreModel.getParameterIndex(paramName);
+                if (idx >= 0) {
+                    coreModel.setParameterValueByIndex(idx, value);
                 }
-            } catch (e) {}
-        }
+            }
+        } catch (e) {}
     }
 
     /**
@@ -242,107 +350,63 @@ class SoullinkLive2DDriver {
                 const AudioCtx = window.AudioContext || window.webkitAudioContext;
                 this.audioCtx = new AudioCtx();
             }
-            if (this.audioCtx.state === 'suspended') {
-                this.audioCtx.resume();
-            }
 
-            // 创建 AnalyserNode
             if (!this.analyser) {
                 this.analyser = this.audioCtx.createAnalyser();
-                this.analyser.fftSize = 256;
-            }
-
-            // 避免重复创建 MediaElementSource
-            if (!audioElement.__soullink_source_node) {
-                try {
-                    const source = this.audioCtx.createMediaElementSource(audioElement);
-                    source.connect(this.analyser);
-                    this.analyser.connect(this.audioCtx.destination);
-                    audioElement.__soullink_source_node = source;
-                } catch (sourceErr) {
-                    console.warn("[SOULLINK LIPSYNC WARN] 无法直连 MediaElementSource:", sourceErr);
-                }
+                this.analyser.fftSize = 128;
             }
 
             // 监听音频播放与停止
             audioElement.addEventListener('play', () => {
-                this.startLipSyncLoop();
+                if (this.audioCtx && this.audioCtx.state === 'suspended') {
+                    this.audioCtx.resume();
+                }
+                this.isSpeaking = true;
+                this.triggerRandomMotion();
             });
 
             audioElement.addEventListener('pause', () => {
-                this.stopLipSyncLoop();
+                this.isSpeaking = false;
             });
 
             audioElement.addEventListener('ended', () => {
-                this.stopLipSyncLoop();
+                this.isSpeaking = false;
             });
         } catch (e) {
             console.error("[SOULLINK LIPSYNC ERROR]", e);
         }
     }
 
-    startLipSyncLoop() {
-        this.isLipSyncActive = true;
-        const dataArray = new Uint8Array(this.analyser ? this.analyser.frequencyBinCount : 128);
-
-        const loop = () => {
-            if (!this.isLipSyncActive) {
-                this.resetMouth();
-                return;
-            }
-
-            if (this.analyser && this.model && this.model.internalModel && this.model.internalModel.coreModel) {
-                this.analyser.getByteFrequencyData(dataArray);
-                let sum = 0;
-                for (let i = 0; i < dataArray.length; i++) {
-                    sum += dataArray[i];
-                }
-                const average = sum / dataArray.length;
-                // 计算开合度 (0.0 ~ 1.0)
-                const mouthOpen = Math.min(1.0, Math.max(0.0, (average - 15) / 60));
-
-                const coreModel = this.model.internalModel.coreModel;
-                this.applyParam(coreModel, ['ParamMouthOpenY', 'PARAM_MOUTH_OPEN_Y'], mouthOpen, 0.4);
-            }
-
-            this.lipSyncRaf = requestAnimationFrame(loop);
-        };
-
-        if (this.lipSyncRaf) cancelAnimationFrame(this.lipSyncRaf);
-        this.lipSyncRaf = requestAnimationFrame(loop);
-    }
-
-    stopLipSyncLoop() {
-        this.isLipSyncActive = false;
-        if (this.lipSyncRaf) {
-            cancelAnimationFrame(this.lipSyncRaf);
-            this.lipSyncRaf = null;
-        }
-        this.resetMouth();
-    }
-
-    resetMouth() {
-        if (this.model && this.model.internalModel && this.model.internalModel.coreModel) {
-            const coreModel = this.model.internalModel.coreModel;
-            this.applyParam(coreModel, ['ParamMouthOpenY', 'PARAM_MOUTH_OPEN_Y'], 0.0, 0.2);
-        }
-    }
-
     /**
-     * 随机触发可用的 Motion
+     * 随机触发可用的动作 Motion
      */
     triggerRandomMotion(candidateGroups = []) {
-        if (!this.model) return;
-        for (const group of candidateGroups) {
-            try {
-                this.model.motion(group);
-                return;
-            } catch (e) {}
+        if (!this.model || !this.model.internalModel) return;
+        const motionManager = this.model.internalModel.motionManager;
+        if (!motionManager || !motionManager.definitions) return;
+
+        const availableGroups = Object.keys(motionManager.definitions);
+        if (availableGroups.length === 0) return;
+
+        // 如果指定了候选组，优先在候选组里找
+        for (const grp of candidateGroups) {
+            if (availableGroups.includes(grp)) {
+                try {
+                    this.model.motion(grp);
+                    return;
+                } catch (e) {}
+            }
         }
+
+        // 随机在所有动作组中播放
+        const randomGrp = availableGroups[Math.floor(Math.random() * availableGroups.length)];
+        try {
+            this.model.motion(randomGrp);
+        } catch (e) {}
     }
 
     destroy() {
-        this.stopLipSyncLoop();
+        this.isSpeaking = false;
         if (this.model) {
             try {
                 this.model.destroy();

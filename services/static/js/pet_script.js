@@ -1638,6 +1638,11 @@ class DesktopPet {
         this.bubble.style.opacity = '1';
         this.bubble.style.pointerEvents = 'auto';
 
+        // 联动 Live2D 触发说话微动作
+        if (this.spriteType === 'live2d' && window.SoullinkLive2D && window.SoullinkLive2D.isLoaded) {
+            window.SoullinkLive2D.triggerRandomMotion();
+        }
+
         // 保存当前文本用于 TTS 发音
         this.currentSpeechText = text;
         if (this.ttsBtn) {
