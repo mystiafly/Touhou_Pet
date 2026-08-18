@@ -2,6 +2,7 @@ import os
 import re
 import hashlib
 import requests
+import asyncio
 from typing import Tuple, Optional
 from dotenv import load_dotenv
 from core.config_manager import get_config, get_active_character_id
@@ -42,6 +43,13 @@ def clean_text_for_speech(text: str) -> str:
 
     return cleaned
 
+def strip_all_bracket_tags(text: str) -> str:
+    """去除发音标签如 [happy], [pitch up]，仅供不支持该标签的传统引擎 (如 Edge TTS / OpenAI) 朗读"""
+    if not text:
+        return ""
+    cleaned = re.sub(r'\[[^\]]+\]', '', text)
+    return re.sub(r'\s+', ' ', cleaned).strip()
+
 def refine_text_with_post_llm_prosody(
     text: str,
     emotion: str = "normal",
@@ -65,7 +73,7 @@ def refine_text_with_post_llm_prosody(
     lang_instruction = lang_desc_map.get(target_lang, lang_desc_map["zh"])
 
     system_prompt = (
-        "【角色语音情感精修与语种翻译引擎 (Fish Audio TTS Prosody Engine)】\n"
+        "【角色语音情感精修与语种翻译引擎 (TTS Prosody Engine)】\n"
         f"你是一个专为二次元桌宠角色【{char_name}】服务的语音台词精修大师。\n"
         f"角色人设背景：{persona}\n"
         f"当前对话情绪：[{emotion}]\n"
@@ -73,7 +81,7 @@ def refine_text_with_post_llm_prosody(
         "【任务要求】\n"
         "1. 仅输出供 TTS 朗读的最终台词文本，禁止包含任何思考过程、解释、引号或 Markdown 格式。\n"
         "2. 语言转换：按照目标朗读语种要求输出（若为日文/英文，请地道翻译并契合角色口癖与语气；若为中文，保留原口语）。\n"
-        "3. 注入 Fish Audio S2 音调与情绪控制方括号标签 [tag]：\n"
+        "3. 注入 Fish Audio S2 情绪与音调方括号标签 [tag]（若使用其他引擎系统会自动兼容过滤）：\n"
         "   - 支持的标签包括：[happy], [sad], [angry], [excited], [whisper], [pitch up], [pitch down], [speaking slowly], [speaking fast], [soft tone], [laughing], [sighing], [giggle], [long pause] 等。\n"
         "   - 请根据句子的起伏与情感，在句子开头或重点词句前合理插入 1~2 个标签，使发音充满灵魂与起伏（例如：`[pitch up] [happy] 早上好呀！` 或 `[whisper] [soft tone] べ、別にアンタのためじゃないんだからね！`）。\n"
         "4. 绝对不要输出动作描写括号（如 `(微笑)` 或 `（脸红）`），只输出纯口语与 [tag] 音调标签。"
@@ -116,14 +124,15 @@ def refine_text_with_post_llm_prosody(
         fallback_tag = "[soft tone] "
     return f"{fallback_tag}{clean_text}".strip()
 
+# 1. Fish Audio 驱动
 def generate_speech_fish_audio(styled_text: str, voice_id: Optional[str] = None) -> Tuple[bool, Optional[bytes], Optional[str]]:
-    """调用 Fish Audio TTS 接口生成 MP3 音频流"""
+    """调用 Fish Audio TTS 官方 API 生成 MP3 音频流"""
     if not styled_text or not str(styled_text).strip():
         return False, None, "没有可朗读的有效文本内容"
 
     config_data = get_config()
-    api_key = config_data.get("fish_audio_api_key") or os.getenv("FISH_AUDIO_API_KEY", "").strip()
-    base_url = config_data.get("fish_audio_base_url") or os.getenv("FISH_AUDIO_BASE_URL", "https://api.fish.audio/v1/tts").strip()
+    api_key = config_data.get("tts_api_key") or config_data.get("fish_audio_api_key") or os.getenv("FISH_AUDIO_API_KEY", "").strip()
+    base_url = config_data.get("tts_base_url") or config_data.get("fish_audio_base_url") or os.getenv("FISH_AUDIO_BASE_URL", "https://api.fish.audio/v1/tts").strip()
 
     if not api_key:
         return False, None, "未配置 Fish Audio API Key (请在控制台或 .env 中设置)"
@@ -160,6 +169,199 @@ def generate_speech_fish_audio(styled_text: str, voice_id: Optional[str] = None)
         print(f"[TTS FISH AUDIO EXCEPTION] {err_msg}")
         return False, None, err_msg
 
+# 2. Edge TTS 免费微软云端语音驱动 (免 Key)
+def generate_speech_edge_tts(styled_text: str, voice_id: Optional[str] = None, language: str = "zh") -> Tuple[bool, Optional[bytes], Optional[str]]:
+    """使用微软 Edge-TTS 免费生成高保真自然语音"""
+    clean_text = strip_all_bracket_tags(styled_text)
+    if not clean_text:
+        return False, None, "没有可朗读的有效文本内容"
+
+    try:
+        import edge_tts
+    except ImportError:
+        return False, None, "未安装 edge-tts 依赖库 (请运行 pip install edge-tts)"
+
+    # 默认音色映射
+    default_voices = {
+        "zh": "zh-CN-XiaoxiaoNeural", # 晓晓 (女，极自然)
+        "ja": "ja-JP-NanamiNeural",   # 七海 (女，日文动漫风)
+        "en": "en-US-AnaNeural"       # Ana (女，美式自然口语)
+    }
+    lang_key = language.lower() if language else "zh"
+    target_voice = default_voices.get(lang_key, "zh-CN-XiaoxiaoNeural")
+
+    # 仅当 voice_id 属于有效 Edge-TTS 音色名（如含 Neural 或短横杠，且非 Fish Audio 32位十六进制ID）时才覆盖
+    if voice_id and isinstance(voice_id, str) and ("Neural" in voice_id or "-" in voice_id) and not re.match(r'^[a-f0-9]{32}$', voice_id, re.I):
+        target_voice = voice_id
+
+    async def _async_generate() -> bytes:
+        communicate = edge_tts.Communicate(clean_text, target_voice)
+        audio_chunks = []
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                audio_chunks.append(chunk["data"])
+        return b"".join(audio_chunks)
+
+    try:
+        print(f"[TTS EDGE-TTS] 使用微软云端语音 ({target_voice}) 朗读: {clean_text}")
+        audio_bytes = asyncio.run(_async_generate())
+        if audio_bytes and len(audio_bytes) > 0:
+            print(f"[TTS EDGE-TTS] 成功合成音频: {len(audio_bytes)} 字节")
+            return True, audio_bytes, None
+        return False, None, "Edge-TTS 未返回音频数据"
+    except Exception as ex:
+        err_msg = f"Edge-TTS 合成异常: {str(ex)}"
+        print(f"[TTS EDGE-TTS ERROR] {err_msg}")
+        return False, None, err_msg
+
+# 3. OpenAI / 硅基流动 / 阶跃星辰 / 智谱兼容 Speech API 驱动
+def generate_speech_openai_compatible(
+    styled_text: str,
+    voice_id: Optional[str] = None,
+    language: str = "zh"
+) -> Tuple[bool, Optional[bytes], Optional[str]]:
+    """调用 OpenAI 兼容规范 (/v1/audio/speech) 生成语音 (支持 OpenAI、SiliconFlow、StepFun、智谱等)"""
+    clean_text = strip_all_bracket_tags(styled_text)
+    if not clean_text:
+        return False, None, "没有可朗读的有效文本内容"
+
+    config_data = get_config()
+    api_key = config_data.get("tts_api_key") or os.getenv("TTS_API_KEY", "").strip()
+    base_url = (config_data.get("tts_base_url") or "https://api.siliconflow.cn/v1/audio/speech").strip()
+    model_name = (config_data.get("tts_model_name") or "FunAudioLLM/CosyVoice2-0.5B").strip()
+
+    # 规范化 URL 路径
+    if not base_url.endswith("/speech") and not base_url.endswith("/audio/speech"):
+        if base_url.endswith("/v1"):
+            base_url = f"{base_url}/audio/speech"
+        elif base_url.endswith("/v1/"):
+            base_url = f"{base_url}audio/speech"
+
+    target_voice = voice_id or "alex" # 硅基流动与OpenAI常见默认音色
+
+    headers = {
+        "Content-Type": "application/json"
+    }
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
+    payload = {
+        "model": model_name,
+        "input": clean_text,
+        "voice": target_voice,
+        "response_format": "mp3"
+    }
+
+    try:
+        print(f"[TTS OPENAI-COMPATIBLE] 请求 {base_url} (模型: {model_name}, 音色: {target_voice}): {clean_text}")
+        response = requests.post(base_url, headers=headers, json=payload, timeout=35)
+        if response.status_code == 200:
+            audio_bytes = response.content
+            print(f"[TTS OPENAI-COMPATIBLE] 成功合成音频: {len(audio_bytes)} 字节")
+            return True, audio_bytes, None
+        else:
+            err_msg = f"OpenAI 兼容 API 错误 ({response.status_code}): {response.text}"
+            print(f"[TTS OPENAI ERROR] {err_msg}")
+            return False, None, err_msg
+    except Exception as ex:
+        err_msg = f"OpenAI 兼容 API 请求异常: {str(ex)}"
+        print(f"[TTS OPENAI EXCEPTION] {err_msg}")
+        return False, None, err_msg
+
+# 4. GPT-SoVITS 本地 / 云端 Fast-Inference API 驱动
+def generate_speech_gpt_sovits(
+    styled_text: str,
+    voice_id: Optional[str] = None,
+    language: str = "zh"
+) -> Tuple[bool, Optional[bytes], Optional[str]]:
+    """调用 GPT-SoVITS 本地/云端 WebUI 接口生成语音"""
+    clean_text = strip_all_bracket_tags(styled_text)
+    if not clean_text:
+        return False, None, "没有可朗读的有效文本内容"
+
+    config_data = get_config()
+    base_url = (config_data.get("tts_base_url") or "http://127.0.0.1:9880/tts").strip()
+
+    lang_map = { "zh": "zh", "ja": "ja", "en": "en" }
+    target_lang = lang_map.get(language.lower(), "zh")
+
+    params = {
+        "text": clean_text,
+        "text_lang": target_lang,
+        "ref_audio_path": voice_id or ""
+    }
+
+    try:
+        print(f"[TTS GPT-SOVITS] 请求本地接口 {base_url}: {clean_text}")
+        response = requests.get(base_url, params=params, timeout=30)
+        if response.status_code == 200:
+            audio_bytes = response.content
+            print(f"[TTS GPT-SOVITS] 成功合成音频: {len(audio_bytes)} 字节")
+            return True, audio_bytes, None
+        else:
+            # 尝试 POST 降级
+            response_post = requests.post(base_url, json={"text": clean_text, "text_language": target_lang}, timeout=30)
+            if response_post.status_code == 200:
+                return True, response_post.content, None
+            return False, None, f"GPT-SoVITS 响应错误 ({response.status_code}): {response.text}"
+    except Exception as ex:
+        return False, None, f"GPT-SoVITS 连接失败: {str(ex)}"
+
+# 5. 通用 HTTP 自定义接口驱动
+def generate_speech_custom_http(
+    styled_text: str,
+    voice_id: Optional[str] = None
+) -> Tuple[bool, Optional[bytes], Optional[str]]:
+    """调用通用自定义 HTTP POST 音频接口"""
+    clean_text = strip_all_bracket_tags(styled_text)
+    if not clean_text:
+        return False, None, "没有可朗读的有效文本内容"
+
+    config_data = get_config()
+    base_url = (config_data.get("tts_base_url") or "").strip()
+    api_key = (config_data.get("tts_api_key") or "").strip()
+
+    if not base_url:
+        return False, None, "未配置自定义 TTS 接口地址 (Base URL)"
+
+    headers = { "Content-Type": "application/json" }
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
+    payload = {
+        "text": clean_text,
+        "voice": voice_id or "",
+        "format": "mp3"
+    }
+
+    try:
+        response = requests.post(base_url, headers=headers, json=payload, timeout=30)
+        if response.status_code == 200:
+            return True, response.content, None
+        return False, None, f"自定义接口返回错误 ({response.status_code}): {response.text}"
+    except Exception as ex:
+        return False, None, f"自定义接口请求异常: {str(ex)}"
+
+# --- 核心调度器 ---
+def dispatch_speech_synthesis(styled_text: str, voice_id: Optional[str] = None, language: str = "zh") -> Tuple[bool, Optional[bytes], Optional[str]]:
+    """根据系统配置的 TTS 提供商统一分发合成请求"""
+    config_data = get_config()
+    provider = (config_data.get("tts_provider") or "fish_audio").lower()
+
+    if provider in ["fish_audio", "fish"]:
+        return generate_speech_fish_audio(styled_text, voice_id=voice_id)
+    elif provider in ["edge_tts", "edge", "microsoft"]:
+        return generate_speech_edge_tts(styled_text, voice_id=voice_id, language=language)
+    elif provider in ["openai", "siliconflow", "stepfun", "zhipu", "custom_openai", "openai_compatible"]:
+        return generate_speech_openai_compatible(styled_text, voice_id=voice_id, language=language)
+    elif provider in ["gpt_sovits", "gpt-sovits", "sovits"]:
+        return generate_speech_gpt_sovits(styled_text, voice_id=voice_id, language=language)
+    elif provider in ["custom_http", "custom"]:
+        return generate_speech_custom_http(styled_text, voice_id=voice_id)
+    else:
+        # 默认回退至 Fish Audio
+        return generate_speech_fish_audio(styled_text, voice_id=voice_id)
+
 def synthesize_and_cache_audio(
     text: str,
     char_id: Optional[str] = None,
@@ -175,6 +377,7 @@ def synthesize_and_cache_audio(
 
     active_char = char_id or get_active_character_id()
     config_data = get_config()
+    provider = (config_data.get("tts_provider") or "fish_audio").lower()
     char_name = config_data.get("character_name", "桌宠")
     persona = config_data.get("persona_prompt", "")
     
@@ -191,7 +394,7 @@ def synthesize_and_cache_audio(
         else:
             effective_voice_id = config_data.get("tts_voice_zh") or config_data.get("tts_voice_id", "")
 
-    # 执行 Post-LLM 精修 (翻译 + 注入 Fish Audio 情绪音调标签)
+    # 执行 Post-LLM 精修 (翻译 + 注入情绪音调标签)
     if not skip_refine:
         styled_text = refine_text_with_post_llm_prosody(
             raw_clean,
@@ -206,18 +409,18 @@ def synthesize_and_cache_audio(
     if not styled_text:
         styled_text = raw_clean
 
-    # 计算哈希指纹
-    hash_key = f"{active_char}_{target_lang}_{effective_voice_id}_{styled_text}"
+    # 计算哈希指纹 (将 provider 纳入 hash 防止切换服务商时冲突)
+    hash_key = f"{provider}_{active_char}_{target_lang}_{effective_voice_id}_{styled_text}"
     file_hash = hashlib.md5(hash_key.encode('utf-8')).hexdigest()
     cache_file = os.path.join(TTS_CACHE_DIR, f"{file_hash}.mp3")
 
     # 如果缓存已存在，直接命中返回
     if os.path.exists(cache_file) and os.path.getsize(cache_file) > 1024:
-        print(f"[TTS CACHE HIT] 命中语音缓存: {file_hash}.mp3")
+        print(f"[TTS CACHE HIT] 命中语音缓存 ({provider}): {file_hash}.mp3")
         return True, f"/api/tts/audio/{file_hash}.mp3", None
 
-    # 调用合成器
-    success, audio_bytes, error = generate_speech_fish_audio(styled_text, voice_id=effective_voice_id)
+    # 通过调度器统一合成
+    success, audio_bytes, error = dispatch_speech_synthesis(styled_text, voice_id=effective_voice_id, language=target_lang)
     if not success or not audio_bytes:
         return False, None, error
 

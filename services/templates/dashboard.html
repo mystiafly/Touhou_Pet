@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>大贤者控制台 (Dashboard)</title>
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.25.1">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.25.2">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -409,26 +409,61 @@
                     </div>
 
                     <div class="form-group" style="margin-top: 15px;">
-                        <label for="tts-provider-select" style="font-weight: 500; font-size: 14px; display: block;">TTS 引擎服务商</label>
+                        <label for="tts-provider-select" style="font-weight: 500; font-size: 14px; display: block;"><i class="fas fa-server" style="color: #ff79c6; margin-right: 4px;"></i> TTS 引擎服务商</label>
                         <select id="tts-provider-select" class="modern-select" style="margin-top: 8px; width: 100%;">
                             <option value="fish_audio">Fish Audio (官方云端 API / 推荐)</option>
+                            <option value="edge_tts">微软 Edge TTS (免费云端语音 / 免 Key)</option>
+                            <option value="siliconflow">硅基流动 (SiliconFlow / CosyVoice / F5-TTS)</option>
+                            <option value="openai">OpenAI (官方 TTS / tts-1)</option>
+                            <option value="stepfun">阶跃星辰 (StepFun / Step-TTS)</option>
+                            <option value="zhipu">智谱清言 (GLM-4-Voice / CogTTS)</option>
+                            <option value="gpt_sovits">GPT-SoVITS (本地 / 局域网 WebUI 接口)</option>
+                            <option value="custom_openai">自定义 (兼容 OpenAI /v1/audio/speech 规范)</option>
+                            <option value="custom_http">自定义 (通用 HTTP 音频返回接口)</option>
                         </select>
                     </div>
 
-                    <div class="form-group" style="margin-top: 15px;">
-                        <label for="fish-audio-key-input" style="font-weight: 500; font-size: 14px; display: block;">Fish Audio API Key</label>
+                    <div class="form-group" style="margin-top: 12px;">
+                        <label for="tts-quick-preset-select" style="font-weight: 500; font-size: 13px; color: var(--text-secondary); display: block;">
+                            <i class="fas fa-magic" style="color: #f1fa8c; margin-right: 4px;"></i> 快速填入知名厂商预设 (一键填入)
+                        </label>
+                        <select id="tts-quick-preset-select" class="modern-select" style="margin-top: 6px; width: 100%;">
+                            <option value="">-- 懒人一键选择预设并自动填入 --</option>
+                            <option value="fish_audio">Fish Audio 官方 (https://api.fish.audio/v1/tts)</option>
+                            <option value="edge_tts">微软 Edge TTS (内置免费直连 / 免 Key)</option>
+                            <option value="siliconflow">硅基流动 (https://api.siliconflow.cn/v1/audio/speech | CosyVoice2)</option>
+                            <option value="openai">OpenAI 官方 (https://api.openai.com/v1/audio/speech | tts-1)</option>
+                            <option value="stepfun">阶跃星辰 (https://api.stepfun.com/v1/audio/speech | step-tts-mini)</option>
+                            <option value="zhipu">智谱清言 (https://open.bigmodel.cn/api/paas/v4/audio/speech | cogview-3)</option>
+                            <option value="gpt_sovits">GPT-SoVITS 本地接口 (http://127.0.0.1:9880/tts)</option>
+                            <option value="custom">自定义 (自由填写 URL / Key / Model)</option>
+                        </select>
+                    </div>
+
+                    <div id="tts-key-group" class="form-group" style="margin-top: 15px;">
+                        <label for="fish-audio-key-input" style="font-weight: 500; font-size: 14px; display: block;">API Key (密码凭据)</label>
                         <div style="display: flex; gap: 8px; margin-top: 6px;">
-                            <input type="password" id="fish-audio-key-input" class="modern-input" placeholder="sk-fish-..." style="flex: 1;">
+                            <input type="password" id="fish-audio-key-input" class="modern-input" placeholder="sk-..." style="flex: 1;">
                             <button id="toggle-fish-key-vis-btn" class="action-btn outline" title="显示/隐藏 Key" style="padding: 0 12px;">
                                 <i class="fas fa-eye"></i>
                             </button>
                         </div>
-                        <p class="help-text">填入在 fish.audio 获取的 API Key，将安全存储在本地（受 .gitignore 保护）。</p>
+                        <p id="tts-key-help" class="help-text">填入对应服务商的 API Key，将安全存储在本地（受 .gitignore 保护）。使用 Edge TTS / 本地服务时可留空。</p>
                     </div>
 
-                    <div class="form-group" style="margin-top: 15px;">
-                        <label for="fish-audio-url-input" style="font-weight: 500; font-size: 14px; display: block;">Fish Audio API 接口地址</label>
+                    <div id="tts-url-group" class="form-group" style="margin-top: 15px;">
+                        <label for="fish-audio-url-input" style="font-weight: 500; font-size: 14px; display: block;">API 接口地址 (Base URL)</label>
                         <input type="text" id="fish-audio-url-input" class="modern-input" placeholder="https://api.fish.audio/v1/tts" style="width: 100%; margin-top: 6px;">
+                    </div>
+
+                    <div id="tts-model-group" class="form-group" style="margin-top: 15px;">
+                        <label for="tts-model-input" style="font-weight: 500; font-size: 14px; display: block;">模型名称 (Model Name，选填)</label>
+                        <input type="text" id="tts-model-input" class="modern-input" placeholder="例如: FunAudioLLM/CosyVoice2-0.5B 或 tts-1" style="width: 100%; margin-top: 6px;">
+                        <p class="help-text">OpenAI / 硅基流动等兼容规范需指定模型名称；Fish Audio 与 Edge TTS 无需填写。</p>
+                    </div>
+
+                    <div id="tts-provider-tip" style="margin-top: 12px; padding: 10px 12px; border-radius: 6px; background: rgba(139, 233, 253, 0.08); border-left: 3px solid #8be9fd; font-size: 12px; color: #8be9fd; line-height: 1.5;">
+                        <i class="fas fa-info-circle"></i> 当前选择：<strong>Fish Audio</strong>，支持 S2 情绪标签精修与二次元专属音色。
                     </div>
 
                     <div style="margin-top: 18px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; gap: 10px; align-items: center;">
@@ -1490,7 +1525,7 @@
     </div>
 </div>
 
-<script src="/static/js/dashboard.js?v=1.25.1"></script>
+<script src="/static/js/dashboard.js?v=1.25.2"></script>
 
 <!-- 视觉识图配置 Modal -->
 <div id="vision-tool-modal" class="modal-overlay hidden">

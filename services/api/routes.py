@@ -912,8 +912,11 @@ def get_config_api():
     config["tts_provider"] = config.get("tts_provider", "fish_audio")
     config["tts_speak_mode"] = config.get("tts_speak_mode", "click")
     config["tts_language"] = config.get("tts_language", "zh")
-    config["fish_audio_base_url"] = config.get("fish_audio_base_url", "https://api.fish.audio/v1/tts")
-    config["fish_audio_api_key"] = config.get("fish_audio_api_key", os.getenv("FISH_AUDIO_API_KEY", ""))
+    config["tts_base_url"] = config.get("tts_base_url") or config.get("fish_audio_base_url", "https://api.fish.audio/v1/tts")
+    config["tts_api_key"] = config.get("tts_api_key") or config.get("fish_audio_api_key", os.getenv("FISH_AUDIO_API_KEY", ""))
+    config["tts_model_name"] = config.get("tts_model_name", "")
+    config["fish_audio_base_url"] = config["tts_base_url"]
+    config["fish_audio_api_key"] = config["tts_api_key"]
     config["tts_voice_id"] = config.get("tts_voice_id", "")
     config["tts_voice_zh"] = config.get("tts_voice_zh", "")
     config["tts_voice_ja"] = config.get("tts_voice_ja", "")
@@ -995,10 +998,20 @@ def post_config_api(payload: dict = Body(...)):
             config_data["tts_language"] = payload["tts_language"].strip()
         if "tts_provider" in payload:
             config_data["tts_provider"] = payload["tts_provider"].strip()
+        if "tts_base_url" in payload:
+            config_data["tts_base_url"] = payload["tts_base_url"].strip()
+            config_data["fish_audio_base_url"] = config_data["tts_base_url"]
+        if "tts_api_key" in payload:
+            config_data["tts_api_key"] = payload["tts_api_key"].strip()
+            config_data["fish_audio_api_key"] = config_data["tts_api_key"]
+        if "tts_model_name" in payload:
+            config_data["tts_model_name"] = payload["tts_model_name"].strip()
         if "fish_audio_base_url" in payload:
             config_data["fish_audio_base_url"] = payload["fish_audio_base_url"].strip()
+            config_data["tts_base_url"] = config_data["fish_audio_base_url"]
         if "fish_audio_api_key" in payload:
             config_data["fish_audio_api_key"] = payload["fish_audio_api_key"].strip()
+            config_data["tts_api_key"] = config_data["fish_audio_api_key"]
         if "tts_voice_id" in payload:
             config_data["tts_voice_id"] = str(payload["tts_voice_id"]).strip()
         if "tts_voice_zh" in payload:

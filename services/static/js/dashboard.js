@@ -396,14 +396,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 const fishAudioKeyInput = document.getElementById('fish-audio-key-input');
-                if (fishAudioKeyInput && configData.fish_audio_api_key) {
-                    fishAudioKeyInput.value = configData.fish_audio_api_key;
+                if (fishAudioKeyInput) {
+                    fishAudioKeyInput.value = configData.tts_api_key || configData.fish_audio_api_key || "";
                 }
 
                 const fishAudioUrlInput = document.getElementById('fish-audio-url-input');
-                if (fishAudioUrlInput && configData.fish_audio_base_url) {
-                    fishAudioUrlInput.value = configData.fish_audio_base_url;
+                if (fishAudioUrlInput) {
+                    fishAudioUrlInput.value = configData.tts_base_url || configData.fish_audio_base_url || "https://api.fish.audio/v1/tts";
                 }
+
+                const ttsModelInput = document.getElementById('tts-model-input');
+                if (ttsModelInput) {
+                    ttsModelInput.value = configData.tts_model_name || "";
+                }
+
+                // 更新 TTS 提示信息
+                updateTtsProviderUI(configData.tts_provider || "fish_audio");
 
                 const ttsLangSelect = document.getElementById('character-tts-language-select');
                 if (ttsLangSelect && configData.tts_language) {
@@ -1263,65 +1271,191 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // TTS 说话模式独立开关 (点按说话 & 主动说话 可独立开启/共存)
-    const ttsClickToggle = document.getElementById('tts-mode-click-toggle');
-    const ttsAutoToggle = document.getElementById('tts-mode-auto-toggle');
+    // TTS 服务商与厂商预设管理
+    const TTS_PROVIDER_DEFAULTS = {
+        fish_audio: {
+            url: 'https://api.fish.audio/v1/tts',
+            model: '',
+            tip: '当前选择：<strong>Fish Audio 官方云端</strong>，支持 S2 情绪标签精修与专属音色 Reference ID。',
+            needKey: true,
+            keyPlaceholder: 'sk-fish-...'
+        },
+        edge_tts: {
+            url: '内置微软云端直连',
+            model: '',
+            tip: '当前选择：<strong>微软 Edge TTS (免费免 Key)</strong>，微软云端高拟真发音，无需配置任何 Key！',
+            needKey: false,
+            keyPlaceholder: '（免费服务，无需 Key）'
+        },
+        siliconflow: {
+            url: 'https://api.siliconflow.cn/v1/audio/speech',
+            model: 'FunAudioLLM/CosyVoice2-0.5B',
+            tip: '当前选择：<strong>硅基流动 (SiliconFlow)</strong>，支持 CosyVoice2 / F5-TTS 开源超拟真情感模型。',
+            needKey: true,
+            keyPlaceholder: 'sk-...'
+        },
+        openai: {
+            url: 'https://api.openai.com/v1/audio/speech',
+            model: 'tts-1',
+            tip: '当前选择：<strong>OpenAI 官方 TTS</strong>，支持 nova / alloy / shimmer 等预置音色。',
+            needKey: true,
+            keyPlaceholder: 'sk-...'
+        },
+        stepfun: {
+            url: 'https://api.stepfun.com/v1/audio/speech',
+            model: 'step-tts-mini',
+            tip: '当前选择：<strong>阶跃星辰 (StepFun)</strong>，Step-Audio 语音大模型，情感表现优异。',
+            needKey: true,
+            keyPlaceholder: 'sk-...'
+        },
+        zhipu: {
+            url: 'https://open.bigmodel.cn/api/paas/v4/audio/speech',
+            model: 'cogview-3',
+            tip: '当前选择：<strong>智谱清言 (GLM Voice)</strong>，智谱开放平台语音接口。',
+            needKey: true,
+            keyPlaceholder: '（智谱清言 API Key）'
+        },
+        gpt_sovits: {
+            url: 'http://127.0.0.1:9880/tts',
+            model: '',
+            tip: '当前选择：<strong>GPT-SoVITS 本地接口</strong>，请确保本地已启动 Fast-Inference WebUI。',
+            needKey: false,
+            keyPlaceholder: '（本地运行，无需 Key）'
+        },
+        custom_openai: {
+            url: 'https://your-api-domain.com/v1/audio/speech',
+            model: 'tts-1',
+            tip: '当前选择：<strong>自定义 OpenAI 规范</strong>，支持任意兼容 /v1/audio/speech 的接口。',
+            needKey: true,
+            keyPlaceholder: 'sk-...'
+        },
+        custom_http: {
+            url: 'http://127.0.0.1:50000/tts',
+            model: '',
+            tip: '当前选择：<strong>自定义通用 HTTP</strong>，返回二进制音频流接口。',
+            needKey: false,
+            keyPlaceholder: '可选填'
+        }
+    };
 
-    if (ttsClickToggle) {
-        ttsClickToggle.addEventListener('change', async () => {
-            try {
-                await fetch('/api/settings/config', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ enable_tts_click: ttsClickToggle.checked })
-                });
-            } catch (e) { console.error(e); }
-        });
+    function updateTtsProviderUI(providerKey) {
+        const info = TTS_PROVIDER_DEFAULTS[providerKey] || TTS_PROVIDER_DEFAULTS.fish_audio;
+        const tipEl = document.getElementById('tts-provider-tip');
+        if (tipEl && info.tip) {
+            tipEl.innerHTML = `<i class="fas fa-info-circle"></i> ${info.tip}`;
+        }
+        const keyInput = document.getElementById('fish-audio-key-input');
+        if (keyInput) {
+            keyInput.placeholder = info.keyPlaceholder || 'sk-...';
+        }
     }
 
-    if (ttsAutoToggle) {
-        ttsAutoToggle.addEventListener('change', async () => {
+    const ttsProviderSelect = document.getElementById('tts-provider-select');
+    const ttsQuickPresetSelect = document.getElementById('tts-quick-preset-select');
+    const fishAudioKeyInput = document.getElementById('fish-audio-key-input');
+    const fishAudioUrlInput = document.getElementById('fish-audio-url-input');
+    const ttsModelInput = document.getElementById('tts-model-input');
+
+    // 监听 TTS 服务商下拉切换
+    if (ttsProviderSelect) {
+        ttsProviderSelect.addEventListener('change', async () => {
+            const provider = ttsProviderSelect.value;
+            updateTtsProviderUI(provider);
+            const def = TTS_PROVIDER_DEFAULTS[provider];
+            if (def) {
+                if (fishAudioUrlInput && def.url && (!fishAudioUrlInput.value || fishAudioUrlInput.value.includes('fish.audio') || fishAudioUrlInput.value.includes('内置') || fishAudioUrlInput.value.includes('siliconflow') || fishAudioUrlInput.value.includes('openai.com') || fishAudioUrlInput.value.includes('stepfun') || fishAudioUrlInput.value.includes('9880'))) {
+                    fishAudioUrlInput.value = def.url;
+                }
+                if (ttsModelInput && def.model) {
+                    ttsModelInput.value = def.model;
+                }
+            }
             try {
                 await fetch('/api/settings/config', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
-                        enable_tts_auto: ttsAutoToggle.checked,
-                        tts_speak_mode: ttsAutoToggle.checked ? 'auto' : 'click'
+                        tts_provider: provider,
+                        tts_base_url: fishAudioUrlInput ? fishAudioUrlInput.value.trim() : '',
+                        tts_model_name: ttsModelInput ? ttsModelInput.value.trim() : ''
                     })
                 });
             } catch (e) { console.error(e); }
         });
     }
 
-    // Fish Audio Key / URL 变更保存
-    const fishAudioKeyInput = document.getElementById('fish-audio-key-input');
+    // 监听快速填入预设一键选择
+    if (ttsQuickPresetSelect) {
+        ttsQuickPresetSelect.addEventListener('change', async () => {
+            const presetVal = ttsQuickPresetSelect.value;
+            if (!presetVal) return;
+            const targetProvider = presetVal === 'custom' ? 'custom_openai' : presetVal;
+            if (ttsProviderSelect) {
+                ttsProviderSelect.value = targetProvider;
+            }
+            const def = TTS_PROVIDER_DEFAULTS[targetProvider] || TTS_PROVIDER_DEFAULTS.fish_audio;
+            if (fishAudioUrlInput && def.url) {
+                fishAudioUrlInput.value = def.url;
+            }
+            if (ttsModelInput) {
+                ttsModelInput.value = def.model || '';
+            }
+            updateTtsProviderUI(targetProvider);
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        tts_provider: targetProvider,
+                        tts_base_url: fishAudioUrlInput ? fishAudioUrlInput.value.trim() : '',
+                        tts_model_name: ttsModelInput ? ttsModelInput.value.trim() : ''
+                    })
+                });
+            } catch (e) { console.error(e); }
+            ttsQuickPresetSelect.value = "";
+        });
+    }
+
+    // API Key / URL / Model 变更保存
     if (fishAudioKeyInput) {
         fishAudioKeyInput.addEventListener('change', async () => {
             try {
                 await fetch('/api/settings/config', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ fish_audio_api_key: fishAudioKeyInput.value.trim() })
+                    body: JSON.stringify({
+                        tts_api_key: fishAudioKeyInput.value.trim(),
+                        fish_audio_api_key: fishAudioKeyInput.value.trim()
+                    })
                 });
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         });
     }
 
-    const fishAudioUrlInput = document.getElementById('fish-audio-url-input');
     if (fishAudioUrlInput) {
         fishAudioUrlInput.addEventListener('change', async () => {
             try {
                 await fetch('/api/settings/config', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ fish_audio_base_url: fishAudioUrlInput.value.trim() })
+                    body: JSON.stringify({
+                        tts_base_url: fishAudioUrlInput.value.trim(),
+                        fish_audio_base_url: fishAudioUrlInput.value.trim()
+                    })
                 });
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
+        });
+    }
+
+    if (ttsModelInput) {
+        ttsModelInput.addEventListener('change', async () => {
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ tts_model_name: ttsModelInput.value.trim() })
+                });
+            } catch (e) { console.error(e); }
         });
     }
 
