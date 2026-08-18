@@ -118,6 +118,10 @@ class SoullinkLive2DDriver {
                 return false;
             }
 
+            // 缓存未缩放前的原始模型宽高 (防止 scale.set 改变 model.width 产生递归乘积放大)
+            this.rawModelWidth = this.model.internalModel?.originalWidth || this.model.internalModel?.width || this.model.width || 1000;
+            this.rawModelHeight = this.model.internalModel?.originalHeight || this.model.internalModel?.height || this.model.height || 1000;
+
             // 3. 检测模型内置的 LipSync 参数组
             this.discoverModelCapabilities();
 
@@ -189,8 +193,8 @@ class SoullinkLive2DDriver {
      */
     resizeModel(viewWidth, viewHeight) {
         if (!this.model) return;
-        const rawW = this.model.width || 1;
-        const rawH = this.model.height || 1;
+        const rawW = this.rawModelWidth || 1000;
+        const rawH = this.rawModelHeight || 1000;
 
         const scaleX = (viewWidth * 1.35) / rawW;
         const scaleY = (viewHeight * 1.35) / rawH;
@@ -478,6 +482,8 @@ class SoullinkLive2DDriver {
         this.isLoaded = false;
         this.currentModelUrl = null;
         this.canvas = null;
+        this.rawModelWidth = 0;
+        this.rawModelHeight = 0;
     }
 }
 
