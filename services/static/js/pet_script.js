@@ -174,6 +174,8 @@ class DesktopPet {
                     'sleeping': [prefix + 'sleeping.png', prefix + 'sleeping_1.png', prefix + 'sleeping_2.png']
                 };
                 this.img.src = prefix + 'normal.png';
+            }
+
             this.spriteType = data.sprite_type || 'sprite';
             this.live2dModelUrl = data.live2d_model_url || '';
             const live2dCanvas = document.getElementById('live2d-canvas');
