@@ -98,7 +98,7 @@ GLOBAL_KEYS = {
     "bubble_duration_multiplier", "show_thought_button",
     "auto_minimize_on_fullscreen_game", "preset_max_depth", "preset_block_english",
     "flow_mode", "history_step_multiplier", "auto_start_on_boot",
-    "enable_tts", "tts_provider", "tts_speak_mode", "fish_audio_base_url", "fish_audio_api_key"
+    "enable_tts", "enable_tts_click", "enable_tts_auto", "tts_provider", "tts_speak_mode", "fish_audio_base_url", "fish_audio_api_key"
 }
 
 CHARACTER_CONFIG_WHITELIST = {
@@ -145,6 +145,10 @@ def get_config():
         merged["auto_start_on_boot"] = False
     if "enable_tts" not in merged:
         merged["enable_tts"] = True
+    if "enable_tts_click" not in merged:
+        merged["enable_tts_click"] = True
+    if "enable_tts_auto" not in merged:
+        merged["enable_tts_auto"] = False
     if "tts_speak_mode" not in merged:
         merged["tts_speak_mode"] = "click"
     if "tts_language" not in merged:

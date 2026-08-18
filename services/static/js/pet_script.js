@@ -181,7 +181,8 @@ class DesktopPet {
             this.enableAutoSpeak = data.enable_auto_speak !== false;
             this.showThoughtButton = data.show_thought_button !== false;
             this.enableTts = data.enable_tts !== false;
-            this.ttsSpeakMode = data.tts_speak_mode || "click";
+            this.enableTtsClick = data.enable_tts_click !== false;
+            this.enableTtsAuto = data.enable_tts_auto === true || data.tts_speak_mode === "auto";
             this.autoSpeakMultiplier = data.auto_speak_multiplier || 1.0;
             this.bubbleDurationMultiplier = data.bubble_duration_multiplier || 1.0;
             
@@ -1622,7 +1623,7 @@ class DesktopPet {
             }
             this.ttsBtn.classList.remove('playing');
             this.ttsBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
-            if (this.enableTts === false || this.ttsSpeakMode === 'off') {
+            if (this.enableTts === false || this.enableTtsClick === false) {
                 this.ttsBtn.classList.add('hidden');
             } else {
                 this.ttsBtn.classList.remove('hidden');
@@ -1774,7 +1775,7 @@ class DesktopPet {
     }
 
     handleAutoTtsPlay(audioUrl) {
-        if (!audioUrl || this.enableTts === false || this.ttsSpeakMode === 'off') return;
+        if (!audioUrl || this.enableTts === false) return;
         try {
             if (this.ttsAudio) {
                 this.ttsAudio.pause();

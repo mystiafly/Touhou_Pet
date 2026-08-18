@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>大贤者控制台 (Dashboard)</title>
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.25.0">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.25.1">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -388,8 +388,8 @@
                     
                     <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08);">
                         <div>
-                            <label style="font-weight: 500; font-size: 14px;"><i class="fas fa-hand-pointer" style="color: #8be9fd; margin-right: 4px;"></i> 点按说话 (Click-to-Speak)</label>
-                            <p class="help-text" style="margin-top: 4px;">桌宠气泡右上角显示 🔊 朗读按钮，点击时按需合成发音（节省 API 额度，与主动说话互斥）。</p>
+                            <label style="font-weight: 500; font-size: 14px;"><i class="fas fa-hand-pointer" style="color: #8be9fd; margin-right: 4px;"></i> 点按说话 (Click-to-Speak / 随时重播)</label>
+                            <p class="help-text" style="margin-top: 4px;">桌宠气泡右上角显示 🔊 朗读按钮，支持随时点击朗读或重播当前台词。</p>
                         </div>
                         <label class="switch">
                             <input type="checkbox" id="tts-mode-click-toggle">
@@ -400,7 +400,7 @@
                     <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08);">
                         <div>
                             <label style="font-weight: 500; font-size: 14px;"><i class="fas fa-bullhorn" style="color: #50fa7b; margin-right: 4px;"></i> 主动说话 (Proactive Auto-Speak)</label>
-                            <p class="help-text" style="margin-top: 4px;">沉浸发音模式：桌宠每次对白与搭话均自动调用 TTS 开口朗读（与点按说话互斥）。</p>
+                            <p class="help-text" style="margin-top: 4px;">沉浸发音模式：桌宠每次对白与搭话均自动调用 TTS 开口朗读（可与点按按钮并存，随时重听）。</p>
                         </div>
                         <label class="switch">
                             <input type="checkbox" id="tts-mode-auto-toggle">
@@ -1490,7 +1490,7 @@
     </div>
 </div>
 
-<script src="/static/js/dashboard.js?v=1.25.0"></script>
+<script src="/static/js/dashboard.js?v=1.25.1"></script>
 
 <!-- 视觉识图配置 Modal -->
 <div id="vision-tool-modal" class="modal-overlay hidden">

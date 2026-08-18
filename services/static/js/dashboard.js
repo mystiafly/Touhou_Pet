@@ -383,12 +383,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const ttsClickToggle = document.getElementById('tts-mode-click-toggle');
                 const ttsAutoToggle = document.getElementById('tts-mode-auto-toggle');
-                const speakMode = configData.tts_speak_mode || (configData.enable_tts !== false ? 'click' : 'off');
                 if (ttsClickToggle) {
-                    ttsClickToggle.checked = (speakMode === 'click');
+                    ttsClickToggle.checked = configData.enable_tts_click !== false;
                 }
                 if (ttsAutoToggle) {
-                    ttsAutoToggle.checked = (speakMode === 'auto');
+                    ttsAutoToggle.checked = configData.enable_tts_auto === true || configData.tts_speak_mode === 'auto';
                 }
 
                 const ttsProviderSelect = document.getElementById('tts-provider-select');
@@ -1264,55 +1263,34 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // TTS 说话模式互斥切换 (点按说话 vs 主动说话)
+    // TTS 说话模式独立开关 (点按说话 & 主动说话 可独立开启/共存)
     const ttsClickToggle = document.getElementById('tts-mode-click-toggle');
     const ttsAutoToggle = document.getElementById('tts-mode-auto-toggle');
 
-    if (ttsClickToggle && ttsAutoToggle) {
+    if (ttsClickToggle) {
         ttsClickToggle.addEventListener('change', async () => {
-            if (ttsClickToggle.checked) {
-                ttsAutoToggle.checked = false;
-                try {
-                    await fetch('/api/settings/config', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ enable_tts: true, tts_speak_mode: 'click' })
-                    });
-                } catch (e) { console.error(e); }
-            } else {
-                if (!ttsAutoToggle.checked) {
-                    try {
-                        await fetch('/api/settings/config', {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({ enable_tts: false, tts_speak_mode: 'off' })
-                        });
-                    } catch (e) { console.error(e); }
-                }
-            }
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ enable_tts_click: ttsClickToggle.checked })
+                });
+            } catch (e) { console.error(e); }
         });
+    }
 
+    if (ttsAutoToggle) {
         ttsAutoToggle.addEventListener('change', async () => {
-            if (ttsAutoToggle.checked) {
-                ttsClickToggle.checked = false;
-                try {
-                    await fetch('/api/settings/config', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ enable_tts: true, tts_speak_mode: 'auto' })
-                    });
-                } catch (e) { console.error(e); }
-            } else {
-                if (!ttsClickToggle.checked) {
-                    try {
-                        await fetch('/api/settings/config', {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({ enable_tts: false, tts_speak_mode: 'off' })
-                        });
-                    } catch (e) { console.error(e); }
-                }
-            }
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        enable_tts_auto: ttsAutoToggle.checked,
+                        tts_speak_mode: ttsAutoToggle.checked ? 'auto' : 'click'
+                    })
+                });
+            } catch (e) { console.error(e); }
         });
     }
 

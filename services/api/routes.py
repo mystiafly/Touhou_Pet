@@ -251,7 +251,8 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
         # 检查是否开启“主动说话”模式，若是则自动生成语音
         audio_url = None
         cfg = get_config()
-        if cfg.get("enable_tts") and cfg.get("tts_speak_mode") == "auto":
+        is_auto_speak = cfg.get("enable_tts_auto") or cfg.get("tts_speak_mode") == "auto"
+        if cfg.get("enable_tts", True) and is_auto_speak:
             try:
                 from core.tts_client import synthesize_and_cache_audio
                 tts_ok, url, err = synthesize_and_cache_audio(
@@ -906,6 +907,8 @@ def get_config_api():
     config["show_thought_button"] = config.get("show_thought_button", True)
     config["auto_start_on_boot"] = config.get("auto_start_on_boot", False)
     config["enable_tts"] = config.get("enable_tts", True)
+    config["enable_tts_click"] = config.get("enable_tts_click", True)
+    config["enable_tts_auto"] = config.get("enable_tts_auto", False)
     config["tts_provider"] = config.get("tts_provider", "fish_audio")
     config["tts_speak_mode"] = config.get("tts_speak_mode", "click")
     config["tts_language"] = config.get("tts_language", "zh")
@@ -982,6 +985,10 @@ def post_config_api(payload: dict = Body(...)):
             sync_windows_autostart_registry(config_data["auto_start_on_boot"])
         if "enable_tts" in payload:
             config_data["enable_tts"] = bool(payload["enable_tts"])
+        if "enable_tts_click" in payload:
+            config_data["enable_tts_click"] = bool(payload["enable_tts_click"])
+        if "enable_tts_auto" in payload:
+            config_data["enable_tts_auto"] = bool(payload["enable_tts_auto"])
         if "tts_speak_mode" in payload:
             config_data["tts_speak_mode"] = payload["tts_speak_mode"].strip()
         if "tts_language" in payload:
@@ -1441,7 +1448,8 @@ def pet_speak(payload: dict = Body(...), background_tasks: BackgroundTasks = Bac
         # 检查是否开启“主动说话”模式，若是则自动生成语音
         audio_url = None
         cfg = get_config()
-        if cfg.get("enable_tts") and cfg.get("tts_speak_mode") == "auto":
+        is_auto_speak = cfg.get("enable_tts_auto") or cfg.get("tts_speak_mode") == "auto"
+        if cfg.get("enable_tts", True) and is_auto_speak:
             try:
                 from core.tts_client import synthesize_and_cache_audio
                 tts_ok, url, err = synthesize_and_cache_audio(
