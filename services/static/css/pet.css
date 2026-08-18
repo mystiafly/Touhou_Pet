@@ -155,11 +155,20 @@ body, html {
     font-size: 0.95em;
 }
 
-/* 气泡右上角思维链微按钮 */
-.bubble-thought-btn {
+/* 气泡右上角微按钮操作栏 */
+.bubble-actions {
     position: absolute;
     top: 6px;
     right: 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    z-index: 5;
+    pointer-events: auto;
+}
+
+.bubble-action-btn,
+.bubble-thought-btn {
     width: 22px;
     height: 22px;
     border-radius: 50%;
@@ -174,9 +183,9 @@ body, html {
     pointer-events: auto;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-    z-index: 5;
 }
 
+.bubble-action-btn:hover,
 .bubble-thought-btn:hover {
     background: var(--theme-main);
     color: #fff;
@@ -184,11 +193,30 @@ body, html {
     box-shadow: 0 0 10px var(--theme-main);
 }
 
+.bubble-action-btn.active,
 .bubble-thought-btn.active {
     background: var(--theme-main);
     color: #fff;
 }
 
+.bubble-action-btn.playing {
+    background: var(--theme-main);
+    color: #fff;
+    animation: ttsPulse 1.2s infinite ease-in-out;
+}
+
+@keyframes ttsPulse {
+    0%, 100% {
+        box-shadow: 0 0 4px var(--theme-main);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 12px var(--theme-main), 0 0 20px var(--theme-main);
+        transform: scale(1.15);
+    }
+}
+
+.bubble-action-btn.hidden,
 .bubble-thought-btn.hidden {
     display: none !important;
 }

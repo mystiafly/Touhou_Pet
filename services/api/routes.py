@@ -888,6 +888,11 @@ def get_config_api():
     config["preset_block_english"] = config.get("preset_block_english", False)
     config["show_thought_button"] = config.get("show_thought_button", True)
     config["auto_start_on_boot"] = config.get("auto_start_on_boot", False)
+    config["enable_tts"] = config.get("enable_tts", True)
+    config["tts_provider"] = config.get("tts_provider", "fish_audio")
+    config["fish_audio_base_url"] = config.get("fish_audio_base_url", "https://api.fish.audio/v1/tts")
+    config["fish_audio_api_key"] = config.get("fish_audio_api_key", os.getenv("FISH_AUDIO_API_KEY", ""))
+    config["tts_voice_id"] = config.get("tts_voice_id", "")
     config["pre_api_provider"] = config.get("pre_api_provider", "inherit")
     config["post_api_provider"] = config.get("post_api_provider", "inherit")
     config["vision_engine"] = config.get("vision_engine", "gemini")
@@ -953,6 +958,16 @@ def post_config_api(payload: dict = Body(...)):
         if "auto_start_on_boot" in payload:
             config_data["auto_start_on_boot"] = bool(payload["auto_start_on_boot"])
             sync_windows_autostart_registry(config_data["auto_start_on_boot"])
+        if "enable_tts" in payload:
+            config_data["enable_tts"] = bool(payload["enable_tts"])
+        if "tts_provider" in payload:
+            config_data["tts_provider"] = payload["tts_provider"].strip()
+        if "fish_audio_base_url" in payload:
+            config_data["fish_audio_base_url"] = payload["fish_audio_base_url"].strip()
+        if "fish_audio_api_key" in payload:
+            config_data["fish_audio_api_key"] = payload["fish_audio_api_key"].strip()
+        if "tts_voice_id" in payload:
+            config_data["tts_voice_id"] = str(payload["tts_voice_id"]).strip()
         if "auto_speak_multiplier" in payload:
             config_data["auto_speak_multiplier"] = float(payload["auto_speak_multiplier"])
         if "bubble_duration_multiplier" in payload:
@@ -2785,3 +2800,30 @@ async def api_save_immersive_config(request: Request):
         return JSONResponse({"success": True})
     except Exception as e:
         return JSONResponse({"success": False, "message": str(e)}, status_code=500)
+
+
+@router.post("/api/tts/speak")
+def api_tts_speak(payload: dict = Body(...)):
+    """接收文本并调用 TTS 接口生成语音"""
+    text = payload.get("text", "")
+    char_id = payload.get("character_id")
+    voice_id = payload.get("voice_id")
+    if not text or not str(text).strip():
+        return JSONResponse({"success": False, "error": "文本为空"}, status_code=400)
+
+    from core.tts_client import synthesize_and_cache_audio
+    success, audio_url, error = synthesize_and_cache_audio(str(text).strip(), char_id=char_id, voice_id=voice_id)
+    if success:
+        return JSONResponse({"success": True, "audio_url": audio_url})
+    else:
+        return JSONResponse({"success": False, "error": error or "语音合成失败"}, status_code=500)
+
+
+@router.get("/api/tts/audio/{filename}")
+def api_tts_audio_file(filename: str):
+    """读取并提供 TTS 缓存音频文件"""
+    from core.tts_client import TTS_CACHE_DIR
+    file_path = os.path.join(TTS_CACHE_DIR, filename)
+    if not os.path.exists(file_path):
+        return JSONResponse({"error": "Audio file not found"}, status_code=404)
+    return FileResponse(file_path, media_type="audio/mpeg")

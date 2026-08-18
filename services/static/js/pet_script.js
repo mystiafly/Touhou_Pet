@@ -106,6 +106,10 @@ class DesktopPet {
         this.closeThoughtBtn = document.getElementById('close-thought-btn');
         this.currentThought = '';
         this.showThoughtButton = true;
+        this.ttsBtn = document.getElementById('bubble-tts-btn');
+        this.ttsAudio = new Audio();
+        this.currentSpeechText = '';
+        this.isTtsLoading = false;
         this.img = document.getElementById('pet-img');
         this.favScore = document.getElementById('fav-score');
         this.favContainer = document.getElementById('fav-container');
@@ -283,6 +287,28 @@ class DesktopPet {
             this.closeThoughtBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.closeThoughtBox();
+            });
+        }
+
+        if (this.ttsBtn) {
+            this.ttsBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.handleTtsSpeak();
+            });
+        }
+        if (this.ttsAudio) {
+            this.ttsAudio.addEventListener('ended', () => {
+                if (this.ttsBtn) {
+                    this.ttsBtn.classList.remove('playing');
+                    this.ttsBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+                }
+            });
+            this.ttsAudio.addEventListener('error', (e) => {
+                console.error("[TTS AUDIO PLAY ERROR]", e);
+                if (this.ttsBtn) {
+                    this.ttsBtn.classList.remove('playing');
+                    this.ttsBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+                }
             });
         }
 
@@ -1585,6 +1611,17 @@ class DesktopPet {
         this.bubble.style.opacity = '1';
         this.bubble.style.pointerEvents = 'auto';
 
+        // 保存当前文本用于 TTS 发音
+        this.currentSpeechText = text;
+        if (this.ttsBtn) {
+            if (this.ttsAudio && !this.ttsAudio.paused) {
+                this.ttsAudio.pause();
+                this.ttsAudio.currentTime = 0;
+            }
+            this.ttsBtn.classList.remove('playing');
+            this.ttsBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+        }
+
         // 思维链观察微按钮控制
         this.currentThought = thought || "";
         if (this.thoughtBtn) {
@@ -1663,6 +1700,70 @@ class DesktopPet {
         if (!this.thoughtBox) return;
         this.thoughtBox.classList.add('hidden');
         if (this.thoughtBtn) this.thoughtBtn.classList.remove('active');
+    }
+
+    async handleTtsSpeak() {
+        let textToRead = this.currentSpeechText;
+        if (!textToRead && this.bubbleContent) {
+            textToRead = this.bubbleContent.innerText.trim();
+        }
+        if (!textToRead || textToRead === '...') return;
+
+        // 如果正在播放，再次点击则停止播放
+        if (this.ttsAudio && !this.ttsAudio.paused) {
+            this.ttsAudio.pause();
+            this.ttsAudio.currentTime = 0;
+            if (this.ttsBtn) {
+                this.ttsBtn.classList.remove('playing');
+                this.ttsBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+            }
+            return;
+        }
+
+        if (this.isTtsLoading) return;
+        this.isTtsLoading = true;
+
+        if (this.ttsBtn) {
+            this.ttsBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        }
+
+        try {
+            const resp = await fetch('/api/tts/speak', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    text: textToRead,
+                    character_id: this.characterId
+                })
+            });
+            const data = await resp.json();
+            if (data.success && data.audio_url) {
+                this.ttsAudio.src = data.audio_url;
+                await this.ttsAudio.play();
+                if (this.ttsBtn) {
+                    this.ttsBtn.classList.add('playing');
+                    this.ttsBtn.innerHTML = '<i class="fas fa-volume-high"></i>';
+                }
+            } else {
+                console.error("[TTS API ERROR]", data.error);
+                if (this.ttsBtn) {
+                    this.ttsBtn.innerHTML = '<i class="fas fa-exclamation-circle"></i>';
+                    setTimeout(() => {
+                        if (this.ttsBtn) this.ttsBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+                    }, 3000);
+                }
+            }
+        } catch (err) {
+            console.error("[TTS FETCH ERROR]", err);
+            if (this.ttsBtn) {
+                this.ttsBtn.innerHTML = '<i class="fas fa-exclamation-circle"></i>';
+                setTimeout(() => {
+                    if (this.ttsBtn) this.ttsBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+                }, 3000);
+            }
+        } finally {
+            this.isTtsLoading = false;
+        }
     }
 
     async sendMessage() {

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Desktop Pet</title>
-    <link rel="stylesheet" href="/static/css/pet.css?v=1.23.3">
+    <link rel="stylesheet" href="/static/css/pet.css?v=1.24.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Premium Interactive Network Graph Vis.js -->
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
@@ -60,9 +60,14 @@
 
     <!-- 头顶气泡 -->
     <div id="speech-bubble" class="bubble" style="opacity: 0;">
-        <button id="bubble-thought-btn" class="bubble-thought-btn hidden" title="观察角色思维链">
-            <i class="fas fa-brain"></i>
-        </button>
+        <div class="bubble-actions">
+            <button id="bubble-tts-btn" class="bubble-action-btn" title="朗读当前对话 (TTS)">
+                <i class="fas fa-volume-up"></i>
+            </button>
+            <button id="bubble-thought-btn" class="bubble-action-btn hidden" title="观察角色思维链">
+                <i class="fas fa-brain"></i>
+            </button>
+        </div>
         <p id="bubble-content">...</p>
         <div id="bubble-thought-box" class="bubble-thought-box hidden">
             <div class="bubble-thought-header">
@@ -156,6 +161,6 @@
     </div>
 </div>
 
-<script src="/static/js/pet_script.js?v=1.23.3"></script>
+<script src="/static/js/pet_script.js?v=1.24.0"></script>
 </body>
 </html>

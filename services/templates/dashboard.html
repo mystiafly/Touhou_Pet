@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>大贤者控制台 (Dashboard)</title>
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.23.3">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.24.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -383,6 +383,50 @@
                     </div>
                 </div>
 
+                <div class="settings-card" style="border-left: 4px solid #ff79c6;">
+                    <h3><i class="fas fa-volume-up" style="color: #ff79c6;"></i> 语音合成设置 (TTS)</h3>
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <label style="font-weight: 500; font-size: 14px;">启用语音服务</label>
+                            <p class="help-text" style="margin-top: 5px;">开启后，桌宠气泡右上角将显示 🔊 朗读按钮，点击即可调用 TTS 朗读台词。</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="enable-tts-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="tts-provider-select" style="font-weight: 500; font-size: 14px; display: block;">TTS 引擎服务商</label>
+                        <select id="tts-provider-select" class="modern-select" style="margin-top: 8px; width: 100%;">
+                            <option value="fish_audio">Fish Audio (官方云端 API / 推荐)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="fish-audio-key-input" style="font-weight: 500; font-size: 14px; display: block;">Fish Audio API Key</label>
+                        <div style="display: flex; gap: 8px; margin-top: 6px;">
+                            <input type="password" id="fish-audio-key-input" class="modern-input" placeholder="sk-fish-..." style="flex: 1;">
+                            <button id="toggle-fish-key-vis-btn" class="action-btn outline" title="显示/隐藏 Key" style="padding: 0 12px;">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <p class="help-text">填入在 fish.audio 获取的 API Key，将安全存储在本地（受 .gitignore 保护）。</p>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="fish-audio-url-input" style="font-weight: 500; font-size: 14px; display: block;">Fish Audio API 接口地址</label>
+                        <input type="text" id="fish-audio-url-input" class="modern-input" placeholder="https://api.fish.audio/v1/tts" style="width: 100%; margin-top: 6px;">
+                    </div>
+
+                    <div style="margin-top: 18px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="tts-test-input" class="modern-input" placeholder="输入测试语音文本..." value="你好呀！我是桌宠。" style="flex: 1;">
+                        <button id="test-tts-btn" class="action-btn">
+                            <i class="fas fa-play"></i> 测试发音
+                        </button>
+                    </div>
+                </div>
+
                 <div class="settings-card" style="border-left: 4px solid #bd93f9;">
                     <h3><i class="fas fa-power-off" style="color: #bd93f9;"></i> 系统与运行偏好</h3>
                     <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
@@ -656,6 +700,18 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <div class="settings-card" style="border-left: 4px solid #ff79c6;">
+                    <h3><i class="fas fa-microphone-alt" style="color: #ff79c6;"></i> 角色专属音色 (Voice Model ID)</h3>
+                    <div class="form-group">
+                        <label for="character-tts-voice-id" style="font-weight: 500; font-size: 14px; display: block;">Fish Audio 音色模型 ID (Reference ID)</label>
+                        <input type="text" id="character-tts-voice-id" class="modern-input" placeholder="留空使用默认音色，或填入 Fish Audio 声音 ID" style="width: 100%; margin-top: 6px;">
+                        <p class="help-text" style="margin-top: 6px;">可前往 <a href="https://fish.audio/zh-CN/discovery/" target="_blank" style="color: #ff79c6; text-decoration: underline;">Fish Audio 声音模型广场</a> 复制任何喜欢的二次元/动漫角色音色 ID（例如：<code>800a742870194833b584d4b182046461</code>）。每个桌宠角色可单独设置各自的专属音色！</p>
+                    </div>
+                    <button id="save-char-voice-btn" class="action-btn primary" style="margin-top: 10px;">
+                        <i class="fas fa-save"></i> 保存当前角色音色
+                    </button>
                 </div>
 
                 <div class="settings-card" style="border: 1px dashed rgba(139, 233, 253, 0.4); background: rgba(30, 31, 41, 0.5);">
@@ -1399,7 +1455,7 @@
     </div>
 </div>
 
-<script src="/static/js/dashboard.js?v=1.23.3"></script>
+<script src="/static/js/dashboard.js?v=1.24.0"></script>
 
 <!-- 视觉识图配置 Modal -->
 <div id="vision-tool-modal" class="modal-overlay hidden">

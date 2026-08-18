@@ -53,3 +53,8 @@ services/models/
 build/
 dist/
 services/models/
+
+# === TTS Cache ===
+data/tts_cache/
+services/data/tts_cache/
+

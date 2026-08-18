@@ -97,13 +97,15 @@ GLOBAL_KEYS = {
     "enable_greeting", "enable_auto_speak", "auto_speak_multiplier",
     "bubble_duration_multiplier", "show_thought_button",
     "auto_minimize_on_fullscreen_game", "preset_max_depth", "preset_block_english",
-    "flow_mode", "history_step_multiplier", "auto_start_on_boot"
+    "flow_mode", "history_step_multiplier", "auto_start_on_boot",
+    "enable_tts", "tts_provider", "fish_audio_base_url", "fish_audio_api_key"
 }
 
 CHARACTER_CONFIG_WHITELIST = {
     "character_id", "character_name", "persona_prompt", "user_prompt",
     "theme_color", "active_skin", "wallpaper_url", "wallpaper_fit",
-    "bgm_url", "immersive_effects", "created_at", "version"
+    "bgm_url", "immersive_effects", "created_at", "version",
+    "tts_voice_id"
 }
 
 def get_config():
@@ -141,6 +143,14 @@ def get_config():
         merged["auto_minimize_on_fullscreen_game"] = True
     if "auto_start_on_boot" not in merged:
         merged["auto_start_on_boot"] = False
+    if "enable_tts" not in merged:
+        merged["enable_tts"] = True
+    if "tts_provider" not in merged:
+        merged["tts_provider"] = "fish_audio"
+    if "fish_audio_base_url" not in merged:
+        merged["fish_audio_base_url"] = os.getenv("FISH_AUDIO_BASE_URL", "https://api.fish.audio/v1/tts")
+    if "fish_audio_api_key" not in merged:
+        merged["fish_audio_api_key"] = os.getenv("FISH_AUDIO_API_KEY", "")
     return merged
 
 def save_config(config_data):

@@ -381,6 +381,31 @@ document.addEventListener('DOMContentLoaded', () => {
                     autoStartToggle.checked = configData.auto_start_on_boot === true;
                 }
 
+                const enableTtsToggle = document.getElementById('enable-tts-toggle');
+                if (enableTtsToggle) {
+                    enableTtsToggle.checked = configData.enable_tts !== false;
+                }
+
+                const ttsProviderSelect = document.getElementById('tts-provider-select');
+                if (ttsProviderSelect && configData.tts_provider) {
+                    ttsProviderSelect.value = configData.tts_provider;
+                }
+
+                const fishAudioKeyInput = document.getElementById('fish-audio-key-input');
+                if (fishAudioKeyInput && configData.fish_audio_api_key) {
+                    fishAudioKeyInput.value = configData.fish_audio_api_key;
+                }
+
+                const fishAudioUrlInput = document.getElementById('fish-audio-url-input');
+                if (fishAudioUrlInput && configData.fish_audio_base_url) {
+                    fishAudioUrlInput.value = configData.fish_audio_base_url;
+                }
+
+                const charTtsVoiceInput = document.getElementById('character-tts-voice-id');
+                if (charTtsVoiceInput && configData.tts_voice_id !== undefined) {
+                    charTtsVoiceInput.value = configData.tts_voice_id;
+                }
+
                 const presetMaxDepth = document.getElementById('preset-max-depth');
                 if (presetMaxDepth && configData.preset_max_depth !== undefined) {
                     presetMaxDepth.value = configData.preset_max_depth.toString();
@@ -1217,6 +1242,145 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             } catch (e) {
                 console.error(e);
+            }
+        });
+    }
+
+    // TTS 全局开关
+    const enableTtsToggle = document.getElementById('enable-tts-toggle');
+    if (enableTtsToggle) {
+        enableTtsToggle.addEventListener('change', async () => {
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ enable_tts: enableTtsToggle.checked })
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        });
+    }
+
+    // Fish Audio Key / URL 变更保存
+    const fishAudioKeyInput = document.getElementById('fish-audio-key-input');
+    if (fishAudioKeyInput) {
+        fishAudioKeyInput.addEventListener('change', async () => {
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ fish_audio_api_key: fishAudioKeyInput.value.trim() })
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        });
+    }
+
+    const fishAudioUrlInput = document.getElementById('fish-audio-url-input');
+    if (fishAudioUrlInput) {
+        fishAudioUrlInput.addEventListener('change', async () => {
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ fish_audio_base_url: fishAudioUrlInput.value.trim() })
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        });
+    }
+
+    // 密码框明暗显示切换
+    const toggleFishKeyBtn = document.getElementById('toggle-fish-key-vis-btn');
+    if (toggleFishKeyBtn && fishAudioKeyInput) {
+        toggleFishKeyBtn.addEventListener('click', () => {
+            if (fishAudioKeyInput.type === 'password') {
+                fishAudioKeyInput.type = 'text';
+                toggleFishKeyBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+            } else {
+                fishAudioKeyInput.type = 'password';
+                toggleFishKeyBtn.innerHTML = '<i class="fas fa-eye"></i>';
+            }
+        });
+    }
+
+    // 测试发音
+    const testTtsBtn = document.getElementById('test-tts-btn');
+    const ttsTestInput = document.getElementById('tts-test-input');
+    let testAudio = new Audio();
+    if (testTtsBtn) {
+        testTtsBtn.addEventListener('click', async () => {
+            const text = ttsTestInput ? ttsTestInput.value.trim() : '你好呀！我是桌宠。';
+            if (!text) return;
+
+            testTtsBtn.disabled = true;
+            testTtsBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 合成中...';
+
+            try {
+                const resp = await fetch('/api/tts/speak', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ text: text })
+                });
+                const data = await resp.json();
+                if (data.success && data.audio_url) {
+                    testAudio.src = data.audio_url;
+                    await testAudio.play();
+                    testTtsBtn.innerHTML = '<i class="fas fa-volume-high"></i> 播放中...';
+                    testAudio.onended = () => {
+                        testTtsBtn.disabled = false;
+                        testTtsBtn.innerHTML = '<i class="fas fa-play"></i> 测试发音';
+                    };
+                    testAudio.onerror = () => {
+                        testTtsBtn.disabled = false;
+                        testTtsBtn.innerHTML = '<i class="fas fa-play"></i> 测试发音';
+                    };
+                } else {
+                    alert("语音合成失败: " + (data.error || "未知错误"));
+                    testTtsBtn.disabled = false;
+                    testTtsBtn.innerHTML = '<i class="fas fa-play"></i> 测试发音';
+                }
+            } catch (e) {
+                alert("请求异常: " + e.message);
+                testTtsBtn.disabled = false;
+                testTtsBtn.innerHTML = '<i class="fas fa-play"></i> 测试发音';
+            }
+        });
+    }
+
+    // 保存当前角色专属音色
+    const saveCharVoiceBtn = document.getElementById('save-char-voice-btn');
+    const charTtsVoiceInput = document.getElementById('character-tts-voice-id');
+    if (saveCharVoiceBtn && charTtsVoiceInput) {
+        saveCharVoiceBtn.addEventListener('click', async () => {
+            const voiceId = charTtsVoiceInput.value.trim();
+            saveCharVoiceBtn.disabled = true;
+            saveCharVoiceBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+            try {
+                const resp = await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ tts_voice_id: voiceId })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    saveCharVoiceBtn.innerHTML = '<i class="fas fa-check"></i> 保存成功！';
+                    setTimeout(() => {
+                        saveCharVoiceBtn.disabled = false;
+                        saveCharVoiceBtn.innerHTML = '<i class="fas fa-save"></i> 保存当前角色音色';
+                    }, 2000);
+                } else {
+                    alert("保存失败: " + (data.error || "未知错误"));
+                    saveCharVoiceBtn.disabled = false;
+                    saveCharVoiceBtn.innerHTML = '<i class="fas fa-save"></i> 保存当前角色音色';
+                }
+            } catch (e) {
+                alert("网络异常: " + e.message);
+                saveCharVoiceBtn.disabled = false;
+                saveCharVoiceBtn.innerHTML = '<i class="fas fa-save"></i> 保存当前角色音色';
             }
         });
     }
