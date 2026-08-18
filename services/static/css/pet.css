@@ -98,6 +98,17 @@ body, html {
     animation: live2dBobbing 3.8s ease-in-out infinite;
 }
 
+/* 4.1 Live2D Canvas 动态模型画布样式 */
+.live2d-canvas {
+    width: 320px !important;
+    height: 360px !important;
+    filter: drop-shadow(0 5px 15px rgba(0,0,0,0.4));
+    cursor: grab;
+    pointer-events: auto;
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
 /* 5. 好感度样式 */
 .fav-container {
     position: absolute;

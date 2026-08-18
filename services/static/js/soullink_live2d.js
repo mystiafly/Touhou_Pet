@@ -52,17 +52,22 @@ class SoullinkLive2DDriver {
             this.destroy();
             this.currentModelUrl = modelUrl;
 
+            // 确保 Canvas 元素及其容器背景绝对透明
+            canvas.style.background = 'transparent';
+            canvas.style.backgroundColor = 'transparent';
+
             // 1. 初始化 PIXI 应用
             const parent = canvas.parentElement || document.body;
-            const width = parent.clientWidth || 300;
-            const height = parent.clientHeight || 350;
+            const width = Math.max(320, canvas.clientWidth || parent.clientWidth || 320);
+            const height = Math.max(380, canvas.clientHeight || parent.clientHeight || 380);
 
             this.app = new PIXI.Application({
                 view: canvas,
-                transparent: true,
+                backgroundAlpha: 0, // PIXI v7 核心透明配置（修复黑色底色）
+                clearBeforeRender: true,
                 autoDensity: true,
                 antialias: true,
-                resolution: window.devicePixelRatio || 1,
+                resolution: Math.max(window.devicePixelRatio || 1, 2),
                 width: width,
                 height: height
             });
@@ -112,18 +117,22 @@ class SoullinkLive2DDriver {
     }
 
     /**
-     * 自适应调整模型尺寸与居中位置
+     * 自适应调整模型尺寸与居中位置（适度放大，让模型主体饱满充盈窗口）
      */
     resizeModel(viewWidth, viewHeight) {
         if (!this.model) return;
-        const scaleX = (viewWidth * 0.9) / this.model.width;
-        const scaleY = (viewHeight * 0.9) / this.model.height;
+        const rawW = this.model.width || 1;
+        const rawH = this.model.height || 1;
+
+        // 计算饱满缩放比：充分利用视口高度，使模型大小与 300px PNG 立绘高度相当
+        const scaleX = (viewWidth * 1.35) / rawW;
+        const scaleY = (viewHeight * 1.35) / rawH;
         const finalScale = Math.min(scaleX, scaleY);
 
         this.model.scale.set(finalScale);
         this.model.anchor.set(0.5, 0.5);
         this.model.x = viewWidth / 2;
-        this.model.y = viewHeight / 2;
+        this.model.y = viewHeight / 2 + 15; // 居中偏下，贴合输入栏
     }
 
     /**
