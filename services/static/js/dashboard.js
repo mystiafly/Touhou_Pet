@@ -4367,6 +4367,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (closeLive2dModalBtn) closeLive2dModalBtn.addEventListener('click', closeLive2dModal);
     if (cancelLive2dImportBtn) cancelLive2dImportBtn.addEventListener('click', closeLive2dModal);
+    if (live2dModal) {
+        live2dModal.addEventListener('click', (e) => {
+            if (e.target === live2dModal) closeLive2dModal();
+        });
+    }
 
     if (chooseLive2dFileBtn && live2dFileInput) {
         chooseLive2dFileBtn.addEventListener('click', () => live2dFileInput.click());
