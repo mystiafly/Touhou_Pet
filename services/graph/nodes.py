@@ -51,7 +51,25 @@ def recall_memories_node(state: AgentState) -> Dict[str, Any]:
                 
     active_tables = get_active_tables(user_msg, current_pool="\n".join([msg.get("content", "") for msg in history[-4:]]))
         
-    return {"recalled_memories": recalled, "active_databank": active_tables if active_tables else ""}
+    return {
+        "recalled_memories": recalled,
+        "active_databank": active_tables if active_tables else "",
+        "tool_feedback_context": "",
+        "browser_task": None,
+        "browser_result": None,
+        "launcher_task": None,
+        "launcher_result": None,
+        "search_task": None,
+        "search_result": None,
+        "vision_task": None,
+        "vision_result": None,
+        "clean_memory_task": None,
+        "clean_memory_result": None,
+        "process_task": None,
+        "process_result": None,
+        "selected_memory": "",
+        "retry_count": 0
+    }
 
 
 

@@ -188,6 +188,7 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
             "emotion": "normal",
             "score": 10,
             "clean_content": "",
+            "tool_feedback_context": "",
             "browser_task": None,
             "browser_result": None,
             "launcher_task": None,
@@ -196,6 +197,11 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
             "search_result": None,
             "vision_task": None,
             "vision_result": None,
+            "clean_memory_task": None,
+            "clean_memory_result": None,
+            "process_task": None,
+            "process_result": None,
+            "selected_memory": "",
             "request_type": "chat",
             "retry_count": 0
         }
@@ -1435,6 +1441,7 @@ def pet_speak(payload: dict = Body(...), background_tasks: BackgroundTasks = Bac
             "emotion": "normal",
             "score": 10,
             "clean_content": "",
+            "tool_feedback_context": "",
             "browser_task": None,
             "browser_result": None,
             "launcher_task": None,
@@ -1443,7 +1450,13 @@ def pet_speak(payload: dict = Body(...), background_tasks: BackgroundTasks = Bac
             "search_result": None,
             "vision_task": None,
             "vision_result": None,
-            "request_type": request_type
+            "clean_memory_task": None,
+            "clean_memory_result": None,
+            "process_task": None,
+            "process_result": None,
+            "selected_memory": "",
+            "request_type": request_type,
+            "retry_count": 0
         }
 
         config = {"configurable": {"thread_id": f"{char_id}_self_talk_thread"}}
