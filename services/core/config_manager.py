@@ -98,14 +98,14 @@ GLOBAL_KEYS = {
     "bubble_duration_multiplier", "show_thought_button",
     "auto_minimize_on_fullscreen_game", "preset_max_depth", "preset_block_english",
     "flow_mode", "history_step_multiplier", "auto_start_on_boot",
-    "enable_tts", "tts_provider", "fish_audio_base_url", "fish_audio_api_key"
+    "enable_tts", "tts_provider", "tts_speak_mode", "fish_audio_base_url", "fish_audio_api_key"
 }
 
 CHARACTER_CONFIG_WHITELIST = {
     "character_id", "character_name", "persona_prompt", "user_prompt",
     "theme_color", "active_skin", "wallpaper_url", "wallpaper_fit",
     "bgm_url", "immersive_effects", "created_at", "version",
-    "tts_voice_id"
+    "tts_voice_id", "tts_language", "tts_voice_zh", "tts_voice_ja", "tts_voice_en"
 }
 
 def get_config():
@@ -145,6 +145,10 @@ def get_config():
         merged["auto_start_on_boot"] = False
     if "enable_tts" not in merged:
         merged["enable_tts"] = True
+    if "tts_speak_mode" not in merged:
+        merged["tts_speak_mode"] = "click"
+    if "tts_language" not in merged:
+        merged["tts_language"] = "zh"
     if "tts_provider" not in merged:
         merged["tts_provider"] = "fish_audio"
     if "fish_audio_base_url" not in merged:

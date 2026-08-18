@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>大贤者控制台 (Dashboard)</title>
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.24.0">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.25.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -385,13 +385,25 @@
 
                 <div class="settings-card" style="border-left: 4px solid #ff79c6;">
                     <h3><i class="fas fa-volume-up" style="color: #ff79c6;"></i> 语音合成设置 (TTS)</h3>
-                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
+                    
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08);">
                         <div>
-                            <label style="font-weight: 500; font-size: 14px;">启用语音服务</label>
-                            <p class="help-text" style="margin-top: 5px;">开启后，桌宠气泡右上角将显示 🔊 朗读按钮，点击即可调用 TTS 朗读台词。</p>
+                            <label style="font-weight: 500; font-size: 14px;"><i class="fas fa-hand-pointer" style="color: #8be9fd; margin-right: 4px;"></i> 点按说话 (Click-to-Speak)</label>
+                            <p class="help-text" style="margin-top: 4px;">桌宠气泡右上角显示 🔊 朗读按钮，点击时按需合成发音（节省 API 额度，与主动说话互斥）。</p>
                         </div>
                         <label class="switch">
-                            <input type="checkbox" id="enable-tts-toggle">
+                            <input type="checkbox" id="tts-mode-click-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                        <div>
+                            <label style="font-weight: 500; font-size: 14px;"><i class="fas fa-bullhorn" style="color: #50fa7b; margin-right: 4px;"></i> 主动说话 (Proactive Auto-Speak)</label>
+                            <p class="help-text" style="margin-top: 4px;">沉浸发音模式：桌宠每次对白与搭话均自动调用 TTS 开口朗读（与点按说话互斥）。</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="tts-mode-auto-toggle">
                             <span class="slider round"></span>
                         </label>
                     </div>
@@ -703,14 +715,37 @@
                 </div>
 
                 <div class="settings-card" style="border-left: 4px solid #ff79c6;">
-                    <h3><i class="fas fa-microphone-alt" style="color: #ff79c6;"></i> 角色专属音色 (Voice Model ID)</h3>
-                    <div class="form-group">
-                        <label for="character-tts-voice-id" style="font-weight: 500; font-size: 14px; display: block;">Fish Audio 音色模型 ID (Reference ID)</label>
-                        <input type="text" id="character-tts-voice-id" class="modern-input" placeholder="留空使用默认音色，或填入 Fish Audio 声音 ID" style="width: 100%; margin-top: 6px;">
-                        <p class="help-text" style="margin-top: 6px;">可前往 <a href="https://fish.audio/zh-CN/discovery/" target="_blank" style="color: #ff79c6; text-decoration: underline;">Fish Audio 声音模型广场</a> 复制任何喜欢的二次元/动漫角色音色 ID（例如：<code>800a742870194833b584d4b182046461</code>）。每个桌宠角色可单独设置各自的专属音色！</p>
+                    <h3><i class="fas fa-microphone-alt" style="color: #ff79c6;"></i> 角色专属多语言音色库 (Multi-Voice & Language)</h3>
+                    
+                    <div class="form-group" style="margin-bottom: 14px;">
+                        <label for="character-tts-language-select" style="font-weight: 500; font-size: 14px; display: block;">首选发音语种 (Language)</label>
+                        <select id="character-tts-language-select" class="modern-select" style="margin-top: 6px; width: 100%;">
+                            <option value="zh">🇨🇳 中文原声 (Chinese)</option>
+                            <option value="ja">🇯🇵 日本語 (Japanese - 自动翻译与动漫口吻)</option>
+                            <option value="en">🇺🇸 English (英语 - 自动口语翻译)</option>
+                        </select>
+                        <p class="help-text" style="margin-top: 5px;">选择非中文语种时，Post 大模型会自动将对白翻译为地道符合人设的口语，并注入自然音调情绪起伏！</p>
                     </div>
-                    <button id="save-char-voice-btn" class="action-btn primary" style="margin-top: 10px;">
-                        <i class="fas fa-save"></i> 保存当前角色音色
+
+                    <div class="form-group" style="margin-top: 12px;">
+                        <label for="character-tts-voice-zh" style="font-weight: 500; font-size: 13px; display: block;">🇨🇳 中文音色 ID (Reference ID)</label>
+                        <input type="text" id="character-tts-voice-zh" class="modern-input" placeholder="留空使用默认，或填入 Fish Audio 中文音色 ID" style="width: 100%; margin-top: 4px;">
+                    </div>
+
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label for="character-tts-voice-ja" style="font-weight: 500; font-size: 13px; display: block;">🇯🇵 日语音色 ID (Reference ID)</label>
+                        <input type="text" id="character-tts-voice-ja" class="modern-input" placeholder="留空使用默认，或填入 Fish Audio 日语音色 ID" style="width: 100%; margin-top: 4px;">
+                    </div>
+
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label for="character-tts-voice-en" style="font-weight: 500; font-size: 13px; display: block;">🇺🇸 英语音色 ID (Reference ID)</label>
+                        <input type="text" id="character-tts-voice-en" class="modern-input" placeholder="留空使用默认，或填入 Fish Audio 英语音色 ID" style="width: 100%; margin-top: 4px;">
+                    </div>
+
+                    <p class="help-text" style="margin-top: 8px;">前往 <a href="https://fish.audio/zh-CN/discovery/" target="_blank" style="color: #ff79c6; text-decoration: underline;">Fish Audio 声音广场</a> 复制任何喜欢的二次元模型 ID（如：<code>800a742870194833b584d4b182046461</code>）。</p>
+
+                    <button id="save-char-voice-btn" class="action-btn primary" style="margin-top: 12px;">
+                        <i class="fas fa-save"></i> 保存当前角色多语种音色
                     </button>
                 </div>
 
@@ -1455,7 +1490,7 @@
     </div>
 </div>
 
-<script src="/static/js/dashboard.js?v=1.24.0"></script>
+<script src="/static/js/dashboard.js?v=1.25.0"></script>
 
 <!-- 视觉识图配置 Modal -->
 <div id="vision-tool-modal" class="modal-overlay hidden">

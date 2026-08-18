@@ -248,6 +248,22 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
 
         thought = final_state.get("thought", "")
 
+        # 检查是否开启“主动说话”模式，若是则自动生成语音
+        audio_url = None
+        cfg = get_config()
+        if cfg.get("enable_tts") and cfg.get("tts_speak_mode") == "auto":
+            try:
+                from core.tts_client import synthesize_and_cache_audio
+                tts_ok, url, err = synthesize_and_cache_audio(
+                    clean_content,
+                    char_id=char_id,
+                    emotion=emotion
+                )
+                if tts_ok:
+                    audio_url = url
+            except Exception as tts_ex:
+                print(f"[AUTO-TTS ERROR] {tts_ex}")
+
         return {
             "success": True,
             "reply": clean_content,
@@ -256,7 +272,8 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
             "favorability": current_fav,
             "fav_change": change,
             "history_count": len(updated_history) - 1,
-            "force_sleep": force_sleep
+            "force_sleep": force_sleep,
+            "audio_url": audio_url
         }
 
     except Exception as e:
@@ -890,9 +907,14 @@ def get_config_api():
     config["auto_start_on_boot"] = config.get("auto_start_on_boot", False)
     config["enable_tts"] = config.get("enable_tts", True)
     config["tts_provider"] = config.get("tts_provider", "fish_audio")
+    config["tts_speak_mode"] = config.get("tts_speak_mode", "click")
+    config["tts_language"] = config.get("tts_language", "zh")
     config["fish_audio_base_url"] = config.get("fish_audio_base_url", "https://api.fish.audio/v1/tts")
     config["fish_audio_api_key"] = config.get("fish_audio_api_key", os.getenv("FISH_AUDIO_API_KEY", ""))
     config["tts_voice_id"] = config.get("tts_voice_id", "")
+    config["tts_voice_zh"] = config.get("tts_voice_zh", "")
+    config["tts_voice_ja"] = config.get("tts_voice_ja", "")
+    config["tts_voice_en"] = config.get("tts_voice_en", "")
     config["pre_api_provider"] = config.get("pre_api_provider", "inherit")
     config["post_api_provider"] = config.get("post_api_provider", "inherit")
     config["vision_engine"] = config.get("vision_engine", "gemini")
@@ -960,6 +982,10 @@ def post_config_api(payload: dict = Body(...)):
             sync_windows_autostart_registry(config_data["auto_start_on_boot"])
         if "enable_tts" in payload:
             config_data["enable_tts"] = bool(payload["enable_tts"])
+        if "tts_speak_mode" in payload:
+            config_data["tts_speak_mode"] = payload["tts_speak_mode"].strip()
+        if "tts_language" in payload:
+            config_data["tts_language"] = payload["tts_language"].strip()
         if "tts_provider" in payload:
             config_data["tts_provider"] = payload["tts_provider"].strip()
         if "fish_audio_base_url" in payload:
@@ -968,6 +994,12 @@ def post_config_api(payload: dict = Body(...)):
             config_data["fish_audio_api_key"] = payload["fish_audio_api_key"].strip()
         if "tts_voice_id" in payload:
             config_data["tts_voice_id"] = str(payload["tts_voice_id"]).strip()
+        if "tts_voice_zh" in payload:
+            config_data["tts_voice_zh"] = str(payload["tts_voice_zh"]).strip()
+        if "tts_voice_ja" in payload:
+            config_data["tts_voice_ja"] = str(payload["tts_voice_ja"]).strip()
+        if "tts_voice_en" in payload:
+            config_data["tts_voice_en"] = str(payload["tts_voice_en"]).strip()
         if "auto_speak_multiplier" in payload:
             config_data["auto_speak_multiplier"] = float(payload["auto_speak_multiplier"])
         if "bubble_duration_multiplier" in payload:
@@ -1406,6 +1438,22 @@ def pet_speak(payload: dict = Body(...), background_tasks: BackgroundTasks = Bac
         except Exception as log_ex:
             print(f"写入每日自言自语日志失败: {log_ex}")
 
+        # 检查是否开启“主动说话”模式，若是则自动生成语音
+        audio_url = None
+        cfg = get_config()
+        if cfg.get("enable_tts") and cfg.get("tts_speak_mode") == "auto":
+            try:
+                from core.tts_client import synthesize_and_cache_audio
+                tts_ok, url, err = synthesize_and_cache_audio(
+                    clean_content,
+                    char_id=char_id,
+                    emotion=emotion
+                )
+                if tts_ok:
+                    audio_url = url
+            except Exception as tts_ex:
+                print(f"[AUTO-TTS ERROR] {tts_ex}")
+
         return {
             "success": True,
             "reply": clean_content,
@@ -1413,7 +1461,8 @@ def pet_speak(payload: dict = Body(...), background_tasks: BackgroundTasks = Bac
             "emotion": emotion,
             "favorability": current_fav,
             "fav_change": change,
-            "history_count": len(updated_history) - 1
+            "history_count": len(updated_history) - 1,
+            "audio_url": audio_url
         }
 
     except Exception as e:
@@ -2804,15 +2853,26 @@ async def api_save_immersive_config(request: Request):
 
 @router.post("/api/tts/speak")
 def api_tts_speak(payload: dict = Body(...)):
-    """接收文本并调用 TTS 接口生成语音"""
+    """接收文本并调用 TTS 接口生成语音 (带 Post-LLM 情绪音调与翻译精修)"""
     text = payload.get("text", "")
     char_id = payload.get("character_id")
+    emotion = payload.get("emotion", "normal")
+    language = payload.get("language")
     voice_id = payload.get("voice_id")
+    skip_refine = bool(payload.get("skip_refine", False))
+
     if not text or not str(text).strip():
         return JSONResponse({"success": False, "error": "文本为空"}, status_code=400)
 
     from core.tts_client import synthesize_and_cache_audio
-    success, audio_url, error = synthesize_and_cache_audio(str(text).strip(), char_id=char_id, voice_id=voice_id)
+    success, audio_url, error = synthesize_and_cache_audio(
+        str(text).strip(),
+        char_id=char_id,
+        emotion=emotion,
+        language=language,
+        voice_id=voice_id,
+        skip_refine=skip_refine
+    )
     if success:
         return JSONResponse({"success": True, "audio_url": audio_url})
     else:

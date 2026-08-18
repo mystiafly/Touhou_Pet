@@ -180,6 +180,8 @@ class DesktopPet {
             this.enableGreeting = data.enable_greeting !== false;
             this.enableAutoSpeak = data.enable_auto_speak !== false;
             this.showThoughtButton = data.show_thought_button !== false;
+            this.enableTts = data.enable_tts !== false;
+            this.ttsSpeakMode = data.tts_speak_mode || "click";
             this.autoSpeakMultiplier = data.auto_speak_multiplier || 1.0;
             this.bubbleDurationMultiplier = data.bubble_duration_multiplier || 1.0;
             
@@ -1620,6 +1622,11 @@ class DesktopPet {
             }
             this.ttsBtn.classList.remove('playing');
             this.ttsBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+            if (this.enableTts === false || this.ttsSpeakMode === 'off') {
+                this.ttsBtn.classList.add('hidden');
+            } else {
+                this.ttsBtn.classList.remove('hidden');
+            }
         }
 
         // 思维链观察微按钮控制
@@ -1766,6 +1773,24 @@ class DesktopPet {
         }
     }
 
+    handleAutoTtsPlay(audioUrl) {
+        if (!audioUrl || this.enableTts === false || this.ttsSpeakMode === 'off') return;
+        try {
+            if (this.ttsAudio) {
+                this.ttsAudio.pause();
+                this.ttsAudio.currentTime = 0;
+                this.ttsAudio.src = audioUrl;
+                this.ttsAudio.play().catch(e => console.log("[AUTO-TTS PLAY EX]", e));
+                if (this.ttsBtn) {
+                    this.ttsBtn.classList.add('playing');
+                    this.ttsBtn.innerHTML = '<i class="fas fa-volume-high"></i>';
+                }
+            }
+        } catch (e) {
+            console.error("[AUTO-TTS ERROR]", e);
+        }
+    }
+
     async sendMessage() {
         const text = this.input.value.trim();
         if (!text) return;
@@ -1794,6 +1819,11 @@ class DesktopPet {
                 this.setEmotion(data.emotion);
                 if (this.isImmersiveMode) {
                     this.appendLocalChatMessage(this.charName || "桌宠", data.reply);
+                }
+
+                // 若开启主动说话并返回了语音，则自动播放
+                if (data.audio_url) {
+                    this.handleAutoTtsPlay(data.audio_url);
                 }
 
                 // 2. 处理好感度
@@ -1901,6 +1931,9 @@ class DesktopPet {
                 if (data.favorability !== undefined) {
                     this.favScore.innerText = data.favorability;
                 }
+                if (data.audio_url) {
+                    this.handleAutoTtsPlay(data.audio_url);
+                }
             } else {
                 // 开机打招呼遇上欠费或配置错误
                 const errorReply = data.reply || (data.error ? `启动问候失败: ${data.error}` : "打招呼失败 (大模型服务异常)");
@@ -1973,6 +2006,9 @@ class DesktopPet {
                 }
                 if (data.favorability !== undefined) {
                     this.favScore.innerText = data.favorability;
+                }
+                if (data.audio_url) {
+                    this.handleAutoTtsPlay(data.audio_url);
                 }
             } else if (data.is_error && data.reply) {
                 this.showBubble(data.reply, 10000, false, data.thought);

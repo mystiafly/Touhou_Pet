@@ -381,9 +381,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     autoStartToggle.checked = configData.auto_start_on_boot === true;
                 }
 
-                const enableTtsToggle = document.getElementById('enable-tts-toggle');
-                if (enableTtsToggle) {
-                    enableTtsToggle.checked = configData.enable_tts !== false;
+                const ttsClickToggle = document.getElementById('tts-mode-click-toggle');
+                const ttsAutoToggle = document.getElementById('tts-mode-auto-toggle');
+                const speakMode = configData.tts_speak_mode || (configData.enable_tts !== false ? 'click' : 'off');
+                if (ttsClickToggle) {
+                    ttsClickToggle.checked = (speakMode === 'click');
+                }
+                if (ttsAutoToggle) {
+                    ttsAutoToggle.checked = (speakMode === 'auto');
                 }
 
                 const ttsProviderSelect = document.getElementById('tts-provider-select');
@@ -401,9 +406,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     fishAudioUrlInput.value = configData.fish_audio_base_url;
                 }
 
-                const charTtsVoiceInput = document.getElementById('character-tts-voice-id');
-                if (charTtsVoiceInput && configData.tts_voice_id !== undefined) {
-                    charTtsVoiceInput.value = configData.tts_voice_id;
+                const ttsLangSelect = document.getElementById('character-tts-language-select');
+                if (ttsLangSelect && configData.tts_language) {
+                    ttsLangSelect.value = configData.tts_language;
+                }
+
+                const charTtsZhInput = document.getElementById('character-tts-voice-zh');
+                if (charTtsZhInput && (configData.tts_voice_zh !== undefined || configData.tts_voice_id !== undefined)) {
+                    charTtsZhInput.value = configData.tts_voice_zh || configData.tts_voice_id || "";
+                }
+                const charTtsJaInput = document.getElementById('character-tts-voice-ja');
+                if (charTtsJaInput && configData.tts_voice_ja !== undefined) {
+                    charTtsJaInput.value = configData.tts_voice_ja;
+                }
+                const charTtsEnInput = document.getElementById('character-tts-voice-en');
+                if (charTtsEnInput && configData.tts_voice_en !== undefined) {
+                    charTtsEnInput.value = configData.tts_voice_en;
                 }
 
                 const presetMaxDepth = document.getElementById('preset-max-depth');
@@ -1246,18 +1264,54 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // TTS 全局开关
-    const enableTtsToggle = document.getElementById('enable-tts-toggle');
-    if (enableTtsToggle) {
-        enableTtsToggle.addEventListener('change', async () => {
-            try {
-                await fetch('/api/settings/config', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ enable_tts: enableTtsToggle.checked })
-                });
-            } catch (e) {
-                console.error(e);
+    // TTS 说话模式互斥切换 (点按说话 vs 主动说话)
+    const ttsClickToggle = document.getElementById('tts-mode-click-toggle');
+    const ttsAutoToggle = document.getElementById('tts-mode-auto-toggle');
+
+    if (ttsClickToggle && ttsAutoToggle) {
+        ttsClickToggle.addEventListener('change', async () => {
+            if (ttsClickToggle.checked) {
+                ttsAutoToggle.checked = false;
+                try {
+                    await fetch('/api/settings/config', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ enable_tts: true, tts_speak_mode: 'click' })
+                    });
+                } catch (e) { console.error(e); }
+            } else {
+                if (!ttsAutoToggle.checked) {
+                    try {
+                        await fetch('/api/settings/config', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ enable_tts: false, tts_speak_mode: 'off' })
+                        });
+                    } catch (e) { console.error(e); }
+                }
+            }
+        });
+
+        ttsAutoToggle.addEventListener('change', async () => {
+            if (ttsAutoToggle.checked) {
+                ttsClickToggle.checked = false;
+                try {
+                    await fetch('/api/settings/config', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ enable_tts: true, tts_speak_mode: 'auto' })
+                    });
+                } catch (e) { console.error(e); }
+            } else {
+                if (!ttsClickToggle.checked) {
+                    try {
+                        await fetch('/api/settings/config', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ enable_tts: false, tts_speak_mode: 'off' })
+                        });
+                    } catch (e) { console.error(e); }
+                }
             }
         });
     }
@@ -1316,6 +1370,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const text = ttsTestInput ? ttsTestInput.value.trim() : '你好呀！我是桌宠。';
             if (!text) return;
 
+            const charTtsLangSelect = document.getElementById('character-tts-language-select');
+            const lang = charTtsLangSelect ? charTtsLangSelect.value : 'zh';
+
             testTtsBtn.disabled = true;
             testTtsBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 合成中...';
 
@@ -1323,7 +1380,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const resp = await fetch('/api/tts/speak', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ text: text })
+                    body: JSON.stringify({
+                        text: text,
+                        language: lang
+                    })
                 });
                 const data = await resp.json();
                 if (data.success && data.audio_url) {
@@ -1351,36 +1411,54 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 保存当前角色专属音色
+    // 保存当前角色多语种专属音色
     const saveCharVoiceBtn = document.getElementById('save-char-voice-btn');
-    const charTtsVoiceInput = document.getElementById('character-tts-voice-id');
-    if (saveCharVoiceBtn && charTtsVoiceInput) {
+    const charTtsLangSelect = document.getElementById('character-tts-language-select');
+    const charTtsZhInput = document.getElementById('character-tts-voice-zh');
+    const charTtsJaInput = document.getElementById('character-tts-voice-ja');
+    const charTtsEnInput = document.getElementById('character-tts-voice-en');
+
+    if (saveCharVoiceBtn) {
         saveCharVoiceBtn.addEventListener('click', async () => {
-            const voiceId = charTtsVoiceInput.value.trim();
+            const lang = charTtsLangSelect ? charTtsLangSelect.value : 'zh';
+            const voiceZh = charTtsZhInput ? charTtsZhInput.value.trim() : '';
+            const voiceJa = charTtsJaInput ? charTtsJaInput.value.trim() : '';
+            const voiceEn = charTtsEnInput ? charTtsEnInput.value.trim() : '';
+            
+            let activeVoiceId = voiceZh;
+            if (lang === 'ja') activeVoiceId = voiceJa || voiceZh;
+            else if (lang === 'en') activeVoiceId = voiceEn || voiceZh;
+
             saveCharVoiceBtn.disabled = true;
             saveCharVoiceBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
             try {
                 const resp = await fetch('/api/settings/config', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ tts_voice_id: voiceId })
+                    body: JSON.stringify({
+                        tts_language: lang,
+                        tts_voice_zh: voiceZh,
+                        tts_voice_ja: voiceJa,
+                        tts_voice_en: voiceEn,
+                        tts_voice_id: activeVoiceId
+                    })
                 });
                 const data = await resp.json();
                 if (data.success) {
                     saveCharVoiceBtn.innerHTML = '<i class="fas fa-check"></i> 保存成功！';
                     setTimeout(() => {
                         saveCharVoiceBtn.disabled = false;
-                        saveCharVoiceBtn.innerHTML = '<i class="fas fa-save"></i> 保存当前角色音色';
+                        saveCharVoiceBtn.innerHTML = '<i class="fas fa-save"></i> 保存当前角色多语种音色';
                     }, 2000);
                 } else {
                     alert("保存失败: " + (data.error || "未知错误"));
                     saveCharVoiceBtn.disabled = false;
-                    saveCharVoiceBtn.innerHTML = '<i class="fas fa-save"></i> 保存当前角色音色';
+                    saveCharVoiceBtn.innerHTML = '<i class="fas fa-save"></i> 保存当前角色多语种音色';
                 }
             } catch (e) {
                 alert("网络异常: " + e.message);
                 saveCharVoiceBtn.disabled = false;
-                saveCharVoiceBtn.innerHTML = '<i class="fas fa-save"></i> 保存当前角色音色';
+                saveCharVoiceBtn.innerHTML = '<i class="fas fa-save"></i> 保存当前角色多语种音色';
             }
         });
     }

@@ -29,7 +29,7 @@ def clean_text_for_speech(text: str) -> str:
     # 3. 移除星号动作描写: *打了个哈欠*
     cleaned = re.sub(r'\*[^\*]*\*', '', cleaned)
 
-    # 4. 移除方括号标签: [normal]、[12]、[SLEEP_NOW]
+    # 4. 移除方括号元数据标签: [normal]、[angry]、[12]、[SLEEP_NOW] 等
     cleaned = re.sub(r'\[[^\]]*\]', '', cleaned)
 
     # 5. 去除多余标点与空白
@@ -42,10 +42,83 @@ def clean_text_for_speech(text: str) -> str:
 
     return cleaned
 
-def generate_speech_fish_audio(text: str, voice_id: Optional[str] = None) -> Tuple[bool, Optional[bytes], Optional[str]]:
-    """调用 Fish Audio TTS 接口生成 MP3 音频流"""
+def refine_text_with_post_llm_prosody(
+    text: str,
+    emotion: str = "normal",
+    target_lang: str = "zh",
+    char_name: str = "桌宠",
+    persona: str = ""
+) -> str:
+    """使用 Post-LLM 将对白翻译为目标语种 (中/日/英)，并插入 Fish Audio S2 情绪音调标签 [pitch up], [happy], [whisper] 等"""
     clean_text = clean_text_for_speech(text)
     if not clean_text:
+        return ""
+
+    from langchain_core.messages import SystemMessage, HumanMessage
+    from graph.nodes import call_model_with_fallback
+
+    lang_desc_map = {
+        "zh": "保持中文原声对白（不要翻译为外语）",
+        "ja": "翻译为极其纯正、符合该角色性格人设的口语日文（使用平假名/片假名/汉字，动漫角色语气，例如傲娇、萌系或元气）",
+        "en": "翻译为纯正、符合该角色性格人设的口语英文（动漫英配或日常口语风）"
+    }
+    lang_instruction = lang_desc_map.get(target_lang, lang_desc_map["zh"])
+
+    system_prompt = (
+        "【角色语音情感精修与语种翻译引擎 (Fish Audio TTS Prosody Engine)】\n"
+        f"你是一个专为二次元桌宠角色【{char_name}】服务的语音台词精修大师。\n"
+        f"角色人设背景：{persona}\n"
+        f"当前对话情绪：[{emotion}]\n"
+        f"目标朗读语种：{lang_instruction}\n\n"
+        "【任务要求】\n"
+        "1. 仅输出供 TTS 朗读的最终台词文本，禁止包含任何思考过程、解释、引号或 Markdown 格式。\n"
+        "2. 语言转换：按照目标朗读语种要求输出（若为日文/英文，请地道翻译并契合角色口癖与语气；若为中文，保留原口语）。\n"
+        "3. 注入 Fish Audio S2 音调与情绪控制方括号标签 [tag]：\n"
+        "   - 支持的标签包括：[happy], [sad], [angry], [excited], [whisper], [pitch up], [pitch down], [speaking slowly], [speaking fast], [soft tone], [laughing], [sighing], [giggle], [long pause] 等。\n"
+        "   - 请根据句子的起伏与情感，在句子开头或重点词句前合理插入 1~2 个标签，使发音充满灵魂与起伏（例如：`[pitch up] [happy] 早上好呀！` 或 `[whisper] [soft tone] べ、別にアンタのためじゃないんだからね！`）。\n"
+        "4. 绝对不要输出动作描写括号（如 `(微笑)` 或 `（脸红）`），只输出纯口语与 [tag] 音调标签。"
+    )
+
+    messages = [
+        SystemMessage(content=system_prompt),
+        HumanMessage(content=f"原始角色对白：{clean_text}")
+    ]
+
+    try:
+        config_data = get_config()
+        provider = config_data.get("post_api_provider", "inherit")
+        response = call_model_with_fallback(messages, provider_override=provider, node_name="POST-LLM-TTS")
+        refined = response.content.strip()
+        # 清理可能误带的反引号或包裹
+        refined = re.sub(r'^```[a-zA-Z]*\n', '', refined)
+        refined = re.sub(r'\n```$', '', refined).strip()
+        # 清理可能残留的思维链
+        refined = re.sub(r'<(?:think|character_thought|thought)[^>]*>.*?</(?:think|character_thought|thought)>', '', refined, flags=re.DOTALL | re.IGNORECASE).strip()
+        refined = re.sub(r'</?[^>]+>', '', refined).strip()
+        # 移除普通动作括号
+        refined = re.sub(r'（[^）]*）', '', refined)
+        refined = re.sub(r'\([^\)]*\)', '', refined).strip()
+        if refined:
+            print(f"[TTS PROSODY REFINED] 原始: '{clean_text}' -> 精修({target_lang}): '{refined}'")
+            return refined
+    except Exception as ex:
+        print(f"[TTS PROSODY POST-LLM WARN] Post-LLM 精修失败，回退至基础规则: {ex}")
+
+    # 降级回退：基础情绪标签注标
+    fallback_tag = ""
+    if emotion == "angry":
+        fallback_tag = "[angry] [pitch up] "
+    elif emotion == "shy":
+        fallback_tag = "[whisper] [soft tone] "
+    elif emotion == "crying":
+        fallback_tag = "[sad] [sighing] "
+    elif emotion == "normal":
+        fallback_tag = "[soft tone] "
+    return f"{fallback_tag}{clean_text}".strip()
+
+def generate_speech_fish_audio(styled_text: str, voice_id: Optional[str] = None) -> Tuple[bool, Optional[bytes], Optional[str]]:
+    """调用 Fish Audio TTS 接口生成 MP3 音频流"""
+    if not styled_text or not str(styled_text).strip():
         return False, None, "没有可朗读的有效文本内容"
 
     config_data = get_config()
@@ -61,20 +134,18 @@ def generate_speech_fish_audio(text: str, voice_id: Optional[str] = None) -> Tup
     }
 
     payload = {
-        "text": clean_text,
+        "text": styled_text.strip(),
         "format": "mp3",
         "latency": "normal",
         "normalize": True
     }
 
-    # 优先使用传入的 voice_id，其次使用角色配置中的 tts_voice_id
-    effective_voice_id = voice_id or config_data.get("tts_voice_id", "")
-    if effective_voice_id and str(effective_voice_id).strip():
-        payload["reference_id"] = str(effective_voice_id).strip()
+    if voice_id and str(voice_id).strip():
+        payload["reference_id"] = str(voice_id).strip()
 
     try:
-        print(f"[TTS FISH AUDIO] 发送 TTS 请求 ({len(clean_text)} 字)...")
-        response = requests.post(base_url, headers=headers, json=payload, timeout=25)
+        print(f"[TTS FISH AUDIO] 发送 TTS 请求 (长度: {len(styled_text)}): {styled_text}")
+        response = requests.post(base_url, headers=headers, json=payload, timeout=30)
         
         if response.status_code == 200:
             audio_bytes = response.content
@@ -89,18 +160,54 @@ def generate_speech_fish_audio(text: str, voice_id: Optional[str] = None) -> Tup
         print(f"[TTS FISH AUDIO EXCEPTION] {err_msg}")
         return False, None, err_msg
 
-def synthesize_and_cache_audio(text: str, char_id: Optional[str] = None, voice_id: Optional[str] = None) -> Tuple[bool, Optional[str], Optional[str]]:
+def synthesize_and_cache_audio(
+    text: str,
+    char_id: Optional[str] = None,
+    emotion: str = "normal",
+    language: Optional[str] = None,
+    voice_id: Optional[str] = None,
+    skip_refine: bool = False
+) -> Tuple[bool, Optional[str], Optional[str]]:
     """合成语音并存入本地缓存，返回缓存音频的相对访问路径 /api/tts/audio/{hash}.mp3"""
-    clean_text = clean_text_for_speech(text)
-    if not clean_text:
+    raw_clean = clean_text_for_speech(text)
+    if not raw_clean:
         return False, None, "文本为空"
 
     active_char = char_id or get_active_character_id()
     config_data = get_config()
-    effective_voice_id = voice_id or config_data.get("tts_voice_id", "")
+    char_name = config_data.get("character_name", "桌宠")
+    persona = config_data.get("persona_prompt", "")
+    
+    # 确定目标语言与对应音色 ID
+    target_lang = (language or config_data.get("tts_language") or "zh").lower()
+    
+    # 根据语言获取对应音色 ID
+    effective_voice_id = voice_id
+    if not effective_voice_id:
+        if target_lang == "ja":
+            effective_voice_id = config_data.get("tts_voice_ja") or config_data.get("tts_voice_id", "")
+        elif target_lang == "en":
+            effective_voice_id = config_data.get("tts_voice_en") or config_data.get("tts_voice_id", "")
+        else:
+            effective_voice_id = config_data.get("tts_voice_zh") or config_data.get("tts_voice_id", "")
+
+    # 执行 Post-LLM 精修 (翻译 + 注入 Fish Audio 情绪音调标签)
+    if not skip_refine:
+        styled_text = refine_text_with_post_llm_prosody(
+            raw_clean,
+            emotion=emotion,
+            target_lang=target_lang,
+            char_name=char_name,
+            persona=persona
+        )
+    else:
+        styled_text = raw_clean
+
+    if not styled_text:
+        styled_text = raw_clean
 
     # 计算哈希指纹
-    hash_key = f"{active_char}_{effective_voice_id}_{clean_text}"
+    hash_key = f"{active_char}_{target_lang}_{effective_voice_id}_{styled_text}"
     file_hash = hashlib.md5(hash_key.encode('utf-8')).hexdigest()
     cache_file = os.path.join(TTS_CACHE_DIR, f"{file_hash}.mp3")
 
@@ -110,7 +217,7 @@ def synthesize_and_cache_audio(text: str, char_id: Optional[str] = None, voice_i
         return True, f"/api/tts/audio/{file_hash}.mp3", None
 
     # 调用合成器
-    success, audio_bytes, error = generate_speech_fish_audio(clean_text, voice_id=effective_voice_id)
+    success, audio_bytes, error = generate_speech_fish_audio(styled_text, voice_id=effective_voice_id)
     if not success or not audio_bytes:
         return False, None, error
 
