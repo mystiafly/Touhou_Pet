@@ -4082,8 +4082,40 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderSpriteGrid(sets, selectedSet) {
+        const typeBadge = document.getElementById('sprite-set-type-badge');
+        const live2dBox = document.getElementById('live2d-preview-box');
+        const pngContainer = document.getElementById('png-sprite-container');
+        const setData = sets[selectedSet];
+
+        if (setData && setData.type === 'live2d') {
+            if (typeBadge) {
+                typeBadge.innerHTML = '💫 Live2D 动态模型 (Soullink 驱动)';
+                typeBadge.style.background = 'rgba(189, 147, 249, 0.2)';
+                typeBadge.style.color = '#bd93f9';
+                typeBadge.style.borderColor = '#bd93f9';
+            }
+            if (live2dBox) live2dBox.classList.remove('hidden');
+            if (pngContainer) pngContainer.classList.add('hidden');
+
+            const canvas = document.getElementById('dashboard-live2d-canvas');
+            if (canvas && window.SoullinkLive2D && setData.model_url) {
+                window.SoullinkLive2D.load(canvas, setData.model_url);
+            }
+            return;
+        }
+
+        // 普通 PNG 套装
+        if (typeBadge) {
+            typeBadge.innerHTML = '🎨 普通 PNG 立绘';
+            typeBadge.style.background = 'rgba(80, 250, 123, 0.2)';
+            typeBadge.style.color = '#50fa7b';
+            typeBadge.style.borderColor = '#50fa7b';
+        }
+        if (live2dBox) live2dBox.classList.add('hidden');
+        if (pngContainer) pngContainer.classList.remove('hidden');
+
         previewContainer.innerHTML = '';
-        const imagesDict = sets[selectedSet] || {};
+        const imagesDict = (setData && setData.images) ? setData.images : (sets[selectedSet] || {});
         
         const emotions = ['normal', 'angry', 'shy', 'crying', 'sleeping', 'peeking_left', 'peeking_right'];
         
@@ -4296,6 +4328,113 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('创建错误');
         }
     });
+
+    // 绑定 Live2D 情绪测试按钮
+    document.querySelectorAll('.btn-test-live2d-emotion').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const emotion = btn.getAttribute('data-emotion');
+            if (window.SoullinkLive2D && window.SoullinkLive2D.isLoaded) {
+                window.SoullinkLive2D.setEmotion(emotion);
+            }
+        });
+    });
+
+    // === Live2D 模型导入 Modal 逻辑 ===
+    const openLive2dModalBtn = document.getElementById('open-import-live2d-modal-btn');
+    const live2dModal = document.getElementById('live2d-import-modal');
+    const closeLive2dModalBtn = document.getElementById('close-live2d-modal-btn');
+    const cancelLive2dImportBtn = document.getElementById('btn-cancel-live2d-import');
+    const chooseLive2dFileBtn = document.getElementById('btn-choose-live2d-file');
+    const live2dFileInput = document.getElementById('live2d-file-input');
+    const chosenLive2dFilename = document.getElementById('chosen-live2d-filename');
+    const live2dLocalPathInput = document.getElementById('live2d-local-path-input');
+    const live2dSetNameInput = document.getElementById('live2d-set-name-input');
+    const submitLive2dImportBtn = document.getElementById('btn-submit-live2d-import');
+    const live2dImportStatus = document.getElementById('live2d-import-status');
+
+    if (openLive2dModalBtn && live2dModal) {
+        openLive2dModalBtn.addEventListener('click', () => {
+            live2dModal.classList.remove('hidden');
+            if (live2dImportStatus) live2dImportStatus.style.display = 'none';
+        });
+    }
+
+    const closeLive2dModal = () => {
+        if (live2dModal) live2dModal.classList.add('hidden');
+        if (live2dFileInput) live2dFileInput.value = '';
+        if (chosenLive2dFilename) chosenLive2dFilename.textContent = '选择 .zip 模型压缩包...';
+    };
+
+    if (closeLive2dModalBtn) closeLive2dModalBtn.addEventListener('click', closeLive2dModal);
+    if (cancelLive2dImportBtn) cancelLive2dImportBtn.addEventListener('click', closeLive2dModal);
+
+    if (chooseLive2dFileBtn && live2dFileInput) {
+        chooseLive2dFileBtn.addEventListener('click', () => live2dFileInput.click());
+        live2dFileInput.addEventListener('change', () => {
+            if (live2dFileInput.files && live2dFileInput.files[0]) {
+                const f = live2dFileInput.files[0];
+                if (chosenLive2dFilename) chosenLive2dFilename.textContent = f.name;
+                if (live2dSetNameInput && !live2dSetNameInput.value) {
+                    live2dSetNameInput.value = f.name.replace(/\.[^/.]+$/, "");
+                }
+            }
+        });
+    }
+
+    if (submitLive2dImportBtn) {
+        submitLive2dImportBtn.addEventListener('click', async () => {
+            const file = live2dFileInput ? live2dFileInput.files[0] : null;
+            const localPath = live2dLocalPathInput ? live2dLocalPathInput.value.trim() : '';
+            const setName = live2dSetNameInput ? live2dSetNameInput.value.trim() : '';
+
+            if (!file && !localPath) {
+                alert('请选择要上传的 .zip 文件，或输入本地文件绝对路径！');
+                return;
+            }
+
+            submitLive2dImportBtn.disabled = true;
+            submitLive2dImportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在解压并校验 Live2D 模型...';
+            if (live2dImportStatus) {
+                live2dImportStatus.style.display = 'block';
+                live2dImportStatus.style.color = '#8be9fd';
+                live2dImportStatus.textContent = '正在解压并检测 .model3.json 结构...';
+            }
+
+            try {
+                const formData = new FormData();
+                if (file) {
+                    formData.append('file', file);
+                }
+                if (localPath) {
+                    formData.append('zip_path', localPath);
+                }
+                if (setName) {
+                    formData.append('set_name', setName);
+                }
+
+                const res = await fetch('/api/sprites/import_live2d', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    alert(`🎉 恭喜！Live2D 模型套装「${data.set_name}」导入成功并已设为当前使用套装！`);
+                    closeLive2dModal();
+                    loadSpriteSets();
+                } else {
+                    alert('导入失败: ' + (data.message || '未知错误'));
+                }
+            } catch (err) {
+                console.error(err);
+                alert('导入请求异常: ' + err.message);
+            } finally {
+                submitLive2dImportBtn.disabled = false;
+                submitLive2dImportBtn.innerHTML = '<i class="fas fa-magic"></i> 开始导入并设为当前套装';
+                if (live2dImportStatus) live2dImportStatus.style.display = 'none';
+            }
+        });
+    }
 });
 
 // === Reactions (Coping Words) Logic ===

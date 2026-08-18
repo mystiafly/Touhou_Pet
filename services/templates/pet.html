@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <title>Desktop Pet</title>
-    <link rel="stylesheet" href="/static/css/pet.css?v=1.25.2">
+    <link rel="stylesheet" href="/static/css/pet.css?v=1.26.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Premium Interactive Network Graph Vis.js -->
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
+    <!-- Live2D Cubism Core & PixiJS & Soullink Driver -->
+    <script src="/static/lib/live2d/live2dcubismcore.min.js"></script>
+    <script src="/static/lib/live2d/pixi.min.js"></script>
+    <script src="/static/lib/live2d/pixi-live2d-display.min.js"></script>
+    <script src="/static/js/soullink_live2d.js?v=1.26.0"></script>
 </head>
 <body>
 <div class="pet-container">
@@ -84,6 +87,7 @@
         </div>
 
         <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" id="pet-img" alt="Pet" draggable="false">
+        <canvas id="live2d-canvas" class="live2d-canvas hidden" style="width: 100%; height: 100%; object-fit: contain; pointer-events: auto;"></canvas>
     </div>
 
     <div class="input-bar">
@@ -161,6 +165,6 @@
     </div>
 </div>
 
-<script src="/static/js/pet_script.js?v=1.25.2"></script>
+<script src="/static/js/pet_script.js?v=1.26.0"></script>
 </body>
 </html>

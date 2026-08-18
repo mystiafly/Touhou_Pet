@@ -6,7 +6,7 @@ import re
 from datetime import datetime
 from fastapi import APIRouter, Request, Body, HTTPException, UploadFile, File, Form, BackgroundTasks
 from pydantic import BaseModel
-from typing import Dict, Any
+from typing import Dict, Any, Optional, List
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from core.config_manager import get_config, save_config, get_active_character_id, GLOBAL_CONFIG_FILE
 from core.memory_manager import load_history, save_history, DAILY_HISTORY_DIR, get_memory_agent
@@ -794,10 +794,16 @@ async def api_character_info():
             if wallpaper_url:
                 break
                     
+    live2d_rel = find_live2d_model_file(sprite_dir) if os.path.exists(sprite_dir) else None
+    sprite_type = "live2d" if live2d_rel else "sprite"
+    live2d_model_url = f"/char_assets/{char_id}/assets/{active_sprite_set}/{live2d_rel}" if live2d_rel else ""
+
     return JSONResponse({
         "character_id": char_id,
         "character_name": char_name,
         "theme_color": config.get("theme_color", ""),
+        "sprite_type": sprite_type,
+        "live2d_model_url": live2d_model_url,
         "image_path": f"/char_assets/{char_id}/assets/{active_sprite_set}/",
         "images_dict": images_dict,
         "active_sprite_set": active_sprite_set,
@@ -2281,6 +2287,15 @@ def test_timer_1min():
     return {"success": True}
 import shutil
 
+def find_live2d_model_file(directory: str) -> Optional[str]:
+    """递归查找目录下的 .model3.json 或 .model.json 相对路径"""
+    for root, dirs, files in os.walk(directory):
+        for f in files:
+            if f.lower().endswith('.model3.json') or f.lower().endswith('.model.json'):
+                rel_path = os.path.relpath(os.path.join(root, f), directory)
+                return rel_path.replace('\\', '/')
+    return None
+
 @router.get("/api/sprites/list")
 async def api_sprites_list():
     from core.config_manager import get_character_dir
@@ -2294,28 +2309,133 @@ async def api_sprites_list():
         for set_name in os.listdir(assets_dir):
             set_dir = os.path.join(assets_dir, set_name)
             if os.path.isdir(set_dir):
-                images = {
-                    "normal": [], "angry": [], "shy": [], "crying": [], "sleeping": [], "peeking_left": [], "peeking_right": []
-                }
-                for f in os.listdir(set_dir):
-                    if f.lower().endswith('.png'):
-                        # special handle for peeking since it contains underscore
-                        if f.lower().startswith('peeking_left'):
-                            emotion_key = 'peeking_left'
-                        elif f.lower().startswith('peeking_right'):
-                            emotion_key = 'peeking_right'
-                        else:
-                            emotion_key = f.split('_')[0].split('.')[0]
-                            
-                        if emotion_key in images:
-                            images[emotion_key].append(f"/char_assets/{char_id}/assets/{set_name}/{f}")
-                sets[set_name] = images
+                # 检查是否为 Live2D 模型套装
+                live2d_rel = find_live2d_model_file(set_dir)
+                if live2d_rel:
+                    sets[set_name] = {
+                        "type": "live2d",
+                        "model_file": live2d_rel,
+                        "model_url": f"/char_assets/{char_id}/assets/{set_name}/{live2d_rel}"
+                    }
+                else:
+                    images = {
+                        "normal": [], "angry": [], "shy": [], "crying": [], "sleeping": [], "peeking_left": [], "peeking_right": []
+                    }
+                    for f in os.listdir(set_dir):
+                        if f.lower().endswith(('.png', '.gif', '.webp', '.jpg', '.jpeg')):
+                            if f.lower().startswith('peeking_left'):
+                                emotion_key = 'peeking_left'
+                            elif f.lower().startswith('peeking_right'):
+                                emotion_key = 'peeking_right'
+                            else:
+                                emotion_key = f.split('_')[0].split('.')[0]
+                                
+                            if emotion_key in images:
+                                images[emotion_key].append(f"/char_assets/{char_id}/assets/{set_name}/{f}")
+                    sets[set_name] = {
+                        "type": "sprite",
+                        "images": images
+                    }
                 
     return JSONResponse({
         "success": True,
         "active_set": active_set,
         "sets": sets
     })
+
+@router.post("/api/sprites/import_live2d")
+async def api_sprites_import_live2d(
+    zip_path: Optional[str] = Form(None),
+    set_name: Optional[str] = Form(None),
+    file: Optional[UploadFile] = File(None)
+):
+    import zipfile
+    from core.config_manager import get_character_dir
+    char_id = get_active_character_id()
+    assets_dir = os.path.join(get_character_dir(), "assets")
+    os.makedirs(assets_dir, exist_ok=True)
+
+    temp_zip_to_clean = None
+    final_zip_path = None
+
+    if file and file.filename:
+        # 上传文件模式
+        temp_zip_to_clean = os.path.join(assets_dir, f"_temp_import_{file.filename}")
+        with open(temp_zip_to_clean, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        final_zip_path = temp_zip_to_clean
+        if not set_name:
+            set_name = os.path.splitext(file.filename)[0]
+    elif zip_path:
+        # 本地绝对路径模式 (例如 "H:\新建文件夹\mao_zh-Hans.zip")
+        clean_path = zip_path.strip().strip('"').strip("'")
+        if not os.path.exists(clean_path):
+            return JSONResponse({"success": False, "message": f"找不到本地压缩包: {clean_path}"}, status_code=400)
+        final_zip_path = clean_path
+        if not set_name:
+            set_name = os.path.splitext(os.path.basename(clean_path))[0]
+    else:
+        return JSONResponse({"success": False, "message": "请提供本地压缩包路径或上传 .zip 文件"}, status_code=400)
+
+    # 规范化套装名称
+    set_name = re.sub(r'[<>:"/\\|?*]', '_', set_name).strip()
+    if not set_name:
+        set_name = "live2d_outfit"
+
+    target_dir = os.path.join(assets_dir, set_name)
+    os.makedirs(target_dir, exist_ok=True)
+
+    try:
+        with zipfile.ZipFile(final_zip_path, 'r') as zip_ref:
+            # 解决 zip 解压中文文件名乱码 (cp437 -> gbk/utf-8)
+            for zip_info in zip_ref.infolist():
+                try:
+                    fixed_name = zip_info.filename.encode('cp437').decode('gbk')
+                except Exception:
+                    try:
+                        fixed_name = zip_info.filename.encode('cp437').decode('utf-8')
+                    except Exception:
+                        fixed_name = zip_info.filename
+
+                fixed_name = fixed_name.lstrip('/\\')
+                target_file_path = os.path.join(target_dir, fixed_name)
+                
+                if zip_info.is_dir():
+                    os.makedirs(target_file_path, exist_ok=True)
+                else:
+                    os.makedirs(os.path.dirname(target_file_path), exist_ok=True)
+                    with zip_ref.open(zip_info) as source, open(target_file_path, "wb") as target:
+                        shutil.copyfileobj(source, target)
+
+        # 检查是否解压出了 Live2D 模型
+        model_file = find_live2d_model_file(target_dir)
+        if not model_file:
+            return JSONResponse({
+                "success": False,
+                "message": f"解压完成，但在压缩包中未检测到 .model3.json 或 .model.json 配置文件！"
+            }, status_code=400)
+
+        # 自动设为当前套装
+        config = get_config()
+        config["active_sprite_set"] = set_name
+        save_config(config)
+
+        return JSONResponse({
+            "success": True,
+            "set_name": set_name,
+            "type": "live2d",
+            "model_file": model_file,
+            "model_url": f"/char_assets/{char_id}/assets/{set_name}/{model_file}"
+        })
+
+    except Exception as e:
+        return JSONResponse({"success": False, "message": f"解压 Live2D 模型失败: {str(e)}"}, status_code=500)
+    finally:
+        if temp_zip_to_clean and os.path.exists(temp_zip_to_clean):
+            try:
+                os.remove(temp_zip_to_clean)
+            except Exception:
+                pass
 
 class SpriteSetActiveRequest(BaseModel):
     set_name: str

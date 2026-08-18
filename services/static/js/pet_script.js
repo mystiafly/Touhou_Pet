@@ -174,7 +174,19 @@ class DesktopPet {
                     'sleeping': [prefix + 'sleeping.png', prefix + 'sleeping_1.png', prefix + 'sleeping_2.png']
                 };
                 this.img.src = prefix + 'normal.png';
+            this.spriteType = data.sprite_type || 'sprite';
+            this.live2dModelUrl = data.live2d_model_url || '';
+            const live2dCanvas = document.getElementById('live2d-canvas');
+            if (this.spriteType === 'live2d' && this.live2dModelUrl && window.SoullinkLive2D && live2dCanvas) {
+                this.img.classList.add('hidden');
+                live2dCanvas.classList.remove('hidden');
+                window.SoullinkLive2D.load(live2dCanvas, this.live2dModelUrl);
+                window.SoullinkLive2D.attachAudioLipSync(this.ttsAudio);
+            } else {
+                if (live2dCanvas) live2dCanvas.classList.add('hidden');
+                this.img.classList.remove('hidden');
             }
+
             this.wallpaperUrl = data.wallpaper_url || "";
             this.wallpaperFit = data.wallpaper_fit || "cover";
             this.enableGreeting = data.enable_greeting !== false;
@@ -398,8 +410,11 @@ class DesktopPet {
                 e.preventDefault();
             });
 
-            // mousemove handler (仅用于拖动，因为 hover 判定已移至 global_mouse_move)
+            // mousemove handler (用于 Live2D 视线跟随与窗口拖拽)
             window.addEventListener('mousemove', (e) => {
+                if (this.spriteType === 'live2d' && window.SoullinkLive2D) {
+                    window.SoullinkLive2D.focus(e.clientX, e.clientY);
+                }
                 if (isDragging) {
                     const deltaX = e.screenX - startX;
                     const deltaY = e.screenY - startY;
@@ -430,7 +445,9 @@ class DesktopPet {
                     };
 
                     try {
-                        if (checkHover(this.img)) {
+                        const live2dCanvas = document.getElementById('live2d-canvas');
+                        const targetSpriteEl = (this.spriteType === 'live2d' && live2dCanvas) ? live2dCanvas : this.img;
+                        if (checkHover(targetSpriteEl)) {
                             isInteractive = true;
                         } else if (checkHover(this.inputBar)) {
                             isInteractive = true;
@@ -1504,7 +1521,6 @@ class DesktopPet {
                 }
                 
                 const isUser = sender.toLowerCase() === 'you' || sender.toLowerCase().includes('you ');
-                
                 const row = document.createElement('div');
                 row.className = 'wechat-msg-row ' + (isUser ? 'is-user' : 'is-bot');
                 
@@ -1575,12 +1591,17 @@ class DesktopPet {
             }
         }
     }
-    // [修改] 切换表情的核心函数（在同种差分中随机选择一个）
+    // [修改] 切换表情的核心函数（支持普通 PNG 差分与 Live2D VAD 连续情绪）
     setEmotion(emotion) {
-        this.currentEmotion = emotion;
+        this.currentEmotion = emotion || 'normal';
         if (this.isPeeking) return; // 如果正在边缘暗中观察，锁定换图逻辑
+
+        if (this.spriteType === 'live2d' && window.SoullinkLive2D && window.SoullinkLive2D.isLoaded) {
+            window.SoullinkLive2D.setEmotion(this.currentEmotion);
+            return;
+        }
         
-        let list = this.images[emotion] || this.images['normal'];
+        let list = this.images[this.currentEmotion] || this.images['normal'];
         if (!list || list.length === 0) {
             list = this.images['normal'];
         }
@@ -1588,16 +1609,17 @@ class DesktopPet {
         const targetSrc = list[Math.floor(Math.random() * list.length)];
 
         // 如果当前已经是这张图，就不操作了，避免闪烁
-        if (this.img.src.includes(targetSrc)) return;
+        if (this.img && this.img.src.includes(targetSrc)) return;
 
-        console.log(`切换心情: ${emotion} -> 随机差分: ${targetSrc}`);
+        console.log(`切换心情: ${this.currentEmotion} -> 随机差分: ${targetSrc}`);
 
-        // 绠€鍗曠殑娣″叆娣″嚭鏁堟灉
-        this.img.style.opacity = '0.7';
-        setTimeout(() => {
-            this.img.src = targetSrc;
-            this.img.style.opacity = '1';
-        }, 150);
+        if (this.img) {
+            this.img.style.opacity = '0.7';
+            setTimeout(() => {
+                this.img.src = targetSrc;
+                this.img.style.opacity = '1';
+            }, 150);
+        }
     }
 
     showBubble(text, duration = null, isHtml = false, thought = null) {
