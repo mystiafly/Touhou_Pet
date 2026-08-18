@@ -4099,7 +4099,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const canvas = document.getElementById('dashboard-live2d-canvas');
             if (canvas && window.SoullinkLive2D && setData.model_url) {
-                window.SoullinkLive2D.load(canvas, setData.model_url);
+                window.SoullinkLive2D.load(canvas, setData.model_url).then(() => {
+                    const scale = setData.scale !== undefined ? setData.scale : 1.0;
+                    const offX = setData.offset_x !== undefined ? setData.offset_x : 0.0;
+                    const offY = setData.offset_y !== undefined ? setData.offset_y : 0.0;
+                    window.SoullinkLive2D.setTransform(scale, offX, offY);
+
+                    const scaleSlider = document.getElementById('live2d-scale-slider');
+                    const scaleVal = document.getElementById('live2d-scale-val');
+                    const offXSlider = document.getElementById('live2d-offset-x-slider');
+                    const offXVal = document.getElementById('live2d-offset-x-val');
+                    const offYSlider = document.getElementById('live2d-offset-y-slider');
+                    const offYVal = document.getElementById('live2d-offset-y-val');
+
+                    if (scaleSlider) scaleSlider.value = scale;
+                    if (scaleVal) scaleVal.textContent = scale.toFixed(2) + 'x';
+                    if (offXSlider) offXSlider.value = offX;
+                    if (offXVal) offXVal.textContent = Math.round(offX) + 'px';
+                    if (offYSlider) offYSlider.value = offY;
+                    if (offYVal) offYVal.textContent = Math.round(offY) + 'px';
+                });
             }
             return;
         }
@@ -4338,6 +4357,100 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // 绑定 Live2D 预览画布鼠标视线跟随
+    const dashboardLive2dCanvas = document.getElementById('dashboard-live2d-canvas');
+    if (dashboardLive2dCanvas) {
+        dashboardLive2dCanvas.addEventListener('mousemove', (e) => {
+            if (window.SoullinkLive2D && window.SoullinkLive2D.isLoaded) {
+                window.SoullinkLive2D.focus(e.clientX, e.clientY, dashboardLive2dCanvas);
+            }
+        });
+        dashboardLive2dCanvas.addEventListener('mouseleave', () => {
+            if (window.SoullinkLive2D && window.SoullinkLive2D.isLoaded) {
+                window.SoullinkLive2D.targetFocusX = 0;
+                window.SoullinkLive2D.targetFocusY = 0;
+            }
+        });
+    }
+
+    // 绑定 Live2D 剪裁缩放与微调滑块
+    const scaleSlider = document.getElementById('live2d-scale-slider');
+    const scaleVal = document.getElementById('live2d-scale-val');
+    const offXSlider = document.getElementById('live2d-offset-x-slider');
+    const offXVal = document.getElementById('live2d-offset-x-val');
+    const offYSlider = document.getElementById('live2d-offset-y-slider');
+    const offYVal = document.getElementById('live2d-offset-y-val');
+    const btnResetTransform = document.getElementById('btn-reset-live2d-transform');
+    const btnSaveTransform = document.getElementById('btn-save-live2d-transform');
+
+    const updateLive2dTransform = () => {
+        const scale = scaleSlider ? parseFloat(scaleSlider.value) : 1.0;
+        const offX = offXSlider ? parseFloat(offXSlider.value) : 0.0;
+        const offY = offYSlider ? parseFloat(offYSlider.value) : 0.0;
+
+        if (scaleVal) scaleVal.textContent = scale.toFixed(2) + 'x';
+        if (offXVal) offXVal.textContent = Math.round(offX) + 'px';
+        if (offYVal) offYVal.textContent = Math.round(offY) + 'px';
+
+        if (window.SoullinkLive2D && window.SoullinkLive2D.isLoaded) {
+            window.SoullinkLive2D.setTransform(scale, offX, offY);
+        }
+    };
+
+    if (scaleSlider) scaleSlider.addEventListener('input', updateLive2dTransform);
+    if (offXSlider) offXSlider.addEventListener('input', updateLive2dTransform);
+    if (offYSlider) offYSlider.addEventListener('input', updateLive2dTransform);
+
+    if (btnResetTransform) {
+        btnResetTransform.addEventListener('click', () => {
+            if (scaleSlider) scaleSlider.value = 1.0;
+            if (offXSlider) offXSlider.value = 0;
+            if (offYSlider) offYSlider.value = 0;
+            updateLive2dTransform();
+        });
+    }
+
+    if (btnSaveTransform) {
+        btnSaveTransform.addEventListener('click', async () => {
+            const selectedSet = setSelect.value;
+            if (!selectedSet) return;
+            const scale = scaleSlider ? parseFloat(scaleSlider.value) : 1.0;
+            const offX = offXSlider ? parseFloat(offXSlider.value) : 0.0;
+            const offY = offYSlider ? parseFloat(offYSlider.value) : 0.0;
+
+            btnSaveTransform.disabled = true;
+            btnSaveTransform.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中';
+            try {
+                const res = await fetch('/api/sprites/live2d_config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        set_name: selectedSet,
+                        scale: scale,
+                        offset_x: offX,
+                        offset_y: offY
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    btnSaveTransform.innerHTML = '<i class="fas fa-check"></i> 已保存';
+                    setTimeout(() => {
+                        btnSaveTransform.innerHTML = '<i class="fas fa-save"></i> 保存布局';
+                        btnSaveTransform.disabled = false;
+                    }, 1500);
+                } else {
+                    alert('保存失败: ' + (data.error || '未知错误'));
+                    btnSaveTransform.disabled = false;
+                    btnSaveTransform.innerHTML = '<i class="fas fa-save"></i> 保存布局';
+                }
+            } catch (e) {
+                alert('请求失败: ' + e);
+                btnSaveTransform.disabled = false;
+                btnSaveTransform.innerHTML = '<i class="fas fa-save"></i> 保存布局';
+            }
+        });
+    }
 
     // === Live2D 模型导入 Modal 逻辑 ===
     const openLive2dModalBtn = document.getElementById('open-import-live2d-modal-btn');

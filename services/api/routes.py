@@ -797,6 +797,12 @@ async def api_character_info():
     live2d_rel = find_live2d_model_file(sprite_dir) if os.path.exists(sprite_dir) else None
     sprite_type = "live2d" if live2d_rel else "sprite"
     live2d_model_url = f"/char_assets/{char_id}/assets/{active_sprite_set}/{live2d_rel}" if live2d_rel else ""
+    
+    live2d_settings = config.get("live2d_settings", {})
+    active_l2d_cfg = live2d_settings.get(active_sprite_set, {})
+    live2d_scale = float(active_l2d_cfg.get("scale", 1.0))
+    live2d_offset_x = float(active_l2d_cfg.get("offset_x", 0.0))
+    live2d_offset_y = float(active_l2d_cfg.get("offset_y", 0.0))
 
     return JSONResponse({
         "character_id": char_id,
@@ -804,6 +810,9 @@ async def api_character_info():
         "theme_color": config.get("theme_color", ""),
         "sprite_type": sprite_type,
         "live2d_model_url": live2d_model_url,
+        "live2d_scale": live2d_scale,
+        "live2d_offset_x": live2d_offset_x,
+        "live2d_offset_y": live2d_offset_y,
         "image_path": f"/char_assets/{char_id}/assets/{active_sprite_set}/",
         "images_dict": images_dict,
         "active_sprite_set": active_sprite_set,
@@ -2305,6 +2314,7 @@ async def api_sprites_list():
     assets_dir = os.path.join(get_character_dir(), "assets")
     
     sets = {}
+    live2d_settings = config.get("live2d_settings", {})
     if os.path.exists(assets_dir):
         for set_name in os.listdir(assets_dir):
             set_dir = os.path.join(assets_dir, set_name)
@@ -2312,10 +2322,14 @@ async def api_sprites_list():
                 # 检查是否为 Live2D 模型套装
                 live2d_rel = find_live2d_model_file(set_dir)
                 if live2d_rel:
+                    suit_cfg = live2d_settings.get(set_name, {})
                     sets[set_name] = {
                         "type": "live2d",
                         "model_file": live2d_rel,
-                        "model_url": f"/char_assets/{char_id}/assets/{set_name}/{live2d_rel}"
+                        "model_url": f"/char_assets/{char_id}/assets/{set_name}/{live2d_rel}",
+                        "scale": float(suit_cfg.get("scale", 1.0)),
+                        "offset_x": float(suit_cfg.get("offset_x", 0.0)),
+                        "offset_y": float(suit_cfg.get("offset_y", 0.0))
                     }
                 else:
                     images = {
@@ -2342,6 +2356,34 @@ async def api_sprites_list():
         "active_set": active_set,
         "sets": sets
     })
+
+@router.post("/api/sprites/live2d_config")
+async def api_sprites_live2d_config(req: Request):
+    """保存 Live2D 模型的缩放比例与位置偏移"""
+    from core.config_manager import save_config
+    try:
+        data = await req.json()
+        set_name = data.get("set_name")
+        scale = float(data.get("scale", 1.0))
+        offset_x = float(data.get("offset_x", 0.0))
+        offset_y = float(data.get("offset_y", 0.0))
+
+        if not set_name:
+            return JSONResponse({"success": False, "error": "set_name is required"}, status_code=400)
+
+        config = get_config()
+        if "live2d_settings" not in config:
+            config["live2d_settings"] = {}
+
+        config["live2d_settings"][set_name] = {
+            "scale": scale,
+            "offset_x": offset_x,
+            "offset_y": offset_y
+        }
+        save_config(config)
+        return JSONResponse({"success": True, "settings": config["live2d_settings"][set_name]})
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
 @router.post("/api/sprites/import_live2d")
 async def api_sprites_import_live2d(

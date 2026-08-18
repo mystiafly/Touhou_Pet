@@ -3,7 +3,7 @@
  * Inspired by nanlingyin/soullink-emotion-sdk
  *
  * Provides real-time VAD emotion interpolation, FACS muscle unit parameter driving,
- * Web Audio real-time Lip-Sync, and mouse eye-tracking for Live2D Cubism 3/4 models.
+ * Web Audio real-time Lip-Sync, custom scale/offset transform, and eye-tracking.
  */
 
 class SoullinkLive2DDriver {
@@ -11,11 +11,23 @@ class SoullinkLive2DDriver {
         this.app = null;
         this.model = null;
         this.currentModelUrl = null;
+        this.canvas = null;
         this.targetEmotion = "normal";
         this.currentVAD = { v: 0.1, a: 0.0, d: 0.0 }; // Valence, Arousal, Dominance
         this.targetVAD = { v: 0.1, a: 0.0, d: 0.0 };
         this.isLoaded = false;
         
+        // 自定义缩放与偏移
+        this.customScale = 1.0;
+        this.customOffsetX = 0.0;
+        this.customOffsetY = 0.0;
+
+        // 视线与头部跟随坐标
+        this.targetFocusX = 0.0;
+        this.targetFocusY = 0.0;
+        this.currentFocusX = 0.0;
+        this.currentFocusY = 0.0;
+
         // Lip-Sync Web Audio
         this.audioCtx = null;
         this.analyser = null;
@@ -38,6 +50,21 @@ class SoullinkLive2DDriver {
     }
 
     /**
+     * 设置自定义变换参数（缩放、X偏移、Y偏移）
+     */
+    setTransform(scale = 1.0, offsetX = 0.0, offsetY = 0.0) {
+        this.customScale = (typeof scale === 'number' && !isNaN(scale)) ? scale : 1.0;
+        this.customOffsetX = (typeof offsetX === 'number' && !isNaN(offsetX)) ? offsetX : 0.0;
+        this.customOffsetY = (typeof offsetY === 'number' && !isNaN(offsetY)) ? offsetY : 0.0;
+
+        if (this.app && this.app.renderer) {
+            const width = this.app.renderer.width / (this.app.renderer.resolution || 1);
+            const height = this.app.renderer.height / (this.app.renderer.resolution || 1);
+            this.resizeModel(width, height);
+        }
+    }
+
+    /**
      * 初始化 Pixi Application 并加载指定的 Live2D 模型
      * @param {HTMLCanvasElement} canvas 
      * @param {string} modelUrl 
@@ -51,6 +78,7 @@ class SoullinkLive2DDriver {
         try {
             this.destroy();
             this.currentModelUrl = modelUrl;
+            this.canvas = canvas;
 
             // 确保 Canvas 元素及其容器背景绝对透明
             canvas.style.background = 'transparent';
@@ -157,7 +185,7 @@ class SoullinkLive2DDriver {
     }
 
     /**
-     * 自适应调整模型尺寸与居中位置
+     * 自适应调整模型尺寸与居中位置 (结合自定义缩放与平移)
      */
     resizeModel(viewWidth, viewHeight) {
         if (!this.model) return;
@@ -166,12 +194,13 @@ class SoullinkLive2DDriver {
 
         const scaleX = (viewWidth * 1.35) / rawW;
         const scaleY = (viewHeight * 1.35) / rawH;
-        const finalScale = Math.min(scaleX, scaleY);
+        const baseScale = Math.min(scaleX, scaleY);
+        const finalScale = baseScale * (this.customScale || 1.0);
 
         this.model.scale.set(finalScale);
         this.model.anchor.set(0.5, 0.5);
-        this.model.x = viewWidth / 2;
-        this.model.y = viewHeight / 2 + 15;
+        this.model.x = (viewWidth / 2) + (this.customOffsetX || 0);
+        this.model.y = (viewHeight / 2 + 15) + (this.customOffsetY || 0);
     }
 
     /**
@@ -192,7 +221,6 @@ class SoullinkLive2DDriver {
 
             if (expressions.length > 0) {
                 const emotionKey = this.targetEmotion.toLowerCase();
-                // 优先根据名称/文件名匹配
                 for (let i = 0; i < expressions.length; i++) {
                     const exp = expressions[i];
                     const name = (exp.Name || exp.name || "").toLowerCase();
@@ -227,7 +255,7 @@ class SoullinkLive2DDriver {
     }
 
     /**
-     * 每帧执行 VAD 连续情感平滑过渡与口型振幅计算
+     * 每帧执行 VAD 连续情感平滑过渡、视线平滑追踪与口型振幅计算
      */
     onTick(delta) {
         if (!this.model || !this.isLoaded) return;
@@ -238,7 +266,12 @@ class SoullinkLive2DDriver {
         this.currentVAD.a += (this.targetVAD.a - this.currentVAD.a) * lerpFactor;
         this.currentVAD.d += (this.targetVAD.d - this.currentVAD.d) * lerpFactor;
 
-        // 2. 口型振幅计算 (Analyser 能量 + 语音声学自然波动双重驱动)
+        // 2. 平滑追踪视线坐标
+        const focusLerp = 0.15 * (delta || 1);
+        this.currentFocusX += (this.targetFocusX - this.currentFocusX) * focusLerp;
+        this.currentFocusY += (this.targetFocusY - this.currentFocusY) * focusLerp;
+
+        // 3. 口型振幅计算 (Analyser 能量 + 语音声学自然波动双重驱动)
         if (this.isSpeaking) {
             let audioVolume = 0.5;
             if (this.analyser) {
@@ -254,7 +287,6 @@ class SoullinkLive2DDriver {
                 }
             }
 
-            // 结合语音发音自然开合正弦波 (音节张合)
             const time = Date.now() / 1000;
             const phonemeWave = (Math.sin(time * 18) * 0.4 + 0.6) * (Math.sin(time * 7) * 0.2 + 0.8);
             this.targetMouthOpen = Math.min(1.0, Math.max(0.1, audioVolume * phonemeWave));
@@ -266,7 +298,7 @@ class SoullinkLive2DDriver {
     }
 
     /**
-     * 在动作系统更新完成后注入 Live2D 参数 (确保口型与微表情不被 Motion 覆盖)
+     * 在动作系统更新完成后注入 Live2D 参数 (口型、视线追踪、微表情)
      */
     applyParametersOnMotionUpdate() {
         if (!this.model || !this.model.internalModel || !this.model.internalModel.coreModel) return;
@@ -274,6 +306,8 @@ class SoullinkLive2DDriver {
 
         const v = this.currentVAD.v;
         const mouthOpen = this.currentMouthOpen;
+        const fx = this.currentFocusX;
+        const fy = this.currentFocusY;
 
         try {
             // 1. 口型参数强制注入 (多参数兼容)
@@ -281,7 +315,19 @@ class SoullinkLive2DDriver {
                 this.setCoreParam(coreModel, paramId, mouthOpen);
             }
 
-            // 2. FACS 肌肉单元与微表情注入
+            // 2. 视线与头部追踪参数注入
+            this.setCoreParam(coreModel, 'ParamAngleX', fx * 30);
+            this.setCoreParam(coreModel, 'ParamAngleY', -fy * 30);
+            this.setCoreParam(coreModel, 'ParamAngleZ', fx * -10);
+            this.setCoreParam(coreModel, 'ParamEyeBallX', fx);
+            this.setCoreParam(coreModel, 'ParamEyeBallY', -fy);
+            this.setCoreParam(coreModel, 'ParamBodyAngleX', fx * 10);
+            this.setCoreParam(coreModel, 'PARAM_ANGLE_X', fx * 30);
+            this.setCoreParam(coreModel, 'PARAM_ANGLE_Y', -fy * 30);
+            this.setCoreParam(coreModel, 'PARAM_EYE_BALL_X', fx);
+            this.setCoreParam(coreModel, 'PARAM_EYE_BALL_Y', -fy);
+
+            // 3. FACS 肌肉单元与微表情注入
             const targetMouthForm = Math.max(-1, Math.min(1, v * 1.2));
             this.setCoreParam(coreModel, 'ParamMouthForm', targetMouthForm);
             this.setCoreParam(coreModel, 'PARAM_MOUTH_FORM', targetMouthForm);
@@ -329,12 +375,22 @@ class SoullinkLive2DDriver {
     }
 
     /**
-     * 鼠标视线追踪
+     * 鼠标视线追踪 (支持传入 Canvas 元素以进行精确相对视线投影)
      */
-    focus(clientX, clientY) {
+    focus(clientX, clientY, canvasElement = null) {
         if (!this.model || !this.isLoaded) return;
         try {
-            this.model.focus(clientX, clientY);
+            const targetCanvas = canvasElement || this.canvas;
+            if (targetCanvas) {
+                const rect = targetCanvas.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                this.targetFocusX = Math.max(-1, Math.min(1, (clientX - centerX) / (rect.width / 2 || 1)));
+                this.targetFocusY = Math.max(-1, Math.min(1, (clientY - centerY) / (rect.height / 2 || 1)));
+                this.model.focus(clientX - rect.left, clientY - rect.top);
+            } else {
+                this.model.focus(clientX, clientY);
+            }
         } catch (e) {}
     }
 
@@ -421,6 +477,7 @@ class SoullinkLive2DDriver {
         }
         this.isLoaded = false;
         this.currentModelUrl = null;
+        this.canvas = null;
     }
 }
 

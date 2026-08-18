@@ -178,11 +178,17 @@ class DesktopPet {
 
             this.spriteType = data.sprite_type || 'sprite';
             this.live2dModelUrl = data.live2d_model_url || '';
+            this.live2dScale = data.live2d_scale !== undefined ? data.live2d_scale : 1.0;
+            this.live2dOffsetX = data.live2d_offset_x !== undefined ? data.live2d_offset_x : 0.0;
+            this.live2dOffsetY = data.live2d_offset_y !== undefined ? data.live2d_offset_y : 0.0;
+
             const live2dCanvas = document.getElementById('live2d-canvas');
             if (this.spriteType === 'live2d' && this.live2dModelUrl && window.SoullinkLive2D && live2dCanvas) {
                 this.img.classList.add('hidden');
                 live2dCanvas.classList.remove('hidden');
-                window.SoullinkLive2D.load(live2dCanvas, this.live2dModelUrl);
+                window.SoullinkLive2D.load(live2dCanvas, this.live2dModelUrl).then(() => {
+                    window.SoullinkLive2D.setTransform(this.live2dScale, this.live2dOffsetX, this.live2dOffsetY);
+                });
                 window.SoullinkLive2D.attachAudioLipSync(this.ttsAudio);
             } else {
                 if (live2dCanvas) live2dCanvas.classList.add('hidden');
@@ -391,31 +397,35 @@ class DesktopPet {
             let mousedownX = 0, mousedownY = 0;
             let isIgnoring = false; // [状态追踪] 避免重复且无意义的高频 IPC 通信导致界面卡死
 
-            // mousedown handler
-            this.img.addEventListener('mousedown', (e) => {
-                // if (this.isSleeping) {
-                //     this.wakeUp(false);
-                // }
-                if (e.button === 0) { 
-                    isDragging = true;
-                    startX = e.screenX;
-                    startY = e.screenY;
-                    mousedownX = e.screenX;
-                    mousedownY = e.screenY;
-                    petIPC.sendSetIgnoreMouseEvents(false);
-                    isIgnoring = false; // 同步状态
-                    this.img.style.cursor = 'grabbing';
-                }
-            });
+            // 绑定立绘与 Live2D 画布的拖拽和点击
+            const live2dCanvas = document.getElementById('live2d-canvas');
+            const bindSpriteDrag = (el) => {
+                if (!el) return;
+                el.addEventListener('mousedown', (e) => {
+                    if (e.button === 0) { 
+                        isDragging = true;
+                        startX = e.screenX;
+                        startY = e.screenY;
+                        mousedownX = e.screenX;
+                        mousedownY = e.screenY;
+                        petIPC.sendSetIgnoreMouseEvents(false);
+                        isIgnoring = false;
+                        if (this.img) this.img.style.cursor = 'grabbing';
+                        if (live2dCanvas) live2dCanvas.style.cursor = 'grabbing';
+                    }
+                });
+                el.addEventListener('dragstart', (e) => {
+                    e.preventDefault();
+                });
+            };
 
-            this.img.addEventListener('dragstart', (e) => {
-                e.preventDefault();
-            });
+            bindSpriteDrag(this.img);
+            bindSpriteDrag(live2dCanvas);
 
             // mousemove handler (用于 Live2D 视线跟随与窗口拖拽)
             window.addEventListener('mousemove', (e) => {
                 if (this.spriteType === 'live2d' && window.SoullinkLive2D) {
-                    window.SoullinkLive2D.focus(e.clientX, e.clientY);
+                    window.SoullinkLive2D.focus(e.clientX, e.clientY, live2dCanvas);
                 }
                 if (isDragging) {
                     const deltaX = e.screenX - startX;
@@ -447,7 +457,6 @@ class DesktopPet {
                     };
 
                     try {
-                        const live2dCanvas = document.getElementById('live2d-canvas');
                         const targetSpriteEl = (this.spriteType === 'live2d' && live2dCanvas) ? live2dCanvas : this.img;
                         if (checkHover(targetSpriteEl)) {
                             isInteractive = true;
@@ -498,11 +507,12 @@ class DesktopPet {
                 });
             }
 
-            // 全局监听 mouseup 停止拖动
+            // 全局监听 mouseup 停止拖动并触发点击互动
             window.addEventListener('mouseup', (e) => {
                 if (isDragging) {
                     isDragging = false;
-                    this.img.style.cursor = 'grab';
+                    if (this.img) this.img.style.cursor = 'grab';
+                    if (live2dCanvas) live2dCanvas.style.cursor = 'grab';
                     
                     if (typeof petIPC.sendWindowDragEnd === 'function') {
                         petIPC.sendWindowDragEnd();
