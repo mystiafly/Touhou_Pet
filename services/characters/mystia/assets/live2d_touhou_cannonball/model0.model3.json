@@ -1,1 +1,92 @@
-{"Version": 3, "FileReferences": {"Moc": "FileReferences_Moc_0.moc3", "Textures": ["textures/FileReferences_Textures_0_0.png"], "Physics": "physics/FileReferences_Physics_0.physic3.json", "PhysicsV2": {"File": "physics/FileReferences_Physics_0.physic3.json"}, "Motions": {"Idle": [{"File": "motions/idle/FileReferences_Motions_Idle_0_File_0.motion3.json", "FadeIn": 10, "FadeOut": 100000, "MotionDuration": 1000000}]}}, "Controllers": {"ParamHit": {}, "ParamLoop": {}, "KeyTrigger": {}, "EyeBlink": {"MinInterval": 500, "MaxInterval": 6000, "Enabled": true}, "LipSync": {"Gain": 5.0}, "MouseTracking": {"SmoothTime": 0.15, "Enabled": true}, "AutoBreath": {"Enabled": true}, "ExtraMotion": {"Enabled": true}, "Accelerometer": {"Enabled": true}, "Microphone": {}, "Transform": {}, "FaceTracking": {"Enabled": true}, "ParamValue": {}, "PartOpacity": {"Enabled": true}, "ArtmeshOpacity": {}, "ArtmeshColor": {}, "ArtmeshCulling": {"DefaultMode": 0}, "IntimacySystem": {}}, "Options": {"TexFixed": true}}
+{
+  "Version": 3,
+  "FileReferences": {
+    "Moc": "FileReferences_Moc_0.moc3",
+    "Textures": [
+      "textures/FileReferences_Textures_0_0.png"
+    ],
+    "Physics": "physics/FileReferences_Physics_0.physic3.json",
+    "PhysicsV2": {
+      "File": "physics/FileReferences_Physics_0.physic3.json"
+    },
+    "Motions": {
+      "Idle": [
+        {
+          "File": "motions/idle/FileReferences_Motions_Idle_0_File_0.motion3.json",
+          "FadeIn": 500,
+          "FadeOut": 500
+        }
+      ],
+      "Tap": [
+        {
+          "File": "motions/tap/tap_flap.motion3.json",
+          "FadeIn": 250,
+          "FadeOut": 350
+        }
+      ],
+      "Flick": [
+        {
+          "File": "motions/drag/drag_flick.motion3.json",
+          "FadeIn": 150,
+          "FadeOut": 250
+        }
+      ],
+      "Special": [
+        {
+          "File": "motions/special/special_sing.motion3.json",
+          "FadeIn": 400,
+          "FadeOut": 400
+        },
+        {
+          "File": "motions/special/special_stretch.motion3.json",
+          "FadeIn": 400,
+          "FadeOut": 400
+        }
+      ]
+    }
+  },
+  "Controllers": {
+    "ParamHit": {},
+    "ParamLoop": {},
+    "KeyTrigger": {},
+    "EyeBlink": {
+      "MinInterval": 500,
+      "MaxInterval": 6000,
+      "Enabled": true
+    },
+    "LipSync": {
+      "Gain": 5.0
+    },
+    "MouseTracking": {
+      "SmoothTime": 0.15,
+      "Enabled": true
+    },
+    "AutoBreath": {
+      "Enabled": true
+    },
+    "ExtraMotion": {
+      "Enabled": true
+    },
+    "Accelerometer": {
+      "Enabled": true
+    },
+    "Microphone": {},
+    "Transform": {},
+    "FaceTracking": {
+      "Enabled": true
+    },
+    "ParamValue": {},
+    "PartOpacity": {
+      "Enabled": true
+    },
+    "ArtmeshOpacity": {},
+    "ArtmeshColor": {},
+    "ArtmeshCulling": {
+      "DefaultMode": 0
+    },
+    "IntimacySystem": {}
+  },
+  "Options": {
+    "TexFixed": true
+  }
+}
