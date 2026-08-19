@@ -47,6 +47,15 @@ class SoullinkLive2DDriver {
         this.idleMotionTimer = null;
         this.lastMotionTriggerTime = 0;
 
+        // 方案一：程序化物理弹性微动与拖拽阻尼惯性引擎 (告别机械假人)
+        this.bounceSpring = 0.0;     // 点击 Q 弹位移
+        this.bounceVelocity = 0.0;   // 弹簧速度
+        this.dragInertiaX = 0.0;     // 拖拽水平惯性倾斜
+        this.dragInertiaY = 0.0;     // 拖拽垂直惯性倾斜
+        this.dragTargetX = 0.0;      // 目标倾斜
+        this.dragTargetY = 0.0;
+        this.tapSmileTimer = 0.0;    // 点击微笑微表情计时器
+
         // VAD 情绪映射坐标系
         this.EMOTION_VAD_MAP = {
             "normal":   { v: 0.1,  a: 0.0,  d: 0.0 },
@@ -365,10 +374,37 @@ class SoullinkLive2DDriver {
         }
 
         this.currentMouthOpen += (this.targetMouthOpen - this.currentMouthOpen) * 0.35;
+
+        // 4. 计算点击 Q 弹阻尼弹簧运动 (Spring Physics: F = -k*x - c*v)
+        if (this.bounceSpring !== 0 || this.bounceVelocity !== 0) {
+            const springK = 0.25;
+            const damping = 0.18;
+            const force = -springK * this.bounceSpring - damping * this.bounceVelocity;
+            this.bounceVelocity += force * (delta || 1);
+            this.bounceSpring += this.bounceVelocity * (delta || 1);
+
+            if (Math.abs(this.bounceSpring) < 0.003 && Math.abs(this.bounceVelocity) < 0.003) {
+                this.bounceSpring = 0;
+                this.bounceVelocity = 0;
+            }
+        }
+
+        // 5. 计算拖拽惯性阻尼跟随
+        this.dragInertiaX += (this.dragTargetX - this.dragInertiaX) * 0.2 * (delta || 1);
+        this.dragInertiaY += (this.dragTargetY - this.dragInertiaY) * 0.2 * (delta || 1);
+        if (!this.isDragging) {
+            this.dragTargetX *= 0.82;
+            this.dragTargetY *= 0.82;
+        }
+
+        // 6. 点击微笑微表情计时器衰减
+        if (this.tapSmileTimer > 0) {
+            this.tapSmileTimer -= 0.02 * (delta || 1);
+        }
     }
 
     /**
-     * 在动作系统更新完成后注入 Live2D 参数 (口型、视线追踪、微表情)
+     * 在动作系统更新完成后注入 Live2D 参数 (口型、视线追踪、物理惯性、Q弹微动、微表情)
      */
     applyParametersOnMotionUpdate() {
         if (!this.model || !this.model.internalModel || !this.model.internalModel.coreModel) return;
@@ -421,6 +457,31 @@ class SoullinkLive2DDriver {
             } else if (this.targetEmotion === 'sleeping') {
                 this.setCoreParam(coreModel, 'ParamEyeLOpen', 0.0);
                 this.setCoreParam(coreModel, 'ParamEyeROpen', 0.0);
+            }
+
+            // 4. 点击物理弹性 Q 弹微动 (极其自然的起伏与微偏头，激发内置物理引擎自然抖拂)
+            if (this.bounceSpring !== 0) {
+                this.setCoreParam(coreModel, 'ParamBodyWeight', this.bounceSpring * 0.45);
+                this.setCoreParam(coreModel, 'ParamAngleY', -this.bounceSpring * 5.0);
+            }
+
+            // 5. 拖拽物理惯性阻尼倾斜 (跟随鼠标拖动产生自然倾斜滞后)
+            if (this.dragInertiaX !== 0 || this.dragInertiaY !== 0) {
+                this.setCoreParam(coreModel, 'ParamAngleZ', this.dragInertiaX * 14.0);
+                this.setCoreParam(coreModel, 'ParamBodyAngleX', this.dragInertiaX * 8.0);
+                this.setCoreParam(coreModel, 'ParamBodyAngleY', -this.dragInertiaY * 8.0);
+                this.setCoreParam(coreModel, 'ParamBodyAngleZ', this.dragInertiaX * 10.0);
+            }
+
+            // 6. 点击瞬态甜美眨眼/微笑反馈
+            if (this.tapSmileTimer > 0) {
+                const smileVal = Math.min(1.0, this.tapSmileTimer * 2.5);
+                this.setCoreParam(coreModel, 'ParamEyeLSmile', smileVal);
+                this.setCoreParam(coreModel, 'ParamEyeRSmile', smileVal);
+                this.setCoreParam(coreModel, 'ParamCheek', Math.max(isShyOrHappy, smileVal * 0.75));
+                this.setCoreParam(coreModel, 'PARAM_EYE_L_SMILE', smileVal);
+                this.setCoreParam(coreModel, 'PARAM_EYE_R_SMILE', smileVal);
+                this.setCoreParam(coreModel, 'PARAM_CHEEK', Math.max(isShyOrHappy, smileVal * 0.75));
             }
         } catch (e) {
             // 忽略个别模型没有的参数
@@ -504,50 +565,43 @@ class SoullinkLive2DDriver {
     }
 
     /**
-     * 1. 触发【点击组】动作 (用户点击/戳一戳交互)
+     * 1. 触发【点击组】动作 (用户点击/戳一戳交互 -> 方案一：自然物理弹性 Q 弹与甜美微笑微动)
      */
     triggerTapMotion(preferredList = []) {
         if (!this.model || !this.isLoaded || this.isSleeping) return;
         
-        console.log("[SOULLINK LIVE2D] 触发【点击组】动作交互");
+        console.log("[SOULLINK LIVE2D] 触发【点击组】物理弹性微动与表情互动");
 
-        // 优先在传入的偏好列表或模型扫描出的点击组中查找
+        // 方案一核心：赋予 Q 弹阻尼弹簧冲量 + 甜美眨眼微笑 + 头部自然微偏
+        this.bounceVelocity = 0.85;
+        this.tapSmileTimer = 0.65;
+        this.targetFocusX += (Math.random() - 0.5) * 0.3;
+
+        // 如果模型内置了画师手作的真实 Tap 动作，播放手作动作
         const candidates = (preferredList.length > 0) ? preferredList : this.tapMotions;
         if (candidates.length > 0) {
-            const played = this.playMotionFromCandidates(candidates);
-            if (played) return;
-        }
-
-        // 若模型无点击动作，回退至特殊动作或任意可用动作
-        if (this.specialMotions.length > 0) {
-            this.playMotionFromCandidates(this.specialMotions);
-        } else {
-            this.triggerRandomMotion();
+            this.playMotionFromCandidates(candidates);
         }
     }
 
     /**
-     * 2. 触发【拖拽组】动作 (用户按住并拖动桌宠窗口)
+     * 2. 触发【拖拽组】动作 (用户按住并拖动桌宠窗口 -> 方案一：物理惯性倾斜与重力跟随)
      */
-    triggerDragMotion(preferredList = []) {
+    triggerDragMotion(deltaX = 0, deltaY = 0) {
         if (!this.model || !this.isLoaded || this.isSleeping) return;
         this.isDragging = true;
 
+        // 根据窗口拖拽位移速度动态更新目标惯性角度
+        const dx = (typeof deltaX === 'number' && !isNaN(deltaX)) ? deltaX : 0;
+        const dy = (typeof deltaY === 'number' && !isNaN(deltaY)) ? deltaY : 0;
+        this.dragTargetX = Math.max(-1.0, Math.min(1.0, dx * 0.08));
+        this.dragTargetY = Math.max(-1.0, Math.min(1.0, dy * 0.08));
+
+        // 如果模型内置了画师手作的真实 Flick 动作，防抖触发
         const now = Date.now();
-        if (now - this.lastMotionTriggerTime < 800) return; // 800ms 防抖
-        this.lastMotionTriggerTime = now;
-
-        console.log("[SOULLINK LIVE2D] 触发【拖拽组】动作交互");
-
-        const candidates = (preferredList.length > 0) ? preferredList : this.dragMotions;
-        if (candidates.length > 0) {
-            const played = this.playMotionFromCandidates(candidates);
-            if (played) return;
-        }
-
-        // 若无拖拽动作，尝试点击动作或惊吓微姿态
-        if (this.tapMotions.length > 0) {
-            this.playMotionFromCandidates(this.tapMotions);
+        if (now - this.lastMotionTriggerTime >= 1200 && this.dragMotions.length > 0) {
+            this.lastMotionTriggerTime = now;
+            this.playMotionFromCandidates(this.dragMotions);
         }
     }
 

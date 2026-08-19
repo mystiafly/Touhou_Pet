@@ -434,9 +434,9 @@ class DesktopPet {
                     startY = e.screenY;
                     petIPC.sendWindowDrag(deltaX, deltaY);
 
-                    // Live2D 拖拽组动作联动
+                    // Live2D 拖拽惯性与动作联动
                     if (this.spriteType === 'live2d' && window.SoullinkLive2D && window.SoullinkLive2D.isLoaded) {
-                        window.SoullinkLive2D.triggerDragMotion();
+                        window.SoullinkLive2D.triggerDragMotion(deltaX, deltaY);
                     }
                 }
             });

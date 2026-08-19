@@ -16,32 +16,6 @@
           "FadeIn": 500,
           "FadeOut": 500
         }
-      ],
-      "Tap": [
-        {
-          "File": "motions/tap/tap_flap.motion3.json",
-          "FadeIn": 250,
-          "FadeOut": 350
-        }
-      ],
-      "Flick": [
-        {
-          "File": "motions/drag/drag_flick.motion3.json",
-          "FadeIn": 150,
-          "FadeOut": 250
-        }
-      ],
-      "Special": [
-        {
-          "File": "motions/special/special_sing.motion3.json",
-          "FadeIn": 400,
-          "FadeOut": 400
-        },
-        {
-          "File": "motions/special/special_stretch.motion3.json",
-          "FadeIn": 400,
-          "FadeOut": 400
-        }
       ]
     }
   },
