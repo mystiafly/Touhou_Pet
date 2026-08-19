@@ -32,9 +32,20 @@ class SoullinkLive2DDriver {
         this.audioCtx = null;
         this.analyser = null;
         this.isSpeaking = false;
+        this.isSleeping = false;
+        this.isDragging = false;
         this.currentMouthOpen = 0.0;
         this.targetMouthOpen = 0.0;
         this.lipSyncParamIds = ['ParamMouthOpenY', 'ParamA', 'PARAM_MOUTH_OPEN_Y', 'PARAM_A', 'ParamMouthA'];
+
+        // 动作组分类管理 (点击组、拖拽组、特殊组、待机组)
+        this.tapMotions = [];
+        this.dragMotions = [];
+        this.specialMotions = [];
+        this.idleMotions = [];
+        this.allMotionGroups = [];
+        this.idleMotionTimer = null;
+        this.lastMotionTriggerTime = 0;
 
         // VAD 情绪映射坐标系
         this.EMOTION_VAD_MAP = {
@@ -141,22 +152,23 @@ class SoullinkLive2DDriver {
 
             // 7. 绑定点击互动
             this.model.on('hit', (hitAreas) => {
-                console.log(`[SOULLINK LIVE2D] Hit:`, hitAreas);
+                console.log(`[SOULLINK LIVE2D] HitAreas:`, hitAreas);
                 if (hitAreas.some(h => /head|face/i.test(h))) {
-                    this.triggerRandomMotion(['tap_head', 'touch_head', 'flick_head', '']);
+                    this.triggerTapMotion(['tap_head', 'touch_head', 'hit_head', 'tap']);
                 } else if (hitAreas.some(h => /body|chest|arm/i.test(h))) {
-                    this.triggerRandomMotion(['tap_body', 'touch_body', 'shake', '']);
+                    this.triggerTapMotion(['tap_body', 'touch_body', 'hit_body', 'tap']);
                 } else {
-                    this.triggerRandomMotion();
+                    this.triggerTapMotion();
                 }
             });
 
             this.isLoaded = true;
             console.log(`[SOULLINK LIVE2D] 模型加载成功: ${modelUrl}`);
 
-            // 播放初始动作与表情
-            this.triggerRandomMotion();
+            // 播放初始动作与表情，并启动日常待机自发动作调度器
+            this.triggerIdleMotion();
             this.setEmotion('normal');
+            this.startIdleMotionScheduler();
 
             return true;
         } catch (e) {
@@ -166,15 +178,15 @@ class SoullinkLive2DDriver {
     }
 
     /**
-     * 自动解析模型的内置参数名与可用表情/动作组
+     * 自动解析模型的内置参数名与可用表情/动作组 (分类为 点击组、拖拽组、特殊组、待机组)
      */
     discoverModelCapabilities() {
         if (!this.model || !this.model.internalModel) return;
         const settings = this.model.internalModel.settings;
-        if (!settings) return;
+        const motionManager = this.model.internalModel.motionManager;
 
-        // 提取 LipSync 参数 Ids
-        if (settings.groups) {
+        // 1. 提取 LipSync 参数 Ids
+        if (settings && settings.groups) {
             for (const g of settings.groups) {
                 if (g.Name === 'LipSync' && Array.isArray(g.Ids)) {
                     for (const id of g.Ids) {
@@ -186,6 +198,50 @@ class SoullinkLive2DDriver {
             }
         }
         console.log("[SOULLINK LIVE2D] 识别到的口型同步参数:", this.lipSyncParamIds);
+
+        // 2. 扫描并分类全部动作组 (Motion Groups)
+        this.tapMotions = [];
+        this.dragMotions = [];
+        this.specialMotions = [];
+        this.idleMotions = [];
+        this.allMotionGroups = [];
+
+        if (motionManager && motionManager.definitions) {
+            this.allMotionGroups = Object.keys(motionManager.definitions);
+            
+            for (const grp of this.allMotionGroups) {
+                const lower = grp.toLowerCase().trim();
+                
+                // ① 待机组 (Idle)
+                if (lower === '' || /idle|standby|normal|wait|loop/i.test(lower)) {
+                    this.idleMotions.push(grp);
+                }
+                // ② 点击组 (Tap / Touch / Click / Hit)
+                else if (/tap|touch|click|hit|interact|poke|head|body/i.test(lower)) {
+                    this.tapMotions.push(grp);
+                }
+                // ③ 拖拽组 (Flick / Shake / Drag / Move / Drop)
+                else if (/flick|shake|drag|move|drop|pan|lift/i.test(lower)) {
+                    this.dragMotions.push(grp);
+                }
+                // ④ 特殊组 (Special / Extra / Dance / Sing / Pose / Action)
+                else if (/special|extra|dance|sing|magic|pose|action|attack|unique|skill|show/i.test(lower)) {
+                    this.specialMotions.push(grp);
+                }
+                // 其它未明确命名的非待机动作归入特殊组
+                else {
+                    this.specialMotions.push(grp);
+                }
+            }
+
+            console.log(`[SOULLINK LIVE2D] 动作组智能分类完成:`, {
+                点击组_Tap: this.tapMotions,
+                拖拽组_Drag: this.dragMotions,
+                特殊组_Special: this.specialMotions,
+                待机组_Idle: this.idleMotions,
+                全部动作组: this.allMotionGroups
+            });
+        }
     }
 
     /**
@@ -252,9 +308,19 @@ class SoullinkLive2DDriver {
             console.warn("[SOULLINK LIVE2D] 表情切换提示:", e);
         }
 
-        // 2. 触发对应的肢体微动作
-        if (this.targetEmotion !== 'normal' && this.targetEmotion !== 'sleeping') {
-            this.triggerRandomMotion();
+        // 2. 状态切换与肢体动作联动
+        if (this.targetEmotion === 'sleeping') {
+            this.isSleeping = true;
+            this.stopIdleMotionScheduler();
+        } else {
+            const wasSleeping = this.isSleeping;
+            this.isSleeping = false;
+            if (wasSleeping) {
+                this.startIdleMotionScheduler();
+            }
+            if (this.targetEmotion !== 'normal') {
+                this.triggerRandomMotion();
+            }
         }
     }
 
@@ -438,10 +504,146 @@ class SoullinkLive2DDriver {
     }
 
     /**
-     * 随机触发可用的动作 Motion
+     * 1. 触发【点击组】动作 (用户点击/戳一戳交互)
+     */
+    triggerTapMotion(preferredList = []) {
+        if (!this.model || !this.isLoaded || this.isSleeping) return;
+        
+        console.log("[SOULLINK LIVE2D] 触发【点击组】动作交互");
+
+        // 优先在传入的偏好列表或模型扫描出的点击组中查找
+        const candidates = (preferredList.length > 0) ? preferredList : this.tapMotions;
+        if (candidates.length > 0) {
+            const played = this.playMotionFromCandidates(candidates);
+            if (played) return;
+        }
+
+        // 若模型无点击动作，回退至特殊动作或任意可用动作
+        if (this.specialMotions.length > 0) {
+            this.playMotionFromCandidates(this.specialMotions);
+        } else {
+            this.triggerRandomMotion();
+        }
+    }
+
+    /**
+     * 2. 触发【拖拽组】动作 (用户按住并拖动桌宠窗口)
+     */
+    triggerDragMotion(preferredList = []) {
+        if (!this.model || !this.isLoaded || this.isSleeping) return;
+        this.isDragging = true;
+
+        const now = Date.now();
+        if (now - this.lastMotionTriggerTime < 800) return; // 800ms 防抖
+        this.lastMotionTriggerTime = now;
+
+        console.log("[SOULLINK LIVE2D] 触发【拖拽组】动作交互");
+
+        const candidates = (preferredList.length > 0) ? preferredList : this.dragMotions;
+        if (candidates.length > 0) {
+            const played = this.playMotionFromCandidates(candidates);
+            if (played) return;
+        }
+
+        // 若无拖拽动作，尝试点击动作或惊吓微姿态
+        if (this.tapMotions.length > 0) {
+            this.playMotionFromCandidates(this.tapMotions);
+        }
+    }
+
+    /**
+     * 3. 触发【特殊组】动作 (日常待机自发产生的小动作 / 施法 / 舞蹈 / 招牌姿态)
+     */
+    triggerSpecialMotion(preferredList = []) {
+        if (!this.model || !this.isLoaded) return;
+        if (this.isSleeping || this.isSpeaking || this.isDragging) return;
+
+        console.log("[SOULLINK LIVE2D] 触发【特殊组】待机自发动作");
+
+        const candidates = (preferredList.length > 0) ? preferredList : this.specialMotions;
+        if (candidates.length > 0) {
+            const played = this.playMotionFromCandidates(candidates);
+            if (played) return;
+        }
+
+        // 若无特殊动作，尝试任意非 Idle 动作
+        const nonIdle = this.allMotionGroups.filter(g => !this.idleMotions.includes(g));
+        if (nonIdle.length > 0) {
+            this.playMotionFromCandidates(nonIdle);
+        }
+    }
+
+    /**
+     * 4. 触发【待机组】动作 (恢复平稳站姿与呼吸循环)
+     */
+    triggerIdleMotion() {
+        if (!this.model || !this.isLoaded) return;
+        this.isDragging = false;
+
+        if (this.idleMotions.length > 0) {
+            this.playMotionFromCandidates(this.idleMotions);
+        } else {
+            try {
+                this.model.motion('');
+            } catch (e) {}
+        }
+    }
+
+    /**
+     * 辅助：在指定候选动作组列表中随机抽取一个并播放
+     */
+    playMotionFromCandidates(candidateList = []) {
+        if (!this.model || !this.model.internalModel) return false;
+        const motionManager = this.model.internalModel.motionManager;
+        if (!motionManager || !motionManager.definitions) return false;
+
+        const available = Object.keys(motionManager.definitions);
+        const matched = candidateList.filter(grp => available.includes(grp));
+
+        if (matched.length > 0) {
+            const chosen = matched[Math.floor(Math.random() * matched.length)];
+            try {
+                this.model.motion(chosen);
+                this.lastMotionTriggerTime = Date.now();
+                return true;
+            } catch (e) {
+                console.warn(`[SOULLINK LIVE2D] 播放动作 ${chosen} 失败:`, e);
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 启动日常待机自发动作调度器 (每 25~45 秒随机触发一次特殊小动作)
+     */
+    startIdleMotionScheduler() {
+        this.stopIdleMotionScheduler();
+        if (this.isSleeping) return; // 睡觉状态严格静默
+
+        const nextDelay = 25000 + Math.random() * 20000; // 25s ~ 45s
+        this.idleMotionTimer = setTimeout(() => {
+            if (this.isLoaded && !this.isSleeping && !this.isSpeaking && !this.isDragging) {
+                this.triggerSpecialMotion();
+            }
+            this.startIdleMotionScheduler(); // 递归安排下一次
+        }, nextDelay);
+    }
+
+    /**
+     * 停止待机自发动作调度器
+     */
+    stopIdleMotionScheduler() {
+        if (this.idleMotionTimer) {
+            clearTimeout(this.idleMotionTimer);
+            this.idleMotionTimer = null;
+        }
+    }
+
+    /**
+     * 随机触发可用的动作 Motion (通用保底)
      */
     triggerRandomMotion(candidateGroups = []) {
-        if (!this.model || !this.model.internalModel) return;
+        if (!this.model || !this.model.internalModel || this.isSleeping) return;
         const motionManager = this.model.internalModel.motionManager;
         if (!motionManager || !motionManager.definitions) return;
 
@@ -453,6 +655,7 @@ class SoullinkLive2DDriver {
             if (availableGroups.includes(grp)) {
                 try {
                     this.model.motion(grp);
+                    this.lastMotionTriggerTime = Date.now();
                     return;
                 } catch (e) {}
             }
@@ -462,11 +665,15 @@ class SoullinkLive2DDriver {
         const randomGrp = availableGroups[Math.floor(Math.random() * availableGroups.length)];
         try {
             this.model.motion(randomGrp);
+            this.lastMotionTriggerTime = Date.now();
         } catch (e) {}
     }
 
     destroy() {
+        this.stopIdleMotionScheduler();
         this.isSpeaking = false;
+        this.isSleeping = false;
+        this.isDragging = false;
         if (this.model) {
             try {
                 this.model.destroy();

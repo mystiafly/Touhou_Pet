@@ -433,6 +433,11 @@ class DesktopPet {
                     startX = e.screenX;
                     startY = e.screenY;
                     petIPC.sendWindowDrag(deltaX, deltaY);
+
+                    // Live2D 拖拽组动作联动
+                    if (this.spriteType === 'live2d' && window.SoullinkLive2D && window.SoullinkLive2D.isLoaded) {
+                        window.SoullinkLive2D.triggerDragMotion();
+                    }
                 }
             });
 
@@ -521,6 +526,11 @@ class DesktopPet {
                     let moveDist = Math.abs(e.screenX - mousedownX) + Math.abs(e.screenY - mousedownY);
                     if (moveDist < 5) { 
                         this.handlePetClick();
+                    } else {
+                        // 拖拽释放，Live2D 恢复平稳待机
+                        if (this.spriteType === 'live2d' && window.SoullinkLive2D && window.SoullinkLive2D.isLoaded) {
+                            window.SoullinkLive2D.triggerIdleMotion();
+                        }
                     }
                 }
             });
@@ -2016,6 +2026,11 @@ class DesktopPet {
             this.appendLocalChatMessage(this.charName || "桌宠", randomLine);
         }
         this.setEmotion(emotion);
+        
+        // 联动 Live2D 触发点击组动作 (随机表演)
+        if (this.spriteType === 'live2d' && window.SoullinkLive2D && window.SoullinkLive2D.isLoaded) {
+            window.SoullinkLive2D.triggerTapMotion();
+        }
         
         fetch('/api/action_sync', {
             method: 'POST',
