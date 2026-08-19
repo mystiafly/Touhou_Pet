@@ -95,7 +95,7 @@ GLOBAL_KEYS = {
     "engines", "pre_api_provider", "post_api_provider", "app_launcher",
     "vision_engine", "active_character", "custom_engines", "temperature",
     "enable_greeting", "enable_auto_speak", "auto_speak_multiplier",
-    "bubble_duration_multiplier", "show_thought_button",
+    "bubble_duration_multiplier", "show_thought_button", "show_tool_calls",
     "auto_minimize_on_fullscreen_game", "preset_max_depth", "preset_block_english",
     "flow_mode", "history_step_multiplier", "auto_start_on_boot",
     "enable_tts", "enable_tts_click", "enable_tts_auto", "tts_provider", "tts_speak_mode",

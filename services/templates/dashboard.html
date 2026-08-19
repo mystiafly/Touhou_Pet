@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>大贤者控制台 (Dashboard)</title>
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.26.12">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.27.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
@@ -11,7 +11,7 @@
     <script src="/static/lib/live2d/live2dcubismcore.min.js"></script>
     <script src="/static/lib/live2d/pixi.min.js"></script>
     <script src="/static/lib/live2d/pixi-live2d-display.min.js"></script>
-    <script src="/static/js/soullink_live2d.js?v=1.26.12"></script>
+    <script src="/static/js/soullink_live2d.js?v=1.27.0"></script>
 </head>
 <body>
 
@@ -357,6 +357,19 @@
                         </div>
                         <label class="switch">
                             <input type="checkbox" id="show-thought-button-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 15px 0;">
+
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <label style="font-weight: 500; font-size: 14px;">在对话框中显式显示工具调用</label>
+                            <p class="help-text" style="margin-top: 5px;">默认开启。当 Pre 意图模型决策触发工具调用（如前台进程探测、屏幕画面解析、联网搜索、启动应用等）时，对话框开头会直接展示 <code>[🔧 触发工具: ...]</code> 提示行。</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="show-tool-calls-toggle">
                             <span class="slider round"></span>
                         </label>
                     </div>
@@ -1903,6 +1916,6 @@
     </div>
 </div>
 
-<script src="/static/js/dashboard.js?v=1.26.12"></script>
+<script src="/static/js/dashboard.js?v=1.27.0"></script>
 </body>
 </html>

@@ -157,6 +157,32 @@ def run_post_and_history(state: dict):
             f.write(f"BG Task Error: {e}\\n{err_str}\\n")
         print(f"后台任务 (post_llm & update_history) 执行异常: {e}")
 
+def format_tool_prefix(final_state: dict) -> str:
+    """提取 Pre 模型触发的工具调用并格式化为对话框前缀"""
+    tool_labels = []
+    if final_state.get("process_task"):
+        tool_labels.append("前台进程探测")
+    if final_state.get("vision_task"):
+        tool_labels.append("屏幕画面解析")
+    if final_state.get("search_task"):
+        kw = final_state.get("search_task")
+        tool_labels.append(f"网络搜索: {kw}" if kw else "网络搜索")
+    if final_state.get("browser_task"):
+        target = final_state.get("browser_task")
+        tool_labels.append(f"网页浏览: {target}" if target else "网页浏览")
+    if final_state.get("launcher_task"):
+        app = final_state.get("launcher_task")
+        tool_labels.append(f"启动应用: {app}" if app else "启动应用")
+    if final_state.get("clean_memory_task"):
+        tool_labels.append("内存清理优化")
+    if final_state.get("selected_memory"):
+        tool_labels.append("调取深层日记")
+
+    if not tool_labels:
+        return ""
+    
+    return f"[🔧 触发工具: {' | '.join(tool_labels)}]\n"
+
 # 3. 核心聊天对话接口
 @router.post("/api/chat")
 def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = BackgroundTasks()):
@@ -271,9 +297,16 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
             except Exception as tts_ex:
                 print(f"[AUTO-TTS ERROR] {tts_ex}")
 
+        # 若开启了显式工具调用显示，在对话正文前合成前缀
+        display_content = clean_content
+        if cfg.get("show_tool_calls", True):
+            tool_prefix = format_tool_prefix(final_state)
+            if tool_prefix:
+                display_content = tool_prefix + clean_content
+
         return {
             "success": True,
-            "reply": clean_content,
+            "reply": display_content,
             "thought": thought,
             "emotion": emotion,
             "favorability": current_fav,
@@ -926,6 +959,7 @@ def get_config_api():
     config["preset_max_depth"] = config.get("preset_max_depth", 2)
     config["preset_block_english"] = config.get("preset_block_english", False)
     config["show_thought_button"] = config.get("show_thought_button", True)
+    config["show_tool_calls"] = config.get("show_tool_calls", True)
     config["auto_start_on_boot"] = config.get("auto_start_on_boot", False)
     config["enable_tts"] = config.get("enable_tts", True)
     config["enable_tts_click"] = config.get("enable_tts_click", True)
@@ -1004,6 +1038,8 @@ def post_config_api(payload: dict = Body(...)):
             config_data["enable_auto_speak"] = bool(payload["enable_auto_speak"])
         if "show_thought_button" in payload:
             config_data["show_thought_button"] = bool(payload["show_thought_button"])
+        if "show_tool_calls" in payload:
+            config_data["show_tool_calls"] = bool(payload["show_tool_calls"])
         if "auto_start_on_boot" in payload:
             config_data["auto_start_on_boot"] = bool(payload["auto_start_on_boot"])
             sync_windows_autostart_registry(config_data["auto_start_on_boot"])
@@ -1617,9 +1653,16 @@ def pet_speak(payload: dict = Body(...), background_tasks: BackgroundTasks = Bac
             except Exception as tts_ex:
                 print(f"[AUTO-TTS ERROR] {tts_ex}")
 
+        # 若开启了显式工具调用显示，在对话正文前合成前缀
+        display_content = clean_content
+        if cfg.get("show_tool_calls", True):
+            tool_prefix = format_tool_prefix(final_state)
+            if tool_prefix:
+                display_content = tool_prefix + clean_content
+
         return {
             "success": True,
-            "reply": clean_content,
+            "reply": display_content,
             "thought": final_state.get("thought", ""),
             "emotion": emotion,
             "favorability": current_fav,

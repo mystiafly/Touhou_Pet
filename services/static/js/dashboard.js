@@ -384,6 +384,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     showThoughtBtnToggle.checked = configData.show_thought_button !== false;
                 }
 
+                const showToolCallsToggle = document.getElementById('show-tool-calls-toggle');
+                if (showToolCallsToggle) {
+                    showToolCallsToggle.checked = configData.show_tool_calls !== false;
+                }
+
                 const autoStartToggle = document.getElementById('auto-start-toggle');
                 if (autoStartToggle) {
                     autoStartToggle.checked = configData.auto_start_on_boot === true;
@@ -1250,6 +1255,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ show_thought_button: showThoughtBtnToggle.checked })
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        });
+    }
+
+    const showToolCallsToggle = document.getElementById('show-tool-calls-toggle');
+    if (showToolCallsToggle) {
+        showToolCallsToggle.addEventListener('change', async () => {
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ show_tool_calls: showToolCallsToggle.checked })
                 });
             } catch (e) {
                 console.error(e);
