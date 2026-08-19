@@ -56,6 +56,10 @@ class SoullinkLive2DDriver {
         this.dragTargetY = 0.0;
         this.tapSmileTimer = 0.0;    // 点击微笑微表情计时器
 
+        // 视线活跃度与自然直视归位调度器 (避免鼠标离开或静止时呆滞斜视)
+        this.lastMouseMoveTime = Date.now();
+        this.isMouseHovering = false;
+
         // VAD 情绪映射坐标系
         this.EMOTION_VAD_MAP = {
             "normal":   { v: 0.1,  a: 0.0,  d: 0.0 },
@@ -345,8 +349,20 @@ class SoullinkLive2DDriver {
         this.currentVAD.a += (this.targetVAD.a - this.currentVAD.a) * lerpFactor;
         this.currentVAD.d += (this.targetVAD.d - this.currentVAD.d) * lerpFactor;
 
-        // 2. 平滑追踪视线坐标
-        const focusLerp = 0.15 * (delta || 1);
+        // 2. 视线活跃度检查与平滑自然归位 (鼠标离开或静止超过 2.0 秒后缓缓恢复直视)
+        const now = Date.now();
+        const isIdleMouse = (now - this.lastMouseMoveTime > 2000);
+        if (!this.isMouseHovering || isIdleMouse) {
+            // 自然平滑将目标视线拉回 (0, 0) 正中直视
+            const returnSpeed = 0.06 * (delta || 1);
+            this.targetFocusX += (0.0 - this.targetFocusX) * returnSpeed;
+            this.targetFocusY += (0.0 - this.targetFocusY) * returnSpeed;
+            if (Math.abs(this.targetFocusX) < 0.002) this.targetFocusX = 0;
+            if (Math.abs(this.targetFocusY) < 0.002) this.targetFocusY = 0;
+        }
+
+        // 平滑追踪视线坐标 (带自然微动阻尼)
+        const focusLerp = 0.12 * (delta || 1);
         this.currentFocusX += (this.targetFocusX - this.currentFocusX) * focusLerp;
         this.currentFocusY += (this.targetFocusY - this.currentFocusY) * focusLerp;
 
@@ -509,7 +525,10 @@ class SoullinkLive2DDriver {
      * 鼠标视线追踪 (支持传入 Canvas 元素以进行精确相对视线投影)
      */
     focus(clientX, clientY, canvasElement = null) {
-        if (!this.model || !this.isLoaded) return;
+        if (!this.model || !this.isLoaded || this.isSleeping) return;
+        this.lastMouseMoveTime = Date.now();
+        this.isMouseHovering = true;
+
         try {
             const targetCanvas = canvasElement || this.canvas;
             if (targetCanvas) {
@@ -523,6 +542,15 @@ class SoullinkLive2DDriver {
                 this.model.focus(clientX, clientY);
             }
         } catch (e) {}
+    }
+
+    /**
+     * 鼠标离开窗口或视野时平滑恢复直视前方
+     */
+    resetFocus() {
+        this.isMouseHovering = false;
+        this.targetFocusX = 0.0;
+        this.targetFocusY = 0.0;
     }
 
     /**

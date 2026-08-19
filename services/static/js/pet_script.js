@@ -441,6 +441,13 @@ class DesktopPet {
                 }
             });
 
+            // mouseleave handler (鼠标离开桌宠窗口时平滑恢复直视)
+            window.addEventListener('mouseleave', () => {
+                if (this.spriteType === 'live2d' && window.SoullinkLive2D) {
+                    window.SoullinkLive2D.resetFocus();
+                }
+            });
+
             // 监听系统全局鼠标坐标，用于无死角地进行 hover 和点击穿透判定
             if (typeof petIPC.onGlobalMouseMove === 'function') {
                 petIPC.onGlobalMouseMove((point) => {
@@ -491,6 +498,17 @@ class DesktopPet {
                         if (!isIgnoring) {
                             petIPC.sendSetIgnoreMouseEvents(true, { forward: true });
                             isIgnoring = true;
+                        }
+                    }
+
+                    // Live2D 视线跟随与离开自动归位联动
+                    if (this.spriteType === 'live2d' && window.SoullinkLive2D) {
+                        if (isInteractive) {
+                            const mouseX = point.x - window.screenX;
+                            const mouseY = point.y - window.screenY;
+                            window.SoullinkLive2D.focus(mouseX, mouseY, live2dCanvas);
+                        } else {
+                            window.SoullinkLive2D.resetFocus();
                         }
                     }
 
