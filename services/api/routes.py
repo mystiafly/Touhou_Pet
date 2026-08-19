@@ -1438,10 +1438,18 @@ def perform_system_update_api():
                 rel_path = parts[1]
                 
                 # 安全保护：绝不覆盖用户个人数据与本地历史配置
-                if rel_path.startswith("data/") or rel_path.startswith("logs/") or rel_path.endswith(".env") or rel_path == "global_config.json":
-                    continue
-                    
                 target_path = os.path.join(root_dir, rel_path.replace("/", os.sep))
+                if (
+                    rel_path.startswith("data/")
+                    or rel_path.startswith("logs/")
+                    or rel_path.endswith(".env")
+                    or rel_path == "global_config.json"
+                    or "daily_history" in rel_path
+                    or rel_path.endswith("dialog_history.json")
+                    or rel_path.endswith("favorability.json")
+                    or (rel_path.endswith("config.json") and os.path.exists(target_path))
+                ):
+                    continue
                 if member.is_dir():
                     os.makedirs(target_path, exist_ok=True)
                 else:
