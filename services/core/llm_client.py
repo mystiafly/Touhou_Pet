@@ -70,6 +70,21 @@ def get_llm_client_and_model(provider_override: str = None):
         
     raise ValueError("未检测到有效的 API 密钥环境，请检查 .env 文件。")
 
+def is_temperature_fixed_model(model_name: str) -> bool:
+    """判断是否属于强制要求 temperature=1.0 的推理或特定模型 (如 Kimi/Moonshot, OpenAI o1/o3, DeepSeek-R1/Reasoner 等)"""
+    if not model_name:
+        return False
+    name_lower = model_name.lower()
+    return any(k in name_lower for k in [
+        "kimi", "moonshot", "o1", "o3", "r1", "reasoner", "thinking"
+    ])
+
+def get_safe_temperature(model_name: str, preferred_temp: float = 0.7) -> float:
+    """获取安全的 temperature 参数"""
+    if is_temperature_fixed_model(model_name):
+        return 1.0
+    return preferred_temp
+
 def get_langchain_model(provider_override: str = None):
     """根据配置动态获取 LangChain ChatModel 包装实例"""
     config_data = get_config()
@@ -128,7 +143,7 @@ def get_langchain_model(provider_override: str = None):
         api_key=api_key,
         base_url=base_url,
         model=model_name,
-        temperature=0.7
+        temperature=get_safe_temperature(model_name, 0.7)
     )
 
 def format_llm_error(error: Exception | str, char_name: str = "桌宠") -> dict:
@@ -141,6 +156,12 @@ def format_llm_error(error: Exception | str, char_name: str = "桌宠") -> dict:
     
     emotion = "crying"
     thought = f"【大模型 API 调用异常】\n原始错误信息: {err_str}"
+    
+    # 0. Temperature 约束异常 (400, invalid temperature: only 1 is allowed for this model)
+    if "temperature" in err_lower and ("only 1" in err_lower or "must be 1" in err_lower or "invalid temperature" in err_lower):
+        reply = f"呜...当前大模型要求 Temperature 必须为 1.0！系统已为您自动尝试兼容适配，请重试一次看看~"
+        thought = f"【大贤者诊断 - Temperature 约束】\n目标大模型强制要求 Temperature 为 1.0 (例如 Kimi/o1/o3 推理模型)。已自动修正。"
+        error_type = "invalid_temperature"
     
     # 1. 欠费 / 余额不足 (402, Insufficient Balance, out_of_quota, etc.)
     if any(k in err_lower for k in [

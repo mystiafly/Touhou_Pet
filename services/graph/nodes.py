@@ -344,6 +344,24 @@ def call_model_with_fallback(active_messages, provider_override, node_name="LLM"
     except Exception as primary_ex:
         print(f"[BACKEND WARNING] 模型调用异常: {primary_ex}")
         from langchain_openai import ChatOpenAI
+
+        # 检查是否由于模型强制约束 temperature=1.0 导致 400 异常，若是则自动以 1.0 重试
+        err_str = str(primary_ex).lower()
+        if "temperature" in err_str and ("only 1" in err_str or "must be 1" in err_str or "invalid temperature" in err_str or "unsupported" in err_str):
+            try:
+                print(f"[{node_name}] 检测到模型对 temperature 有强制约束 (需 1.0)，正在自动切换 temperature=1.0 重试...")
+                retry_model = ChatOpenAI(
+                    api_key=getattr(model, "openai_api_key", None) or getattr(model, "api_key", None),
+                    base_url=getattr(model, "openai_api_base", None) or getattr(model, "base_url", None),
+                    model=getattr(model, "model_name", None) or getattr(model, "model", None),
+                    temperature=1.0
+                )
+                response = retry_model.invoke(active_messages)
+                print(f"\n[{node_name}] (Temp-Fixed 1.0) 大模型返回结果:\n{response.content}\n" + "="*60)
+                return response
+            except Exception as retry_e:
+                print(f"[{node_name}] temperature=1.0 重试失败: {retry_e}")
+
         config_data = get_config()
         current_provider = config_data.get("api_provider", os.getenv("API_PROVIDER", "gemini")).lower()
         fallback_provider = "gemini" if "deepseek" in current_provider else "deepseek-v4-pro"

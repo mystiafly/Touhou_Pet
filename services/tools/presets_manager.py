@@ -70,12 +70,25 @@ def check_semantic_presets(user_message, candidates):
             "If none are relevant, output []. Do not include any markdown code blocks, explanations, or extra text."
         )
         
-        response = client.chat.completions.create(
-            model=model_name,
-            messages=[{"role": "system", "content": prompt}],
-            temperature=0.0,
-            max_tokens=50
-        )
+        from core.llm_client import get_safe_temperature
+        try:
+            response = client.chat.completions.create(
+                model=model_name,
+                messages=[{"role": "system", "content": prompt}],
+                temperature=get_safe_temperature(model_name, 0.0),
+                max_tokens=50
+            )
+        except Exception as api_err:
+            err_str = str(api_err).lower()
+            if "temperature" in err_str and ("only 1" in err_str or "must be 1" in err_str or "invalid temperature" in err_str):
+                response = client.chat.completions.create(
+                    model=model_name,
+                    messages=[{"role": "system", "content": prompt}],
+                    temperature=1.0,
+                    max_tokens=50
+                )
+            else:
+                raise api_err
         
         result_text = response.choices[0].message.content.strip()
         # 清理可能包含的 Markdown 块语法

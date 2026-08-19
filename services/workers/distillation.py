@@ -44,12 +44,25 @@ def generate_pet_diary(date_str, log_content):
             f"   emotion 必须是以下五个之一：normal, angry, shy, crying, sleeping。不要输出任何其他说明文字。"
         )
         
-        response = client.chat.completions.create(
-            model=model_name,
-            messages=[{"role": "system", "content": prompt}],
-            temperature=0.7,
-            max_tokens=5000
-        )
+        from core.llm_client import get_safe_temperature
+        try:
+            response = client.chat.completions.create(
+                model=model_name,
+                messages=[{"role": "system", "content": prompt}],
+                temperature=get_safe_temperature(model_name, 0.7),
+                max_tokens=5000
+            )
+        except Exception as api_err:
+            err_str = str(api_err).lower()
+            if "temperature" in err_str and ("only 1" in err_str or "must be 1" in err_str or "invalid temperature" in err_str):
+                response = client.chat.completions.create(
+                    model=model_name,
+                    messages=[{"role": "system", "content": prompt}],
+                    temperature=1.0,
+                    max_tokens=5000
+                )
+            else:
+                raise api_err
         
         full_content = response.choices[0].message.content.strip()
         
