@@ -287,6 +287,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (historyStepSelect && configData.history_step_multiplier !== undefined) {
                     historyStepSelect.value = configData.history_step_multiplier.toString();
                 }
+
+                const globalTempSlider = document.getElementById('global-temperature-slider');
+                const globalTempInput = document.getElementById('global-temperature-input');
+                const globalTempVal = document.getElementById('global-temperature-val');
+                const globalTemp = configData.temperature !== undefined ? parseFloat(configData.temperature) : 0.7;
+                if (globalTempSlider) globalTempSlider.value = globalTemp;
+                if (globalTempInput) globalTempInput.value = globalTemp;
+                if (globalTempVal) globalTempVal.textContent = globalTemp.toFixed(2);
                 
                 const mainDisplay = document.getElementById('main-api-provider-display');
                 if (mainDisplay) {
@@ -569,6 +577,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error("保存阶梯倍率失败:", e);
             }
         });
+    }
+
+    const globalTempSlider = document.getElementById('global-temperature-slider');
+    const globalTempInput = document.getElementById('global-temperature-input');
+    const globalTempVal = document.getElementById('global-temperature-val');
+    if (globalTempSlider && globalTempInput) {
+        const syncGlobalTemp = async (val, save = false) => {
+            const num = Math.max(0, Math.min(2, parseFloat(val) || 0.7));
+            globalTempSlider.value = num;
+            globalTempInput.value = num;
+            if (globalTempVal) globalTempVal.textContent = num.toFixed(2);
+            if (save) {
+                try {
+                    await fetch('/api/settings/config', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ temperature: num })
+                    });
+                } catch (e) {
+                    console.error("保存全局温度失败:", e);
+                }
+            }
+        };
+        globalTempSlider.addEventListener('input', (e) => syncGlobalTemp(e.target.value, false));
+        globalTempSlider.addEventListener('change', (e) => syncGlobalTemp(e.target.value, true));
+        globalTempInput.addEventListener('input', (e) => syncGlobalTemp(e.target.value, false));
+        globalTempInput.addEventListener('change', (e) => syncGlobalTemp(e.target.value, true));
     }
 
     const visionEngineSelect = document.getElementById('vision-engine-select');
@@ -3627,9 +3662,13 @@ function renderCustomEnginesList() {
         item.style.justifyContent = 'space-between';
         item.style.alignItems = 'center';
         
+        const tempText = engine.temperature !== undefined ? `${parseFloat(engine.temperature).toFixed(2)}` : '0.70 (默认)';
         item.innerHTML = `
             <div>
-                <div style="font-weight: bold; margin-bottom: 5px;">${engine.name}</div>
+                <div style="font-weight: bold; margin-bottom: 5px; display: flex; align-items: center; gap: 8px;">
+                    ${engine.name}
+                    <span style="font-size: 11px; background: rgba(189, 147, 249, 0.2); color: #bd93f9; padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(189, 147, 249, 0.3);">Temp: ${tempText}</span>
+                </div>
                 <div style="font-size: 12px; color: var(--text-secondary);">模型: ${engine.model_name}</div>
                 <div style="font-size: 12px; color: var(--text-secondary);">URL: ${engine.base_url}</div>
             </div>
@@ -3650,6 +3689,15 @@ window.editCustomEngine = function(id) {
     document.getElementById('engine-base-url').value = engine.base_url;
     document.getElementById('engine-api-key').value = engine.api_key || '';
     document.getElementById('engine-model-name').value = engine.model_name;
+
+    const engTemp = engine.temperature !== undefined ? parseFloat(engine.temperature) : 0.7;
+    const tempSlider = document.getElementById('engine-temperature-slider');
+    const tempInput = document.getElementById('engine-temperature');
+    const tempVal = document.getElementById('engine-temperature-val');
+    if (tempSlider) tempSlider.value = engTemp;
+    if (tempInput) tempInput.value = engTemp;
+    if (tempVal) tempVal.textContent = engTemp.toFixed(2);
+
     document.getElementById('btn-save-engine').disabled = true; // 需重新测试才能保存
     
     document.getElementById('engine-model-select').style.display = 'none';
@@ -3696,6 +3744,14 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('engine-base-url').value = '';
             document.getElementById('engine-api-key').value = '';
             document.getElementById('engine-model-name').value = '';
+
+            const tempSlider = document.getElementById('engine-temperature-slider');
+            const tempInput = document.getElementById('engine-temperature');
+            const tempVal = document.getElementById('engine-temperature-val');
+            if (tempSlider) tempSlider.value = 0.7;
+            if (tempInput) tempInput.value = 0.7;
+            if (tempVal) tempVal.textContent = '0.70';
+
             document.getElementById('btn-save-engine').disabled = true;
             document.getElementById('engine-test-status').style.display = 'none';
             document.getElementById('engine-model-select').style.display = 'none';
@@ -3712,6 +3768,23 @@ document.addEventListener('DOMContentLoaded', () => {
     if (modal) {
         modal.addEventListener('click', (e) => {
             if (e.target === modal) modal.classList.add('hidden');
+        });
+    }
+
+    // 引擎弹窗内温度滑块与数值输入联动
+    const engineTempSlider = document.getElementById('engine-temperature-slider');
+    const engineTempInput = document.getElementById('engine-temperature');
+    const engineTempVal = document.getElementById('engine-temperature-val');
+    if (engineTempSlider && engineTempInput) {
+        engineTempSlider.addEventListener('input', (e) => {
+            const num = parseFloat(e.target.value) || 0.7;
+            engineTempInput.value = num;
+            if (engineTempVal) engineTempVal.textContent = num.toFixed(2);
+        });
+        engineTempInput.addEventListener('input', (e) => {
+            const num = Math.max(0, Math.min(2, parseFloat(e.target.value) || 0.7));
+            engineTempSlider.value = num;
+            if (engineTempVal) engineTempVal.textContent = num.toFixed(2);
         });
     }
     
@@ -3788,6 +3861,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const baseUrl = document.getElementById('engine-base-url').value.trim();
             const apiKey = document.getElementById('engine-api-key').value.trim();
             const modelName = document.getElementById('engine-model-name').value.trim();
+            const temperature = engineTempInput ? (parseFloat(engineTempInput.value) || 0.7) : 0.7;
             
             if(!baseUrl || !modelName) {
                 alert("请先填写 API Base URL 和模型名称！如果不知道模型名称，可以先拉取列表。");
@@ -3803,7 +3877,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const res = await fetch('/api/engines/test', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ base_url: baseUrl, api_key: apiKey, model_name: modelName })
+                    body: JSON.stringify({ base_url: baseUrl, api_key: apiKey, model_name: modelName, temperature: temperature })
                 });
                 const data = await res.json();
                 
@@ -3834,6 +3908,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const baseUrl = document.getElementById('engine-base-url').value.trim();
             const apiKey = document.getElementById('engine-api-key').value.trim();
             const modelName = document.getElementById('engine-model-name').value.trim();
+            const temperature = engineTempInput ? (parseFloat(engineTempInput.value) || 0.7) : 0.7;
             
             if(!name || !baseUrl || !modelName) {
                 alert("请填写完整的名称、URL 和模型名！");
@@ -3848,7 +3923,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
-                        id, name, base_url: baseUrl, api_key: apiKey, model_name: modelName
+                        id, name, base_url: baseUrl, api_key: apiKey, model_name: modelName, temperature: temperature
                     })
                 });
                 const data = await res.json();

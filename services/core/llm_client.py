@@ -97,6 +97,7 @@ def get_langchain_model(provider_override: str = None):
     api_key = None
     base_url = None
     model_name = None
+    engine_temp = None
     
     # Check custom engine
     if provider.startswith("custom_"):
@@ -108,6 +109,11 @@ def get_langchain_model(provider_override: str = None):
                     api_key = config_data.get("engine_api_key") or config_data.get("deepseek_api_key") or os.getenv("DEEPSEEK_API_KEY")
                 base_url = engine.get("base_url")
                 model_name = engine.get("model_name", "custom-model")
+                if "temperature" in engine and engine.get("temperature") is not None:
+                    try:
+                        engine_temp = float(engine.get("temperature"))
+                    except:
+                        pass
                 break
     
     if not api_key:
@@ -139,11 +145,17 @@ def get_langchain_model(provider_override: str = None):
     if not api_key:
         raise ValueError("未检测到有效的 API 密钥环境，请检查 .env 文件。")
         
+    try:
+        global_temp = float(config_data.get("temperature", 0.7))
+    except:
+        global_temp = 0.7
+    preferred_temp = engine_temp if engine_temp is not None else global_temp
+
     return ChatOpenAI(
         api_key=api_key,
         base_url=base_url,
         model=model_name,
-        temperature=get_safe_temperature(model_name, 0.7)
+        temperature=get_safe_temperature(model_name, preferred_temp)
     )
 
 def format_llm_error(error: Exception | str, char_name: str = "桌宠") -> dict:

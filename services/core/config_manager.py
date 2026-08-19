@@ -93,7 +93,7 @@ def get_file_path(filename):
 GLOBAL_KEYS = {
     "api_provider", "engine_base_url", "engine_api_key", "engine_model_name",
     "engines", "pre_api_provider", "post_api_provider", "app_launcher",
-    "vision_engine", "active_character", "custom_engines",
+    "vision_engine", "active_character", "custom_engines", "temperature",
     "enable_greeting", "enable_auto_speak", "auto_speak_multiplier",
     "bubble_duration_multiplier", "show_thought_button",
     "auto_minimize_on_fullscreen_game", "preset_max_depth", "preset_block_english",

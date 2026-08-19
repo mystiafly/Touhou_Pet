@@ -2095,6 +2095,7 @@ class EngineTestRequest(BaseModel):
     base_url: str
     api_key: str
     model_name: str = "test-model"
+    temperature: Optional[float] = None
 
 @router.post("/api/engines/fetch_models")
 def api_engines_fetch_models(req: EngineTestRequest):
@@ -2133,15 +2134,18 @@ def api_engines_test(req: EngineTestRequest):
     """测试连接 (发送一条空闲问候)"""
     from langchain_openai import ChatOpenAI
     from langchain_core.messages import HumanMessage
+    from core.llm_client import get_safe_temperature
     try:
         api_key = req.api_key
         if not api_key:
             api_key = "sk-local"
             
+        temp = get_safe_temperature(req.model_name, req.temperature if req.temperature is not None else 0.7)
         llm = ChatOpenAI(
             api_key=api_key,
             base_url=req.base_url,
             model=req.model_name,
+            temperature=temp,
             max_retries=0,
             timeout=10
         )
@@ -2157,6 +2161,7 @@ class EngineSaveRequest(BaseModel):
     model_name: str
     base_url: str
     api_key: str
+    temperature: Optional[float] = 0.7
 
 @router.post("/api/engines/save")
 def api_engines_save(req: EngineSaveRequest):
@@ -2173,7 +2178,8 @@ def api_engines_save(req: EngineSaveRequest):
         "name": req.name.strip(),
         "model_name": req.model_name.strip(),
         "base_url": req.base_url.strip(),
-        "api_key": req.api_key.strip()
+        "api_key": req.api_key.strip(),
+        "temperature": req.temperature if req.temperature is not None else 0.7
     }
     
     success = save_custom_engine(engine_data)
