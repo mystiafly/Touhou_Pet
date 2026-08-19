@@ -100,7 +100,8 @@ GLOBAL_KEYS = {
     "flow_mode", "history_step_multiplier", "auto_start_on_boot",
     "enable_tts", "enable_tts_click", "enable_tts_auto", "tts_provider", "tts_speak_mode",
     "tts_base_url", "tts_api_key", "tts_model_name",
-    "fish_audio_base_url", "fish_audio_api_key"
+    "fish_audio_base_url", "fish_audio_api_key",
+    "weather_provider", "weather_api_key", "weather_city", "weather_lat", "weather_lon"
 }
 
 CHARACTER_CONFIG_WHITELIST = {

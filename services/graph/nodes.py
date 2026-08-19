@@ -95,7 +95,8 @@ def build_pre_messages(state: AgentState) -> list:
         "4. 睡眠控制：如果用户明确命令你去睡觉、休息，输出 `[SLEEP_NOW]`。\n"
         "5. 视觉识图: 如果用户要求你看看屏幕上有什么，或者让你识图，输出 `[ANALYZE_SCREEN]`。\n"
         "6. 进程探测: 如果用户问你在忙什么、玩什么游戏，或者让你看看他电脑里开着什么软件，输出 `[READ_PROCESS]`。\n"
-        "7. 长期记忆检索: 如果检测到下面的【相关记忆检索结果】中的内容与当前用户的话题有实质性关联（例如提及了过去的某件事、某个约定或情感），你必须输出对应的 `[SELECT_MEMORY: ID]` 来在后续环节调取完整日记。\n\n"
+        "7. 长期记忆检索: 如果检测到下面的【相关记忆检索结果】中的内容与当前用户的话题有实质性关联（例如提及了过去的某件事、某个约定或情感），你必须输出对应的 `[SELECT_MEMORY: ID]` 来在后续环节调取完整日记。\n"
+        "8. 实时天气查询: 如果用户询问天气、气温、下雨、冷热、穿衣防雨建议，或者询问某地天气（如‘今天上海天气怎么样’、‘出门要带伞吗’），你必须输出 `[WEATHER: 城市名]`（若未指定城市输出 `[WEATHER: auto]`）。\n\n"
         "【规则】\n"
         "1. 如果检测到工具意图，请仅输出上述的一个或多个标签，不需要任何多余解释！绝对禁止进行角色扮演！\n"
         "2. 如果未检测到任何需要工具协助的意图（且不需要调取长记忆），请仅输出 `[NO_TOOLS_NEEDED]`。\n"
@@ -424,6 +425,13 @@ def parse_pre_response_node(state: AgentState) -> Dict[str, Any]:
     process_match = re.search(r'\[READ_PROCESS\]', raw_reply, re.IGNORECASE)
     if process_match: process_task = True
 
+    weather_task = None
+    weather_match = re.search(r'\[WEATHER:\s*(.*?)\]', raw_reply, re.IGNORECASE)
+    if weather_match:
+        weather_task = weather_match.group(1).strip()
+    elif "[WEATHER]" in raw_reply.upper():
+        weather_task = "auto"
+
     selected_memory = ""
     memory_match = re.search(r'\[SELECT_MEMORY:\s*(.*?)\]', raw_reply, re.IGNORECASE)
     if memory_match: 
@@ -454,6 +462,7 @@ def parse_pre_response_node(state: AgentState) -> Dict[str, Any]:
         "vision_task": vision_task,
         "clean_memory_task": clean_memory_task,
         "process_task": process_task,
+        "weather_task": weather_task,
         "selected_memory": selected_memory
     }
 
@@ -481,6 +490,9 @@ def collect_tool_feedback_node(state: AgentState) -> Dict[str, Any]:
         else:
             tool_feedback.append(f"【系统反馈】内存清理失败: {res.get('error')}")
 
+    if state.get("weather_result"):
+        tool_feedback.append(f"【系统反馈-实时天气】\n{state.get('weather_result')}")
+
     feedback_str = "\n".join(tool_feedback)
     return {"tool_feedback_context": feedback_str}
 
@@ -488,6 +500,12 @@ def execute_process_task_node(state: AgentState) -> Dict[str, Any]:
     from core.system_inspector import get_active_programs
     result = get_active_programs()
     return {"process_result": result}
+
+def execute_weather_task_node(state: AgentState) -> Dict[str, Any]:
+    from core.weather_manager import get_weather_report
+    city_query = state.get("weather_task") or "auto"
+    result = get_weather_report(city_query)
+    return {"weather_result": result}
 
 def main_llm_node(state: AgentState) -> Dict[str, Any]:
     active_messages = build_main_messages(state)
@@ -607,6 +625,8 @@ def should_execute_tools(state: AgentState) -> str:
         return "execute_process_task"
     if state.get("clean_memory_task") and state.get("clean_memory_result") is None:
         return "execute_clean_memory_task"
+    if state.get("weather_task") and state.get("weather_result") is None:
+        return "execute_weather_task"
     return "collect_tool_feedback"
 
 def prepare_retry_node(state: AgentState) -> Dict[str, Any]:

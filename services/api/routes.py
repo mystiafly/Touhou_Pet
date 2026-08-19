@@ -175,6 +175,12 @@ def format_tool_prefix(final_state: dict) -> str:
         tool_labels.append(f"启动应用: {app}" if app else "启动应用")
     if final_state.get("clean_memory_task"):
         tool_labels.append("内存清理优化")
+    if final_state.get("weather_task"):
+        w_city = final_state.get("weather_task")
+        if w_city and w_city.lower() != "auto":
+            tool_labels.append(f"实时天气查询: {w_city}")
+        else:
+            tool_labels.append("实时天气查询")
     if final_state.get("selected_memory"):
         tool_labels.append("调取深层日记")
 
@@ -227,6 +233,8 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
             "clean_memory_result": None,
             "process_task": None,
             "process_result": None,
+            "weather_task": None,
+            "weather_result": None,
             "selected_memory": "",
             "request_type": "chat",
             "retry_count": 0
@@ -939,9 +947,73 @@ async def api_tools():
             "command": "[ANALYZE_SCREEN]",
             "description": "截取当前电脑屏幕并调用视觉多模态大模型进行分析，以实现看屏幕的功能。",
             "icon": "fas fa-eye"
+        },
+        {
+            "name": "实时天气查询",
+            "command": "[WEATHER: 城市名] 或 [WEATHER: auto]",
+            "description": "智能感知本地或指定城市的天气与气温，提供穿衣防雨贴士与角色关怀。",
+            "icon": "fas fa-cloud-sun"
         }
     ]
     return JSONResponse({"status": "success", "tools": tools})
+
+@router.post("/api/tools/weather/test")
+def test_weather_api(payload: dict = Body(...)):
+    """测试天气接口与定位配置"""
+    try:
+        from core.weather_manager import (
+            resolve_target_location,
+            fetch_open_meteo,
+            fetch_wttr_in,
+            fetch_qweather,
+            fetch_amap,
+            fetch_seniverse,
+            get_weather_report
+        )
+        provider = payload.get("weather_provider", "auto")
+        api_key = payload.get("weather_api_key", "").strip()
+        city = payload.get("weather_city", "").strip()
+        lat = payload.get("weather_lat")
+        lon = payload.get("weather_lon")
+
+        # 临时覆盖经纬度
+        if not city and (lat is None or lon is None):
+            res_city, res_lat, res_lon = resolve_target_location("auto")
+        else:
+            res_city = city or "北京"
+            try:
+                res_lat = float(lat) if lat is not None else 39.9042
+                res_lon = float(lon) if lon is not None else 116.4074
+            except:
+                res_lat, res_lon = 39.9042, 116.4074
+
+        report = ""
+        if provider == "qweather" and api_key:
+            res = fetch_qweather(api_key, res_city, res_lat, res_lon)
+            report = f"【和风天气测试成功】城市: {res['city']} | 天气: {res['weather']} | 温度: {res['temperature']} | 温差: {res['temp_range']} | 湿度: {res['humidity']} | 风向: {res['wind']}\n建议: {res['advice']}"
+        elif provider == "amap" and api_key:
+            res = fetch_amap(api_key, res_city)
+            report = f"【高德天气测试成功】城市: {res['city']} | 天气: {res['weather']} | 温度: {res['temperature']} | 温差: {res['temp_range']} | 湿度: {res['humidity']} | 风向: {res['wind']}\n建议: {res['advice']}"
+        elif provider == "seniverse" and api_key:
+            res = fetch_seniverse(api_key, res_city)
+            report = f"【心知天气测试成功】城市: {res['city']} | 天气: {res['weather']} | 温度: {res['temperature']} | 温差: {res['temp_range']}\n建议: {res['advice']}"
+        else:
+            # 默认或免 Key
+            report = get_weather_report(res_city)
+
+        return JSONResponse({"status": "success", "report": report, "city": res_city, "lat": res_lat, "lon": res_lon})
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=400)
+
+@router.get("/api/tools/weather/locate")
+def auto_locate_api():
+    """获取公网 IP 自动定位结果"""
+    try:
+        from core.weather_manager import auto_detect_location
+        data = auto_detect_location()
+        return JSONResponse({"status": "success", "location": data})
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
 @router.get("/api/settings/config")
 def get_config_api():
@@ -981,6 +1053,11 @@ def get_config_api():
     config["vision_engine"] = config.get("vision_engine", "gemini")
     config["flow_mode"] = config.get("flow_mode", False)
     config["history_step_multiplier"] = config.get("history_step_multiplier", 1)
+    config["weather_provider"] = config.get("weather_provider", "auto")
+    config["weather_api_key"] = config.get("weather_api_key", "")
+    config["weather_city"] = config.get("weather_city", "")
+    config["weather_lat"] = config.get("weather_lat", 39.9042)
+    config["weather_lon"] = config.get("weather_lon", 116.4074)
     config["success"] = True
     return config
 
@@ -1089,6 +1166,22 @@ def post_config_api(payload: dict = Body(...)):
             config_data["preset_block_english"] = bool(payload["preset_block_english"])
         if "app_launcher" in payload:
             config_data["app_launcher"] = payload["app_launcher"]
+        if "weather_provider" in payload:
+            config_data["weather_provider"] = str(payload["weather_provider"]).strip()
+        if "weather_api_key" in payload:
+            config_data["weather_api_key"] = str(payload["weather_api_key"]).strip()
+        if "weather_city" in payload:
+            config_data["weather_city"] = str(payload["weather_city"]).strip()
+        if "weather_lat" in payload:
+            try:
+                config_data["weather_lat"] = float(payload["weather_lat"])
+            except:
+                pass
+        if "weather_lon" in payload:
+            try:
+                config_data["weather_lon"] = float(payload["weather_lon"])
+            except:
+                pass
 
         if "character_name" in payload:
             cname = str(payload["character_name"]).strip()
@@ -1604,6 +1697,8 @@ def pet_speak(payload: dict = Body(...), background_tasks: BackgroundTasks = Bac
             "clean_memory_result": None,
             "process_task": None,
             "process_result": None,
+            "weather_task": None,
+            "weather_result": None,
             "selected_memory": "",
             "request_type": request_type,
             "retry_count": 0
