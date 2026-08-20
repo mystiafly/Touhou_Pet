@@ -1,0 +1,146 @@
+{
+  "Version": 3,
+  "FileReferences": {
+    "Moc": "Cirno.asset.moc3",
+    "Textures": [
+      "textures/texture_00.png"
+    ],
+    "Physics": "Cirno.asset.physics3.json",
+    "Pose": "Cirno.pose3.json",
+    "Motions": {
+      "": [
+        {
+          "File": "motions/Cirno_50.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_10.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_20.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_03.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_34.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_45.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_53.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_15.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_31.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_25.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_54.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_21.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_44.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_41.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_42.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_35.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_23.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_04.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_07.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_40.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_55.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_06.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_33.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_14.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_30.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_13.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_11.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_43.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_22.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_12.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_05.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_08.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_01.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_24.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_02.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_52.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_32.motion3.json"
+        },
+        {
+          "File": "motions/Cirno_51.motion3.json"
+        }
+      ]
+    }
+  },
+  "Groups": [
+    {
+      "Target": "Parameter",
+      "Name": "EyeBlink",
+      "Ids": [
+        "ParamEyeLOpen",
+        "ParamEyeROpen"
+      ]
+    },
+    {
+      "Target": "Parameter",
+      "Name": "LipSync",
+      "Ids": [
+        "ParamMouthOpenY"
+      ]
+    }
+  ]
+}
