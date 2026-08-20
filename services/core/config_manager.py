@@ -8,28 +8,75 @@ os.environ["HF_ENDPOINT"] = os.getenv("HF_ENDPOINT", "https://hf-mirror.com")
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
-SERVICES_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
+# 获取真实的软件便携根目录 (Portable Directory)
 if getattr(sys, 'frozen', False):
-    app_data = os.getenv('APPDATA') or os.path.expanduser('~')
-    USER_DATA_DIR = os.path.join(app_data, 'RumiaDesktopPet')
+    APP_DIR = os.path.dirname(os.path.abspath(sys.executable))
+    if os.path.basename(APP_DIR).lower() in ["backend", "bin", "dist"]:
+        parent_dir = os.path.dirname(APP_DIR)
+        if os.path.basename(parent_dir).lower() == "resources":
+            APP_DIR = os.path.dirname(parent_dir)
+        elif os.path.exists(os.path.join(parent_dir, "services")):
+            APP_DIR = parent_dir
+    SERVICES_DIR = os.path.join(APP_DIR, "services") if os.path.exists(os.path.join(APP_DIR, "services")) else APP_DIR
 else:
-    USER_DATA_DIR = SERVICES_DIR
+    SERVICES_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# 统一便携化 (Portable Mode)：所有日记、记忆、角色配置就近存放在软件自身目录，彻底告别 AppData 碎片化
+USER_DATA_DIR = SERVICES_DIR
 
 # 绑定本地内嵌 HuggingFace 缓存路径
 LOCAL_MODELS_DIR = os.path.join(USER_DATA_DIR, "models")
 os.environ["HF_HOME"] = os.getenv("HF_HOME", LOCAL_MODELS_DIR)
 
 def init_user_data_dir():
-    """初始化 AppData 用户目录，在打包部署时从应用包中解压并初始化出厂设置"""
+    """初始化便携目录，并自动从旧版 AppData 无损迁移历史日记与记忆"""
     try:
         os.makedirs(USER_DATA_DIR, exist_ok=True)
         os.makedirs(os.path.join(USER_DATA_DIR, "logs"), exist_ok=True)
         os.makedirs(LOCAL_MODELS_DIR, exist_ok=True)
         
-        # 0. 自动同步内嵌模型文件 (sentence-transformers/all-MiniLM-L6-v2)
+        # 0. 自动从旧版 AppData 迁移历史数据 (向后无缝兼容老用户)
+        app_data = os.getenv('APPDATA')
+        if app_data:
+            legacy_appdata = os.path.join(app_data, 'RumiaDesktopPet')
+            if os.path.exists(legacy_appdata) and os.path.abspath(legacy_appdata) != os.path.abspath(USER_DATA_DIR):
+                try:
+                    legacy_chars = os.path.join(legacy_appdata, "characters")
+                    if os.path.exists(legacy_chars):
+                        dst_chars = os.path.join(USER_DATA_DIR, "characters")
+                        os.makedirs(dst_chars, exist_ok=True)
+                        for char_id in os.listdir(legacy_chars):
+                            src_char = os.path.join(legacy_chars, char_id)
+                            dst_char = os.path.join(dst_chars, char_id)
+                            if os.path.isdir(src_char):
+                                os.makedirs(dst_char, exist_ok=True)
+                                # 迁移 daily_history 日记与聊天记录
+                                src_dh = os.path.join(src_char, "daily_history")
+                                dst_dh = os.path.join(dst_char, "daily_history")
+                                if os.path.exists(src_dh):
+                                    os.makedirs(dst_dh, exist_ok=True)
+                                    for df in os.listdir(src_dh):
+                                        s_df = os.path.join(src_dh, df)
+                                        d_df = os.path.join(dst_dh, df)
+                                        if not os.path.exists(d_df):
+                                            shutil.copy2(s_df, d_df)
+                                # 迁移 qdrant_db
+                                src_q = os.path.join(src_char, "qdrant_db")
+                                dst_q = os.path.join(dst_char, "qdrant_db")
+                                if os.path.exists(src_q) and not os.path.exists(dst_q):
+                                    shutil.copytree(src_q, dst_q)
+                                # 迁移 databank / dialog_history / favorability
+                                for fn in ["databank_state.json", "dialog_history.json", "favorability.json"]:
+                                    s_fn = os.path.join(src_char, fn)
+                                    d_fn = os.path.join(dst_char, fn)
+                                    if os.path.exists(s_fn) and not os.path.exists(d_fn):
+                                        shutil.copy2(s_fn, d_fn)
+                except Exception as me:
+                    print(f"[PORTABLE MIGRATION] 旧版 AppData 数据迁移提示: {me}")
+
+        # 1. 自动同步内嵌模型文件 (sentence-transformers/all-MiniLM-L6-v2)
         src_models = os.path.join(SERVICES_DIR, "models")
-        if os.path.exists(src_models):
+        if os.path.exists(src_models) and os.path.abspath(src_models) != os.path.abspath(LOCAL_MODELS_DIR):
             for item in os.listdir(src_models):
                 s_item = os.path.join(src_models, item)
                 d_item = os.path.join(LOCAL_MODELS_DIR, item)
@@ -39,31 +86,6 @@ def init_user_data_dir():
                             shutil.copytree(s_item, d_item)
                         else:
                             shutil.copy2(s_item, d_item)
-                    except Exception: pass
-
-        if getattr(sys, 'frozen', False):
-            # 1. 自动同步/解压 global_config.json
-            dst_global = os.path.join(USER_DATA_DIR, "global_config.json")
-            if not os.path.exists(dst_global):
-                src_global = os.path.join(SERVICES_DIR, "global_config.json")
-                if os.path.exists(src_global):
-                    try: shutil.copy2(src_global, dst_global)
-                    except Exception: pass
-                    
-            # 2. 自动解压/出厂 characters 角色预设包
-            dst_chars = os.path.join(USER_DATA_DIR, "characters")
-            if not os.path.exists(dst_chars):
-                src_chars = os.path.join(SERVICES_DIR, "characters")
-                if os.path.exists(src_chars):
-                    try: shutil.copytree(src_chars, dst_chars)
-                    except Exception: pass
-
-            # 3. 自动解压/出厂 global_presets 场景感应预设
-            dst_presets = os.path.join(USER_DATA_DIR, "global_presets")
-            if not os.path.exists(dst_presets):
-                src_presets = os.path.join(SERVICES_DIR, "global_presets")
-                if os.path.exists(src_presets):
-                    try: shutil.copytree(src_presets, dst_presets)
                     except Exception: pass
     except Exception as e:
         print(f"[WARN] init_user_data_dir Warning: {e}")
