@@ -2337,6 +2337,7 @@ async def import_worldbook(file: UploadFile = File(...), type: str = Form("custo
 
 # 13. 自定义大脑引擎接口
 @router.get("/api/engines")
+@router.get("/api/settings/custom_engines")
 def api_get_engines():
     """获取所有自定义引擎列表"""
     from core.config_manager import get_custom_engines
@@ -2452,6 +2453,7 @@ def api_engines_delete(engine_id: str):
 
 # 12. 桌面宠物点击反应库接口
 @router.get("/api/pet_reactions")
+@router.get("/api/reactions")
 def api_pet_reactions():
     """获取桌宠5x5点击反应词库"""
     from core.reaction_manager import load_reactions, trigger_initial_generation_async, DEFAULT_EMOTIONS
@@ -2482,6 +2484,7 @@ def api_pet_reactions():
     return JSONResponse({"success": True, "reactions": data, "is_generating": False})
 
 @router.post("/api/pet_reactions/add")
+@router.post("/api/reactions/add")
 def api_pet_reactions_add(payload: dict = Body(...)):
     """添加应付词"""
     from core.reaction_manager import append_reaction, DEFAULT_EMOTIONS
@@ -2495,6 +2498,7 @@ def api_pet_reactions_add(payload: dict = Body(...)):
     return {"success": True}
 
 @router.post("/api/pet_reactions/delete")
+@router.post("/api/reactions/delete")
 def api_pet_reactions_delete(payload: dict = Body(...)):
     """删除应付词"""
     from core.reaction_manager import remove_reaction, DEFAULT_EMOTIONS

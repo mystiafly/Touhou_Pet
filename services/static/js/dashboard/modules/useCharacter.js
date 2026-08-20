@@ -200,7 +200,7 @@ window.useCharacterModule = function(Vue) {
     // 3. 互动反应词库
     async function loadReactions() {
         try {
-            const res = await fetch('/api/reactions');
+            const res = await fetch('/api/pet_reactions');
             const data = await res.json();
             if (data.success && data.reactions) {
                 Object.keys(reactions).forEach(k => {
@@ -215,7 +215,7 @@ window.useCharacterModule = function(Vue) {
     async function addReaction(emotion, text) {
         if (!text || !text.trim()) return;
         try {
-            const res = await fetch('/api/reactions/add', {
+            const res = await fetch('/api/pet_reactions/add', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ emotion, text: text.trim() })
@@ -233,7 +233,7 @@ window.useCharacterModule = function(Vue) {
 
     async function deleteReaction(emotion, text) {
         try {
-            const res = await fetch('/api/reactions/delete', {
+            const res = await fetch('/api/pet_reactions/delete', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ emotion, text })

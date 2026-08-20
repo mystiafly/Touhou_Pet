@@ -60,7 +60,7 @@ window.useConfigModule = function(Vue) {
 
     async function loadCustomEngines() {
         try {
-            const res = await fetch('/api/settings/custom_engines');
+            const res = await fetch('/api/engines');
             const data = await res.json();
             if (data.success && data.engines) {
                 customEngines.value = data.engines;
