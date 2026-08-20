@@ -6,7 +6,7 @@
       "textures/texture_00.png"
     ],
     "Physics": "Cirno.asset.physics3.json",
-    "Pose": "Cirno.pose3.json",
+    "Pose": "Cirno.asset.pose3.json",
     "Motions": {
       "": [
         {

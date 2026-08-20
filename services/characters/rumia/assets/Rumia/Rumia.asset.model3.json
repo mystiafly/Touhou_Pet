@@ -123,7 +123,8 @@
           "File": "motions/Rumia_15.motion3.json"
         }
       ]
-    }
+    },
+    "Pose": "Rumia.asset.pose3.json"
   },
   "Groups": [
     {

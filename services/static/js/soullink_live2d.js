@@ -564,20 +564,22 @@ class SoullinkLive2DDriver {
     setCorePartOpacity(coreModel, partId, opacity) {
         if (!coreModel) return;
         try {
-            if (coreModel.parts && coreModel.parts.ids && coreModel.parts.opacities) {
-                const idx = coreModel.parts.ids.indexOf(partId);
-                if (idx >= 0) {
-                    coreModel.parts.opacities[idx] = opacity;
-                    return;
-                }
+            // 1. Cubism 4 WebAssembly getPartOpacities() Float32Array 底层直接写入
+            const opacities = (typeof coreModel.getPartOpacities === 'function') ? coreModel.getPartOpacities() :
+                              (coreModel._partOpacities || coreModel.parts?.opacities);
+            const partIndex = (typeof coreModel.getPartIndex === 'function') ? coreModel.getPartIndex(partId) :
+                              (coreModel.parts?.ids ? coreModel.parts.ids.indexOf(partId) : -1);
+
+            if (opacities && partIndex >= 0 && partIndex < opacities.length) {
+                opacities[partIndex] = opacity;
+                return;
             }
+
+            // 2. SDK 原生 API 接口
             if (typeof coreModel.setPartOpacityById === 'function') {
                 coreModel.setPartOpacityById(partId, opacity);
-            } else if (typeof coreModel.setPartOpacityByIndex === 'function') {
-                const idx = typeof coreModel.getPartIndex === 'function' ? coreModel.getPartIndex(partId) : -1;
-                if (idx >= 0) {
-                    coreModel.setPartOpacityByIndex(idx, opacity);
-                }
+            } else if (typeof coreModel.setPartOpacityByIndex === 'function' && partIndex >= 0) {
+                coreModel.setPartOpacityByIndex(partIndex, opacity);
             }
         } catch (e) {}
     }

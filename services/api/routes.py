@@ -2567,12 +2567,89 @@ def test_timer_1min():
     return {"success": True}
 import shutil
 
+def ensure_live2d_pose_configured(model_json_path: str):
+    """自动检查并生成 Live2D 姿态互斥表 (pose3.json)，彻底消除无绑定/解包模型的千手观音重影"""
+    try:
+        if not os.path.exists(model_json_path):
+            return
+        with open(model_json_path, "r", encoding="utf-8") as f:
+            mdata = json.load(f)
+
+        file_refs = mdata.get("FileReferences", {})
+        existing_pose = file_refs.get("Pose")
+        model_dir = os.path.dirname(model_json_path)
+
+        if existing_pose and os.path.exists(os.path.join(model_dir, existing_pose)):
+            return  # 已经配置了合法的 pose 文件
+
+        # 扫描同目录或子目录下的所有动作曲线中的 PartOpacity 目标
+        part_ids = set()
+        for root, dirs, files in os.walk(model_dir):
+            for f in files:
+                if f.lower().endswith(".motion3.json"):
+                    try:
+                        with open(os.path.join(root, f), "r", encoding="utf-8") as mf:
+                            cdata = json.load(mf)
+                            for c in cdata.get("Curves", []):
+                                if c.get("Target") == "PartOpacity":
+                                    part_ids.add(c.get("Id"))
+                    except:
+                        pass
+
+        if not part_ids:
+            return
+
+        import re
+        groups_dict = {}
+        for pid in sorted(part_ids):
+            match = re.match(r"^(.*?(?:Hand|Arm|Leg|Body|Pose|Cloth))([0-9]+|[A-Za-z])$", pid, re.I)
+            if match:
+                prefix = match.group(1).lower()
+            else:
+                prefix = pid[:len(pid)-1].lower() if len(pid) > 2 else pid.lower()
+
+            if prefix not in groups_dict:
+                groups_dict[prefix] = []
+            groups_dict[prefix].append(pid)
+
+        pose_groups = []
+        for prefix, plist in groups_dict.items():
+            if len(plist) > 1:
+                plist.sort()
+                pose_groups.append([{"Id": pid} for pid in plist])
+
+        if not pose_groups:
+            return
+
+        base_name = os.path.basename(model_json_path).replace(".model3.json", "")
+        pose_filename = f"{base_name}.asset.pose3.json" if not base_name.endswith(".asset") else f"{base_name}.pose3.json"
+        pose_path = os.path.join(model_dir, pose_filename)
+
+        pose_data = {
+            "Type": "Live2D Pose",
+            "Groups": pose_groups
+        }
+
+        with open(pose_path, "w", encoding="utf-8") as pf:
+            json.dump(pose_data, pf, indent=2, ensure_ascii=False)
+
+        file_refs["Pose"] = pose_filename
+        mdata["FileReferences"] = file_refs
+        with open(model_json_path, "w", encoding="utf-8") as f:
+            json.dump(mdata, f, indent=2, ensure_ascii=False)
+        print(f"[SOULLINK BACKEND] 🚀 已为 Live2D 模型自动生成并绑定姿态互斥表: {pose_path}")
+    except Exception as e:
+        print(f"[SOULLINK BACKEND] 自动生成 pose3.json 异常: {e}")
+
 def find_live2d_model_file(directory: str) -> Optional[str]:
-    """递归查找目录下的 .model3.json 或 .model.json 相对路径"""
+    """递归查找目录下的 .model3.json 或 .model.json 相对路径，并自动校验绑定 Pose 互斥表"""
     for root, dirs, files in os.walk(directory):
         for f in files:
             if f.lower().endswith('.model3.json') or f.lower().endswith('.model.json'):
-                rel_path = os.path.relpath(os.path.join(root, f), directory)
+                abs_path = os.path.join(root, f)
+                if f.lower().endswith('.model3.json'):
+                    ensure_live2d_pose_configured(abs_path)
+                rel_path = os.path.relpath(abs_path, directory)
                 return rel_path.replace('\\', '/')
     return None
 
