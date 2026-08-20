@@ -536,9 +536,35 @@ class SoullinkLive2DDriver {
                 this.setCoreParam(coreModel, 'PARAM_EYE_R_SMILE', smileVal);
                 this.setCoreParam(coreModel, 'PARAM_CHEEK', Math.max(isShyOrHappy, smileVal * 0.75));
             }
+
+            // 7. 图层层级参数离散量化保护 (解决 Live2D 动作过渡期间 ArmOrder/ClothOrder 产生浮点插值导致的穿模撕裂)
+            for (const orderKey of ['ParamLeftArmOrder', 'ParamRightArmOrder', 'ParamArmOrder', 'ParamClothOrder', 'PARAM_LEFT_ARM_ORDER', 'PARAM_RIGHT_ARM_ORDER']) {
+                const curVal = this.getCoreParam(coreModel, orderKey);
+                if (curVal !== null && curVal !== undefined) {
+                    this.setCoreParam(coreModel, orderKey, Math.round(curVal));
+                }
+            }
         } catch (e) {
             // 忽略个别模型没有的参数
         }
+    }
+
+    /**
+     * 安全读取 CoreModel 参数
+     */
+    getCoreParam(coreModel, paramName) {
+        if (!coreModel) return null;
+        try {
+            if (typeof coreModel.getParameterValueById === 'function') {
+                return coreModel.getParameterValueById(paramName);
+            } else if (typeof coreModel.getParameterValueByIndex === 'function') {
+                const idx = coreModel.getParameterIndex(paramName);
+                if (idx >= 0) {
+                    return coreModel.getParameterValueByIndex(idx);
+                }
+            }
+        } catch (e) {}
+        return null;
     }
 
     /**
