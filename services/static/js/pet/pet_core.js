@@ -200,15 +200,6 @@ class DesktopPetCore {
         this.resetAutoSpeakTimer();
         this.loadStatus();
 
-        // 键盘快捷键: R 键快速重播最近一句对白/语音 (防止错过说话)
-        window.addEventListener('keydown', (e) => {
-            const activeEl = document.activeElement;
-            const isInputFocused = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
-            if (!isInputFocused && (e.key === 'r' || e.key === 'R') && !e.ctrlKey && !e.altKey && !e.metaKey) {
-                this.replayLastSpeech();
-            }
-        });
-
         // 动态穿透切换与窗口拖拽绑定
         const petIPC = window.__petIPC || (() => {
             try {
@@ -534,6 +525,9 @@ class DesktopPetCore {
 
         this.currentSpeechText = text;
         if (text && text !== '...' && !text.startsWith('hmm...') && !text.startsWith('（正在') && !text.startsWith('（系统')) {
+            if (this.audio && this.lastSpokenText !== text) {
+                this.audio.lastSpokenAudioUrl = '';
+            }
             this.lastSpokenText = text;
             this.lastSpokenEmotion = this.currentEmotion || 'normal';
             this.lastSpokenThought = thought || this.currentThought || '';
@@ -909,15 +903,6 @@ class DesktopPetCore {
                     this.presetsPopup.classList.add('hidden');
                     this.toolsPopup.classList.add('hidden');
                 }
-            });
-        }
-
-        const replayBtn = document.getElementById('replay-last-speech-btn');
-        if (replayBtn) {
-            replayBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.actionPopup.classList.add('hidden');
-                this.replayLastSpeech();
             });
         }
 
