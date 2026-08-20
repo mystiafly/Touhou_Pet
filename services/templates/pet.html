@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <title>Desktop Pet</title>
-    <link rel="stylesheet" href="/static/css/pet.css?v=1.31.2">
+    <link rel="stylesheet" href="/static/css/pet.css?v=1.31.3">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- Live2D Cubism Core & PixiJS & Soullink Driver -->
     <script src="https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pixi.js@6.5.8/dist/browser/pixi.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0/dist/cubism4.min.js"></script>
-    <script src="/static/js/soullink_live2d.js?v=1.31.2"></script>
+    <script src="/static/js/soullink_live2d.js?v=1.31.3"></script>
 </head>
 <body>
 <div class="pet-container">
@@ -61,80 +61,83 @@
         <i class="fas fa-comments"></i>
     </div>
 
-    <!-- 头顶气泡 -->
-    <div id="speech-bubble" class="bubble" style="opacity: 0;">
-        <div class="bubble-actions">
-            <button id="bubble-tts-btn" class="bubble-action-btn" title="朗读当前对话 (TTS)">
-                <i class="fas fa-volume-up"></i>
+    <!-- 桌面宠物核心舞台 (统一普通模式与沉浸模式的自适应垂直层级排版) -->
+    <div class="pet-stage" id="pet-stage">
+        <!-- 头顶气泡 -->
+        <div id="speech-bubble" class="bubble" style="opacity: 0;">
+            <div class="bubble-actions">
+                <button id="bubble-tts-btn" class="bubble-action-btn" title="朗读当前对话 (TTS)">
+                    <i class="fas fa-volume-up"></i>
+                </button>
+                <button id="bubble-thought-btn" class="bubble-action-btn hidden" title="观察角色思维链">
+                    <i class="fas fa-brain"></i>
+                </button>
+            </div>
+            <p id="bubble-content">...</p>
+            <div id="bubble-thought-box" class="bubble-thought-box hidden">
+                <div class="bubble-thought-header">
+                    <span class="thought-title"><i class="fas fa-brain"></i> 角色内心思维链</span>
+                    <span id="close-thought-btn" class="close-thought-btn" title="收起">&times;</span>
+                </div>
+                <div id="bubble-thought-content" class="bubble-thought-content"></div>
+            </div>
+        </div>
+
+        <div class="character-wrapper">
+            <div id="fav-container" class="fav-container">
+                <i class="fas fa-heart"></i> <span id="fav-score">...</span>
+            </div>
+
+            <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" id="pet-img" alt="Pet" draggable="false">
+            <canvas id="live2d-canvas" class="live2d-canvas hidden" style="width: 100%; height: 100%; object-fit: contain; pointer-events: auto;"></canvas>
+        </div>
+
+        <div class="input-bar">
+            <button id="settings-btn" class="icon-btn" title="系统设置">
+                <svg viewBox="0 0 512 512" width="18" height="18" fill="currentColor">
+                    <path d="M495.9 166.6c3.2 8.7.5 18.4-6.4 24.6l-43.3 39.4c1.1 8.3 1.7 16.8 1.7 25.4s-.6 17.1-1.7 25.4l43.3 39.4c6.9 6.2 9.6 15.9 6.4 24.6l-43.3 118.9c-3.2 8.7-11.2 14.6-20.5 14.6-2.2 0-4.5-.4-6.7-1.3l-55.6-22.3c-12.7 8.8-26.6 16.1-41.4 21.6l-13.8 57.7c-2.4 10-11.4 17-21.7 17h-86.7c-10.3 0-19.3-7-21.7-17l-13.8-57.7c-14.8-5.5-28.7-12.8-41.4-21.6l-55.6 22.3c-2.2.9-4.5 1.3-6.7 1.3-9.3 0-17.3-5.9-20.5-14.6L4.1 345.4c-3.2-8.7-.5-18.4 6.4-24.6l43.3-39.4c-1.1-8.3-1.7-16.8-1.7-25.4s.6-17.1 1.7-25.4L10.5 191.2c-6.9-6.2-9.6-15.9-6.4-24.6L47.4 47.7c3.2-8.7 11.2-14.6 20.5-14.6 2.2 0 4.5.4 6.7 1.3l55.6 22.3c12.7-8.8 26.6-16.1 41.4-21.6L185.4 17c2.4-10 11.4-17 21.7-17h86.7c10.3 0 19.3 7 21.7 17l13.8 57.7c14.8 5.5 28.7 12.8 41.4 21.6l55.6-22.3c2.2-.9 4.5-1.3 6.7-1.3 9.3 0 17.3 5.9 20.5 14.6l43.3 118.9zM256 336c44.2 0 80-35.8 80-80s-35.8-80-80-80-80 35.8-80 80 35.8 80 80 80z"/>
+                </svg>
             </button>
-            <button id="bubble-thought-btn" class="bubble-action-btn hidden" title="观察角色思维链">
-                <i class="fas fa-brain"></i>
+
+            <button id="presets-btn" class="icon-btn" title="快捷操作">
+                <svg viewBox="0 0 512 512" width="18" height="18" fill="currentColor">
+                    <path d="M12.41 148.02l232.94 105.67a32.062 32.062 0 0 0 25.3 0l232.94-105.67c16.55-7.51 16.55-32.53 0-40.04L270.65 2.31a32.062 32.062 0 0 0-25.3 0L12.41 107.98c-16.55 7.51-16.55 32.53 0 40.04zM12.41 292.02l232.94 105.67a32.062 32.062 0 0 0 25.3 0l232.94-105.67c16.55-7.51 16.55-32.53 0-40.04l-37.1 16.83-195.84 88.85a32.062 32.062 0 0 1-25.3 0L49.51 268.81l-37.1-16.83c-16.55 7.51-16.55 32.53 0 40.04zM12.41 436.02l232.94 105.67a32.062 32.062 0 0 0 25.3 0l232.94-105.67c16.55-7.51 16.55-32.53 0-40.04l-37.1 16.83-195.84 88.85a32.062 32.062 0 0 1-25.3 0L49.51 412.81l-37.1-16.83c-16.55 7.51-16.55 32.53 0 40.04z"/>
+                </svg>
             </button>
-        </div>
-        <p id="bubble-content">...</p>
-        <div id="bubble-thought-box" class="bubble-thought-box hidden">
-            <div class="bubble-thought-header">
-                <span class="thought-title"><i class="fas fa-brain"></i> 角色内心思维链</span>
-                <span id="close-thought-btn" class="close-thought-btn" title="收起">&times;</span>
+
+            <input type="text" id="pet-input" placeholder="和她说话..." autocomplete="off">
+
+            <!-- 一级快捷操作菜单 -->
+            <div id="action-popup" class="presets-popup hidden">
+                <div class="preset-item" id="open-presets-btn">
+                    <i class="fas fa-comment-dots" style="color: #8be9fd;"></i> 预制对话
+                </div>
+                <div class="preset-item" id="open-tools-btn">
+                    <i class="fas fa-wrench" style="color: #ffb86c;"></i> 快速工具
+                </div>
             </div>
-            <div id="bubble-thought-content" class="bubble-thought-content"></div>
-        </div>
-    </div>
 
-    <div class="character-wrapper">
-        <div id="fav-container" class="fav-container">
-            <i class="fas fa-heart"></i> <span id="fav-score">...</span>
-        </div>
-
-        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" id="pet-img" alt="Pet" draggable="false">
-        <canvas id="live2d-canvas" class="live2d-canvas hidden" style="width: 100%; height: 100%; object-fit: contain; pointer-events: auto;"></canvas>
-    </div>
-
-    <div class="input-bar">
-        <button id="settings-btn" class="icon-btn" title="系统设置">
-            <svg viewBox="0 0 512 512" width="18" height="18" fill="currentColor">
-                <path d="M495.9 166.6c3.2 8.7.5 18.4-6.4 24.6l-43.3 39.4c1.1 8.3 1.7 16.8 1.7 25.4s-.6 17.1-1.7 25.4l43.3 39.4c6.9 6.2 9.6 15.9 6.4 24.6l-43.3 118.9c-3.2 8.7-11.2 14.6-20.5 14.6-2.2 0-4.5-.4-6.7-1.3l-55.6-22.3c-12.7 8.8-26.6 16.1-41.4 21.6l-13.8 57.7c-2.4 10-11.4 17-21.7 17h-86.7c-10.3 0-19.3-7-21.7-17l-13.8-57.7c-14.8-5.5-28.7-12.8-41.4-21.6l-55.6 22.3c-2.2.9-4.5 1.3-6.7 1.3-9.3 0-17.3-5.9-20.5-14.6L4.1 345.4c-3.2-8.7-.5-18.4 6.4-24.6l43.3-39.4c-1.1-8.3-1.7-16.8-1.7-25.4s.6-17.1 1.7-25.4L10.5 191.2c-6.9-6.2-9.6-15.9-6.4-24.6L47.4 47.7c3.2-8.7 11.2-14.6 20.5-14.6 2.2 0 4.5.4 6.7 1.3l55.6 22.3c12.7-8.8 26.6-16.1 41.4-21.6L185.4 17c2.4-10 11.4-17 21.7-17h86.7c10.3 0 19.3 7 21.7 17l13.8 57.7c14.8 5.5 28.7 12.8 41.4 21.6l55.6-22.3c2.2-.9 4.5-1.3 6.7-1.3 9.3 0 17.3 5.9 20.5 14.6l43.3 118.9zM256 336c44.2 0 80-35.8 80-80s-35.8-80-80-80-80 35.8-80 80 35.8 80 80 80z"/>
-            </svg>
-        </button>
-
-        <button id="presets-btn" class="icon-btn" title="快捷操作">
-            <svg viewBox="0 0 512 512" width="18" height="18" fill="currentColor">
-                <path d="M12.41 148.02l232.94 105.67a32.062 32.062 0 0 0 25.3 0l232.94-105.67c16.55-7.51 16.55-32.53 0-40.04L270.65 2.31a32.062 32.062 0 0 0-25.3 0L12.41 107.98c-16.55 7.51-16.55 32.53 0 40.04zM12.41 292.02l232.94 105.67a32.062 32.062 0 0 0 25.3 0l232.94-105.67c16.55-7.51 16.55-32.53 0-40.04l-37.1 16.83-195.84 88.85a32.062 32.062 0 0 1-25.3 0L49.51 268.81l-37.1-16.83c-16.55 7.51-16.55 32.53 0 40.04zM12.41 436.02l232.94 105.67a32.062 32.062 0 0 0 25.3 0l232.94-105.67c16.55-7.51 16.55-32.53 0-40.04l-37.1 16.83-195.84 88.85a32.062 32.062 0 0 1-25.3 0L49.51 412.81l-37.1-16.83c-16.55 7.51-16.55 32.53 0 40.04z"/>
-            </svg>
-        </button>
-
-        <input type="text" id="pet-input" placeholder="和她说话..." autocomplete="off">
-
-        <!-- 一级快捷操作菜单 -->
-        <div id="action-popup" class="presets-popup hidden">
-            <div class="preset-item" id="open-presets-btn">
-                <i class="fas fa-comment-dots" style="color: #8be9fd;"></i> 预制对话
+            <!-- 快速工具弹出层 -->
+            <div id="tools-popup" class="presets-popup hidden">
+                <div class="preset-item" id="tool-read-process">
+                    <i class="fas fa-desktop" style="color: #50fa7b;"></i> 读取当前进程
+                </div>
+                <div class="preset-item" id="tool-clean-memory">
+                    <i class="fas fa-broom" style="color: #ff5555;"></i> 内存清理
+                </div>
             </div>
-            <div class="preset-item" id="open-tools-btn">
-                <i class="fas fa-wrench" style="color: #ffb86c;"></i> 快速工具
-            </div>
-        </div>
 
-        <!-- 快速工具弹出层 -->
-        <div id="tools-popup" class="presets-popup hidden">
-            <div class="preset-item" id="tool-read-process">
-                <i class="fas fa-desktop" style="color: #50fa7b;"></i> 读取当前进程
-            </div>
-            <div class="preset-item" id="tool-clean-memory">
-                <i class="fas fa-broom" style="color: #ff5555;"></i> 内存清理
-            </div>
-        </div>
-
-        <!-- 预制发言弹出层 -->
-        <div id="presets-popup" class="presets-popup hidden">
-            <div class="preset-item" data-text="我现在有点无聊，你逗逗我吧。">
-                <i class="fas fa-laugh-beam" style="color: #ffb86c;"></i> 无聊 (逗逗我吧)
-            </div>
-            <div class="preset-item" data-text="我现在有点不高兴，你安慰安慰我吧。">
-                <i class="fas fa-sad-tear" style="color: #8be9fd;"></i> 伤心 (安慰我吧)
-            </div>
-            <div class="preset-item" data-text="我现在有点性欲，你诱惑诱惑我吧（进行nsfw描述）。">
-                <i class="fas fa-heart" style="color: #ff5555;"></i> 色欲 (诱惑我吧)
+            <!-- 预制发言弹出层 -->
+            <div id="presets-popup" class="presets-popup hidden">
+                <div class="preset-item" data-text="我现在有点无聊，你逗逗我吧。">
+                    <i class="fas fa-laugh-beam" style="color: #ffb86c;"></i> 无聊 (逗逗我吧)
+                </div>
+                <div class="preset-item" data-text="我现在有点不高兴，你安慰安慰我吧。">
+                    <i class="fas fa-sad-tear" style="color: #8be9fd;"></i> 伤心 (安慰我吧)
+                </div>
+                <div class="preset-item" data-text="我现在有点性欲，你诱惑诱惑我吧（进行nsfw描述）。">
+                    <i class="fas fa-heart" style="color: #ff5555;"></i> 色欲 (诱惑我吧)
+                </div>
             </div>
         </div>
     </div>

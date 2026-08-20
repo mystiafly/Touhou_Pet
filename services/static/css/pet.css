@@ -68,6 +68,18 @@ body, html {
     pointer-events: auto;
 }
 
+/* 2.1 核心舞台：在普通模式下占满容器，保持垂直弹性布局 */
+.pet-stage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    pointer-events: auto;
+}
+
 /* 3. 角色包装器：限制宽度，紧贴图片 */
 .character-wrapper {
     position: relative;
@@ -1334,15 +1346,31 @@ body.peeking-mode .log-container {
     background: #0d0e15 !important;
 }
 
+/* 沉浸模式下桌面宠物舞台：整体锚定在屏幕左下方，复刻桌面模式天然的垂直弹性层级 */
+.pet-container.immersive-mode .pet-stage {
+    position: fixed !important;
+    left: 20px !important;
+    bottom: 20px !important;
+    width: 480px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    pointer-events: none !important;
+    z-index: 15 !important;
+}
+
 /* 左下角 2倍放大桌宠 */
 .pet-container.immersive-mode .character-wrapper {
-    position: fixed !important;
-    left: 40px !important;
-    bottom: 20px !important;
+    position: relative !important;
+    left: auto !important;
+    bottom: auto !important;
     z-index: 10 !important;
     transform: scale(2) !important;
-    transform-origin: bottom left !important;
+    transform-origin: bottom center !important;
+    margin-bottom: 0 !important;
     transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important;
+    pointer-events: auto !important;
 }
 
 .pet-container.immersive-mode .character-wrapper img {
@@ -1355,15 +1383,17 @@ body.peeking-mode .log-container {
     display: none !important;
 }
 
-/* 沉浸模式下对话气泡（优化至角色右侧微浮动，彻底避免遮挡角色头部与面部） */
+/* 沉浸模式下头顶对话气泡：完全复刻桌面模式，居中立于角色头顶正上方，随角色身形自适应 */
 .pet-container.immersive-mode #speech-bubble {
-    position: fixed !important;
-    left: 350px !important;
-    bottom: 400px !important;
-    right: auto !important;
+    position: relative !important;
+    left: auto !important;
+    bottom: auto !important;
     top: auto !important;
+    right: auto !important;
+    transform: none !important;
     width: 360px !important;
     max-width: 440px !important;
+    margin-bottom: 330px !important; /* 弥补 scale(2) 产生的上部视觉空间，精准贴合角色头顶上方 */
     z-index: 25 !important;
     background: rgba(30, 31, 41, 0.88) !important;
     backdrop-filter: blur(16px) !important;
@@ -1373,17 +1403,20 @@ body.peeking-mode .log-container {
     padding: 14px 18px !important;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
     transition: opacity 0.3s ease !important;
+    pointer-events: auto !important;
 }
 
+/* 气泡指示尾巴：与桌面模式一致，底部水平居中，向下指向头顶 */
 .pet-container.immersive-mode #speech-bubble::after {
     content: '' !important;
     position: absolute !important;
-    bottom: 25px !important;
-    left: -10px !important;
-    transform: none !important;
-    border-width: 8px 10px 8px 0 !important;
+    bottom: -10px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    border-width: 10px 10px 0 !important;
     border-style: solid !important;
-    border-color: transparent rgba(30, 31, 41, 0.88) transparent transparent !important;
+    border-color: rgba(30, 31, 41, 0.88) transparent transparent transparent !important;
+    display: block !important;
 }
 
 .pet-container.immersive-mode #bubble-content {
