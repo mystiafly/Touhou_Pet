@@ -267,6 +267,11 @@ window.useCharacterModule = function(Vue) {
                     batchProgress.current_emotion = pData.current_emotion || '';
                     batchProgress.current_text = pData.current_text || '';
                     pollBatchProgress();
+                } else {
+                    if (batchPollTimer) {
+                        clearInterval(batchPollTimer);
+                        batchPollTimer = null;
+                    }
                 }
             } catch(e) {}
         } catch (e) {

@@ -140,8 +140,8 @@ def record_single_reaction_audio(
     skip_refine: bool = False
 ) -> Tuple[bool, Optional[str], Optional[str]]:
     """生成并录制单句应付词音频到本地"""
-    from core.tts_client import generate_tts_audio, TTS_CACHE_DIR
-    success, audio_url, err = generate_tts_audio(
+    from core.tts_client import synthesize_and_cache_audio, TTS_CACHE_DIR
+    success, audio_url, err = synthesize_and_cache_audio(
         text,
         emotion=emotion,
         char_id=char_id,
