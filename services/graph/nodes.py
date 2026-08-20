@@ -389,14 +389,16 @@ def pre_llm_node(state: AgentState) -> Dict[str, Any]:
     if not active_messages:
         return {"pre_llm_reply": "[NO_TOOLS_NEEDED]"}
     
-    response = call_model_with_fallback(active_messages, provider_override=get_config().get("pre_api_provider", "inherit"), node_name="PRE-LLM")
-    
-    raw_reply = response.content
-    reasoning = response.additional_kwargs.get("reasoning_content", "")
-    if reasoning:
-        raw_reply = f"<think>\n{reasoning}\n</think>\n\n" + raw_reply
-
-    return {"pre_llm_reply": raw_reply}
+    try:
+        response = call_model_with_fallback(active_messages, provider_override=get_config().get("pre_api_provider", "inherit"), node_name="PRE-LLM")
+        raw_reply = response.content
+        reasoning = response.additional_kwargs.get("reasoning_content", "")
+        if reasoning:
+            raw_reply = f"<think>\n{reasoning}\n</think>\n\n" + raw_reply
+        return {"pre_llm_reply": raw_reply}
+    except Exception as e:
+        print(f"[PRE-LLM WARN] 前置辅助模型调用提示 ({e})，安全降级直达主模型对话！")
+        return {"pre_llm_reply": "[NO_TOOLS_NEEDED]"}
 
 def parse_pre_response_node(state: AgentState) -> Dict[str, Any]:
     raw_reply = state.get("pre_llm_reply", "")
@@ -561,17 +563,21 @@ def post_llm_node(state: AgentState) -> Dict[str, Any]:
         return {"post_llm_reply": "[NO_UPDATE]"}
         
     active_messages = messages
-    response = call_model_with_fallback(active_messages, provider_override=get_config().get("post_api_provider", "inherit"), node_name="POST-LLM")
-    
-    raw_reply = response.content
-    reasoning = response.additional_kwargs.get("reasoning_content", "")
-    if reasoning:
-        raw_reply = f"<think>\n{reasoning}\n</think>\n\n" + raw_reply
+    try:
+        response = call_model_with_fallback(active_messages, provider_override=get_config().get("post_api_provider", "inherit"), node_name="POST-LLM")
         
-    # Execute any DB commands
-    parse_and_execute_databank_commands(raw_reply)
-    
-    return {"post_llm_reply": raw_reply}
+        raw_reply = response.content
+        reasoning = response.additional_kwargs.get("reasoning_content", "")
+        if reasoning:
+            raw_reply = f"<think>\n{reasoning}\n</think>\n\n" + raw_reply
+            
+        # Execute any DB commands
+        parse_and_execute_databank_commands(raw_reply)
+        
+        return {"post_llm_reply": raw_reply}
+    except Exception as e:
+        print(f"[POST-LLM WARN] 后置填表模型调用提示 ({e})，安全跳过记忆填表。")
+        return {"post_llm_reply": "[NO_UPDATE]"}
 
 def update_history_node(state: AgentState) -> Dict[str, Any]:
     history_msgs = state.get("history", [])

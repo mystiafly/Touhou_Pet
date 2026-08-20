@@ -99,14 +99,12 @@ def get_langchain_model(provider_override: str = None):
     model_name = None
     engine_temp = None
     
-    # Check custom engine
+    # 1. 优先匹配自定义引擎 (Custom Engine)
     if provider.startswith("custom_"):
         custom_engines = get_custom_engines()
         for engine in custom_engines:
             if engine.get("id") == provider:
                 api_key = engine.get("api_key")
-                if not api_key:
-                    api_key = config_data.get("engine_api_key") or config_data.get("deepseek_api_key") or os.getenv("DEEPSEEK_API_KEY")
                 base_url = engine.get("base_url")
                 model_name = engine.get("model_name", "custom-model")
                 if "temperature" in engine and engine.get("temperature") is not None:
@@ -114,8 +112,16 @@ def get_langchain_model(provider_override: str = None):
                         engine_temp = float(engine.get("temperature"))
                     except:
                         pass
+                
+                # 如果没有填写独立 key，尝试使用全局 key；若为本地/私有端口 (如 Ollama、LM Studio)，自动赋免鉴权默认值
+                if not api_key:
+                    api_key = deepseek_key or gemini_key
+                    if not api_key and base_url:
+                        # 对于 Ollama、LM Studio、LocalAI、vLLM 等无需 Key 的本地服务赋予兼容占位符
+                        api_key = "ollama" if ("11434" in base_url or "ollama" in base_url.lower()) else "not-needed"
                 break
     
+    # 2. 内置服务商匹配
     if not api_key:
         if provider == "gemini" and gemini_key:
             api_key = gemini_key
@@ -141,6 +147,14 @@ def get_langchain_model(provider_override: str = None):
             api_key = deepseek_key
             base_url = "https://api.deepseek.com"
             model_name = "deepseek-chat"
+        else:
+            # 兜底：如果全局没配默认 key，但自定义引擎中有可用的模型
+            custom_engines = get_custom_engines()
+            if custom_engines:
+                first_e = custom_engines[0]
+                api_key = first_e.get("api_key") or "not-needed"
+                base_url = first_e.get("base_url")
+                model_name = first_e.get("model_name", "custom-model")
         
     if not api_key:
         raise ValueError("未检测到有效的 API 密钥环境，请检查 .env 文件。")
