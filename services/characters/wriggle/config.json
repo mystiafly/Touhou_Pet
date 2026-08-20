@@ -24,5 +24,6 @@
   "user_prompt": "我是一个神隐到幻想乡的外界男性，对这里一无所知，被你从昏迷中救了过来。",
   "preset_block_english": true,
   "bubble_duration_multiplier": 3.0,
-  "preset_max_depth": 1
+  "preset_max_depth": 1,
+  "active_sprite_set": "Wriggle"
 }

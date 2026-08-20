@@ -1,0 +1,145 @@
+{
+  "Version": 3,
+  "FileReferences": {
+    "Moc": "Rumia.asset.moc3",
+    "Textures": [
+      "textures/texture_00.png"
+    ],
+    "Physics": "Rumia.asset.physics3.json",
+    "Motions": {
+      "": [
+        {
+          "File": "motions/Rumia_04.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_03.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_24.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_06.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_08.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_53.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_13.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_45.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_14.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_40.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_12.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_41.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_33.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_22.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_54.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_35.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_21.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_05.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_44.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_43.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_20.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_34.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_25.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_23.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_01.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_30.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_32.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_07.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_11.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_10.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_51.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_52.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_55.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_42.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_31.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_50.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_02.motion3.json"
+        },
+        {
+          "File": "motions/Rumia_15.motion3.json"
+        }
+      ]
+    }
+  },
+  "Groups": [
+    {
+      "Target": "Parameter",
+      "Name": "EyeBlink",
+      "Ids": [
+        "ParamEyeROpen",
+        "ParamEyeLOpen"
+      ]
+    },
+    {
+      "Target": "Parameter",
+      "Name": "LipSync",
+      "Ids": [
+        "ParamMouthOpenY"
+      ]
+    }
+  ]
+}
