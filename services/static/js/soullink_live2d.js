@@ -146,21 +146,23 @@ class SoullinkLive2DDriver {
             this.rawModelWidth = this.model.internalModel?.originalWidth || this.model.internalModel?.width || this.model.width || 1000;
             this.rawModelHeight = this.model.internalModel?.originalHeight || this.model.internalModel?.height || this.model.height || 1000;
 
-            // 3. 检测模型内置的 LipSync 参数组
             this.discoverModelCapabilities();
 
-            // 4. 计算自适应缩放并居中
+            // 4. 智能消除多肢体/多姿态 Part 图层重影 (如 PartLeftHand01~07)
+            this.sanitizeMutuallyExclusiveParts();
+
+            // 5. 计算自适应缩放并居中
             this.app.stage.addChild(this.model);
             this.resizeModel(width, height);
 
-            // 5. 挂载每帧参数注入 Hook (在 Motion 计算之后注入，防止被动作覆写)
+            // 6. 挂载每帧参数注入 Hook (在 Motion 计算之后注入，防止被动作覆写)
             if (this.model.internalModel) {
                 this.model.internalModel.on('afterMotionUpdate', () => {
                     this.applyParametersOnMotionUpdate();
                 });
             }
 
-            // 6. 注册 Ticker 驱动微表情与音频插值
+            // 7. 注册 Ticker 驱动微表情与音频插值
             this.app.ticker.add((delta) => this.onTick(delta));
 
             // 7. 绑定点击互动
@@ -519,6 +521,76 @@ class SoullinkLive2DDriver {
                 }
             }
         } catch (e) {}
+    }
+
+    /**
+     * 安全写入 Part 不透明度 (消除多姿态重叠肢体)
+     */
+    setCorePartOpacity(coreModel, partId, opacity) {
+        if (!coreModel) return;
+        try {
+            if (coreModel.parts && coreModel.parts.ids && coreModel.parts.opacities) {
+                const idx = coreModel.parts.ids.indexOf(partId);
+                if (idx >= 0) {
+                    coreModel.parts.opacities[idx] = opacity;
+                    return;
+                }
+            }
+            if (typeof coreModel.setPartOpacityById === 'function') {
+                coreModel.setPartOpacityById(partId, opacity);
+            } else if (typeof coreModel.setPartOpacityByIndex === 'function') {
+                const idx = typeof coreModel.getPartIndex === 'function' ? coreModel.getPartIndex(partId) : -1;
+                if (idx >= 0) {
+                    coreModel.setPartOpacityByIndex(idx, opacity);
+                }
+            }
+        } catch (e) {}
+    }
+
+    /**
+     * 智能扫描并消除多肢体图层重影 (如 PartLeftHand01~07, PartRightHand01~07)
+     */
+    sanitizeMutuallyExclusiveParts() {
+        if (!this.model || !this.model.internalModel || !this.model.internalModel.coreModel) return;
+        const coreModel = this.model.internalModel.coreModel;
+
+        try {
+            let partIds = [];
+            if (coreModel.parts && Array.isArray(coreModel.parts.ids)) {
+                partIds = coreModel.parts.ids;
+            } else if (typeof coreModel.getPartCount === 'function' && typeof coreModel.getPartId === 'function') {
+                const count = coreModel.getPartCount();
+                for (let i = 0; i < count; i++) {
+                    partIds.push(coreModel.getPartId(i));
+                }
+            }
+
+            if (!partIds || partIds.length === 0) return;
+
+            const groups = {};
+            for (const pid of partIds) {
+                const match = pid.match(/^(.*?(?:Hand|Arm|Leg|Body|Pose|Cloth))([0-9]+|[A-Za-z])$/i);
+                if (match) {
+                    const prefix = match[1].toLowerCase();
+                    if (!groups[prefix]) groups[prefix] = [];
+                    groups[prefix].push(pid);
+                }
+            }
+
+            for (const prefix in groups) {
+                const list = groups[prefix];
+                if (list.length > 1) {
+                    console.log(`[SOULLINK LIVE2D] 发现多姿态互斥 Part 组 [${prefix}]:`, list);
+                    list.sort();
+                    for (let i = 0; i < list.length; i++) {
+                        const targetOpacity = (i === 0) ? 1.0 : 0.0;
+                        this.setCorePartOpacity(coreModel, list[i], targetOpacity);
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('[SOULLINK LIVE2D] 姿态互斥图层处理提示:', e);
+        }
     }
 
     /**
