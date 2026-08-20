@@ -351,20 +351,23 @@ class SoullinkLive2DDriver {
         this.currentVAD.a += (this.targetVAD.a - this.currentVAD.a) * lerpFactor;
         this.currentVAD.d += (this.targetVAD.d - this.currentVAD.d) * lerpFactor;
 
-        // 2. 视线活跃度检查与平滑自然归位 (鼠标离开或静止超过 2.0 秒后缓缓恢复直视)
+        // 2. 视线活跃度检查与平滑自然归位 (鼠标离开或静止超过 1.5 秒后缓缓恢复直视)
         const now = Date.now();
-        const isIdleMouse = (now - this.lastMouseMoveTime > 2000);
+        const isIdleMouse = (now - this.lastMouseMoveTime > 1500);
         if (!this.isMouseHovering || isIdleMouse) {
             // 自然平滑将目标视线拉回 (0, 0) 正中直视
-            const returnSpeed = 0.06 * (delta || 1);
+            const returnSpeed = 0.08 * (delta || 1);
             this.targetFocusX += (0.0 - this.targetFocusX) * returnSpeed;
             this.targetFocusY += (0.0 - this.targetFocusY) * returnSpeed;
-            if (Math.abs(this.targetFocusX) < 0.002) this.targetFocusX = 0;
-            if (Math.abs(this.targetFocusY) < 0.002) this.targetFocusY = 0;
+            if (Math.abs(this.targetFocusX) < 0.001) this.targetFocusX = 0;
+            if (Math.abs(this.targetFocusY) < 0.001) this.targetFocusY = 0;
+            if (this.model && this.model.internalModel && this.model.internalModel.focusController) {
+                this.model.internalModel.focusController.focus(0, 0);
+            }
         }
 
         // 平滑追踪视线坐标 (带自然微动阻尼)
-        const focusLerp = 0.12 * (delta || 1);
+        const focusLerp = 0.14 * (delta || 1);
         this.currentFocusX += (this.targetFocusX - this.currentFocusX) * focusLerp;
         this.currentFocusY += (this.targetFocusY - this.currentFocusY) * focusLerp;
 
@@ -623,6 +626,9 @@ class SoullinkLive2DDriver {
         this.isMouseHovering = false;
         this.targetFocusX = 0.0;
         this.targetFocusY = 0.0;
+        if (this.model && this.model.internalModel && this.model.internalModel.focusController) {
+            this.model.internalModel.focusController.focus(0, 0);
+        }
     }
 
     /**
