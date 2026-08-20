@@ -812,7 +812,10 @@ class DesktopPetCore {
             this.showBubble(randomLine, 1500);
             return;
         }
-        
+        let emotion = this.currentEmotion || 'normal';
+        let lines = this.reactionLines[emotion] || this.reactionLines['normal'] || ["哼！"];
+        let randomLine = lines[Math.floor(Math.random() * lines.length)];
+
         // 检查是否有已录制的本地离线语音，实现 0ms 本地瞬发秒播
         let matchedAudioUrl = null;
         if (this.reactionsDetail) {
