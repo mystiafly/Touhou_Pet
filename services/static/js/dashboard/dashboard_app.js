@@ -123,6 +123,8 @@
                     stats.loadDashboardStats();
                 } else if (viewId === 'sprite-settings-view') {
                     character.loadSpriteSets();
+                } else if (viewId === 'reactions-view') {
+                    character.loadReactions();
                 }
             }
 

@@ -111,12 +111,13 @@ class DesktopPetCore {
             this.autoSpeakMultiplier = data.auto_speak_multiplier || 1.0;
             this.bubbleDurationMultiplier = data.bubble_duration_multiplier || 1.0;
             
-            // 角色互动台词
+            // 角色互动台词及离线语音映射
             try {
                 const reactionRes = await fetch('/api/pet_reactions');
                 const reactionData = await reactionRes.json();
                 if (reactionData.success) {
                     this.reactionLines = reactionData.reactions;
+                    this.reactionsDetail = reactionData.reactions_detail || {};
                 }
             } catch(e) {
                 console.error("[PET] Failed to load reaction lines", e);
@@ -776,6 +777,23 @@ class DesktopPetCore {
         
         if (this.spriteType === 'live2d' && window.SoullinkLive2D && window.SoullinkLive2D.isLoaded) {
             window.SoullinkLive2D.triggerTapMotion();
+        }
+
+        // 检查是否有已录制的本地离线语音，实现 0ms 本地瞬发秒播
+        let matchedAudioUrl = null;
+        if (this.reactionsDetail && this.reactionsDetail[emotion]) {
+            const item = this.reactionsDetail[emotion].find(x => x.text === randomLine);
+            if (item && item.has_audio && item.audio_url) {
+                matchedAudioUrl = item.audio_url;
+            }
+        }
+
+        const isAutoSpeak = this.enableTts !== false && (this.enableTtsAuto || this.ttsSpeakMode === "auto");
+        if (matchedAudioUrl && isAutoSpeak && this.audio) {
+            this.audio.handleAutoTtsPlay(matchedAudioUrl);
+        } else if (!matchedAudioUrl && isAutoSpeak && this.audio) {
+            // 尚未录制离线语音时，异步请求合成并自动持久化收录
+            this.audio.requestAsyncTts(randomLine, emotion);
         }
         
         fetch('/api/action_sync', {

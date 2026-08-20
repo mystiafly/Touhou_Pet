@@ -1350,24 +1350,71 @@
         </section>
 
         <!-- 6.6 互动应付词视图 -->
-        <section id="reactions-view" class="content-section">
+        <section id="reactions-view" class="content-section" :class="{ active: activeView === 'reactions-view' }">
             <div class="section-header">
-                <h2>💬 互动应付词库 (Reactions)</h2>
-                <p>管理桌宠在不同情绪下，被点击时说出的随机短句。如果词库太空，系统会在后台自动用大模型补全。</p>
+                <h2>💬 互动应付词与离线语音 (Reactions)</h2>
+                <p>管理桌宠在不同情绪下被点击时说出的对白短句。支持主动播放收录离线语音与一键批量翻译精修录制。</p>
             </div>
             
-            <div class="card" style="display: flex; flex-direction: column; height: calc(100vh - 180px);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 class="card-title" style="margin:0;"><i class="fas fa-comments"></i> 应付词列表</h3>
-                    <div style="display: flex; gap: 10px;">
-                        <button class="action-btn primary" id="btn-regenerate-reactions" style="padding: 5px 10px; font-size: 12px;"><i class="fas fa-magic"></i> 重新生成词库</button>
-                        <button class="action-btn outline" id="btn-refresh-reactions" style="padding: 5px 10px; font-size: 12px;"><i class="fas fa-sync-alt"></i> 刷新</button>
+            <div class="card" style="display: flex; flex-direction: column; min-height: calc(100vh - 190px);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <h3 class="card-title" style="margin:0;"><i class="fas fa-comments"></i> 应付词列表与离线语音</h3>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="action-btn" id="btn-batch-record-reactions" @click="character.startBatchRecording(false)" :disabled="character.isBatchRecording" style="background: linear-gradient(135deg, #bd93f9, #ff79c6); border: none; color: #fff; padding: 6px 14px; font-size: 13px; cursor: pointer;">
+                            <i class="fas" :class="character.isBatchRecording ? 'fa-spinner fa-spin' : 'fa-microphone-alt'"></i>
+                            {{ character.isBatchRecording ? '正在批量录制语音...' : '🎙️ 一键批量录制全量语音' }}
+                        </button>
+                        <button class="action-btn primary" id="btn-regenerate-reactions" @click="character.regenerateReactions" style="padding: 6px 12px; font-size: 12px;"><i class="fas fa-magic"></i> 重新生成词库</button>
+                        <button class="action-btn outline" id="btn-refresh-reactions" @click="character.loadReactions" style="padding: 6px 12px; font-size: 12px;"><i class="fas fa-sync-alt"></i> 刷新</button>
                     </div>
                 </div>
-                <div id="reactions-list-container" style="display: flex; flex-direction: column; gap: 20px; overflow-y: auto; flex: 1; padding-right: 10px;">
-                    <div class="loading-state" id="reactions-loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>
-                    <div id="reactions-content" style="display: none; flex-direction: column; gap: 15px;">
-                        <!-- 动态填充 -->
+
+                <!-- 批量录制进度条 -->
+                <div v-if="character.isBatchRecording" style="background: var(--bg-secondary); border: 1px solid rgba(255,121,198,0.4); border-radius: 10px; padding: 14px 18px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(255,121,198,0.15);">
+                    <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
+                        <span><i class="fas fa-satellite-dish" style="color: #ff79c6; margin-right: 6px;"></i> {{ character.batchProgress.current_text ? `[${character.batchProgress.current_emotion}] 正在精修与录制: "${character.batchProgress.current_text}"` : '准备启动录制流水线...' }}</span>
+                        <span style="font-weight: 600; color: #ff79c6;">{{ character.batchProgress.completed }} / {{ character.batchProgress.total }} ({{ character.batchProgress.percent }}%)</span>
+                    </div>
+                    <div style="height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; display: flex;">
+                        <div style="height: 100%; background: linear-gradient(90deg, #bd93f9, #ff79c6); transition: width 0.3s ease;" :style="{ width: character.batchProgress.percent + '%' }"></div>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+                        <button class="action-btn outline" @click="character.stopBatchRecording" style="padding: 3px 12px; font-size: 12px; color: #ff5555; border-color: #ff5555;">停止录制</button>
+                    </div>
+                </div>
+
+                <div id="reactions-list-container" style="display: flex; flex-direction: column; gap: 16px; overflow-y: auto; flex: 1; padding-right: 6px;">
+                    <div v-for="(name, key) in character.emotionNames" :key="key" class="reaction-category-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                            <span style="font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                                <i :class="character.emotionIcons[key]" style="color: var(--accent-color);"></i>
+                                {{ name }} <span style="opacity: 0.6; font-size: 12px;">({{ key }})</span>
+                                <span style="font-size: 11px; opacity: 0.7; font-weight: normal; background: rgba(255,255,255,0.08); padding: 2px 8px; border-radius: 10px;">共 {{ (character.reactionsDetail[key] || []).length }} 句</span>
+                            </span>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" v-model="character.newReactionInputs[key]" @keyup.enter="character.handleAddReaction(key)" :placeholder="'添加' + name + '反应短句...'" class="modern-input" style="padding: 4px 10px; font-size: 12px; width: 220px;">
+                                <button class="action-btn primary" @click="character.handleAddReaction(key)" style="padding: 4px 10px; font-size: 12px;"><i class="fas fa-plus"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="reaction-tags-container" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            <div v-for="(item, idx) in (character.reactionsDetail[key] || [])" :key="idx" class="reaction-tag-item" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 6px 12px; display: flex; align-items: center; gap: 8px; font-size: 13px; transition: all 0.2s ease;">
+                                <!-- 试听 / 即时录制按钮 -->
+                                <button class="action-btn icon-only" @click="character.playOrRecordReaction(key, item)" :title="item.has_audio ? '点击试听离线语音' : '尚未录制语音，点击立即生成收录'" style="width: 24px; height: 24px; padding: 0; font-size: 11px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;" :style="item.has_audio ? 'background: rgba(80, 250, 123, 0.2); color: #50fa7b; border-color: rgba(80, 250, 123, 0.4);' : 'background: rgba(255, 255, 255, 0.08); color: #aaa; border-color: rgba(255, 255, 255, 0.15);'">
+                                    <i :class="item.isPlaying ? 'fas fa-spinner fa-spin' : (item.has_audio ? 'fas fa-volume-up' : 'fas fa-microphone')"></i>
+                                </button>
+                                
+                                <span style="line-height: 1.4;">{{ item.text }}</span>
+
+                                <!-- 删除按钮 -->
+                                <button class="action-btn icon-only danger" @click="character.deleteReaction(key, item.text)" title="删除此句" style="width: 20px; height: 20px; padding: 0; font-size: 10px; border-radius: 50%; opacity: 0.6; margin-left: 4px; cursor: pointer;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div v-if="!(character.reactionsDetail[key] && character.reactionsDetail[key].length)" style="color: var(--text-secondary); font-size: 12px; padding: 6px 0;">
+                                暂无此情绪反应词，系统将在后台自动补全。
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2048,15 +2095,15 @@
 </div>
 
 <!-- Vue 3 Modular Architecture -->
-<script src="/static/js/dashboard/modules/useTheme.js?v=1.31.1"></script>
-<script src="/static/js/dashboard/modules/useCharacter.js?v=1.31.1"></script>
-<script src="/static/js/dashboard/modules/useTTS.js?v=1.31.1"></script>
-<script src="/static/js/dashboard/modules/useDataBank.js?v=1.31.1"></script>
-<script src="/static/js/dashboard/modules/useMemory.js?v=1.31.1"></script>
-<script src="/static/js/dashboard/modules/useLive2DDebug.js?v=1.31.1"></script>
-<script src="/static/js/dashboard/modules/useStatsLogs.js?v=1.31.1"></script>
-<script src="/static/js/dashboard/modules/useConfig.js?v=1.31.1"></script>
-<script src="/static/js/dashboard/dashboard_app.js?v=1.31.1"></script>
-<script src="/static/js/dashboard.js?v=1.31.1"></script>
+<script src="/static/js/dashboard/modules/useTheme.js?v=1.32.0"></script>
+<script src="/static/js/dashboard/modules/useCharacter.js?v=1.32.0"></script>
+<script src="/static/js/dashboard/modules/useTTS.js?v=1.32.0"></script>
+<script src="/static/js/dashboard/modules/useDataBank.js?v=1.32.0"></script>
+<script src="/static/js/dashboard/modules/useMemory.js?v=1.32.0"></script>
+<script src="/static/js/dashboard/modules/useLive2DDebug.js?v=1.32.0"></script>
+<script src="/static/js/dashboard/modules/useStatsLogs.js?v=1.32.0"></script>
+<script src="/static/js/dashboard/modules/useConfig.js?v=1.32.0"></script>
+<script src="/static/js/dashboard/dashboard_app.js?v=1.32.0"></script>
+<script src="/static/js/dashboard.js?v=1.32.0"></script>
 </body>
 </html>

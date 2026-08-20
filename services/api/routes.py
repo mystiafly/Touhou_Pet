@@ -2455,8 +2455,8 @@ def api_engines_delete(engine_id: str):
 @router.get("/api/pet_reactions")
 @router.get("/api/reactions")
 def api_pet_reactions():
-    """获取桌宠5x5点击反应词库"""
-    from core.reaction_manager import load_reactions, trigger_initial_generation_async, DEFAULT_EMOTIONS
+    """获取桌宠5x5点击反应词库及离线语音状态"""
+    from core.reaction_manager import load_reactions, get_reactions_detail, trigger_initial_generation_async, DEFAULT_EMOTIONS
     char_id = get_active_character_id()
     data = load_reactions(char_id)
     
@@ -2467,9 +2467,7 @@ def api_pet_reactions():
             total_reactions += len(data.get(e, []))
 
     if not data or total_reactions < 5:
-        # 触发后台补全生成
         trigger_initial_generation_async(char_id)
-        # 返回临时保底数据防止前端报错，合并已有数据
         fallback = {e: ["嗯？"] for e in DEFAULT_EMOTIONS}
         fallback["angry"] = ["别碰我！"]
         fallback["crying"] = ["呜呜..."]
@@ -2479,9 +2477,61 @@ def api_pet_reactions():
             for e in DEFAULT_EMOTIONS:
                 if data.get(e):
                     fallback[e] = data[e]
-        return JSONResponse({"success": True, "reactions": fallback, "is_generating": True})
+        detail = get_reactions_detail(char_id)
+        return JSONResponse({"success": True, "reactions": fallback, "reactions_detail": detail, "is_generating": True})
         
-    return JSONResponse({"success": True, "reactions": data, "is_generating": False})
+    detail = get_reactions_detail(char_id)
+    return JSONResponse({"success": True, "reactions": data, "reactions_detail": detail, "is_generating": False})
+
+@router.get("/api/pet_reactions/audio_file/{char_id}/{filename}")
+def api_pet_reactions_audio_file(char_id: str, filename: str):
+    """静态读取并返回应付词离线音频文件"""
+    from core.reaction_manager import get_reactions_audio_dir
+    audio_dir = get_reactions_audio_dir(char_id)
+    file_path = os.path.join(audio_dir, filename)
+    if os.path.exists(file_path) and file_path.endswith('.mp3'):
+        from fastapi.responses import FileResponse
+        return FileResponse(file_path, media_type="audio/mpeg")
+    return JSONResponse({"success": False, "error": "Audio file not found"}, status_code=404)
+
+@router.post("/api/pet_reactions/record_single")
+def api_pet_reactions_record_single(payload: dict = Body(...)):
+    """单句应付词生成/录制为本地离线语音"""
+    from core.reaction_manager import record_single_reaction_audio
+    char_id = payload.get("character_id") or get_active_character_id()
+    emotion = payload.get("emotion") or "normal"
+    text = payload.get("text", "").strip()
+    skip_refine = payload.get("skip_refine", False)
+
+    if not text:
+        return JSONResponse({"success": False, "error": "文本内容不能为空"}, status_code=400)
+
+    success, audio_url, err = record_single_reaction_audio(char_id, emotion, text, skip_refine=skip_refine)
+    if success and audio_url:
+        return JSONResponse({"success": True, "audio_url": audio_url})
+    return JSONResponse({"success": False, "error": err or "录制失败"}, status_code=500)
+
+@router.post("/api/pet_reactions/batch_generate_audio")
+def api_pet_reactions_batch_generate(payload: dict = Body(default={})):
+    """启动全量应付词自动翻译精修与语音录制流水线"""
+    from core.reaction_manager import batch_recorder
+    char_id = payload.get("character_id") or get_active_character_id()
+    force_overwrite = payload.get("force_overwrite", False)
+    success, msg = batch_recorder.start_batch(char_id, force_overwrite=force_overwrite)
+    return JSONResponse({"success": success, "message": msg})
+
+@router.get("/api/pet_reactions/batch_progress")
+def api_pet_reactions_batch_progress():
+    """获取当前批量录制流水线进度"""
+    from core.reaction_manager import batch_recorder
+    return JSONResponse(batch_recorder.get_progress())
+
+@router.post("/api/pet_reactions/stop_batch")
+def api_pet_reactions_stop_batch():
+    """停止批量录制流水线"""
+    from core.reaction_manager import batch_recorder
+    batch_recorder.stop_batch()
+    return JSONResponse({"success": True, "message": "已发送停止信号"})
 
 @router.post("/api/pet_reactions/add")
 @router.post("/api/reactions/add")
@@ -2516,7 +2566,6 @@ def api_pet_reactions_regenerate():
     """清空并重新生成词库"""
     from core.reaction_manager import save_reactions, trigger_initial_generation_async
     char_id = get_active_character_id()
-    # 清空为 {}，然后触发生成
     save_reactions(char_id, {})
     trigger_initial_generation_async(char_id)
     return {"success": True}
@@ -3390,7 +3439,7 @@ async def api_save_immersive_config(request: Request):
 def api_tts_speak(payload: dict = Body(...)):
     """接收文本并调用 TTS 接口生成语音 (带 Post-LLM 情绪音调与翻译精修)"""
     text = payload.get("text", "")
-    char_id = payload.get("character_id")
+    char_id = payload.get("character_id") or get_active_character_id()
     emotion = payload.get("emotion", "normal")
     language = payload.get("language")
     voice_id = payload.get("voice_id")
@@ -3399,7 +3448,7 @@ def api_tts_speak(payload: dict = Body(...)):
     if not text or not str(text).strip():
         return JSONResponse({"success": False, "error": "文本为空"}, status_code=400)
 
-    from core.tts_client import synthesize_and_cache_audio
+    from core.tts_client import synthesize_and_cache_audio, TTS_CACHE_DIR
     success, audio_url, error = synthesize_and_cache_audio(
         str(text).strip(),
         char_id=char_id,
@@ -3408,7 +3457,21 @@ def api_tts_speak(payload: dict = Body(...)):
         voice_id=voice_id,
         skip_refine=skip_refine
     )
-    if success:
+    if success and audio_url:
+        # 如果当前发音的文本属于该角色的应付词，自动转存收录为离线语音
+        try:
+            from core.reaction_manager import load_reactions, save_reaction_audio_file
+            reactions = load_reactions(char_id) or {}
+            clean_t = str(text).strip()
+            if any(clean_t in lines for lines in reactions.values()):
+                filename = os.path.basename(audio_url)
+                cache_file = os.path.join(TTS_CACHE_DIR, filename)
+                if os.path.exists(cache_file):
+                    with open(cache_file, "rb") as f:
+                        save_reaction_audio_file(char_id, emotion, clean_t, f.read())
+        except Exception as e:
+            print(f"[REACTION AUDIO AUTO-SAVE WARN] {e}")
+
         return JSONResponse({"success": True, "audio_url": audio_url})
     else:
         return JSONResponse({"success": False, "error": error or "语音合成失败"}, status_code=500)
