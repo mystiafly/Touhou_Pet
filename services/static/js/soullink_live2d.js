@@ -491,8 +491,8 @@ class SoullinkLive2DDriver {
             this.setCoreParam(coreModel, 'ParamMouthForm', targetMouthForm);
             this.setCoreParam(coreModel, 'PARAM_MOUTH_FORM', targetMouthForm);
 
-            // 脸红
-            const isShyOrHappy = (this.targetEmotion === 'shy') ? 0.9 : (v > 0.5 ? 0.4 : 0);
+            // 脸红 (害羞/傲娇时赋予 1.0 全量红晕粉扑，开心时赋予 0.5 甜美轻腮红)
+            const isShyOrHappy = (this.targetEmotion === 'shy') ? 1.0 : (v > 0.4 ? 0.5 : 0.0);
             this.setCoreParam(coreModel, 'ParamCheek', isShyOrHappy);
             this.setCoreParam(coreModel, 'PARAM_CHEEK', isShyOrHappy);
 
