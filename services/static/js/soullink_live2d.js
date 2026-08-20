@@ -60,6 +60,12 @@ class SoullinkLive2DDriver {
         this.lastMouseMoveTime = Date.now();
         this.isMouseHovering = false;
 
+        // 通用虚拟姿态与手势调度引擎 (通用解决任意无绑定/解包模型的千手观音重影，并赋予动作手势动态分配能力)
+        this.virtualPoseGroups = {};       // 自动识别的互斥组 (如 left_hand, right_hand, items, costumes)
+        this.activePartIndices = {};       // 当前激活的姿态索引
+        this.tempGestureTimer = 0.0;       // 临时互动手势计时器
+        this.basePartIndices = {};         // 常驻基础姿态索引 (待机时恢复)
+
         // VAD 情绪映射坐标系
         this.EMOTION_VAD_MAP = {
             "normal":   { v: 0.1,  a: 0.0,  d: 0.0 },
@@ -148,8 +154,8 @@ class SoullinkLive2DDriver {
 
             this.discoverModelCapabilities();
 
-            // 4. 智能消除多肢体/多姿态 Part 图层重影 (如 PartLeftHand01~07)
-            this.sanitizeMutuallyExclusiveParts();
+            // 4. 智能扫描与构建通用姿态互斥引擎 (彻底杜绝多肢体/多手重影，并启用动态手势分发)
+            this.scanUniversalPartGroups();
 
             // 5. 计算自适应缩放并居中
             this.app.stage.addChild(this.model);
@@ -327,6 +333,7 @@ class SoullinkLive2DDriver {
         if (this.targetEmotion === 'sleeping') {
             this.isSleeping = true;
             this.stopIdleMotionScheduler();
+            this.setHandGesture(0, 0, 0); // 睡觉时双手安放
         } else {
             const wasSleeping = this.isSleeping;
             this.isSleeping = false;
@@ -335,6 +342,17 @@ class SoullinkLive2DDriver {
             }
             if (this.targetEmotion !== 'normal') {
                 this.triggerRandomMotion();
+            }
+
+            // 3. 智能手势随情绪自然流转
+            if (this.targetEmotion === 'happy') {
+                this.setHandGesture(1, 1, 4.0); // 快乐时展示元气/展开手势
+            } else if (this.targetEmotion === 'shy') {
+                this.setHandGesture(2, 2, 4.0); // 害羞时展示护胸/微收手势
+            } else if (this.targetEmotion === 'angry') {
+                this.setHandGesture(3, 3, 4.0); // 生气时展示握拳/抗议手势
+            } else if (this.targetEmotion === 'normal') {
+                this.setHandGesture(0, 0, 0);   // 常态恢复端庄基础姿态
             }
         }
     }
@@ -422,14 +440,28 @@ class SoullinkLive2DDriver {
         if (this.tapSmileTimer > 0) {
             this.tapSmileTimer -= 0.02 * (delta || 1);
         }
+
+        // 7. 临时互动手势计时器衰减 (自然恢复常驻基础手势)
+        if (this.tempGestureTimer > 0) {
+            this.tempGestureTimer -= 0.016 * (delta || 1);
+            if (this.tempGestureTimer <= 0) {
+                this.tempGestureTimer = 0;
+                for (const key in this.basePartIndices) {
+                    this.activePartIndices[key] = this.basePartIndices[key];
+                }
+            }
+        }
     }
 
     /**
-     * 在动作系统更新完成后注入 Live2D 参数 (口型、视线追踪、物理惯性、Q弹微动、微表情)
+     * 在动作系统更新完成后注入 Live2D 参数 (口型、视线追踪、物理惯性、Q弹微动、微表情、通用姿态互斥)
      */
     applyParametersOnMotionUpdate() {
         if (!this.model || !this.model.internalModel || !this.model.internalModel.coreModel) return;
         const coreModel = this.model.internalModel.coreModel;
+
+        // 0. 通用虚拟姿态每帧强制互斥 (100% 杜绝多手/多肢体重影)
+        this.applyVirtualPoseOpacities();
 
         const v = this.currentVAD.v;
         const mouthOpen = this.currentMouthOpen;
@@ -551,9 +583,13 @@ class SoullinkLive2DDriver {
     }
 
     /**
-     * 智能扫描并消除多肢体图层重影 (如 PartLeftHand01~07, PartRightHand01~07)
+     * 通用 Part 图层智能扫描与互斥分组构建 (通用解决任意 Live2D 模型千手观音重影，并启用手势动态分配)
      */
-    sanitizeMutuallyExclusiveParts() {
+    scanUniversalPartGroups() {
+        this.virtualPoseGroups = {};
+        this.activePartIndices = {};
+        this.basePartIndices = {};
+
         if (!this.model || !this.model.internalModel || !this.model.internalModel.coreModel) return;
         const coreModel = this.model.internalModel.coreModel;
 
@@ -570,30 +606,122 @@ class SoullinkLive2DDriver {
 
             if (!partIds || partIds.length === 0) return;
 
-            const groups = {};
             for (const pid of partIds) {
-                const match = pid.match(/^(.*?(?:Hand|Arm|Leg|Body|Pose|Cloth))([0-9]+|[A-Za-z])$/i);
-                if (match) {
-                    const prefix = match[1].toLowerCase();
-                    if (!groups[prefix]) groups[prefix] = [];
-                    groups[prefix].push(pid);
+                let groupKey = null;
+
+                // ① 左手/左臂组
+                if (/(?:hand.*[lL]|left.*hand|hand_l|part.*left.*hand|arm.*[lL]|left.*arm|l.*hand|l.*arm)/i.test(pid)) {
+                    groupKey = 'left_hand';
+                }
+                // ② 右手/右臂组
+                else if (/(?:hand.*[rR]|right.*hand|hand_r|part.*right.*hand|arm.*[rR]|right.*arm|r.*hand|r.*arm)/i.test(pid)) {
+                    groupKey = 'right_hand';
+                }
+                // ③ 道具/手持物组
+                else if (/(?:item|prop|weapon|equip|acc|glass|hat|fan|sword|mic|tray|food)/i.test(pid)) {
+                    groupKey = 'props';
+                }
+                // ④ 服装/换装变体组
+                else if (/(?:cloth|costume|dress|outfit|skirt|coat|jacket|suit)/i.test(pid)) {
+                    groupKey = 'costumes';
+                }
+                // ⑤ 通用序号后缀组
+                else {
+                    const match = pid.match(/^(.*?[_\-\s]?)([0-9]+|[a-zA-Z])$/i);
+                    if (match) {
+                        groupKey = match[1].toLowerCase().replace(/[_\-\s]+$/, '');
+                    }
+                }
+
+                if (groupKey) {
+                    if (!this.virtualPoseGroups[groupKey]) {
+                        this.virtualPoseGroups[groupKey] = [];
+                    }
+                    this.virtualPoseGroups[groupKey].push(pid);
                 }
             }
 
-            for (const prefix in groups) {
-                const list = groups[prefix];
-                if (list.length > 1) {
-                    console.log(`[SOULLINK LIVE2D] 发现多姿态互斥 Part 组 [${prefix}]:`, list);
-                    list.sort();
-                    for (let i = 0; i < list.length; i++) {
-                        const targetOpacity = (i === 0) ? 1.0 : 0.0;
-                        this.setCorePartOpacity(coreModel, list[i], targetOpacity);
-                    }
+            // 过滤掉只有 1 个部件的单体组，仅对 >=2 个部件的多选一图层进行互斥管理
+            for (const key of Object.keys(this.virtualPoseGroups)) {
+                if (this.virtualPoseGroups[key].length < 2) {
+                    delete this.virtualPoseGroups[key];
+                } else {
+                    this.virtualPoseGroups[key].sort(); // 确保 01 / A 排在默认首位
+                    this.activePartIndices[key] = 0;    // 默认展示第 1 种主手势/姿态
+                    this.basePartIndices[key] = 0;
                 }
             }
+
+            console.log(`[SOULLINK LIVE2D] ✨ 通用虚拟姿态引擎构建完成，已自动锁定互斥图层组:`, this.virtualPoseGroups);
+            this.applyVirtualPoseOpacities();
         } catch (e) {
-            console.warn('[SOULLINK LIVE2D] 姿态互斥图层处理提示:', e);
+            console.warn('[SOULLINK LIVE2D] 通用姿态扫描提示:', e);
         }
+    }
+
+    /**
+     * 每帧执行虚拟姿态图层透明度强制互斥 (100% 杜绝多肢体/多手重影)
+     */
+    applyVirtualPoseOpacities() {
+        if (!this.model || !this.model.internalModel || !this.model.internalModel.coreModel) return;
+        const coreModel = this.model.internalModel.coreModel;
+
+        try {
+            for (const key in this.virtualPoseGroups) {
+                const partList = this.virtualPoseGroups[key];
+                const activeIdx = this.activePartIndices[key] || 0;
+
+                for (let i = 0; i < partList.length; i++) {
+                    const targetOpacity = (i === activeIdx) ? 1.0 : 0.0;
+                    this.setCorePartOpacity(coreModel, partList[i], targetOpacity);
+                }
+            }
+        } catch (e) {}
+    }
+
+    /**
+     * 动态分配与切换手势动作
+     * @param {number|null} leftIndex 左手姿势索引 (0..N)
+     * @param {number|null} rightIndex 右手姿势索引 (0..N)
+     * @param {number} temporaryDuration 临时维持秒数 (0 表示常驻)
+     */
+    setHandGesture(leftIndex = null, rightIndex = null, temporaryDuration = 0) {
+        if (leftIndex !== null && this.virtualPoseGroups['left_hand']) {
+            const maxL = this.virtualPoseGroups['left_hand'].length;
+            this.activePartIndices['left_hand'] = Math.max(0, Math.min(maxL - 1, leftIndex));
+        }
+        if (rightIndex !== null && this.virtualPoseGroups['right_hand']) {
+            const maxR = this.virtualPoseGroups['right_hand'].length;
+            this.activePartIndices['right_hand'] = Math.max(0, Math.min(maxR - 1, rightIndex));
+        }
+
+        if (temporaryDuration > 0) {
+            this.tempGestureTimer = temporaryDuration;
+        }
+    }
+
+    /**
+     * 随机或轮播一个可用手势 (例如点击互动或说话强调时)
+     */
+    triggerRandomGesture(duration = 2.5) {
+        const hasLeft = this.virtualPoseGroups['left_hand'] && this.virtualPoseGroups['left_hand'].length > 1;
+        const hasRight = this.virtualPoseGroups['right_hand'] && this.virtualPoseGroups['right_hand'].length > 1;
+
+        if (!hasLeft && !hasRight) return;
+
+        let leftIdx = null;
+        let rightIdx = null;
+
+        if (hasLeft) {
+            const count = this.virtualPoseGroups['left_hand'].length;
+            leftIdx = Math.floor(Math.random() * (count - 1)) + 1; // 随机选择 1..N-1 变体手势
+        }
+        if (hasRight) {
+            const count = this.virtualPoseGroups['right_hand'].length;
+            rightIdx = Math.floor(Math.random() * (count - 1)) + 1;
+        }
+
+        this.setHandGesture(leftIdx, rightIdx, duration);
     }
 
     /**
@@ -678,10 +806,11 @@ class SoullinkLive2DDriver {
         
         console.log("[SOULLINK LIVE2D] 触发【点击组】物理弹性微动与表情互动");
 
-        // 方案一核心：赋予 Q 弹阻尼弹簧冲量 + 甜美眨眼微笑 + 头部自然微偏
+        // 方案一核心：赋予 Q 弹阻尼弹簧冲量 + 甜美眨眼微笑 + 头部自然微偏 + 动态手势互动
         this.bounceVelocity = 0.85;
         this.tapSmileTimer = 0.65;
         this.targetFocusX += (Math.random() - 0.5) * 0.3;
+        this.triggerRandomGesture(2.5); // 随机激活备选手势 2.5 秒后自然恢复
 
         // 如果模型内置了画师手作的真实 Tap 动作，播放手作动作
         const candidates = (preferredList.length > 0) ? preferredList : this.tapMotions;
