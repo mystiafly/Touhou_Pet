@@ -1355,15 +1355,15 @@ body.peeking-mode .log-container {
     display: none !important;
 }
 
-/* 沉浸模式下头顶对话气泡（依然浮动于左下角桌宠头顶） */
+/* 沉浸模式下对话气泡（优化至角色右侧微浮动，彻底避免遮挡角色头部与面部） */
 .pet-container.immersive-mode #speech-bubble {
     position: fixed !important;
-    left: 45px !important;
-    bottom: 580px !important;
+    left: 350px !important;
+    bottom: 400px !important;
     right: auto !important;
     top: auto !important;
-    width: 340px !important;
-    max-width: 340px !important;
+    width: 360px !important;
+    max-width: 440px !important;
     z-index: 25 !important;
     background: rgba(30, 31, 41, 0.88) !important;
     backdrop-filter: blur(16px) !important;
@@ -1373,6 +1373,17 @@ body.peeking-mode .log-container {
     padding: 14px 18px !important;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
     transition: opacity 0.3s ease !important;
+}
+
+.pet-container.immersive-mode #speech-bubble::after {
+    content: '' !important;
+    position: absolute !important;
+    bottom: 25px !important;
+    left: -10px !important;
+    transform: none !important;
+    border-width: 8px 10px 8px 0 !important;
+    border-style: solid !important;
+    border-color: transparent rgba(30, 31, 41, 0.88) transparent transparent !important;
 }
 
 .pet-container.immersive-mode #bubble-content {
