@@ -541,6 +541,97 @@ input:checked + .slider:before {
     background-color: rgba(255, 255, 255, 0.1);
 }
 
+/* 互动应付词药丸与语音/删除按钮微组件 (100% 居中对称与自适应对齐) */
+.reaction-tag-item {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    padding: 4px 8px 4px 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+.reaction-tag-item:hover {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.reaction-audio-btn {
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.08);
+    color: #a0a0a0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    font-size: 11px;
+    line-height: 1;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+.reaction-audio-btn i {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+.reaction-audio-btn.has-audio {
+    background: rgba(80, 250, 123, 0.18);
+    border-color: rgba(80, 250, 123, 0.45);
+    color: #50fa7b;
+}
+.reaction-audio-btn:hover {
+    transform: scale(1.1);
+}
+
+.reaction-tag-text {
+    line-height: 1.4;
+    color: #f8f8f2;
+    font-size: 13px;
+}
+
+.reaction-delete-btn {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 85, 85, 0.18);
+    color: #ff5555;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0 0 0 2px;
+    cursor: pointer;
+    font-size: 10px;
+    line-height: 1;
+    opacity: 0.6;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+.reaction-delete-btn i {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    font-size: 10px;
+}
+.reaction-delete-btn:hover {
+    opacity: 1;
+    background: rgba(255, 85, 85, 0.4);
+    transform: scale(1.15);
+}
+
 /* 图谱模块 */
 .graph-toolbar {
     margin-bottom: 15px;

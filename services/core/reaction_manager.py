@@ -194,7 +194,7 @@ class ReactionBatchRecorder:
                         all_items.append((e, text))
 
             if not all_items:
-                return True, "所有应付词均已录制完成，无需重复生成"
+                return False, "所有应付词均已录制完成，无需重复生成"
 
             self.is_running = True
             self.char_id = char_id

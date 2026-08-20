@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>大贤者控制台 (Dashboard)</title>
-    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.30.0">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=1.32.1">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
@@ -13,7 +13,7 @@
     <script src="/static/lib/live2d/live2dcubismcore.min.js"></script>
     <script src="/static/lib/live2d/pixi.min.js"></script>
     <script src="/static/lib/live2d/pixi-live2d-display.min.js"></script>
-    <script src="/static/js/soullink_live2d.js?v=1.30.0"></script>
+    <script src="/static/js/soullink_live2d.js?v=1.32.1"></script>
 </head>
 <body>
 
@@ -1398,16 +1398,16 @@
                         </div>
 
                         <div class="reaction-tags-container" style="display: flex; flex-wrap: wrap; gap: 8px;">
-                            <div v-for="(item, idx) in (character.reactionsDetail[key] || [])" :key="idx" class="reaction-tag-item" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 6px 12px; display: flex; align-items: center; gap: 8px; font-size: 13px; transition: all 0.2s ease;">
+                            <div v-for="(item, idx) in (character.reactionsDetail[key] || [])" :key="idx" class="reaction-tag-item">
                                 <!-- 试听 / 即时录制按钮 -->
-                                <button class="action-btn icon-only" @click="character.playOrRecordReaction(key, item)" :title="item.has_audio ? '点击试听离线语音' : '尚未录制语音，点击立即生成收录'" style="width: 24px; height: 24px; padding: 0; font-size: 11px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;" :style="item.has_audio ? 'background: rgba(80, 250, 123, 0.2); color: #50fa7b; border-color: rgba(80, 250, 123, 0.4);' : 'background: rgba(255, 255, 255, 0.08); color: #aaa; border-color: rgba(255, 255, 255, 0.15);'">
+                                <button class="reaction-audio-btn" :class="{ 'has-audio': item.has_audio }" @click="character.playOrRecordReaction(key, item)" :title="item.has_audio ? '点击试听离线语音' : '尚未录制语音，点击立即生成收录'">
                                     <i :class="item.isPlaying ? 'fas fa-spinner fa-spin' : (item.has_audio ? 'fas fa-volume-up' : 'fas fa-microphone')"></i>
                                 </button>
                                 
-                                <span style="line-height: 1.4;">{{ item.text }}</span>
+                                <span class="reaction-tag-text">{{ item.text }}</span>
 
-                                <!-- 删除按钮 -->
-                                <button class="action-btn icon-only danger" @click="character.deleteReaction(key, item.text)" title="删除此句" style="width: 20px; height: 20px; padding: 0; font-size: 10px; border-radius: 50%; opacity: 0.6; margin-left: 4px; cursor: pointer;">
+                                <!-- 删除按钮 (完美居中对齐) -->
+                                <button class="reaction-delete-btn" @click="character.deleteReaction(key, item.text)" title="删除此句">
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>
@@ -2095,15 +2095,15 @@
 </div>
 
 <!-- Vue 3 Modular Architecture -->
-<script src="/static/js/dashboard/modules/useTheme.js?v=1.32.0"></script>
-<script src="/static/js/dashboard/modules/useCharacter.js?v=1.32.0"></script>
-<script src="/static/js/dashboard/modules/useTTS.js?v=1.32.0"></script>
-<script src="/static/js/dashboard/modules/useDataBank.js?v=1.32.0"></script>
-<script src="/static/js/dashboard/modules/useMemory.js?v=1.32.0"></script>
-<script src="/static/js/dashboard/modules/useLive2DDebug.js?v=1.32.0"></script>
-<script src="/static/js/dashboard/modules/useStatsLogs.js?v=1.32.0"></script>
-<script src="/static/js/dashboard/modules/useConfig.js?v=1.32.0"></script>
-<script src="/static/js/dashboard/dashboard_app.js?v=1.32.0"></script>
-<script src="/static/js/dashboard.js?v=1.32.0"></script>
+<script src="/static/js/dashboard/modules/useTheme.js?v=1.32.1"></script>
+<script src="/static/js/dashboard/modules/useCharacter.js?v=1.32.1"></script>
+<script src="/static/js/dashboard/modules/useTTS.js?v=1.32.1"></script>
+<script src="/static/js/dashboard/modules/useDataBank.js?v=1.32.1"></script>
+<script src="/static/js/dashboard/modules/useMemory.js?v=1.32.1"></script>
+<script src="/static/js/dashboard/modules/useLive2DDebug.js?v=1.32.1"></script>
+<script src="/static/js/dashboard/modules/useStatsLogs.js?v=1.32.1"></script>
+<script src="/static/js/dashboard/modules/useConfig.js?v=1.32.1"></script>
+<script src="/static/js/dashboard/dashboard_app.js?v=1.32.1"></script>
+<script src="/static/js/dashboard.js?v=1.32.1"></script>
 </body>
 </html>

@@ -254,6 +254,21 @@ window.useCharacterModule = function(Vue) {
                     });
                 }
             }
+
+            // 同步批量录制后台任务状态
+            try {
+                const pRes = await fetch('/api/pet_reactions/batch_progress');
+                const pData = await pRes.json();
+                isBatchRecording.value = !!pData.is_running;
+                if (pData.is_running) {
+                    batchProgress.total = pData.total || 0;
+                    batchProgress.completed = pData.completed || 0;
+                    batchProgress.percent = pData.percent || 0;
+                    batchProgress.current_emotion = pData.current_emotion || '';
+                    batchProgress.current_text = pData.current_text || '';
+                    pollBatchProgress();
+                }
+            } catch(e) {}
         } catch (e) {
             console.error('加载反应词库失败:', e);
         }
@@ -380,9 +395,11 @@ window.useCharacterModule = function(Vue) {
                 isBatchRecording.value = true;
                 pollBatchProgress();
             } else {
+                isBatchRecording.value = false;
                 alert(data.message || '启动批量录制失败');
             }
         } catch (e) {
+            isBatchRecording.value = false;
             alert('启动批量录制异常: ' + e);
         }
     }
@@ -404,6 +421,7 @@ window.useCharacterModule = function(Vue) {
                 if (!data.is_running) {
                     clearInterval(batchPollTimer);
                     batchPollTimer = null;
+                    isBatchRecording.value = false;
                     await loadReactions();
                 }
             } catch (e) {
