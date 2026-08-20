@@ -95,21 +95,21 @@
         return;
     }
 
-    const { createApp, ref, onMounted } = Vue;
+    const { createApp, ref, reactive, onMounted } = Vue;
 
     const app = createApp({
         setup() {
             const activeView = ref('engine-view');
 
-            // 组合各业务模块
-            const theme = window.useThemeModule(Vue);
-            const character = window.useCharacterModule(Vue);
-            const tts = window.useTTSModule(Vue);
-            const databank = window.useDataBankModule(Vue);
-            const memory = window.useMemoryModule(Vue);
-            const live2d = window.useLive2DDebugModule(Vue);
-            const stats = window.useStatsLogsModule(Vue);
-            const config = window.useConfigModule(Vue);
+            // 组合各业务模块 (通过 reactive 自动深度解包嵌套 Ref)
+            const theme = reactive(window.useThemeModule(Vue));
+            const character = reactive(window.useCharacterModule(Vue));
+            const tts = reactive(window.useTTSModule(Vue));
+            const databank = reactive(window.useDataBankModule(Vue));
+            const memory = reactive(window.useMemoryModule(Vue));
+            const live2d = reactive(window.useLive2DDebugModule(Vue));
+            const stats = reactive(window.useStatsLogsModule(Vue));
+            const config = reactive(window.useConfigModule(Vue));
 
             function switchView(viewId) {
                 activeView.value = viewId;
