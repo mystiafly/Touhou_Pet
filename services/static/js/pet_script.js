@@ -1859,6 +1859,29 @@ class DesktopPet {
         }
     }
 
+    async requestAsyncTts(text, emotion) {
+        if (!text || this.enableTts === false) return;
+        const isAutoSpeak = this.enableTtsAuto || this.ttsSpeakMode === "auto";
+        if (!isAutoSpeak) return;
+        try {
+            const resp = await fetch('/api/tts/speak', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    text: text,
+                    emotion: emotion || 'normal',
+                    character_id: this.characterId
+                })
+            });
+            const d = await resp.json();
+            if (d.success && d.audio_url) {
+                this.handleAutoTtsPlay(d.audio_url);
+            }
+        } catch (e) {
+            console.log("[ASYNC-TTS EX]", e);
+        }
+    }
+
     async sendMessage() {
         const text = this.input.value.trim();
         if (!text) return;
@@ -2001,6 +2024,8 @@ class DesktopPet {
                 }
                 if (data.audio_url) {
                     this.handleAutoTtsPlay(data.audio_url);
+                } else {
+                    this.requestAsyncTts(data.reply, data.emotion);
                 }
             } else {
                 // 开机打招呼遇上欠费或配置错误

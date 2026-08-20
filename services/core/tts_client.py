@@ -154,7 +154,7 @@ def generate_speech_fish_audio(styled_text: str, voice_id: Optional[str] = None)
 
     try:
         print(f"[TTS FISH AUDIO] 发送 TTS 请求 (长度: {len(styled_text)}): {styled_text}")
-        response = requests.post(base_url, headers=headers, json=payload, timeout=30)
+        response = requests.post(base_url, headers=headers, json=payload, timeout=12)
         
         if response.status_code == 200:
             audio_bytes = response.content
@@ -254,7 +254,7 @@ def generate_speech_openai_compatible(
 
     try:
         print(f"[TTS OPENAI-COMPATIBLE] 请求 {base_url} (模型: {model_name}, 音色: {target_voice}): {clean_text}")
-        response = requests.post(base_url, headers=headers, json=payload, timeout=35)
+        response = requests.post(base_url, headers=headers, json=payload, timeout=15)
         if response.status_code == 200:
             audio_bytes = response.content
             print(f"[TTS OPENAI-COMPATIBLE] 成功合成音频: {len(audio_bytes)} 字节")
