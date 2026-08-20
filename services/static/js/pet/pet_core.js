@@ -15,6 +15,9 @@ class DesktopPetCore {
         this.currentThought = '';
         this.showThoughtButton = true;
         this.currentSpeechText = '';
+        this.lastSpokenText = '';
+        this.lastSpokenEmotion = 'normal';
+        this.lastSpokenThought = '';
 
         this.img = document.getElementById('pet-img');
         this.favScore = document.getElementById('fav-score');
@@ -24,6 +27,7 @@ class DesktopPetCore {
         this.images = {};
         this.currentEmotion = 'normal';
         this.reactionLines = null;
+        this.reactionsDetail = null;
         this.isPeeking = false;
         
         this.isSleeping = false;
@@ -195,6 +199,15 @@ class DesktopPetCore {
 
         this.resetAutoSpeakTimer();
         this.loadStatus();
+
+        // 键盘快捷键: R 键快速重播最近一句对白/语音 (防止错过说话)
+        window.addEventListener('keydown', (e) => {
+            const activeEl = document.activeElement;
+            const isInputFocused = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+            if (!isInputFocused && (e.key === 'r' || e.key === 'R') && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                this.replayLastSpeech();
+            }
+        });
 
         // 动态穿透切换与窗口拖拽绑定
         const petIPC = window.__petIPC || (() => {
@@ -520,6 +533,12 @@ class DesktopPetCore {
         }
 
         this.currentSpeechText = text;
+        if (text && text !== '...' && !text.startsWith('hmm...') && !text.startsWith('（正在') && !text.startsWith('（系统')) {
+            this.lastSpokenText = text;
+            this.lastSpokenEmotion = this.currentEmotion || 'normal';
+            this.lastSpokenThought = thought || this.currentThought || '';
+        }
+
         if (this.audio && this.audio.ttsBtn) {
             if (this.audio.ttsAudio && !this.audio.ttsAudio.paused) {
                 this.audio.ttsAudio.pause();
@@ -562,6 +581,28 @@ class DesktopPetCore {
                 this.bubble.style.opacity = '0';
                 this.bubble.style.pointerEvents = 'none';
             }, showTime);
+        }
+    }
+
+    replayLastSpeech() {
+        if (!this.lastSpokenText) {
+            this.showBubble("刚才还没有说话记录哦~", 2500);
+            return;
+        }
+        
+        // 唤醒气泡并恢复展示
+        this.showBubble(this.lastSpokenText, 8000, false, this.lastSpokenThought);
+        if (this.lastSpokenEmotion) {
+            this.setEmotion(this.lastSpokenEmotion);
+        }
+
+        // 立即播放语音
+        if (this.audio) {
+            if (this.audio.lastSpokenAudioUrl) {
+                this.audio.handleAutoTtsPlay(this.audio.lastSpokenAudioUrl);
+            } else {
+                this.audio.handleTtsSpeak();
+            }
         }
     }
 
@@ -868,6 +909,15 @@ class DesktopPetCore {
                     this.presetsPopup.classList.add('hidden');
                     this.toolsPopup.classList.add('hidden');
                 }
+            });
+        }
+
+        const replayBtn = document.getElementById('replay-last-speech-btn');
+        if (replayBtn) {
+            replayBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.actionPopup.classList.add('hidden');
+                this.replayLastSpeech();
             });
         }
 

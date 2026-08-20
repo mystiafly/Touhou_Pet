@@ -179,6 +179,7 @@ class PetAudioController {
 
     handleAutoTtsPlay(audioUrl) {
         if (!audioUrl || this.petCore?.enableTts === false) return;
+        this.lastSpokenAudioUrl = audioUrl;
         try {
             if (this.ttsAudio) {
                 this.ttsAudio.pause();
@@ -230,6 +231,12 @@ class PetAudioController {
             return;
         }
 
+        // 如果已有缓存的最近一句语音，直接 0ms 本地瞬发重播，免去重复网络请求
+        if (this.lastSpokenAudioUrl && (currentText === this.petCore.lastSpokenText || (this.ttsAudio.src && this.ttsAudio.src.includes(this.lastSpokenAudioUrl)))) {
+            this.handleAutoTtsPlay(this.lastSpokenAudioUrl);
+            return;
+        }
+
         if (this.isTtsLoading) return;
         this.isTtsLoading = true;
 
@@ -250,17 +257,8 @@ class PetAudioController {
             });
             const data = await response.json();
             if (data.success && data.audio_url) {
-                this.ttsAudio.src = data.audio_url;
-                this.ttsAudio.play().then(() => {
-                    if (this.ttsBtn) {
-                        this.ttsBtn.classList.remove('loading');
-                        this.ttsBtn.classList.add('playing');
-                        this.ttsBtn.innerHTML = '<i class="fas fa-volume-high"></i>';
-                    }
-                }).catch(err => {
-                    console.error("[TTS PLAY EX]", err);
-                    this.resetTtsButtonState();
-                });
+                this.lastSpokenAudioUrl = data.audio_url;
+                this.handleAutoTtsPlay(data.audio_url);
             } else {
                 console.error("[TTS SERVER ERROR]", data.error);
                 this.resetTtsButtonState();
