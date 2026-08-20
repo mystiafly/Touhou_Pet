@@ -231,10 +231,22 @@ class PetAudioController {
             return;
         }
 
-        // 如果已有缓存的最近一句语音，直接 0ms 本地瞬发重播，免去重复网络请求
+        // 1. 如果已有缓存的最近一句语音，直接 0ms 本地瞬发重播，免去重复网络请求
         if (this.lastSpokenAudioUrl && (currentText === this.petCore.lastSpokenText || (this.ttsAudio.src && this.ttsAudio.src.includes(this.lastSpokenAudioUrl)))) {
             this.handleAutoTtsPlay(this.lastSpokenAudioUrl);
             return;
+        }
+
+        // 2. 检查当前文本是否命中桌宠已录制的离线应付词语音库
+        if (this.petCore && this.petCore.reactionsDetail) {
+            for (const emo of Object.keys(this.petCore.reactionsDetail)) {
+                const item = (this.petCore.reactionsDetail[emo] || []).find(x => x.text === currentText);
+                if (item && item.has_audio && item.audio_url) {
+                    this.lastSpokenAudioUrl = item.audio_url;
+                    this.handleAutoTtsPlay(item.audio_url);
+                    return;
+                }
+            }
         }
 
         if (this.isTtsLoading) return;

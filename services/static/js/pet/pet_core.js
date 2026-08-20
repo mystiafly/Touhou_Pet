@@ -117,7 +117,7 @@ class DesktopPetCore {
             
             // 角色互动台词及离线语音映射
             try {
-                const reactionRes = await fetch('/api/pet_reactions');
+                const reactionRes = await fetch('/api/pet_reactions?_t=' + Date.now());
                 const reactionData = await reactionRes.json();
                 if (reactionData.success) {
                     this.reactionLines = reactionData.reactions;
@@ -525,8 +525,22 @@ class DesktopPetCore {
 
         this.currentSpeechText = text;
         if (text && text !== '...' && !text.startsWith('hmm...') && !text.startsWith('（正在') && !text.startsWith('（系统')) {
-            if (this.audio && this.lastSpokenText !== text) {
-                this.audio.lastSpokenAudioUrl = '';
+            if (this.audio) {
+                let foundOfflineAudio = null;
+                if (this.reactionsDetail) {
+                    for (const emoKey of Object.keys(this.reactionsDetail)) {
+                        const item = (this.reactionsDetail[emoKey] || []).find(x => x.text === text);
+                        if (item && item.has_audio && item.audio_url) {
+                            foundOfflineAudio = item.audio_url;
+                            break;
+                        }
+                    }
+                }
+                if (foundOfflineAudio) {
+                    this.audio.lastSpokenAudioUrl = foundOfflineAudio;
+                } else if (this.lastSpokenText !== text) {
+                    this.audio.lastSpokenAudioUrl = '';
+                }
             }
             this.lastSpokenText = text;
             this.lastSpokenEmotion = this.currentEmotion || 'normal';
@@ -799,11 +813,31 @@ class DesktopPetCore {
             return;
         }
         
-        let emotion = this.currentEmotion || 'normal';
-        let lines = this.reactionLines[emotion] || this.reactionLines['normal'] || ["哼！"];
-        let randomLine = lines[Math.floor(Math.random() * lines.length)];
-        
-        this.showBubble(randomLine, 1500);
+        // 检查是否有已录制的本地离线语音，实现 0ms 本地瞬发秒播
+        let matchedAudioUrl = null;
+        if (this.reactionsDetail) {
+            if (this.reactionsDetail[emotion]) {
+                const item = this.reactionsDetail[emotion].find(x => x.text === randomLine);
+                if (item && item.has_audio && item.audio_url) {
+                    matchedAudioUrl = item.audio_url;
+                }
+            }
+            if (!matchedAudioUrl) {
+                for (const emoKey of Object.keys(this.reactionsDetail)) {
+                    const item = (this.reactionsDetail[emoKey] || []).find(x => x.text === randomLine);
+                    if (item && item.has_audio && item.audio_url) {
+                        matchedAudioUrl = item.audio_url;
+                        break;
+                    }
+                }
+            }
+        }
+
+        this.showBubble(randomLine, 2500);
+        if (matchedAudioUrl && this.audio) {
+            this.audio.lastSpokenAudioUrl = matchedAudioUrl;
+        }
+
         if (this.immersive?.isImmersiveMode) {
             this.immersive.appendLocalChatMessage("你 (动作)", `(戳了戳${this.charName || "桌宠"})`, true);
             this.immersive.appendLocalChatMessage(this.charName || "桌宠", randomLine);
@@ -814,21 +848,15 @@ class DesktopPetCore {
             window.SoullinkLive2D.triggerTapMotion();
         }
 
-        // 检查是否有已录制的本地离线语音，实现 0ms 本地瞬发秒播
-        let matchedAudioUrl = null;
-        if (this.reactionsDetail && this.reactionsDetail[emotion]) {
-            const item = this.reactionsDetail[emotion].find(x => x.text === randomLine);
-            if (item && item.has_audio && item.audio_url) {
-                matchedAudioUrl = item.audio_url;
+        // 只要启用了语音 (enableTts !== false)
+        if (this.enableTts !== false && this.audio) {
+            if (matchedAudioUrl) {
+                // 已有离线语音：主动点击桌宠直接 0ms 播放语音！
+                this.audio.handleAutoTtsPlay(matchedAudioUrl);
+            } else if (this.enableTtsAuto || this.ttsSpeakMode === "auto") {
+                // 尚未录制离线语音且开启了自动合成：异步请求在线合成并自动持久化收录
+                this.audio.requestAsyncTts(randomLine, emotion);
             }
-        }
-
-        const isAutoSpeak = this.enableTts !== false && (this.enableTtsAuto || this.ttsSpeakMode === "auto");
-        if (matchedAudioUrl && isAutoSpeak && this.audio) {
-            this.audio.handleAutoTtsPlay(matchedAudioUrl);
-        } else if (!matchedAudioUrl && isAutoSpeak && this.audio) {
-            // 尚未录制离线语音时，异步请求合成并自动持久化收录
-            this.audio.requestAsyncTts(randomLine, emotion);
         }
         
         fetch('/api/action_sync', {
