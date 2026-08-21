@@ -411,6 +411,10 @@ function createWindow() {
     function loadPetPage() {
         win.webContents.session.clearCache().then(() => {
             win.loadURL(petUrl).then(() => {
+                try {
+                    win.webContents.setVisualZoomLevelLimits(1, 1);
+                    win.webContents.setZoomFactor(1.0);
+                } catch(e) {}
                 logDebug(`[ELECTRON] Page loaded successfully`);
             }).catch(err => {
                 logDebug(`[ELECTRON] Page load failed, retrying in 1.5s...`);

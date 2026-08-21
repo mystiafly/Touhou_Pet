@@ -1,6 +1,27 @@
 // preload.js — 在预加载脚本中获取 ipcRenderer 并暴露给页面
 // preload 脚本在 BrowserWindow 加载页面前执行，require 始终可用
-const { ipcRenderer } = require('electron');
+const { ipcRenderer, webFrame } = require('electron');
+
+try {
+    webFrame.setZoomFactor(1.0);
+    webFrame.setVisualZoomLevelLimits(1, 1);
+} catch(e) {}
+
+// 拦截 Ctrl + 滚轮 / Ctrl + +/- 快捷键，防止误触导致桌宠变形变小
+window.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && (e.key === '=' || e.key === '+' || e.key === '-' || e.key === '_' || e.key === '0')) {
+        e.preventDefault();
+        try {
+            webFrame.setZoomFactor(1.0);
+        } catch(err) {}
+    }
+}, { capture: true });
+
+window.addEventListener('wheel', (e) => {
+    if (e.ctrlKey) {
+        e.preventDefault();
+    }
+}, { passive: false, capture: true });
 
 // contextIsolation: false 时，直接挂到 window 即可被页面访问
 window.__petIPC = {
