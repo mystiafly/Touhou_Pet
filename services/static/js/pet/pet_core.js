@@ -83,11 +83,13 @@ class DesktopPetCore {
                 this.img.src = prefix + 'normal.png';
             }
 
+            this.activeSpriteSet = data.active_sprite_set || 'main_sprites';
             this.spriteType = data.sprite_type || 'sprite';
             this.live2dModelUrl = data.live2d_model_url || '';
             this.live2dScale = data.live2d_scale !== undefined ? data.live2d_scale : 1.0;
             this.live2dOffsetX = data.live2d_offset_x !== undefined ? data.live2d_offset_x : 0.0;
             this.live2dOffsetY = data.live2d_offset_y !== undefined ? data.live2d_offset_y : 0.0;
+            this.spriteScale = data.live2d_scale !== undefined ? data.live2d_scale : 1.0;
 
             const live2dCanvas = document.getElementById('live2d-canvas');
             if (this.spriteType === 'live2d' && this.live2dModelUrl && window.SoullinkLive2D && live2dCanvas) {
@@ -102,6 +104,10 @@ class DesktopPetCore {
             } else {
                 if (live2dCanvas) live2dCanvas.classList.add('hidden');
                 this.img.classList.remove('hidden');
+                if (this.spriteScale !== 1.0) {
+                    this.img.style.transform = `scale(${this.spriteScale})`;
+                    this.img.style.transformOrigin = 'bottom center';
+                }
             }
 
             this.wallpaperUrl = data.wallpaper_url || "";
@@ -183,6 +189,7 @@ class DesktopPetCore {
 
         this.initSettings();
         this.initPresets();
+        this.setupScaleInteraction();
 
         if (this.thoughtBtn) {
             this.thoughtBtn.addEventListener('click', (e) => {
@@ -1036,6 +1043,97 @@ class DesktopPetCore {
             if (this.presetsPopup && !this.presetsPopup.contains(e.target)) this.presetsPopup.classList.add('hidden');
             if (this.toolsPopup && !this.toolsPopup.contains(e.target)) this.toolsPopup.classList.add('hidden');
         });
+    }
+
+    /**
+     * 初始化即时无级缩放与重置快捷键 (Alt + 滚轮 / Alt + 0 / Ctrl + 0)
+     */
+    setupScaleInteraction() {
+        this.scaleHud = document.getElementById('scale-hud');
+        this.scaleHudText = document.getElementById('scale-hud-text');
+        this.scaleHudTimer = null;
+        this.scaleSaveTimer = null;
+
+        // 1. 鼠标滚轮即时缩放 (Alt + 滚轮 或 Ctrl+Shift+滚轮)
+        window.addEventListener('wheel', (e) => {
+            if (e.altKey || (e.ctrlKey && e.shiftKey)) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const delta = e.deltaY < 0 ? 0.05 : -0.05;
+                let currentScale = (this.spriteType === 'live2d') ? (this.live2dScale || 1.0) : (this.spriteScale || 1.0);
+                let newScale = Math.round((currentScale + delta) * 100) / 100;
+                newScale = Math.max(0.3, Math.min(2.5, newScale));
+
+                this.applyPetScale(newScale);
+                this.showScaleHud(`🔍 缩放: ${Math.round(newScale * 100)}%`);
+                this.debounceSaveScale(newScale);
+            }
+        }, { passive: false, capture: true });
+
+        // 2. 快捷键重置 (Alt + 0 / Ctrl + 0)
+        window.addEventListener('keydown', (e) => {
+            if ((e.altKey || e.ctrlKey) && (e.key === '0' || e.code === 'Digit0' || e.code === 'Numpad0')) {
+                e.preventDefault();
+                const resetScale = 1.0;
+                this.applyPetScale(resetScale);
+                this.showScaleHud(`🔍 缩放: 100% (已复原)`);
+                this.debounceSaveScale(resetScale);
+            }
+        }, { capture: true });
+    }
+
+    /**
+     * 即时应用新缩放比例至 Live2D 引擎或立绘 DOM
+     */
+    applyPetScale(scale) {
+        if (this.spriteType === 'live2d' && window.SoullinkLive2D) {
+            this.live2dScale = scale;
+            window.SoullinkLive2D.setTransform(this.live2dScale, this.live2dOffsetX || 0.0, this.live2dOffsetY || 0.0);
+        } else if (this.img) {
+            this.spriteScale = scale;
+            this.img.style.transform = `scale(${scale})`;
+            this.img.style.transformOrigin = 'bottom center';
+        }
+    }
+
+    /**
+     * 弹出毛玻璃百分比 HUD 胶囊提示，1.2 秒后平滑淡出
+     */
+    showScaleHud(text) {
+        if (!this.scaleHud) return;
+        if (this.scaleHudText) {
+            this.scaleHudText.innerText = text;
+        }
+        this.scaleHud.classList.remove('hidden');
+        if (this.scaleHudTimer) clearTimeout(this.scaleHudTimer);
+        this.scaleHudTimer = setTimeout(() => {
+            this.scaleHud.classList.add('hidden');
+        }, 1200);
+    }
+
+    /**
+     * 600ms 防抖自动将新尺寸持久化保存到当前角色立绘配置
+     */
+    debounceSaveScale(scale) {
+        if (this.scaleSaveTimer) clearTimeout(this.scaleSaveTimer);
+        this.scaleSaveTimer = setTimeout(async () => {
+            try {
+                const setName = this.activeSpriteSet || 'main_sprites';
+                await fetch('/api/sprites/live2d_config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        set_name: setName,
+                        scale: scale,
+                        offset_x: this.live2dOffsetX || 0.0,
+                        offset_y: this.live2dOffsetY || 0.0
+                    })
+                });
+            } catch (err) {
+                console.warn('[PET SCALE] 保存缩放配置异常:', err);
+            }
+        }, 600);
     }
 }
 

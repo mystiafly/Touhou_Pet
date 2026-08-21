@@ -18,7 +18,7 @@ window.addEventListener('keydown', (e) => {
 }, { capture: true });
 
 window.addEventListener('wheel', (e) => {
-    if (e.ctrlKey) {
+    if (e.ctrlKey && !e.altKey && !e.shiftKey) {
         e.preventDefault();
     }
 }, { passive: false, capture: true });

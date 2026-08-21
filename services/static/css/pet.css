@@ -1602,3 +1602,35 @@ body.peeking-mode .log-container {
 .pet-container.immersive-mode #presets-btn {
     display: none !important;
 }
+
+/* 即时缩放 HUD 胶囊提示 */
+.scale-hud {
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(24, 25, 38, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--theme-glow-05, rgba(255, 107, 139, 0.5));
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45), 0 0 15px var(--theme-glow-03, rgba(255, 107, 139, 0.3));
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 16px;
+    border-radius: 20px;
+    z-index: 10000;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    letter-spacing: 0.5px;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.scale-hud.hidden {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px) scale(0.95);
+    pointer-events: none;
+}

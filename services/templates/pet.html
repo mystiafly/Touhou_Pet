@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <title>Desktop Pet</title>
-    <link rel="stylesheet" href="/static/css/pet.css?v=1.32.0">
+    <link rel="stylesheet" href="/static/css/pet.css?v=1.33.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- Live2D Cubism Core & PixiJS & Soullink Driver -->
     <script src="https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pixi.js@6.5.8/dist/browser/pixi.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0/dist/cubism4.min.js"></script>
-    <script src="/static/js/soullink_live2d.js?v=1.32.0"></script>
+    <script src="/static/js/soullink_live2d.js?v=1.33.0"></script>
 </head>
 <body>
 <div class="pet-container">
@@ -86,6 +86,11 @@
         <div class="character-wrapper">
             <div id="fav-container" class="fav-container">
                 <i class="fas fa-heart"></i> <span id="fav-score">...</span>
+            </div>
+
+            <!-- 即时缩放 HUD 提示胶囊 -->
+            <div id="scale-hud" class="scale-hud hidden">
+                <span id="scale-hud-text">🔍 缩放: 100%</span>
             </div>
 
             <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" id="pet-img" alt="Pet" draggable="false">
@@ -166,9 +171,9 @@
     </div>
 </div>
 
-<script src="/static/js/pet/pet_audio.js?v=1.32.8"></script>
-<script src="/static/js/pet/pet_immersive.js?v=1.32.8"></script>
-<script src="/static/js/pet/pet_core.js?v=1.32.8"></script>
-<script src="/static/js/pet_script.js?v=1.32.8"></script>
+<script src="/static/js/pet/pet_audio.js?v=1.33.0"></script>
+<script src="/static/js/pet/pet_immersive.js?v=1.33.0"></script>
+<script src="/static/js/pet/pet_core.js?v=1.33.0"></script>
+<script src="/static/js/pet_script.js?v=1.33.0"></script>
 </body>
 </html>
