@@ -1,0 +1,122 @@
+{
+	"Version": 3,
+	"FileReferences": {
+		"Moc": "Koishi.asset.moc3",
+		"Textures": [
+			"textures/texture_00.png"
+		],
+		"Physics": "Koishi.asset.physics3.json",
+		"Motions": {
+			"": [
+				{
+					"File": "motions/Koishi_14.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_31.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_13.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_15.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_41.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_30.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_12.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_40.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_22.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_53.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_24.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_50.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_11.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_32.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_51.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_10.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_55.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_43.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_33.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_42.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_34.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_52.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_21.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_45.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_23.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_35.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_54.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_20.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_44.motion3.json"
+				},
+				{
+					"File": "motions/Koishi_25.motion3.json"
+				}
+			]
+		}
+	},
+	"Groups": [
+		{
+			"Target": "Parameter",
+			"Name": "EyeBlink",
+			"Ids": [
+				"ParamEyeLOpen",
+				"ParamEyeROpen"
+			]
+		},
+		{
+			"Target": "Parameter",
+			"Name": "LipSync",
+			"Ids": [
+				"ParamMouthOpenY"
+			]
+		}
+	],
+	"HitAreas": []
+}

@@ -1,0 +1,90 @@
+{
+  "Type": "Live2D Expression",
+  "Parameters": [
+    {
+      "Id": "ParamEyeLSmile",
+      "Value": 0.8,
+      "Blend": "Override"
+    },
+    {
+      "Id": "ParamEyeRSmile",
+      "Value": 0.8,
+      "Blend": "Override"
+    },
+    {
+      "Id": "ParamEyeScale",
+      "Value": 1,
+      "Blend": "Override"
+    },
+    {
+      "Id": "ParamEyeOpen",
+      "Value": 0.5,
+      "Blend": "Override"
+    },
+    {
+      "Id": "ParamEyeHiLight",
+      "Value": 1,
+      "Blend": "Override"
+    },
+    {
+      "Id": "ParamBrowLY",
+      "Value": 0.2,
+      "Blend": "Override"
+    },
+    {
+      "Id": "ParamBrowRY",
+      "Value": 0.2,
+      "Blend": "Override"
+    },
+    {
+      "Id": "ParamBrowLX",
+      "Value": -0.3,
+      "Blend": "Override"
+    },
+    {
+      "Id": "ParamBrowRX",
+      "Value": -0.3,
+      "Blend": "Override"
+    },
+    {
+      "Id": "ParamBrowLAngle",
+      "Value": -0.5,
+      "Blend": "Override"
+    },
+    {
+      "Id": "ParamBrowRAngle",
+      "Value": -0.5,
+      "Blend": "Override"
+    },
+    {
+      "Id": "ParamBrowLForm",
+      "Value": 0.3,
+      "Blend": "Override"
+    },
+    {
+      "Id": "ParamBrowRForm",
+      "Value": 0.3,
+      "Blend": "Override"
+    },
+    {
+      "Id": "ParamMouthForm",
+      "Value": 0.5,
+      "Blend": "Override"
+    },
+    {
+      "Id": "ParamMouthFormScale",
+      "Value": 0.8,
+      "Blend": "Override"
+    },
+    {
+      "Id": "ParamMouthTooth",
+      "Value": 0,
+      "Blend": "Override"
+    },
+    {
+      "Id": "ParamCheek",
+      "Value": 1,
+      "Blend": "Override"
+    }
+  ]
+}

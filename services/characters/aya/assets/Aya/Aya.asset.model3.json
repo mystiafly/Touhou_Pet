@@ -1,0 +1,145 @@
+{
+  "Version": 3,
+  "FileReferences": {
+    "Moc": "Aya.asset.moc3",
+    "Textures": [
+      "textures/texture_00.png"
+    ],
+    "Physics": "Aya.asset.physics3.json",
+    "Motions": {
+      "": [
+        {
+          "File": "motions/Aya_45.motion3.json"
+        },
+        {
+          "File": "motions/Aya_08.motion3.json"
+        },
+        {
+          "File": "motions/Aya_22.motion3.json"
+        },
+        {
+          "File": "motions/Aya_30.motion3.json"
+        },
+        {
+          "File": "motions/Aya_54.motion3.json"
+        },
+        {
+          "File": "motions/Aya_42.motion3.json"
+        },
+        {
+          "File": "motions/Aya_12.motion3.json"
+        },
+        {
+          "File": "motions/Aya_13.motion3.json"
+        },
+        {
+          "File": "motions/Aya_34.motion3.json"
+        },
+        {
+          "File": "motions/Aya_52.motion3.json"
+        },
+        {
+          "File": "motions/Aya_32.motion3.json"
+        },
+        {
+          "File": "motions/Aya_50.motion3.json"
+        },
+        {
+          "File": "motions/Aya_33.motion3.json"
+        },
+        {
+          "File": "motions/Aya_14.motion3.json"
+        },
+        {
+          "File": "motions/Aya_20.motion3.json"
+        },
+        {
+          "File": "motions/Aya_11.motion3.json"
+        },
+        {
+          "File": "motions/Aya_44.motion3.json"
+        },
+        {
+          "File": "motions/Aya_03.motion3.json"
+        },
+        {
+          "File": "motions/Aya_24.motion3.json"
+        },
+        {
+          "File": "motions/Aya_23.motion3.json"
+        },
+        {
+          "File": "motions/Aya_06.motion3.json"
+        },
+        {
+          "File": "motions/Aya_05.motion3.json"
+        },
+        {
+          "File": "motions/Aya_25.motion3.json"
+        },
+        {
+          "File": "motions/Aya_40.motion3.json"
+        },
+        {
+          "File": "motions/Aya_15.motion3.json"
+        },
+        {
+          "File": "motions/Aya_10.motion3.json"
+        },
+        {
+          "File": "motions/Aya_53.motion3.json"
+        },
+        {
+          "File": "motions/Aya_41.motion3.json"
+        },
+        {
+          "File": "motions/Aya_35.motion3.json"
+        },
+        {
+          "File": "motions/Aya_55.motion3.json"
+        },
+        {
+          "File": "motions/Aya_43.motion3.json"
+        },
+        {
+          "File": "motions/Aya_21.motion3.json"
+        },
+        {
+          "File": "motions/Aya_51.motion3.json"
+        },
+        {
+          "File": "motions/Aya_31.motion3.json"
+        },
+        {
+          "File": "motions/Aya_01.motion3.json"
+        },
+        {
+          "File": "motions/Aya_04.motion3.json"
+        },
+        {
+          "File": "motions/Aya_02.motion3.json"
+        },
+        {
+          "File": "motions/Aya_07.motion3.json"
+        }
+      ]
+    }
+  },
+  "Groups": [
+    {
+      "Target": "Parameter",
+      "Name": "EyeBlink",
+      "Ids": [
+        "ParamEyeLOpen",
+        "ParamEyeROpen"
+      ]
+    },
+    {
+      "Target": "Parameter",
+      "Name": "LipSync",
+      "Ids": [
+        "ParamMouthOpenY"
+      ]
+    }
+  ]
+}

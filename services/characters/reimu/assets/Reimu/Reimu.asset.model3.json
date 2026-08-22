@@ -1,0 +1,145 @@
+{
+  "Version": 3,
+  "FileReferences": {
+    "Moc": "Reimu.asset.moc3",
+    "Textures": [
+      "textures/texture_00.png"
+    ],
+    "Physics": "Reimu.asset.physics3.json",
+    "Motions": {
+      "": [
+        {
+          "File": "motions/Reimu_14.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_13.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_55.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_35.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_33.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_04.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_50.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_34.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_44.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_11.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_30.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_51.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_21.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_54.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_01.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_15.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_42.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_07.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_03.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_06.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_22.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_24.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_53.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_52.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_43.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_10.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_05.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_02.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_31.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_20.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_40.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_25.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_32.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_45.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_23.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_08.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_12.motion3.json"
+        },
+        {
+          "File": "motions/Reimu_41.motion3.json"
+        }
+      ]
+    }
+  },
+  "Groups": [
+    {
+      "Target": "Parameter",
+      "Name": "EyeBlink",
+      "Ids": [
+        "ParamEyeROpen",
+        "ParamEyeLOpen"
+      ]
+    },
+    {
+      "Target": "Parameter",
+      "Name": "LipSync",
+      "Ids": [
+        "ParamMouthOpenY"
+      ]
+    }
+  ]
+}
