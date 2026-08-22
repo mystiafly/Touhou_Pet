@@ -424,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 // 更新 TTS 提示信息
-                updateTtsProviderUI(configData.tts_provider || "fish_audio");
+                updateTtsProviderUI(configData.tts_provider || "edge_tts");
 
                 const ttsLangSelect = document.getElementById('character-tts-language-select');
                 if (ttsLangSelect && configData.tts_language) {

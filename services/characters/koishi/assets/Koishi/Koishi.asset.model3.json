@@ -123,7 +123,8 @@
           "File": "motions/Koishi_25.motion3.json"
         }
       ]
-    }
+    },
+    "Pose": "Koishi.asset.pose3.json"
   },
   "Groups": [
     {

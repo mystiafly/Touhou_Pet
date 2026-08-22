@@ -178,8 +178,8 @@ def get_config():
         merged["tts_speak_mode"] = "click"
     if "tts_language" not in merged:
         merged["tts_language"] = "zh"
-    if "tts_provider" not in merged:
-        merged["tts_provider"] = "fish_audio"
+    if "tts_provider" not in merged or not merged["tts_provider"]:
+        merged["tts_provider"] = "edge_tts"
     if "tts_base_url" not in merged:
         merged["tts_base_url"] = merged.get("fish_audio_base_url") or os.getenv("FISH_AUDIO_BASE_URL", "https://api.fish.audio/v1/tts")
     if "tts_api_key" not in merged:

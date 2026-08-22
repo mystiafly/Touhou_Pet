@@ -344,23 +344,53 @@ def generate_speech_custom_http(
 
 # --- 核心调度器 ---
 def dispatch_speech_synthesis(styled_text: str, voice_id: Optional[str] = None, language: str = "zh") -> Tuple[bool, Optional[bytes], Optional[str]]:
-    """根据系统配置的 TTS 提供商统一分发合成请求"""
+    """根据系统配置的 TTS 提供商统一分发合成请求，未配置接口或配置无效时默认使用 Edge-TTS 微软女声"""
     config_data = get_config()
-    provider = (config_data.get("tts_provider") or "fish_audio").lower()
+    provider = (config_data.get("tts_provider") or "edge_tts").lower().strip()
 
-    if provider in ["fish_audio", "fish"]:
-        return generate_speech_fish_audio(styled_text, voice_id=voice_id)
-    elif provider in ["edge_tts", "edge", "microsoft"]:
+    # 1. 明确使用或默认使用 Edge-TTS (免 Key 微软高保真女声)
+    if provider in ["edge_tts", "edge", "microsoft", "default", "none", ""]:
         return generate_speech_edge_tts(styled_text, voice_id=voice_id, language=language)
+
+    # 2. Fish Audio (若未填 Key 或请求失败则自动回退至 Edge-TTS 女声)
+    elif provider in ["fish_audio", "fish"]:
+        api_key = config_data.get("tts_api_key") or config_data.get("fish_audio_api_key") or os.getenv("FISH_AUDIO_API_KEY", "").strip()
+        if not api_key:
+            print("[TTS FALLBACK] 未设置 Fish Audio API Key，自动切换为默认 Edge-TTS 微软女声")
+            return generate_speech_edge_tts(styled_text, voice_id=voice_id, language=language)
+        success, audio_bytes, error = generate_speech_fish_audio(styled_text, voice_id=voice_id)
+        if not success or not audio_bytes:
+            print(f"[TTS FALLBACK] Fish Audio 无法合成 ({error})，自动降级为 Edge-TTS 微软女声")
+            return generate_speech_edge_tts(styled_text, voice_id=voice_id, language=language)
+        return success, audio_bytes, error
+
+    # 3. OpenAI / 硅基流动 / 阶跃星辰等 (若失败自动回退至 Edge-TTS 女声)
     elif provider in ["openai", "siliconflow", "stepfun", "zhipu", "custom_openai", "openai_compatible"]:
-        return generate_speech_openai_compatible(styled_text, voice_id=voice_id, language=language)
+        success, audio_bytes, error = generate_speech_openai_compatible(styled_text, voice_id=voice_id, language=language)
+        if not success or not audio_bytes:
+            print(f"[TTS FALLBACK] OpenAI 兼容接口失败 ({error})，自动降级为 Edge-TTS 微软女声")
+            return generate_speech_edge_tts(styled_text, voice_id=voice_id, language=language)
+        return success, audio_bytes, error
+
+    # 4. GPT-SoVITS (若本地服务未启动则自动回退至 Edge-TTS 女声)
     elif provider in ["gpt_sovits", "gpt-sovits", "sovits"]:
-        return generate_speech_gpt_sovits(styled_text, voice_id=voice_id, language=language)
+        success, audio_bytes, error = generate_speech_gpt_sovits(styled_text, voice_id=voice_id, language=language)
+        if not success or not audio_bytes:
+            print(f"[TTS FALLBACK] GPT-SoVITS 连接失败 ({error})，自动降级为 Edge-TTS 微软女声")
+            return generate_speech_edge_tts(styled_text, voice_id=voice_id, language=language)
+        return success, audio_bytes, error
+
+    # 5. 通用 HTTP 自定义接口
     elif provider in ["custom_http", "custom"]:
-        return generate_speech_custom_http(styled_text, voice_id=voice_id)
+        success, audio_bytes, error = generate_speech_custom_http(styled_text, voice_id=voice_id)
+        if not success or not audio_bytes:
+            print(f"[TTS FALLBACK] 自定义接口失败 ({error})，自动降级为 Edge-TTS 微软女声")
+            return generate_speech_edge_tts(styled_text, voice_id=voice_id, language=language)
+        return success, audio_bytes, error
+
+    # 其他所有情况一律默认回退至 Edge-TTS 女声
     else:
-        # 默认回退至 Fish Audio
-        return generate_speech_fish_audio(styled_text, voice_id=voice_id)
+        return generate_speech_edge_tts(styled_text, voice_id=voice_id, language=language)
 
 def synthesize_and_cache_audio(
     text: str,
@@ -377,7 +407,7 @@ def synthesize_and_cache_audio(
 
     active_char = char_id or get_active_character_id()
     config_data = get_config()
-    provider = (config_data.get("tts_provider") or "fish_audio").lower()
+    provider = (config_data.get("tts_provider") or "edge_tts").lower().strip()
     char_name = config_data.get("character_name", "桌宠")
     persona = config_data.get("persona_prompt", "")
     

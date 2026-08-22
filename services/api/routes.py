@@ -1165,7 +1165,7 @@ def get_config_api():
     config["enable_tts"] = config.get("enable_tts", True)
     config["enable_tts_click"] = config.get("enable_tts_click", True)
     config["enable_tts_auto"] = config.get("enable_tts_auto", False)
-    config["tts_provider"] = config.get("tts_provider", "fish_audio")
+    config["tts_provider"] = config.get("tts_provider", "edge_tts")
     config["tts_speak_mode"] = config.get("tts_speak_mode", "click")
     config["tts_language"] = config.get("tts_language", "zh")
     config["tts_base_url"] = config.get("tts_base_url") or config.get("fish_audio_base_url", "https://api.fish.audio/v1/tts")
