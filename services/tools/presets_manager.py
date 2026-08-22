@@ -18,7 +18,7 @@ def init_custom_presets():
     self_talk_presets_file = get_self_talk_presets_file()
     
     if not os.path.exists(presets_dir):
-        os.makedirs(presets_dir)
+        os.makedirs(presets_dir, exist_ok=True)
     if not os.path.exists(custom_presets_file):
         try:
             with open(custom_presets_file, 'w', encoding='utf-8') as f:
