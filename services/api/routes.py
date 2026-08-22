@@ -355,11 +355,41 @@ def clear_history_api():
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
 
-# 5. 配置中心获取与保存接口
+def safe_recycle_delete(path: str) -> bool:
+    """严格遵循回收站安全删除策略：将文件/目录送至 Windows 回收站"""
+    if not os.path.exists(path):
+        return True
+    abs_path = os.path.abspath(path)
+    # 优先使用 .NET FileSystem.DeleteDirectory / DeleteFile
+    try:
+        import subprocess
+        if os.path.isdir(abs_path):
+            ps_script = f"Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory('{abs_path}', 'OnlyErrorDialogs', 'SendToRecycleBin')"
+        else:
+            ps_script = f"Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('{abs_path}', 'OnlyErrorDialogs', 'SendToRecycleBin')"
+        subprocess.run(["powershell", "-NoProfile", "-Command", ps_script], capture_output=True, text=True, timeout=10)
+        if not os.path.exists(abs_path):
+            return True
+    except Exception:
+        pass
+    
+    # 备选 send2trash
+    try:
+        from send2trash import send2trash
+        send2trash(abs_path)
+        if not os.path.exists(abs_path):
+            return True
+    except Exception:
+        pass
+
+    return not os.path.exists(abs_path)
+
+# 5. 配置中心获取与角色管理接口
 @router.get("/api/characters/list")
 async def api_characters_list():
     import os, json
-    from core.config_manager import SERVICES_DIR
+    from core.config_manager import SERVICES_DIR, get_active_character_id
+    active_char = get_active_character_id()
     chars_dir = os.path.join(SERVICES_DIR, "characters")
     result = []
     if os.path.exists(chars_dir):
@@ -372,11 +402,146 @@ async def api_characters_list():
                         conf = json.load(f)
                         result.append({
                             "character_id": conf.get("character_id", item),
-                            "character_name": conf.get("character_name", item)
+                            "character_name": conf.get("character_name", item),
+                            "persona_prompt": conf.get("persona_prompt", ""),
+                            "theme_color": conf.get("theme_color", ""),
+                            "avatar_url": f"/api/characters/{item}/avatar",
+                            "is_active": (item == active_char)
                         })
                 except Exception:
                     pass
-    return JSONResponse({"status": "success", "characters": result})
+    return JSONResponse({"status": "success", "active_character": active_char, "characters": result})
+
+@router.get("/api/characters/{char_id}/avatar")
+async def api_get_character_avatar(char_id: str):
+    import os
+    from core.config_manager import SERVICES_DIR
+    
+    # 1. 检查是否存在自定义 avatar
+    for ext in ["png", "jpg", "jpeg", "webp"]:
+        av_path = os.path.join(SERVICES_DIR, "characters", char_id, f"avatar.{ext}")
+        if os.path.exists(av_path):
+            media = "image/png" if ext == "png" else f"image/{ext}"
+            return FileResponse(av_path, media_type=media, headers={"Cache-Control": "no-cache, max-age=0"})
+            
+    # 2. 检查是否有 normal.png 静态立绘作为次级备用
+    normal_sprite = os.path.join(SERVICES_DIR, "characters", char_id, "assets", "main_sprites", "normal.png")
+    if os.path.exists(normal_sprite):
+        return FileResponse(normal_sprite, media_type="image/png", headers={"Cache-Control": "no-cache, max-age=0"})
+        
+    # 3. 回退为默认机器人 SVG 头像
+    default_svg = os.path.join(SERVICES_DIR, "static", "images", "default_robot_avatar.svg")
+    if os.path.exists(default_svg):
+        return FileResponse(default_svg, media_type="image/svg+xml", headers={"Cache-Control": "public, max-age=86400"})
+        
+    return JSONResponse({"status": "error", "message": "Avatar not found"}, status_code=404)
+
+@router.post("/api/characters/{char_id}/avatar")
+async def api_upload_character_avatar(char_id: str, file: UploadFile = File(...)):
+    import os, time
+    from core.config_manager import SERVICES_DIR
+    
+    char_dir = os.path.join(SERVICES_DIR, "characters", char_id)
+    if not os.path.exists(char_dir):
+        return JSONResponse({"status": "error", "message": f"角色 {char_id} 不存在"}, status_code=404)
+        
+    contents = await file.read()
+    if len(contents) > 10 * 1024 * 1024:
+        return JSONResponse({"status": "error", "message": "图片大小不能超过 10MB"}, status_code=400)
+        
+    save_path = os.path.join(char_dir, "avatar.png")
+    try:
+        # 如果有 PIL，尝试居中正方形裁剪并压缩为 512x512 PNG
+        try:
+            from PIL import Image
+            import io
+            img = Image.open(io.BytesIO(contents))
+            img = img.convert("RGBA")
+            w, h = img.size
+            min_dim = min(w, h)
+            left = (w - min_dim) / 2
+            top = (h - min_dim) / 2
+            right = (w + min_dim) / 2
+            bottom = (h + min_dim) / 2
+            img = img.crop((left, top, right, bottom))
+            img.thumbnail((512, 512), Image.Resampling.LANCZOS)
+            img.save(save_path, "PNG", optimize=True)
+        except Exception:
+            with open(save_path, "wb") as f:
+                f.write(contents)
+                
+        return JSONResponse({
+            "status": "success",
+            "message": "头像上传成功！",
+            "avatar_url": f"/api/characters/{char_id}/avatar?t={int(time.time()*1000)}"
+        })
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": f"保存头像失败: {str(e)}"}, status_code=500)
+
+@router.delete("/api/characters/{char_id}/avatar")
+async def api_delete_character_avatar(char_id: str):
+    import os, time
+    from core.config_manager import SERVICES_DIR
+    
+    char_dir = os.path.join(SERVICES_DIR, "characters", char_id)
+    if not os.path.exists(char_dir):
+        return JSONResponse({"status": "error", "message": f"角色 {char_id} 不存在"}, status_code=404)
+        
+    for ext in ["png", "jpg", "jpeg", "webp"]:
+        p = os.path.join(char_dir, f"avatar.{ext}")
+        if os.path.exists(p):
+            safe_recycle_delete(p)
+            
+    return JSONResponse({
+        "status": "success",
+        "message": "已恢复默认头像！",
+        "avatar_url": f"/api/characters/{char_id}/avatar?t={int(time.time()*1000)}"
+    })
+
+class BatchDeleteRequest(BaseModel):
+    character_ids: List[str]
+
+@router.post("/api/characters/batch_delete")
+async def api_characters_batch_delete(req: BatchDeleteRequest):
+    import os
+    from core.config_manager import SERVICES_DIR, USER_DATA_DIR, get_active_character_id
+    
+    active_char = get_active_character_id()
+    deleted = []
+    skipped = []
+    
+    for cid in req.character_ids:
+        cid = cid.strip().lower()
+        if not cid:
+            continue
+        if cid == "rumia":
+            skipped.append({"id": cid, "reason": "基础角色(露米娅)受系统保护无法删除"})
+            continue
+        if cid == active_char:
+            skipped.append({"id": cid, "reason": "当前正在活跃运行的灵魂无法删除，请先切换为其他角色"})
+            continue
+            
+        char_dir = os.path.join(SERVICES_DIR, "characters", cid)
+        data_char_dir = os.path.join(USER_DATA_DIR, "data", "characters", cid)
+        
+        ok = True
+        if os.path.exists(char_dir):
+            if not safe_recycle_delete(char_dir):
+                ok = False
+        if os.path.exists(data_char_dir):
+            safe_recycle_delete(data_char_dir)
+            
+        if ok:
+            deleted.append(cid)
+        else:
+            skipped.append({"id": cid, "reason": "删除失败(文件可能被系统占用)"})
+            
+    return JSONResponse({
+        "status": "success",
+        "deleted": deleted,
+        "skipped": skipped,
+        "message": f"成功将 {len(deleted)} 个角色移至回收站！" + (f" (跳过 {len(skipped)} 个)" if skipped else "")
+    })
 
 class CharacterGenRequest(BaseModel):
     mode: str = "lazy"
@@ -404,8 +569,9 @@ async def api_delete_character(char_id: str):
         return JSONResponse({"status": "error", "message": f"找不到角色: {char_id}"}, status_code=404)
         
     try:
-        from send2trash import send2trash
-        send2trash(char_dir)
+        ok = safe_recycle_delete(char_dir)
+        if not ok:
+            return JSONResponse({"status": "error", "message": "删除失败：文件可能被占用"}, status_code=500)
         
         # If we deleted the active character, switch back to rumia
         if get_active_character_id() == char_id:
@@ -419,7 +585,7 @@ async def api_delete_character(char_id: str):
                 except Exception:
                     pass
                     
-        return JSONResponse({"status": "success", "message": "删除成功！"})
+        return JSONResponse({"status": "success", "message": "已安全移至回收站！"})
     except Exception as e:
         return JSONResponse({"status": "error", "message": f"删除失败: {str(e)}"}, status_code=500)
 

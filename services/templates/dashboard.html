@@ -30,6 +30,9 @@
             <a href="#" class="nav-item" data-target="dashboard-stats-view">
                 <i class="fas fa-chart-pie"></i> 数据仪表盘
             </a>
+            <a href="#" class="nav-item" data-target="character-management-view">
+                <i class="fas fa-users-cog"></i> 角色管理
+            </a>
             <a href="#" class="nav-item active" data-target="engine-view">
                 <i class="fas fa-brain"></i> 大脑引擎
             </a>
@@ -238,15 +241,45 @@
                     </div>
                 </div>
 
-                <div class="settings-card danger-card">
-                    <h3><i class="fas fa-user-astronaut"></i> 灵魂载体</h3>
-                    <div class="form-group">
-                        <label for="character-select">切换角色灵魂:</label>
-                        <select id="character-select" class="modern-select">
-                            <!-- 选项将由 JS 动态生成 -->
-                        </select>
+                <div class="settings-card" style="background: rgba(139, 233, 253, 0.05); border: 1px dashed rgba(139, 233, 253, 0.3);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <div style="font-weight: 600; color: #8be9fd; font-size: 14px;"><i class="fas fa-users-cog"></i> 灵魂与角色管理</div>
+                            <div class="help-text" style="margin-top: 4px;">角色切换、头像设置与批量维护已迁移至独立工作台</div>
+                        </div>
+                        <button class="action-btn outline" onclick="document.querySelector('.nav-item[data-target=\'character-management-view\']').click()" style="border-color: #8be9fd; color: #8be9fd; font-size: 13px;">
+                            前往角色管理中心 <i class="fas fa-arrow-right"></i>
+                        </button>
                     </div>
-                    <p class="help-text text-danger"><i class="fas fa-exclamation-triangle"></i> 切换灵魂后，为确保记忆隔离，应用主程序将会自动重启！</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 角色管理视图 (独立全功能中心) -->
+        <section id="character-management-view" class="content-section">
+            <header class="section-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <h1><i class="fas fa-users-cog" style="color: #8be9fd;"></i> 角色管理中心</h1>
+                    <p>管理所有注册的桌宠灵魂、头像外观、快速切换与批量安全维护</p>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <button id="char-select-all-btn" class="action-btn outline" style="font-size: 13px; padding: 7px 14px;">
+                        <i class="far fa-check-square"></i> 全选
+                    </button>
+                    <button id="char-batch-delete-btn" class="action-btn outline" style="border-color: #ff5555; color: #ff5555; font-size: 13px; padding: 7px 14px;">
+                        <i class="fas fa-trash-alt"></i> 批量删除 (至回收站)
+                    </button>
+                    <button class="action-btn" onclick="document.querySelector('.nav-item[data-target=\'create-soul-view\']').click()" style="background: linear-gradient(135deg, #bd93f9, #ff79c6); border: none; color: #fff; font-size: 13px; font-weight: 600; padding: 7px 16px;">
+                        <i class="fas fa-plus"></i> 孕育/构建新角色
+                    </button>
+                </div>
+            </header>
+
+            <div style="margin-top: 15px;">
+                <div id="character-card-grid" class="character-grid-container">
+                    <div style="text-align: center; color: #6272a4; padding: 40px; grid-column: 1 / -1;">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 24px;"></i> 正在加载角色列表...
+                    </div>
                 </div>
             </div>
         </section>
@@ -784,6 +817,28 @@
             </header>
             
             <div class="card-container">
+                <!-- 角色头像设置卡片 -->
+                <div class="settings-card" style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                    <div style="position: relative;">
+                        <img id="current-char-avatar-img" src="/api/characters/rumia/avatar" alt="Character Avatar" 
+                             style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid #8be9fd; box-shadow: 0 0 16px rgba(139, 233, 253, 0.35); background: #1e1f29;">
+                    </div>
+                    <div style="flex: 1; min-width: 220px;">
+                        <h3 style="margin-bottom: 6px;"><i class="fas fa-portrait" style="color: #8be9fd;"></i> 角色专属头像 (Character Avatar)</h3>
+                        <p class="help-text" style="margin-bottom: 12px;">上传专属头像图标，支持 PNG / JPG / WebP / GIF，未上传时自动回退为默认 AI 机器人头像。</p>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                            <input type="file" id="char-avatar-file-input" accept="image/png,image/jpeg,image/webp,image/gif" style="display: none;">
+                            <button id="upload-char-avatar-btn" class="action-btn" style="font-size: 13px; padding: 7px 16px;">
+                                <i class="fas fa-upload"></i> 上传新头像
+                            </button>
+                            <button id="reset-char-avatar-btn" class="action-btn outline" style="font-size: 13px; padding: 7px 16px;">
+                                <i class="fas fa-undo"></i> 恢复默认头像
+                            </button>
+                        </div>
+                        <p id="avatar-upload-status" class="help-text text-success" style="margin-top: 8px; display: none;"></p>
+                    </div>
+                </div>
+
                 <div class="settings-card">
                     <h3><i class="fas fa-id-badge"></i> 角色核心词 (Persona Prompt)</h3>
                     <div class="form-group">
@@ -2080,15 +2135,15 @@
 </div>
 
 <!-- Vue 3 Modular Architecture -->
-<script src="/static/js/dashboard/modules/useTheme.js?v=1.34.0"></script>
-<script src="/static/js/dashboard/modules/useCharacter.js?v=1.34.0"></script>
-<script src="/static/js/dashboard/modules/useTTS.js?v=1.34.0"></script>
-<script src="/static/js/dashboard/modules/useDataBank.js?v=1.34.0"></script>
-<script src="/static/js/dashboard/modules/useMemory.js?v=1.34.0"></script>
-<script src="/static/js/dashboard/modules/useLive2DDebug.js?v=1.34.0"></script>
-<script src="/static/js/dashboard/modules/useStatsLogs.js?v=1.34.0"></script>
-<script src="/static/js/dashboard/modules/useConfig.js?v=1.34.0"></script>
-<script src="/static/js/dashboard/dashboard_app.js?v=1.34.0"></script>
-<script src="/static/js/dashboard.js?v=1.34.0"></script>
+<script src="/static/js/dashboard/modules/useTheme.js?v=1.35.0"></script>
+<script src="/static/js/dashboard/modules/useCharacter.js?v=1.35.0"></script>
+<script src="/static/js/dashboard/modules/useTTS.js?v=1.35.0"></script>
+<script src="/static/js/dashboard/modules/useDataBank.js?v=1.35.0"></script>
+<script src="/static/js/dashboard/modules/useMemory.js?v=1.35.0"></script>
+<script src="/static/js/dashboard/modules/useLive2DDebug.js?v=1.35.0"></script>
+<script src="/static/js/dashboard/modules/useStatsLogs.js?v=1.35.0"></script>
+<script src="/static/js/dashboard/modules/useConfig.js?v=1.35.0"></script>
+<script src="/static/js/dashboard/dashboard_app.js?v=1.35.0"></script>
+<script src="/static/js/dashboard.js?v=1.35.0"></script>
 </body>
 </html>

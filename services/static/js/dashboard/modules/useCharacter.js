@@ -81,7 +81,7 @@ window.useCharacterModule = function(Vue) {
         try {
             const res = await fetch('/api/characters/list');
             const data = await res.json();
-            if (data.success && data.characters) {
+            if ((data.status === 'success' || data.success) && data.characters) {
                 charactersList.value = data.characters;
             }
         } catch (e) {
