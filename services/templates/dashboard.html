@@ -980,7 +980,7 @@
                 
                 <div class="mode-tabs" style="margin-top: 15px; display: flex; gap: 10px;">
                     <button id="mode-lazy-btn" class="action-btn active" style="flex: 1; justify-content: center;"><i class="fas fa-magic"></i> 懒人模式</button>
-                    <button id="mode-pro-btn" class="action-btn outline" style="flex: 1; justify-content: center;"><i class="fas fa-code"></i> 高手模式</button>
+                    <button id="mode-pro-btn" class="action-btn outline" style="flex: 1; justify-content: center;"><i class="fas fa-hammer"></i> 构建模式</button>
                     <button id="mode-import-btn" class="action-btn outline" style="flex: 1; justify-content: center;"><i class="fas fa-file-import"></i> 导入模式</button>
                     <button id="mode-export-btn" class="action-btn outline" style="flex: 1; justify-content: center; border-color: #50fa7b; color: #50fa7b;"><i class="fas fa-file-export"></i> 导出模式</button>
                     <button id="mode-delete-btn" class="action-btn outline" style="flex: 1; justify-content: center; border-color: #ff4d4f; color: #ff4d4f;"><i class="fas fa-trash-alt"></i> 删除模式</button>
@@ -1007,57 +1007,42 @@
                     <p id="generate-status" class="help-text" style="margin-top: 10px; text-align: center; display: none;">正在请求大模型塑魂，请稍候...</p>
                 </div>
 
-                <!-- 高手模式表单 -->
+                <!-- 构建模式表单 (取代旧高手模式) -->
                 <div id="form-pro-mode" class="settings-card hidden" style="display: none;">
-                    <h3><i class="fas fa-microchip"></i> 核心代码注入 (高手)</h3>
+                    <h3><i class="fas fa-hammer"></i> 样本沙盒克隆与即时构建 (构建模式)</h3>
                     
-                    <div class="form-group" style="margin-top: 15px;">
-                        <label for="pro-char-id" style="font-weight: 500; font-size: 14px;">英文 ID (必填)</label>
-                        <input type="text" id="pro-char-id" class="modern-input" placeholder="例如：neko" style="margin-top: 8px; width: 100%;">
-                        <p class="help-text">仅限小写字母和下划线，作为文件夹名使用。</p>
+                    <div style="margin-top: 10px; padding: 12px 14px; background: rgba(189, 147, 249, 0.12); border: 1px solid rgba(189, 147, 249, 0.35); border-radius: 8px; font-size: 13px; line-height: 1.6; color: #f8f8f2;">
+                        <i class="fas fa-info-circle" style="color: #bd93f9; margin-right: 6px;"></i>
+                        <strong>构建工作台说明：</strong> 系统将从受保护的示例角色母本（已预装莉莉白 7 表动态数据库与露米娅静态/Live2D 双皮肤）<strong>无损克隆一份独立的沙盒副本</strong>，并<strong>自动为您切换至该新角色</strong>，供您在各功能模块中随意测试与微调，绝不影响母本。
                     </div>
 
                     <div class="form-group" style="margin-top: 15px;">
-                        <label for="pro-char-name" style="font-weight: 500; font-size: 14px;">中文名 (必填)</label>
-                        <input type="text" id="pro-char-name" class="modern-input" placeholder="例如：猫娘" style="margin-top: 8px; width: 100%;">
+                        <label for="pro-char-id" style="font-weight: 500; font-size: 14px;">英文唯一 ID (必填)</label>
+                        <input type="text" id="pro-char-id" class="modern-input" placeholder="例如：my_custom_pet" style="margin-top: 8px; width: 100%;">
+                        <p class="help-text">仅限小写英文字母、数字和下划线，作为独立角色文件夹名。</p>
                     </div>
 
                     <div class="form-group" style="margin-top: 15px;">
-                        <label for="pro-persona-prompt" style="font-weight: 500; font-size: 14px;">核心提示词 (必填)</label>
-                        <textarea id="pro-persona-prompt" class="modern-input" rows="4" placeholder="完全覆盖系统约束的第一排内容" style="margin-top: 8px; width: 100%; resize: vertical;"></textarea>
+                        <label for="pro-char-name" style="font-weight: 500; font-size: 14px;">中文角色名 (必填)</label>
+                        <input type="text" id="pro-char-name" class="modern-input" placeholder="例如：我的桌宠" style="margin-top: 8px; width: 100%;">
                     </div>
 
                     <div class="form-group" style="margin-top: 15px;">
-                        <label for="pro-base-prompt" style="font-weight: 500; font-size: 14px;">系统人设 / Base Prompt (必填)</label>
-                        <textarea id="pro-base-prompt" class="modern-input" rows="6" placeholder="详尽描述角色的世界观、性格、口癖。将被写入 base_prompt.txt" style="margin-top: 8px; width: 100%; resize: vertical;"></textarea>
+                        <label for="pro-persona-prompt" style="font-weight: 500; font-size: 14px;">核心人设 / 提示词 (可选)</label>
+                        <textarea id="pro-persona-prompt" class="modern-input" rows="4" placeholder="例如：你是我的专属贴心桌宠助手，性格温柔活泼，喜欢在我工作和学习时给予陪伴与鼓励..." style="margin-top: 8px; width: 100%; resize: vertical;"></textarea>
+                        <p class="help-text">留空将使用示例标准人设，创建后可随时在「专属预设」中无缝修改。</p>
                     </div>
 
                     <div class="form-group" style="margin-top: 15px;">
-                        <label for="pro-dynamic-tail" style="font-weight: 500; font-size: 14px;">动态尾部 / Dynamic Tail (可选)</label>
-                        <textarea id="pro-dynamic-tail" class="modern-input" rows="3" placeholder="例如：当前时间: {time_of_day}\n环境天气: {weather}" style="margin-top: 8px; width: 100%; resize: vertical;"></textarea>
+                        <label for="pro-theme-color" style="font-weight: 500; font-size: 14px;">专属主题主色调 (可选)</label>
+                        <input type="text" id="pro-theme-color" class="modern-input" placeholder="例如：#bd93f9 或 #ff79c6" style="margin-top: 8px; width: 100%;">
+                        <p class="help-text">填入十六进制颜色代码（留空则继承默认主题色）。</p>
                     </div>
 
-                    <div class="form-group" style="margin-top: 15px;">
-                        <label for="pro-theme-color" style="font-weight: 500; font-size: 14px;">主色调 (可选)</label>
-                        <input type="text" id="pro-theme-color" class="modern-input" placeholder="例如：#FFB6C1" style="margin-top: 8px; width: 100%;">
-                        <p class="help-text">填入十六进制色号，系统将自动注入主题 CSS。</p>
-                    </div>
-
-                    <div class="form-group" style="margin-top: 15px;">
-                        <label for="pro-app-launcher" style="font-weight: 500; font-size: 14px;">专属应用白名单 (可选 JSON)</label>
-                        <textarea id="pro-app-launcher" class="modern-input" rows="3" placeholder='{"记事本": "C:\\\\Windows\\\\System32\\\\notepad.exe"}' style="margin-top: 8px; width: 100%; resize: vertical; font-family: monospace;"></textarea>
-                    </div>
-
-                    <div class="form-group" style="margin-top: 15px;">
-                        <label for="pro-env-presets" style="font-weight: 500; font-size: 14px;">环境触发词 (可选 JSON 数组)</label>
-                        <textarea id="pro-env-presets" class="modern-input" rows="4" placeholder='[{"name": "夜间", "condition": {"type": "time", "start_hour": 23, "end_hour": 6}, "prompt": "..."}]' style="margin-top: 8px; width: 100%; resize: vertical; font-family: monospace;"></textarea>
-                        <p class="help-text">符合格式的 JSON 数组将被写入 <code>env_presets.json</code>。</p>
-                    </div>
-
-                    <button id="generate-pro-btn" class="action-btn outline" style="margin-top: 20px; width: 100%; justify-content: center; border-color: #8c8cff; color: #8c8cff;">
-                        <i class="fas fa-bolt"></i> 瞬间注入 (纯 Python 极速写入)
+                    <button id="generate-pro-btn" class="action-btn" style="background: linear-gradient(135deg, #bd93f9, #ff79c6); border: none; color: #fff; margin-top: 20px; width: 100%; justify-content: center; font-size: 14px; font-weight: 600;">
+                        <i class="fas fa-rocket"></i> 🚀 启动构建工作台 (克隆样本并即刻切换)
                     </button>
-                    <p id="generate-pro-status" class="help-text text-success" style="margin-top: 10px; text-align: center; display: none;">配置已物理写入磁盘！</p>
+                    <p id="generate-pro-status" class="help-text text-success" style="margin-top: 10px; text-align: center; display: none;">沙盒副本已构建完成！</p>
                 </div>
                 
                 <!-- 导入模式表单 -->
@@ -2095,15 +2080,15 @@
 </div>
 
 <!-- Vue 3 Modular Architecture -->
-<script src="/static/js/dashboard/modules/useTheme.js?v=1.32.5"></script>
-<script src="/static/js/dashboard/modules/useCharacter.js?v=1.32.5"></script>
-<script src="/static/js/dashboard/modules/useTTS.js?v=1.32.5"></script>
-<script src="/static/js/dashboard/modules/useDataBank.js?v=1.32.5"></script>
-<script src="/static/js/dashboard/modules/useMemory.js?v=1.32.5"></script>
-<script src="/static/js/dashboard/modules/useLive2DDebug.js?v=1.32.5"></script>
-<script src="/static/js/dashboard/modules/useStatsLogs.js?v=1.32.5"></script>
-<script src="/static/js/dashboard/modules/useConfig.js?v=1.32.5"></script>
-<script src="/static/js/dashboard/dashboard_app.js?v=1.32.5"></script>
-<script src="/static/js/dashboard.js?v=1.32.5"></script>
+<script src="/static/js/dashboard/modules/useTheme.js?v=1.34.0"></script>
+<script src="/static/js/dashboard/modules/useCharacter.js?v=1.34.0"></script>
+<script src="/static/js/dashboard/modules/useTTS.js?v=1.34.0"></script>
+<script src="/static/js/dashboard/modules/useDataBank.js?v=1.34.0"></script>
+<script src="/static/js/dashboard/modules/useMemory.js?v=1.34.0"></script>
+<script src="/static/js/dashboard/modules/useLive2DDebug.js?v=1.34.0"></script>
+<script src="/static/js/dashboard/modules/useStatsLogs.js?v=1.34.0"></script>
+<script src="/static/js/dashboard/modules/useConfig.js?v=1.34.0"></script>
+<script src="/static/js/dashboard/dashboard_app.js?v=1.34.0"></script>
+<script src="/static/js/dashboard.js?v=1.34.0"></script>
 </body>
 </html>

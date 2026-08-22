@@ -1951,72 +1951,64 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 处理新角色生成 (高手模式)
+    // 处理新角色构建 (构建模式)
     const generateProBtn = document.getElementById('generate-pro-btn');
     if (generateProBtn) {
         generateProBtn.addEventListener('click', async () => {
-            const charId = document.getElementById('pro-char-id').value.trim();
+            const charId = document.getElementById('pro-char-id').value.trim().toLowerCase();
             const charName = document.getElementById('pro-char-name').value.trim();
             const personaPrompt = document.getElementById('pro-persona-prompt').value.trim();
-            const basePrompt = document.getElementById('pro-base-prompt') ? document.getElementById('pro-base-prompt').value.trim() : "";
-            const dynamicTail = document.getElementById('pro-dynamic-tail') ? document.getElementById('pro-dynamic-tail').value.trim() : "";
             const themeColor = document.getElementById('pro-theme-color').value.trim();
-            const appLauncher = document.getElementById('pro-app-launcher').value.trim();
-            const envPresets = document.getElementById('pro-env-presets').value.trim();
             const statusText = document.getElementById('generate-pro-status');
             
-            if (!charId || !charName || !personaPrompt) {
-                alert("英文 ID、中文名、核心提示词为必填项！");
+            if (!charId || !charName) {
+                alert("英文唯一 ID 和中文角色名为必填项！");
                 return;
             }
 
-            // 简单校验 ID 格式
-            if (!/^[a-z_]+$/.test(charId)) {
-                alert("英文 ID 只能包含小写字母和下划线！");
+            // 校验 ID 格式 (仅小写字母、数字和下划线)
+            if (!/^[a-z0-9_]+$/.test(charId)) {
+                alert("英文唯一 ID 只能包含小写英文字母、数字和下划线！");
                 return;
             }
 
-            const confirmGen = await window.asyncConfirm(`即将物理写入 ${charId} 的底层配置，确认操作吗？`);
+            const confirmGen = await window.asyncConfirm(`即将从母本样本克隆沙盒副本【${charName} (${charId})】并即刻切换，确认启动构建吗？`);
             if (!confirmGen) return;
 
             generateProBtn.disabled = true;
-            generateProBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在急速写入...';
+            generateProBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在克隆母本并初始化...';
             statusText.style.display = 'block';
-            statusText.innerText = '正在写入...';
+            statusText.innerText = '正在构建沙盒副本...';
 
             try {
                 const response = await fetch('/api/characters/generate', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ 
-                        mode: 'pro',
+                        mode: 'construct',
                         character_id: charId,
                         character_name: charName,
                         persona_prompt: personaPrompt,
-                        base_prompt: basePrompt,
-                        dynamic_tail: dynamicTail,
-                        theme_color: themeColor,
-                        app_launcher: appLauncher,
-                        env_presets: envPresets
+                        theme_color: themeColor
                     })
                 });
                 
                 const data = await response.json();
                 if (data.status === 'success') {
-                    statusText.innerText = '配置已物理写入磁盘！';
-                    alert(`✨ 灵魂注入成功！\n\n大贤者已在后台为您建好了名为【${data.character_id}】的灵魂容器。\n\n⚠️ 重要最后一步：\n请前往 services/static/images/${data.character_id}/ 目录，放入 15 张对应表情动作的立绘（详情见文档）。\n完成后点击左下角【重启大贤者】，即可在主页切换到您的新角色！\n\n如果您需要配置更复杂的现实环境逻辑，可以直接编辑生成的 env_presets.json 文件。`);
-                    loadConfig();
+                    statusText.innerText = '沙盒副本已构建完成！';
+                    alert(`✨ 角色【${data.character_name}】构建成功！\n\n大贤者已为您克隆纯净母本副本（集成莉莉白 7 表动态数据库与露米娅静态/Live2D 双皮肤），并已自动将全局活跃角色切换为【${data.character_name}】！\n\n页面即将刷新，您可以立即在「专属预设」、「动态数据库」、「立绘设置」等页面随意定制！`);
+                    window.location.reload();
                 } else {
-                    statusText.innerText = '写入失败';
-                    alert("生成失败: " + data.message);
+                    statusText.innerText = '构建失败';
+                    alert("构建失败: " + (data.message || "未知错误"));
                 }
             } catch (e) {
                 console.error(e);
-                statusText.innerText = '写入失败';
+                statusText.innerText = '构建失败';
                 alert("请求失败，请检查网络或控制台报错。");
             } finally {
                 generateProBtn.disabled = false;
-                generateProBtn.innerHTML = '<i class="fas fa-bolt"></i> 瞬间注入 (纯 Python 极速写入)';
+                generateProBtn.innerHTML = '<i class="fas fa-rocket"></i> 🚀 启动构建工作台 (克隆样本并即刻切换)';
                 setTimeout(() => { statusText.style.display = 'none'; }, 3000);
             }
         });

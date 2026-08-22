@@ -425,55 +425,44 @@ async def api_delete_character(char_id: str):
 
 @router.post("/api/characters/generate")
 async def api_characters_generate(req: CharacterGenRequest):
-    import os, json
-    from core.config_manager import SERVICES_DIR
+    import os, json, shutil
+    from core.config_manager import SERVICES_DIR, GLOBAL_CONFIG_FILE
 
     try:
-        if req.mode == "pro":
-            # 高手模式：直接取用用户输入的数据
-            char_id = req.character_id
-            char_name = req.character_name
-            persona_prompt = req.persona_prompt
-            theme_color = req.theme_color
+        template_dir = os.path.join(SERVICES_DIR, "character_templates", "shili")
+        if not os.path.exists(template_dir):
+            return JSONResponse({"status": "error", "message": "未找到基础示例母本 (character_templates/shili)！"}, status_code=500)
+
+        theme_color = req.theme_color.strip() if req.theme_color else ""
+
+        if req.mode in ["construct", "pro"]:
+            # 构建模式：根据用户输入克隆沙盒副本并切换
+            char_id = req.character_id.strip().lower()
+            char_name = req.character_name.strip()
+            persona_prompt = req.persona_prompt.strip()
+
+            if not char_id or not char_name:
+                return JSONResponse({"status": "error", "message": "英文 ID 和中文名不能为空。"}, status_code=400)
             
-            if not char_id or not char_name or not persona_prompt:
-                return JSONResponse({"status": "error", "message": "英文 ID、中文名和核心提示词不能为空。"}, status_code=400)
-                
-            # 解析应用白名单 JSON
-            app_launcher_data = {}
-            if req.app_launcher:
-                try:
-                    app_launcher_data = json.loads(req.app_launcher)
-                except Exception as e:
-                    return JSONResponse({"status": "error", "message": f"应用白名单 JSON 格式错误: {e}"}, status_code=400)
-            
-            # 解析环境触发词 JSON
-            env_presets_data = []
-            if req.env_presets:
-                try:
-                    env_presets_data = json.loads(req.env_presets)
-                except Exception as e:
-                    return JSONResponse({"status": "error", "message": f"环境触发词 JSON 格式错误: {e}"}, status_code=400)
-            
-            # 高手模式不提供这两个参数，所以填入默认值让用户稍后手动去文件夹修改
-            base_prompt = req.base_prompt if req.base_prompt else f"你是由大贤者系统孕育出的新灵魂：{char_name}。请根据你的核心设定({persona_prompt})，以第一人称扮演好这个角色与我对话。"
-            dynamic_tail = req.dynamic_tail if req.dynamic_tail else "当前时间: {time_of_day}\n环境天气: {weather}"
-                    
+            # 校验英文 ID 格式
+            import re
+            if not re.match(r'^[a-z0-9_]+$', char_id):
+                return JSONResponse({"status": "error", "message": "英文 ID 仅支持小写字母、数字和下划线。"}, status_code=400)
+
+            if not persona_prompt:
+                persona_prompt = f"你是「{char_name}」，一个由大贤者系统构建出的新角色。请遵循核心人设与用户自然互动。"
+
         else:
-            # 懒人模式：调用大模型
+            # 懒人模式：调用大模型提炼核心人设
             from core.llm_client import get_langchain_model
             from langchain_core.messages import SystemMessage, HumanMessage
-            system_prompt = """
-你是一个高级桌面宠物角色配置生成器。
+            system_prompt = """你是一个高级桌面宠物角色配置生成器。
 用户的输入将包括角色名字和一段特质描述。
-请将这些零散的设定提炼成严格的 JSON 格式。
-输出 JSON 必须只包含以下三个字段，不要输出任何额外的代码块标记或说明文字：
+请将这些零散的设定提炼成严格的 JSON 格式，不要输出任何额外的代码块标记或说明文字：
 1. "character_id": 英文短小标识符（仅小写字母和下划线，如 "neko"、"alice"）
 2. "character_name": 角色的中文名
-3. "persona_prompt": 浓缩的系统核心人设（2-3句话，第一人称或客观陈述均可，如"你是东方Project中的xxx，一个喜欢...的妖怪..."）
-4. "base_prompt": 详尽的系统人设，也就是大语言模型系统的 System Prompt。详细描述世界观、性格、口癖。注意：内容必须使用纯文本，不可包含任何特殊代码块标记，且需要符合大模型设定指令的语境。
-5. "dynamic_tail": 动态尾部 Prompt 模板，包含类似 {time_of_day}, {weather} 的变量占位符。
-"""
+3. "persona_prompt": 浓缩的系统核心人设（2-3句话，第一人称或客观陈述均可）"""
+
             llm = get_langchain_model()
             messages = [
                 SystemMessage(content=system_prompt),
@@ -483,7 +472,6 @@ async def api_characters_generate(req: CharacterGenRequest):
             response = llm.invoke(messages)
             res_text = response.content.strip()
             
-            # Clean markdown code blocks if present
             if res_text.startswith("```json"):
                 res_text = res_text[7:]
             elif res_text.startswith("```"):
@@ -492,81 +480,56 @@ async def api_characters_generate(req: CharacterGenRequest):
                 res_text = res_text[:-3]
                 
             data = json.loads(res_text.strip())
-            
-            char_id = data.get("character_id")
-            char_name = data.get("character_name")
-            persona_prompt = data.get("persona_prompt")
-            base_prompt = data.get("base_prompt", "请在此输入详细的系统人设。")
-            dynamic_tail = data.get("dynamic_tail", "当前时间: {time_of_day}\n环境天气: {weather}")
-            theme_color = ""
-            app_launcher_data = {
-                "记事本": "C:\\Windows\\System32\\notepad.exe",
-                "网易云音乐": "H:\\\\CloudMusic\\\\cloudmusic.exe"
-            }
-            env_presets_data = []
+            char_id = data.get("character_id", "").strip().lower()
+            char_name = data.get("character_name", "").strip()
+            persona_prompt = data.get("persona_prompt", "").strip()
             
             if not char_id or not char_name:
-                return JSONResponse({"status": "error", "message": "模型生成的 JSON 格式不完整。"}, status_code=500)
-            
-        # 通用物理写入逻辑：创建目录
-        char_dir = os.path.join(SERVICES_DIR, "characters", char_id)
-        img_dir = os.path.join(SERVICES_DIR, "static", "images", char_id)
-        presets_dir = os.path.join(char_dir, "presets")
-        os.makedirs(char_dir, exist_ok=True)
-        os.makedirs(img_dir, exist_ok=True)
-        os.makedirs(presets_dir, exist_ok=True)
-        # Copy default images from rumia to avoid frontend crashes
-        rumia_img_dir = os.path.join(SERVICES_DIR, "static", "images", "rumia")
-        if os.path.exists(rumia_img_dir):
-            import shutil
-            for filename in os.listdir(rumia_img_dir):
-                if filename.endswith(".png"):
-                    shutil.copy2(
-                        os.path.join(rumia_img_dir, filename),
-                        os.path.join(img_dir, filename)
-                    )
-        
-        # Write additional text files
-        with open(os.path.join(char_dir, "base_prompt.txt"), "w", encoding="utf-8") as f:
-            f.write(base_prompt)
-        with open(os.path.join(char_dir, "dynamic_tail.txt"), "w", encoding="utf-8") as f:
-            f.write(dynamic_tail)
-            
-        # 写入 config.json
-        config_data = {
-            "api_provider": "deepseek-v4-pro",
-            "character_name": char_name,
-            "persona_prompt": persona_prompt,
-            "app_launcher": app_launcher_data
-        }
+                return JSONResponse({"status": "error", "message": "模型提炼的 JSON 格式不完整。"}, status_code=500)
+
+        # 检查是否已存在同名角色
+        target_char_dir = os.path.join(SERVICES_DIR, "characters", char_id)
+        if os.path.exists(target_char_dir):
+            return JSONResponse({"status": "error", "message": f"角色 ID 「{char_id}」已存在，请换一个 ID 或先删除旧角色。"}, status_code=400)
+
+        # 从母本完整克隆沙盒副本
+        shutil.copytree(template_dir, target_char_dir)
+
+        # 写入定制化的 config.json
+        config_path = os.path.join(target_char_dir, "config.json")
+        conf = {}
+        if os.path.exists(config_path):
+            with open(config_path, 'r', encoding='utf-8') as f:
+                try: conf = json.load(f)
+                except Exception: pass
+
+        conf["character_id"] = char_id
+        conf["character_name"] = char_name
+        conf["persona_prompt"] = persona_prompt
+        conf["user_prompt"] = conf.get("user_prompt", "我是一个神隐到幻想乡的外界男性，对这里一无所知，被你从昏迷中救了过来。")
+        conf["active_sprite_set"] = conf.get("active_sprite_set", "Rumia")
         if theme_color:
-            config_data["theme_color"] = theme_color
-            
-        with open(os.path.join(char_dir, "config.json"), "w", encoding="utf-8") as f:
-            json.dump(config_data, f, ensure_ascii=False, indent=2)
-            
-        # 写入 env_presets.json
-        if env_presets_data:
-            with open(os.path.join(presets_dir, "env_presets.json"), "w", encoding="utf-8") as f:
-                json.dump(env_presets_data, f, ensure_ascii=False, indent=2)
-                
-        # 写入默认的 presets.json
-        default_dialogue_presets = {
-            "eating": [f"(*正在开心地吃着东西*)", "好美味..."],
-            "sleeping": ["Zzz...", "唔...再睡五分钟..."],
-            "waking_up": ["哈啊...早安...", "好困..."],
-            "idle": ["发呆中...", "有点无聊呢..."],
-            "angry": ["哼！", "别理我！"],
-            "working": ["认真工作中...", "别打扰我！"],
-            "gaming": ["冲啊！", "赢了！"]
-        }
-        with open(os.path.join(presets_dir, "presets.json"), "w", encoding="utf-8") as f:
-            json.dump({"dialogue_presets": default_dialogue_presets}, f, ensure_ascii=False, indent=2)
-            
+            conf["theme_color"] = theme_color
+
+        with open(config_path, 'w', encoding='utf-8') as f:
+            json.dump(conf, f, ensure_ascii=False, indent=2)
+
+        # 自动将全局活跃角色切换为新构建的角色
+        if os.path.exists(GLOBAL_CONFIG_FILE):
+            try:
+                with open(GLOBAL_CONFIG_FILE, 'r', encoding='utf-8') as f:
+                    g_config = json.load(f)
+                g_config["active_character"] = char_id
+                with open(GLOBAL_CONFIG_FILE, 'w', encoding='utf-8') as f:
+                    json.dump(g_config, f, indent=4, ensure_ascii=False)
+            except Exception as e:
+                print(f"[CONSTRUCT] 自动切换全局角色失败: {e}")
+
         return JSONResponse({
             "status": "success", 
             "character_id": char_id,
-            "character_name": char_name
+            "character_name": char_name,
+            "message": f"角色「{char_name}」构建成功，已为您自动切换到该角色！"
         })
     except Exception as e:
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
