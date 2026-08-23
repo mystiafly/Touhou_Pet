@@ -190,9 +190,11 @@ def generate_speech_edge_tts(styled_text: str, voice_id: Optional[str] = None, l
     lang_key = language.lower() if language else "zh"
     target_voice = default_voices.get(lang_key, "zh-CN-XiaoxiaoNeural")
 
-    # 仅当 voice_id 属于有效 Edge-TTS 音色名（如含 Neural 或短横杠，且非 Fish Audio 32位十六进制ID）时才覆盖
-    if voice_id and isinstance(voice_id, str) and ("Neural" in voice_id or "-" in voice_id) and not re.match(r'^[a-f0-9]{32}$', voice_id, re.I):
-        target_voice = voice_id
+    # 仅当 voice_id 属于有效 Edge-TTS 音色名（以语言前缀开头且包含 Neural，排查本地音频文件路径和其它TTS ID）
+    if voice_id and isinstance(voice_id, str):
+        is_path = "/" in voice_id or "\\" in voice_id or voice_id.lower().endswith((".wav", ".mp3", ".ogg", ".flac", ".m4a"))
+        if not is_path and ("Neural" in voice_id or voice_id.startswith(("zh-", "ja-", "en-", "ko-"))) and not re.match(r'^[a-f0-9]{32}$', voice_id, re.I):
+            target_voice = voice_id
 
     async def _async_generate() -> bytes:
         communicate = edge_tts.Communicate(clean_text, target_voice)
@@ -281,28 +283,42 @@ def generate_speech_gpt_sovits(
 
     config_data = get_config()
     base_url = (config_data.get("tts_base_url") or "http://127.0.0.1:9880/tts").strip()
+    if not base_url.endswith("/tts"):
+        base_url = f"{base_url.rstrip('/')}/tts"
 
     lang_map = { "zh": "zh", "ja": "ja", "en": "en" }
     target_lang = lang_map.get(language.lower(), "zh")
 
-    params = {
+    ref_audio = voice_id or ""
+    prompt_text = ""
+    prompt_lang = "zh"
+    if "koishi_ref_1" in ref_audio:
+        prompt_text = "我是古明地恋哦，你也是来地灵殿找我玩的吗？"
+        prompt_lang = "zh"
+    elif "koishi_ref_2" in ref_audio:
+        prompt_text = "闭上第三只眼之后，就能去任何想去的地方啦！"
+        prompt_lang = "zh"
+
+    payload = {
         "text": clean_text,
         "text_lang": target_lang,
-        "ref_audio_path": voice_id or ""
+        "ref_audio_path": ref_audio,
+        "prompt_text": prompt_text,
+        "prompt_lang": prompt_lang
     }
 
     try:
-        print(f"[TTS GPT-SOVITS] 请求本地接口 {base_url}: {clean_text}")
-        response = requests.get(base_url, params=params, timeout=30)
+        print(f"[TTS GPT-SOVITS] 请求本地接口 {base_url} (语种: {target_lang}): {clean_text}")
+        response = requests.post(base_url, json=payload, timeout=30)
         if response.status_code == 200:
             audio_bytes = response.content
             print(f"[TTS GPT-SOVITS] 成功合成音频: {len(audio_bytes)} 字节")
             return True, audio_bytes, None
         else:
-            # 尝试 POST 降级
-            response_post = requests.post(base_url, json={"text": clean_text, "text_language": target_lang}, timeout=30)
-            if response_post.status_code == 200:
-                return True, response_post.content, None
+            # 降级尝试 GET
+            response_get = requests.get(base_url, params=payload, timeout=30)
+            if response_get.status_code == 200:
+                return True, response_get.content, None
             return False, None, f"GPT-SoVITS 响应错误 ({response.status_code}): {response.text}"
     except Exception as ex:
         return False, None, f"GPT-SoVITS 连接失败: {str(ex)}"
