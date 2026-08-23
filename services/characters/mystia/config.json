@@ -12,7 +12,8 @@
     "2026-08-14",
     "2026-08-15",
     "2026-08-16",
-    "2026-08-17"
+    "2026-08-17",
+    "2026-08-20"
   ],
   "active_sprite_set": "live2d_touhou_cannonball",
   "user_prompt": "你不慎掉出幻想乡来到外界后，重新开启了夜摊。我是你所招聘的第一个雇员。",
@@ -27,8 +28,8 @@
   "tts_voice_en": "",
   "live2d_settings": {
     "live2d_touhou_cannonball": {
-      "scale": 0.95,
-      "offset_x": -10.0,
+      "scale": 1.0,
+      "offset_x": -4.0,
       "offset_y": 0.0
     }
   }

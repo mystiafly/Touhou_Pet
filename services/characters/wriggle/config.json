@@ -16,14 +16,23 @@
     "2026-07-24",
     "2026-07-25",
     "2026-07-26",
-    "2026-07-27"
+    "2026-07-27",
+    "2026-07-28",
+    "2026-07-29",
+    "2026-08-20"
   ],
-  "enable_greeting": false,
-  "auto_speak_multiplier": 1.0,
-  "enable_auto_speak": true,
   "user_prompt": "我是一个神隐到幻想乡的外界男性，对这里一无所知，被你从昏迷中救了过来。",
-  "preset_block_english": true,
-  "bubble_duration_multiplier": 3.0,
-  "preset_max_depth": 1,
-  "active_sprite_set": "Wriggle"
+  "active_sprite_set": "Wriggle",
+  "tts_language": "ja",
+  "live2d_settings": {
+    "Wriggle": {
+      "scale": 1.0,
+      "offset_x": 3.0,
+      "offset_y": -53.0
+    }
+  },
+  "tts_voice_id": "b4278692be1743859e3afe9ebc1c1607",
+  "tts_voice_zh": "63bc41e652214372b15d9416a30a60b4",
+  "tts_voice_ja": "b4278692be1743859e3afe9ebc1c1607",
+  "tts_voice_en": ""
 }

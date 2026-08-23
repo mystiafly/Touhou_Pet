@@ -232,5 +232,40 @@
             "injectStrategy": "random"
         },
         "orderNo": 4
+    },
+    "sheet_new_1786998403219": {
+        "uid": "sheet_new_1786998403219",
+        "name": "称呼表",
+        "exportConfig": {
+            "entryType": "constant",
+            "keywords": "",
+            "injectLimit": 10,
+            "injectStrategy": "recent"
+        },
+        "sourceData": {
+            "note": "专门用来维护用户与桌宠之间的称呼。\n",
+            "updateNode": "当用户和桌宠之间产生新称呼时在后方追加更新。例如：{老婆}->{老婆,妈妈}",
+            "insertNode": "至少插入两条：用户对桌宠的称呼，桌宠对用户的称呼",
+            "deleteNode": "禁止删除",
+            "columnRules": {
+                "谁对谁的称呼": "格式：{用户:桌宠}",
+                "称呼": "出现新称呼时进行追加"
+            }
+        },
+        "content": [
+            [
+                "row_id",
+                "谁对谁的称呼",
+                "称呼"
+            ]
+        ],
+        "updateConfig": {
+            "batchSize": 4,
+            "contextDepth": 4,
+            "skipFloors": -1,
+            "uiSentinel": -1,
+            "updateFrequency": -1
+        },
+        "orderNo": 99
     }
 }

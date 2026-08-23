@@ -9,19 +9,7 @@
     "Motions": {
       "": [
         {
-          "File": "motions/Rumia_04.motion3.json"
-        },
-        {
-          "File": "motions/Rumia_03.motion3.json"
-        },
-        {
           "File": "motions/Rumia_24.motion3.json"
-        },
-        {
-          "File": "motions/Rumia_06.motion3.json"
-        },
-        {
-          "File": "motions/Rumia_08.motion3.json"
         },
         {
           "File": "motions/Rumia_53.motion3.json"
@@ -60,9 +48,6 @@
           "File": "motions/Rumia_21.motion3.json"
         },
         {
-          "File": "motions/Rumia_05.motion3.json"
-        },
-        {
           "File": "motions/Rumia_44.motion3.json"
         },
         {
@@ -81,16 +66,10 @@
           "File": "motions/Rumia_23.motion3.json"
         },
         {
-          "File": "motions/Rumia_01.motion3.json"
-        },
-        {
           "File": "motions/Rumia_30.motion3.json"
         },
         {
           "File": "motions/Rumia_32.motion3.json"
-        },
-        {
-          "File": "motions/Rumia_07.motion3.json"
         },
         {
           "File": "motions/Rumia_11.motion3.json"
@@ -117,14 +96,10 @@
           "File": "motions/Rumia_50.motion3.json"
         },
         {
-          "File": "motions/Rumia_02.motion3.json"
-        },
-        {
           "File": "motions/Rumia_15.motion3.json"
         }
       ]
-    },
-    "Pose": "Rumia.asset.pose3.json"
+    }
   },
   "Groups": [
     {

@@ -9,7 +9,6 @@
     "PhysicsV2": {
       "File": "physics/FileReferences_Physics_0.physic3.json"
     },
-    "Pose": "model0.pose3.json",
     "Motions": {
       "Idle": [
         {

@@ -15,9 +15,6 @@
           "File": "motions/Wriggle_52.motion3.json"
         },
         {
-          "File": "motions/Wriggle_01.motion3.json"
-        },
-        {
           "File": "motions/Wriggle_51.motion3.json"
         },
         {
@@ -27,19 +24,10 @@
           "File": "motions/Wriggle_20.motion3.json"
         },
         {
-          "File": "motions/Wriggle_02.motion3.json"
-        },
-        {
-          "File": "motions/Wriggle_08.motion3.json"
-        },
-        {
           "File": "motions/Wriggle_25.motion3.json"
         },
         {
           "File": "motions/Wriggle_15.motion3.json"
-        },
-        {
-          "File": "motions/Wriggle_07.motion3.json"
         },
         {
           "File": "motions/Wriggle_13.motion3.json"
@@ -58,9 +46,6 @@
         },
         {
           "File": "motions/Wriggle_22.motion3.json"
-        },
-        {
-          "File": "motions/Wriggle_05.motion3.json"
         },
         {
           "File": "motions/Wriggle_14.motion3.json"
@@ -84,9 +69,6 @@
           "File": "motions/Wriggle_42.motion3.json"
         },
         {
-          "File": "motions/Wriggle_04.motion3.json"
-        },
-        {
           "File": "motions/Wriggle_40.motion3.json"
         },
         {
@@ -105,9 +87,6 @@
           "File": "motions/Wriggle_32.motion3.json"
         },
         {
-          "File": "motions/Wriggle_06.motion3.json"
-        },
-        {
           "File": "motions/Wriggle_35.motion3.json"
         },
         {
@@ -118,13 +97,9 @@
         },
         {
           "File": "motions/Wriggle_53.motion3.json"
-        },
-        {
-          "File": "motions/Wriggle_03.motion3.json"
         }
       ]
-    },
-    "Pose": "Wriggle.asset.pose3.json"
+    }
   },
   "Groups": [
     {
