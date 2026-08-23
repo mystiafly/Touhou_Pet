@@ -5,6 +5,7 @@
   "user_prompt": "我是一个神隐到幻想乡的外界男性，对这里一无所知，被你从昏迷中救了过来。",
   "active_sprite_set": "Koishi",
   "tts_language": "zh",
+  "tts_voice_id": "E:\\ai\\GPT-SoVITS-v2pro-20250604\\ref_audio\\koishi\\koishi_ref_1.wav",
   "theme_color": "#2ed573",
   "live2d_settings": {
     "Koishi": {
@@ -14,6 +15,7 @@
     }
   },
   "distilled_dates": [
-    "2026-08-22"
+    "2026-08-22",
+    "2026-08-23"
   ]
 }
