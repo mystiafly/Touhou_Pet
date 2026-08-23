@@ -7,7 +7,7 @@
     ],
     "Physics": "Cirno.asset.physics3.json",
     "Motions": {
-      "": [
+      "Idle": [
         {
           "File": "motions/Cirno_50.motion3.json"
         },
@@ -124,7 +124,41 @@
         }
       ]
     },
-    "Pose": "Cirno.asset.pose3.json"
+    "Pose": "Cirno.asset.pose3.json",
+    "Expressions": [
+      {
+        "Name": "Cirno_01e.exp3",
+        "File": "expressions/Cirno_01e.exp3.json"
+      },
+      {
+        "Name": "Cirno_02e.exp3",
+        "File": "expressions/Cirno_02e.exp3.json"
+      },
+      {
+        "Name": "Cirno_03e.exp3",
+        "File": "expressions/Cirno_03e.exp3.json"
+      },
+      {
+        "Name": "Cirno_04e.exp3",
+        "File": "expressions/Cirno_04e.exp3.json"
+      },
+      {
+        "Name": "Cirno_05e.exp3",
+        "File": "expressions/Cirno_05e.exp3.json"
+      },
+      {
+        "Name": "Cirno_06e.exp3",
+        "File": "expressions/Cirno_06e.exp3.json"
+      },
+      {
+        "Name": "Cirno_07e.exp3",
+        "File": "expressions/Cirno_07e.exp3.json"
+      },
+      {
+        "Name": "Cirno_08e.exp3",
+        "File": "expressions/Cirno_08e.exp3.json"
+      }
+    ]
   },
   "Groups": [
     {

@@ -7,7 +7,7 @@
     ],
     "Physics": "Reimu.asset.physics3.json",
     "Motions": {
-      "": [
+      "Idle": [
         {
           "File": "motions/Reimu_14.motion3.json"
         },
@@ -124,7 +124,41 @@
         }
       ]
     },
-    "Pose": "Reimu.asset.pose3.json"
+    "Pose": "Reimu.asset.pose3.json",
+    "Expressions": [
+      {
+        "Name": "Reimu_01e.exp3",
+        "File": "expressions/Reimu_01e.exp3.json"
+      },
+      {
+        "Name": "Reimu_02e.exp3",
+        "File": "expressions/Reimu_02e.exp3.json"
+      },
+      {
+        "Name": "Reimu_03e.exp3",
+        "File": "expressions/Reimu_03e.exp3.json"
+      },
+      {
+        "Name": "Reimu_04e.exp3",
+        "File": "expressions/Reimu_04e.exp3.json"
+      },
+      {
+        "Name": "Reimu_05e.exp3",
+        "File": "expressions/Reimu_05e.exp3.json"
+      },
+      {
+        "Name": "Reimu_06e.exp3",
+        "File": "expressions/Reimu_06e.exp3.json"
+      },
+      {
+        "Name": "Reimu_07e.exp3",
+        "File": "expressions/Reimu_07e.exp3.json"
+      },
+      {
+        "Name": "Reimu_08e.exp3",
+        "File": "expressions/Reimu_08e.exp3.json"
+      }
+    ]
   },
   "Groups": [
     {

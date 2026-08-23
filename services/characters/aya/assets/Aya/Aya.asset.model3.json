@@ -7,7 +7,7 @@
     ],
     "Physics": "Aya.asset.physics3.json",
     "Motions": {
-      "": [
+      "Idle": [
         {
           "File": "motions/Aya_45.motion3.json"
         },
@@ -124,7 +124,41 @@
         }
       ]
     },
-    "Pose": "Aya.asset.pose3.json"
+    "Pose": "Aya.asset.pose3.json",
+    "Expressions": [
+      {
+        "Name": "Aya_01e.exp3",
+        "File": "expressions/Aya_01e.exp3.json"
+      },
+      {
+        "Name": "Aya_02e.exp3",
+        "File": "expressions/Aya_02e.exp3.json"
+      },
+      {
+        "Name": "Aya_03e.exp3",
+        "File": "expressions/Aya_03e.exp3.json"
+      },
+      {
+        "Name": "Aya_04e.exp3",
+        "File": "expressions/Aya_04e.exp3.json"
+      },
+      {
+        "Name": "Aya_05e.exp3",
+        "File": "expressions/Aya_05e.exp3.json"
+      },
+      {
+        "Name": "Aya_06e.exp3",
+        "File": "expressions/Aya_06e.exp3.json"
+      },
+      {
+        "Name": "Aya_07e.exp3",
+        "File": "expressions/Aya_07e.exp3.json"
+      },
+      {
+        "Name": "Aya_08e.exp3",
+        "File": "expressions/Aya_08e.exp3.json"
+      }
+    ]
   },
   "Groups": [
     {

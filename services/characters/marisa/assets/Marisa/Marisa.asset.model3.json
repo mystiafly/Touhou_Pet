@@ -7,7 +7,7 @@
     ],
     "Physics": "Marisa.asset.physics3.json",
     "Motions": {
-      "": [
+      "Idle": [
         {
           "File": "motions/Marisa_13.motion3.json"
         },
@@ -100,7 +100,41 @@
         }
       ]
     },
-    "Pose": "Marisa.asset.pose3.json"
+    "Pose": "Marisa.asset.pose3.json",
+    "Expressions": [
+      {
+        "Name": "Marisa_01e.exp3",
+        "File": "expressions/Marisa_01e.exp3.json"
+      },
+      {
+        "Name": "Marisa_02e.exp3",
+        "File": "expressions/Marisa_02e.exp3.json"
+      },
+      {
+        "Name": "Marisa_03e.exp3",
+        "File": "expressions/Marisa_03e.exp3.json"
+      },
+      {
+        "Name": "Marisa_04e.exp3",
+        "File": "expressions/Marisa_04e.exp3.json"
+      },
+      {
+        "Name": "Marisa_05e.exp3",
+        "File": "expressions/Marisa_05e.exp3.json"
+      },
+      {
+        "Name": "Marisa_06e.exp3",
+        "File": "expressions/Marisa_06e.exp3.json"
+      },
+      {
+        "Name": "Marisa_07e.exp3",
+        "File": "expressions/Marisa_07e.exp3.json"
+      },
+      {
+        "Name": "Marisa_08e.exp3",
+        "File": "expressions/Marisa_08e.exp3.json"
+      }
+    ]
   },
   "Groups": [
     {

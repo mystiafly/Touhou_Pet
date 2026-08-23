@@ -7,7 +7,7 @@
     ],
     "Physics": "Koishi.asset.physics3.json",
     "Motions": {
-      "": [
+      "Idle": [
         {
           "File": "motions/Koishi_14.motion3.json"
         },
@@ -100,7 +100,41 @@
         }
       ]
     },
-    "Pose": "koishi.pose3.json"
+    "Pose": "koishi.pose3.json",
+    "Expressions": [
+      {
+        "Name": "Koishi_01e.exp3",
+        "File": "expressions/Koishi_01e.exp3.json"
+      },
+      {
+        "Name": "Koishi_02e.exp3",
+        "File": "expressions/Koishi_02e.exp3.json"
+      },
+      {
+        "Name": "Koishi_03e.exp3",
+        "File": "expressions/Koishi_03e.exp3.json"
+      },
+      {
+        "Name": "Koishi_04e.exp3",
+        "File": "expressions/Koishi_04e.exp3.json"
+      },
+      {
+        "Name": "Koishi_05e.exp3",
+        "File": "expressions/Koishi_05e.exp3.json"
+      },
+      {
+        "Name": "Koishi_06e.exp3",
+        "File": "expressions/Koishi_06e.exp3.json"
+      },
+      {
+        "Name": "Koishi_07e.exp3",
+        "File": "expressions/Koishi_07e.exp3.json"
+      },
+      {
+        "Name": "Koishi_08e.exp3",
+        "File": "expressions/Koishi_08e.exp3.json"
+      }
+    ]
   },
   "Groups": [
     {

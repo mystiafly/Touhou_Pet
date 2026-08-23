@@ -7,7 +7,7 @@
     ],
     "Physics": "Wriggle.asset.physics3.json",
     "Motions": {
-      "": [
+      "Idle": [
         {
           "File": "motions/Wriggle_43.motion3.json"
         },
@@ -100,7 +100,41 @@
         }
       ]
     },
-    "Pose": "Wriggle.asset.pose3.json"
+    "Pose": "Wriggle.asset.pose3.json",
+    "Expressions": [
+      {
+        "Name": "Wriggle_01e.exp3",
+        "File": "expressions/Wriggle_01e.exp3.json"
+      },
+      {
+        "Name": "Wriggle_02e.exp3",
+        "File": "expressions/Wriggle_02e.exp3.json"
+      },
+      {
+        "Name": "Wriggle_03e.exp3",
+        "File": "expressions/Wriggle_03e.exp3.json"
+      },
+      {
+        "Name": "Wriggle_04e.exp3",
+        "File": "expressions/Wriggle_04e.exp3.json"
+      },
+      {
+        "Name": "Wriggle_05e.exp3",
+        "File": "expressions/Wriggle_05e.exp3.json"
+      },
+      {
+        "Name": "Wriggle_06e.exp3",
+        "File": "expressions/Wriggle_06e.exp3.json"
+      },
+      {
+        "Name": "Wriggle_07e.exp3",
+        "File": "expressions/Wriggle_07e.exp3.json"
+      },
+      {
+        "Name": "Wriggle_08e.exp3",
+        "File": "expressions/Wriggle_08e.exp3.json"
+      }
+    ]
   },
   "Groups": [
     {

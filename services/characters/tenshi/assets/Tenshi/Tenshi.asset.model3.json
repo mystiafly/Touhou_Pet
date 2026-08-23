@@ -7,7 +7,7 @@
     ],
     "Physics": "Tenshi.asset.physics3.json",
     "Motions": {
-      "": [
+      "Idle": [
         {
           "File": "motions/Tenshi_53.motion3.json"
         },
@@ -100,7 +100,41 @@
         }
       ]
     },
-    "Pose": "Tenshi.asset.pose3.json"
+    "Pose": "Tenshi.asset.pose3.json",
+    "Expressions": [
+      {
+        "Name": "Tenshi_01e.exp3",
+        "File": "expressions/Tenshi_01e.exp3.json"
+      },
+      {
+        "Name": "Tenshi_02e.exp3",
+        "File": "expressions/Tenshi_02e.exp3.json"
+      },
+      {
+        "Name": "Tenshi_03e.exp3",
+        "File": "expressions/Tenshi_03e.exp3.json"
+      },
+      {
+        "Name": "Tenshi_04e.exp3",
+        "File": "expressions/Tenshi_04e.exp3.json"
+      },
+      {
+        "Name": "Tenshi_05e.exp3",
+        "File": "expressions/Tenshi_05e.exp3.json"
+      },
+      {
+        "Name": "Tenshi_06e.exp3",
+        "File": "expressions/Tenshi_06e.exp3.json"
+      },
+      {
+        "Name": "Tenshi_07e.exp3",
+        "File": "expressions/Tenshi_07e.exp3.json"
+      },
+      {
+        "Name": "Tenshi_08e.exp3",
+        "File": "expressions/Tenshi_08e.exp3.json"
+      }
+    ]
   },
   "Groups": [
     {

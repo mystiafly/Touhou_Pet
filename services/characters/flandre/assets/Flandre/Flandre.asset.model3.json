@@ -7,7 +7,7 @@
     ],
     "Physics": "Flandre.asset.physics3.json",
     "Motions": {
-      "": [
+      "Idle": [
         {
           "File": "motions/Flandre_53.motion3.json"
         },
@@ -100,7 +100,41 @@
         }
       ]
     },
-    "Pose": "Flandre.asset.pose3.json"
+    "Pose": "Flandre.asset.pose3.json",
+    "Expressions": [
+      {
+        "Name": "Flandre_01e.exp3",
+        "File": "expressions/Flandre_01e.exp3.json"
+      },
+      {
+        "Name": "Flandre_02e.exp3",
+        "File": "expressions/Flandre_02e.exp3.json"
+      },
+      {
+        "Name": "Flandre_03e.exp3",
+        "File": "expressions/Flandre_03e.exp3.json"
+      },
+      {
+        "Name": "Flandre_04e.exp3",
+        "File": "expressions/Flandre_04e.exp3.json"
+      },
+      {
+        "Name": "Flandre_05e.exp3",
+        "File": "expressions/Flandre_05e.exp3.json"
+      },
+      {
+        "Name": "Flandre_06e.exp3",
+        "File": "expressions/Flandre_06e.exp3.json"
+      },
+      {
+        "Name": "Flandre_07e.exp3",
+        "File": "expressions/Flandre_07e.exp3.json"
+      },
+      {
+        "Name": "Flandre_08e.exp3",
+        "File": "expressions/Flandre_08e.exp3.json"
+      }
+    ]
   },
   "Groups": [
     {
