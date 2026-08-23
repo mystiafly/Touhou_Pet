@@ -1,140 +1,140 @@
 {
   "Version": 3,
   "FileReferences": {
-    "Moc": "Koishi.asset.moc3",
+    "Moc": "Koishi.moc3",
     "Textures": [
       "textures/texture_00.png"
     ],
-    "Physics": "Koishi.asset.physics3.json",
+    "Physics": "Koishi.physics3.json",
+    "Pose": "Koishi.pose3.json",
+    "Expressions": [
+      {
+        "Name": "exp_01",
+        "File": "expressions/Koishi_01e.exp3.json"
+      },
+      {
+        "Name": "exp_02",
+        "File": "expressions/Koishi_02e.exp3.json"
+      },
+      {
+        "Name": "exp_03",
+        "File": "expressions/Koishi_03e.exp3.json"
+      },
+      {
+        "Name": "exp_04",
+        "File": "expressions/Koishi_04e.exp3.json"
+      },
+      {
+        "Name": "exp_05",
+        "File": "expressions/Koishi_05e.exp3.json"
+      },
+      {
+        "Name": "exp_06",
+        "File": "expressions/Koishi_06e.exp3.json"
+      },
+      {
+        "Name": "exp_07",
+        "File": "expressions/Koishi_07e.exp3.json"
+      },
+      {
+        "Name": "exp_08",
+        "File": "expressions/Koishi_08e.exp3.json"
+      }
+    ],
     "Motions": {
       "Idle": [
         {
-          "File": "motions/Koishi_14.motion3.json"
-        },
-        {
-          "File": "motions/Koishi_31.motion3.json"
-        },
-        {
-          "File": "motions/Koishi_13.motion3.json"
-        },
-        {
-          "File": "motions/Koishi_15.motion3.json"
-        },
-        {
-          "File": "motions/Koishi_41.motion3.json"
-        },
-        {
-          "File": "motions/Koishi_30.motion3.json"
-        },
-        {
-          "File": "motions/Koishi_12.motion3.json"
-        },
-        {
-          "File": "motions/Koishi_40.motion3.json"
-        },
-        {
-          "File": "motions/Koishi_22.motion3.json"
-        },
-        {
-          "File": "motions/Koishi_53.motion3.json"
-        },
-        {
-          "File": "motions/Koishi_24.motion3.json"
-        },
-        {
-          "File": "motions/Koishi_50.motion3.json"
+          "File": "motions/Koishi_10.motion3.json"
         },
         {
           "File": "motions/Koishi_11.motion3.json"
         },
         {
-          "File": "motions/Koishi_32.motion3.json"
+          "File": "motions/Koishi_12.motion3.json"
         },
         {
-          "File": "motions/Koishi_51.motion3.json"
+          "File": "motions/Koishi_13.motion3.json"
         },
         {
-          "File": "motions/Koishi_10.motion3.json"
+          "File": "motions/Koishi_14.motion3.json"
         },
         {
-          "File": "motions/Koishi_55.motion3.json"
-        },
-        {
-          "File": "motions/Koishi_43.motion3.json"
-        },
-        {
-          "File": "motions/Koishi_33.motion3.json"
-        },
-        {
-          "File": "motions/Koishi_42.motion3.json"
-        },
-        {
-          "File": "motions/Koishi_34.motion3.json"
-        },
-        {
-          "File": "motions/Koishi_52.motion3.json"
-        },
-        {
-          "File": "motions/Koishi_21.motion3.json"
-        },
-        {
-          "File": "motions/Koishi_45.motion3.json"
-        },
-        {
-          "File": "motions/Koishi_23.motion3.json"
-        },
-        {
-          "File": "motions/Koishi_35.motion3.json"
-        },
-        {
-          "File": "motions/Koishi_54.motion3.json"
+          "File": "motions/Koishi_15.motion3.json"
         },
         {
           "File": "motions/Koishi_20.motion3.json"
         },
         {
-          "File": "motions/Koishi_44.motion3.json"
+          "File": "motions/Koishi_21.motion3.json"
+        },
+        {
+          "File": "motions/Koishi_22.motion3.json"
+        },
+        {
+          "File": "motions/Koishi_23.motion3.json"
+        },
+        {
+          "File": "motions/Koishi_24.motion3.json"
         },
         {
           "File": "motions/Koishi_25.motion3.json"
+        },
+        {
+          "File": "motions/Koishi_30.motion3.json"
+        },
+        {
+          "File": "motions/Koishi_31.motion3.json"
+        },
+        {
+          "File": "motions/Koishi_32.motion3.json"
+        },
+        {
+          "File": "motions/Koishi_33.motion3.json"
+        },
+        {
+          "File": "motions/Koishi_34.motion3.json"
+        },
+        {
+          "File": "motions/Koishi_35.motion3.json"
+        },
+        {
+          "File": "motions/Koishi_40.motion3.json"
+        },
+        {
+          "File": "motions/Koishi_41.motion3.json"
+        },
+        {
+          "File": "motions/Koishi_42.motion3.json"
+        },
+        {
+          "File": "motions/Koishi_43.motion3.json"
+        },
+        {
+          "File": "motions/Koishi_44.motion3.json"
+        },
+        {
+          "File": "motions/Koishi_45.motion3.json"
+        },
+        {
+          "File": "motions/Koishi_50.motion3.json"
+        },
+        {
+          "File": "motions/Koishi_51.motion3.json"
+        },
+        {
+          "File": "motions/Koishi_52.motion3.json"
+        },
+        {
+          "File": "motions/Koishi_53.motion3.json"
+        },
+        {
+          "File": "motions/Koishi_54.motion3.json"
+        },
+        {
+          "File": "motions/Koishi_55.motion3.json"
         }
       ]
-    },
-    "Pose": "koishi.pose3.json",
-    "Expressions": [
-      {
-        "Name": "Koishi_01e.exp3",
-        "File": "expressions/Koishi_01e.exp3.json"
-      },
-      {
-        "Name": "Koishi_02e.exp3",
-        "File": "expressions/Koishi_02e.exp3.json"
-      },
-      {
-        "Name": "Koishi_03e.exp3",
-        "File": "expressions/Koishi_03e.exp3.json"
-      },
-      {
-        "Name": "Koishi_04e.exp3",
-        "File": "expressions/Koishi_04e.exp3.json"
-      },
-      {
-        "Name": "Koishi_05e.exp3",
-        "File": "expressions/Koishi_05e.exp3.json"
-      },
-      {
-        "Name": "Koishi_06e.exp3",
-        "File": "expressions/Koishi_06e.exp3.json"
-      },
-      {
-        "Name": "Koishi_07e.exp3",
-        "File": "expressions/Koishi_07e.exp3.json"
-      },
-      {
-        "Name": "Koishi_08e.exp3",
-        "File": "expressions/Koishi_08e.exp3.json"
-      }
-    ]
+    }
   },
   "Groups": [
     {
@@ -152,6 +152,5 @@
         "ParamMouthOpenY"
       ]
     }
-  ],
-  "HitAreas": []
+  ]
 }

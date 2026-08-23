@@ -271,12 +271,58 @@ def generate_speech_openai_compatible(
         return False, None, err_msg
 
 # 4. GPT-SoVITS 本地 / 云端 Fast-Inference API 驱动
+def ensure_gpt_sovits_process() -> bool:
+    """自动检测并静默拉起本地 GPT-SoVITS 语音服务，免除用户手动启动的繁琐"""
+    try:
+        r = requests.get("http://127.0.0.1:9880/control", timeout=0.8)
+        if r.status_code in [200, 400]:
+            return True
+    except Exception:
+        pass
+
+    known_dirs = [
+        r"E:\ai\GPT-SoVITS-v2pro-20250604",
+        r"D:\ai\GPT-SoVITS-v2pro-20250604",
+        r"C:\ai\GPT-SoVITS-v2pro-20250604"
+    ]
+    for gdir in known_dirs:
+        py_exe = os.path.join(gdir, "runtime", "python.exe")
+        api_py = os.path.join(gdir, "api_v2.py")
+        if os.path.exists(py_exe) and os.path.exists(api_py):
+            try:
+                print(f"[TTS GPT-SOVITS] 检测到本地语音服务未运行，正在静默自动拉起: {gdir}")
+                creationflags = 0
+                if sys.platform == "win32":
+                    creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+                cmd = [
+                    py_exe, "-I", "api_v2.py",
+                    "-a", "127.0.0.1",
+                    "-p", "9880",
+                    "-c", "GPT_SoVITS/configs/tts_infer.yaml"
+                ]
+                subprocess.Popen(cmd, cwd=gdir, creationflags=creationflags)
+                for _ in range(12):
+                    time.sleep(1.0)
+                    try:
+                        r = requests.get("http://127.0.0.1:9880/control", timeout=0.5)
+                        if r.status_code in [200, 400]:
+                            print("[TTS GPT-SOVITS] 本地语音服务已自动拉起并就绪！")
+                            return True
+                    except Exception:
+                        pass
+            except Exception as e:
+                print(f"[TTS GPT-SOVITS] 自动拉起异常: {e}")
+            break
+    return False
+
 def generate_speech_gpt_sovits(
     styled_text: str,
     voice_id: Optional[str] = None,
     language: str = "zh"
 ) -> Tuple[bool, Optional[bytes], Optional[str]]:
     """调用 GPT-SoVITS 本地/云端 WebUI 接口生成语音"""
+    ensure_gpt_sovits_process()
+
     clean_text = strip_all_bracket_tags(styled_text)
     if not clean_text:
         return False, None, "没有可朗读的有效文本内容"
