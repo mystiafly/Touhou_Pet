@@ -337,30 +337,15 @@ class SoullinkLive2DDriver {
             console.warn("[SOULLINK LIVE2D] 表情切换提示:", e);
         }
 
-        // 2. 状态切换与肢体动作联动
+        // 2. 状态切换与肢体静默管理 (保持自然优雅站姿，彻底杜绝多动症与乱扭反人类姿势)
         if (this.targetEmotion === 'sleeping') {
             this.isSleeping = true;
             this.stopIdleMotionScheduler();
-            this.setHandGesture(0, 0, 0); // 睡觉时双手安放
         } else {
             const wasSleeping = this.isSleeping;
             this.isSleeping = false;
             if (wasSleeping) {
                 this.startIdleMotionScheduler();
-            }
-            if (this.targetEmotion !== 'normal') {
-                this.triggerRandomMotion();
-            }
-
-            // 3. 智能手势随情绪自然流转
-            if (this.targetEmotion === 'happy') {
-                this.setHandGesture(1, 1, 4.0); // 快乐时展示元气/展开手势
-            } else if (this.targetEmotion === 'shy') {
-                this.setHandGesture(2, 2, 4.0); // 害羞时展示护胸/微收手势
-            } else if (this.targetEmotion === 'angry') {
-                this.setHandGesture(3, 3, 4.0); // 生气时展示握拳/抗议手势
-            } else if (this.targetEmotion === 'normal') {
-                this.setHandGesture(0, 0, 0);   // 常态恢复端庄基础姿态
             }
         }
     }
@@ -694,53 +679,21 @@ class SoullinkLive2DDriver {
     }
 
     /**
-     * 动态分配与切换手势动作
-     * @param {number|null} leftIndex 左手姿势索引 (0..N)
-     * @param {number|null} rightIndex 右手姿势索引 (0..N)
-     * @param {number} temporaryDuration 临时维持秒数 (0 表示常驻)
+     * 手势姿态锁定管理 (严格保持 0 号最自然常驻基础手势，彻底杜绝打斗手势抽搐与反人类旋转)
      */
     setHandGesture(leftIndex = null, rightIndex = null, temporaryDuration = 0) {
         for (const key in this.virtualPoseGroups) {
-            const list = this.virtualPoseGroups[key];
-            if (leftIndex !== null && /(?:left|lh|l_|_l|handl|arml)/i.test(key)) {
-                this.activePartIndices[key] = Math.max(0, Math.min(list.length - 1, leftIndex));
-            }
-            if (rightIndex !== null && /(?:right|rh|r_|_r|handr|armr)/i.test(key)) {
-                this.activePartIndices[key] = Math.max(0, Math.min(list.length - 1, rightIndex));
-            }
-        }
-
-        if (temporaryDuration > 0) {
-            this.tempGestureTimer = temporaryDuration;
+            this.activePartIndices[key] = 0; // 永远锁定 0 号主手势，绝不转为反人类手势
         }
     }
 
     /**
-     * 随机或轮播一个可用手势 (例如点击互动或说话强调时)
+     * 随机手势禁用 (确保肢体稳定端庄)
      */
     triggerRandomGesture(duration = 2.5) {
-        let leftKey = null;
-        let rightKey = null;
         for (const key in this.virtualPoseGroups) {
-            if (/(?:left|lh|l_|_l|handl|arml)/i.test(key)) leftKey = key;
-            if (/(?:right|rh|r_|_r|handr|armr)/i.test(key)) rightKey = key;
+            this.activePartIndices[key] = 0;
         }
-
-        if (!leftKey && !rightKey) return;
-
-        let leftIdx = null;
-        let rightIdx = null;
-
-        if (leftKey) {
-            const count = this.virtualPoseGroups[leftKey].length;
-            leftIdx = Math.floor(Math.random() * (count - 1)) + 1;
-        }
-        if (rightKey) {
-            const count = this.virtualPoseGroups[rightKey].length;
-            rightIdx = Math.floor(Math.random() * (count - 1)) + 1;
-        }
-
-        this.setHandGesture(leftIdx, rightIdx, duration);
     }
 
     /**
@@ -924,17 +877,13 @@ class SoullinkLive2DDriver {
     /**
      * 启动日常待机自发动作调度器 (每 25~45 秒随机触发一次特殊小动作)
      */
+    /**
+     * 启动日常待机调度器 (待机保持自然端庄站姿、温和呼吸与微眨眼，彻底杜绝多动症与乱发打斗动作)
+     */
     startIdleMotionScheduler() {
         this.stopIdleMotionScheduler();
         if (this.isSleeping) return; // 睡觉状态严格静默
-
-        const nextDelay = 25000 + Math.random() * 20000; // 25s ~ 45s
-        this.idleMotionTimer = setTimeout(() => {
-            if (this.isLoaded && !this.isSleeping && !this.isSpeaking && !this.isDragging) {
-                this.triggerSpecialMotion();
-            }
-            this.startIdleMotionScheduler(); // 递归安排下一次
-        }, nextDelay);
+        // 待机状态下依靠 Live2D 物理引擎、视线追踪与自发呼吸眨眼保持生机，绝不自发乱触发打斗与多动动作
     }
 
     /**
