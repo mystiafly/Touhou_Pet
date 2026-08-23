@@ -517,8 +517,8 @@ app.whenReady().then(() => {
         const { spawn } = require('child_process');
         const checkBackend = () => {
             return new Promise((resolve) => {
-                const req = http.get('http://127.0.0.1:5000/api/characters', (res) => {
-                    resolve(true);
+                const req = http.get('http://127.0.0.1:5000/api/characters/list', (res) => {
+                    resolve(res.statusCode === 200);
                 });
                 req.on('error', () => resolve(false));
                 req.setTimeout(800, () => {
