@@ -512,12 +512,40 @@ app.whenReady().then(() => {
         } else {
             logDebug(`[PACKAGED ERROR] Backend EXE not found in paths: ${JSON.stringify(exePaths)}`);
         }
+    } else {
+        // 开发模式下：自动检测 5000 端口，未运行则自动拉起 Python 后台
+        const { spawn } = require('child_process');
+        const checkBackend = () => {
+            return new Promise((resolve) => {
+                const req = http.get('http://127.0.0.1:5000/api/characters', (res) => {
+                    resolve(true);
+                });
+                req.on('error', () => resolve(false));
+                req.setTimeout(800, () => {
+                    req.destroy();
+                    resolve(false);
+                });
+            });
+        };
+
+        checkBackend().then((alive) => {
+            if (!alive) {
+                console.log('[DEV AUTO-START] Python 后端服务未运行，正在自动拉起 services/web_interface.py...');
+                backendProcess = spawn('python', ['services/web_interface.py'], {
+                    cwd: __dirname,
+                    stdio: 'inherit'
+                });
+            }
+        });
     }
     syncInitialAutoStart();
     createWindow();
 });
 
 app.on('will-quit', () => {
+    if (backendProcess) {
+        try { backendProcess.kill(); } catch(e) {}
+    }
     if (app.isPackaged) {
         const { execSync } = require('child_process');
         try {
