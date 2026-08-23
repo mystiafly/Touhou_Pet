@@ -9,94 +9,158 @@
     "Motions": {
       "Idle": [
         {
-          "File": "motions/Wriggle_43.motion3.json"
+          "File": "motions/Wriggle_10.motion3.json",
+          "FadeIn": 500,
+          "FadeOut": 500
+        }
+      ],
+      "Tap": [
+        {
+          "File": "motions/Wriggle_13.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_52.motion3.json"
+          "File": "motions/Wriggle_11.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_51.motion3.json"
+          "File": "motions/Wriggle_12.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
+        }
+      ],
+      "Special": [
+        {
+          "File": "motions/Wriggle_43.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_44.motion3.json"
+          "File": "motions/Wriggle_52.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_20.motion3.json"
+          "File": "motions/Wriggle_51.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_25.motion3.json"
+          "File": "motions/Wriggle_44.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_15.motion3.json"
+          "File": "motions/Wriggle_20.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_13.motion3.json"
+          "File": "motions/Wriggle_25.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_30.motion3.json"
+          "File": "motions/Wriggle_15.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_23.motion3.json"
+          "File": "motions/Wriggle_30.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_55.motion3.json"
+          "File": "motions/Wriggle_23.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_21.motion3.json"
+          "File": "motions/Wriggle_55.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_22.motion3.json"
+          "File": "motions/Wriggle_21.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_14.motion3.json"
+          "File": "motions/Wriggle_22.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_24.motion3.json"
+          "File": "motions/Wriggle_14.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_45.motion3.json"
+          "File": "motions/Wriggle_24.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_41.motion3.json"
+          "File": "motions/Wriggle_45.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_11.motion3.json"
+          "File": "motions/Wriggle_41.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_54.motion3.json"
+          "File": "motions/Wriggle_54.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_42.motion3.json"
+          "File": "motions/Wriggle_42.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_40.motion3.json"
+          "File": "motions/Wriggle_40.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_10.motion3.json"
+          "File": "motions/Wriggle_34.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_12.motion3.json"
+          "File": "motions/Wriggle_50.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_34.motion3.json"
+          "File": "motions/Wriggle_32.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_50.motion3.json"
+          "File": "motions/Wriggle_35.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_32.motion3.json"
+          "File": "motions/Wriggle_33.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_35.motion3.json"
+          "File": "motions/Wriggle_31.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Wriggle_33.motion3.json"
-        },
-        {
-          "File": "motions/Wriggle_31.motion3.json"
-        },
-        {
-          "File": "motions/Wriggle_53.motion3.json"
+          "File": "motions/Wriggle_53.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         }
       ]
     },

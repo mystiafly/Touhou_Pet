@@ -9,94 +9,158 @@
     "Motions": {
       "Idle": [
         {
-          "File": "motions/Marisa_13.motion3.json"
+          "File": "motions/Marisa_10.motion3.json",
+          "FadeIn": 500,
+          "FadeOut": 500
+        }
+      ],
+      "Tap": [
+        {
+          "File": "motions/Marisa_13.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_11.motion3.json"
+          "File": "motions/Marisa_11.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_24.motion3.json"
+          "File": "motions/Marisa_12.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
+        }
+      ],
+      "Special": [
+        {
+          "File": "motions/Marisa_24.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_41.motion3.json"
+          "File": "motions/Marisa_41.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_30.motion3.json"
+          "File": "motions/Marisa_30.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_53.motion3.json"
+          "File": "motions/Marisa_53.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_23.motion3.json"
+          "File": "motions/Marisa_23.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_12.motion3.json"
+          "File": "motions/Marisa_42.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_42.motion3.json"
+          "File": "motions/Marisa_51.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_51.motion3.json"
+          "File": "motions/Marisa_22.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_22.motion3.json"
+          "File": "motions/Marisa_25.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_25.motion3.json"
+          "File": "motions/Marisa_40.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_40.motion3.json"
+          "File": "motions/Marisa_55.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_55.motion3.json"
+          "File": "motions/Marisa_44.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_44.motion3.json"
+          "File": "motions/Marisa_20.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_20.motion3.json"
+          "File": "motions/Marisa_50.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_50.motion3.json"
+          "File": "motions/Marisa_43.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_43.motion3.json"
+          "File": "motions/Marisa_52.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_52.motion3.json"
+          "File": "motions/Marisa_31.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_31.motion3.json"
+          "File": "motions/Marisa_33.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_10.motion3.json"
+          "File": "motions/Marisa_54.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_33.motion3.json"
+          "File": "motions/Marisa_34.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_54.motion3.json"
+          "File": "motions/Marisa_35.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_34.motion3.json"
+          "File": "motions/Marisa_15.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_35.motion3.json"
+          "File": "motions/Marisa_14.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_15.motion3.json"
+          "File": "motions/Marisa_32.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_14.motion3.json"
+          "File": "motions/Marisa_45.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Marisa_32.motion3.json"
-        },
-        {
-          "File": "motions/Marisa_45.motion3.json"
-        },
-        {
-          "File": "motions/Marisa_21.motion3.json"
+          "File": "motions/Marisa_21.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         }
       ]
     },

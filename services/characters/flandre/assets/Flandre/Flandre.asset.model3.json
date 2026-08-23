@@ -9,94 +9,158 @@
     "Motions": {
       "Idle": [
         {
-          "File": "motions/Flandre_53.motion3.json"
+          "File": "motions/Flandre_10.motion3.json",
+          "FadeIn": 500,
+          "FadeOut": 500
+        }
+      ],
+      "Tap": [
+        {
+          "File": "motions/Flandre_11.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_41.motion3.json"
+          "File": "motions/Flandre_12.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_55.motion3.json"
+          "File": "motions/Flandre_13.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
+        }
+      ],
+      "Special": [
+        {
+          "File": "motions/Flandre_53.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_11.motion3.json"
+          "File": "motions/Flandre_41.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_10.motion3.json"
+          "File": "motions/Flandre_55.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_44.motion3.json"
+          "File": "motions/Flandre_44.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_20.motion3.json"
+          "File": "motions/Flandre_20.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_12.motion3.json"
+          "File": "motions/Flandre_15.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_15.motion3.json"
+          "File": "motions/Flandre_23.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_23.motion3.json"
+          "File": "motions/Flandre_32.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_32.motion3.json"
+          "File": "motions/Flandre_52.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_52.motion3.json"
+          "File": "motions/Flandre_34.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_34.motion3.json"
+          "File": "motions/Flandre_40.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_40.motion3.json"
+          "File": "motions/Flandre_33.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_33.motion3.json"
+          "File": "motions/Flandre_25.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_13.motion3.json"
+          "File": "motions/Flandre_21.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_25.motion3.json"
+          "File": "motions/Flandre_24.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_21.motion3.json"
+          "File": "motions/Flandre_35.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_24.motion3.json"
+          "File": "motions/Flandre_42.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_35.motion3.json"
+          "File": "motions/Flandre_54.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_42.motion3.json"
+          "File": "motions/Flandre_30.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_54.motion3.json"
+          "File": "motions/Flandre_43.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_30.motion3.json"
+          "File": "motions/Flandre_45.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_43.motion3.json"
+          "File": "motions/Flandre_31.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_45.motion3.json"
+          "File": "motions/Flandre_22.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_31.motion3.json"
+          "File": "motions/Flandre_14.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_22.motion3.json"
+          "File": "motions/Flandre_50.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Flandre_14.motion3.json"
-        },
-        {
-          "File": "motions/Flandre_50.motion3.json"
-        },
-        {
-          "File": "motions/Flandre_51.motion3.json"
+          "File": "motions/Flandre_51.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         }
       ]
     },

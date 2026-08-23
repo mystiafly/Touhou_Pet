@@ -9,94 +9,158 @@
     "Motions": {
       "Idle": [
         {
-          "File": "motions/Tenshi_53.motion3.json"
+          "File": "motions/Tenshi_10.motion3.json",
+          "FadeIn": 500,
+          "FadeOut": 500
+        }
+      ],
+      "Tap": [
+        {
+          "File": "motions/Tenshi_11.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_11.motion3.json"
+          "File": "motions/Tenshi_13.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_14.motion3.json"
+          "File": "motions/Tenshi_12.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
+        }
+      ],
+      "Special": [
+        {
+          "File": "motions/Tenshi_53.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_41.motion3.json"
+          "File": "motions/Tenshi_14.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_33.motion3.json"
+          "File": "motions/Tenshi_41.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_31.motion3.json"
+          "File": "motions/Tenshi_33.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_51.motion3.json"
+          "File": "motions/Tenshi_31.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_44.motion3.json"
+          "File": "motions/Tenshi_51.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_23.motion3.json"
+          "File": "motions/Tenshi_44.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_30.motion3.json"
+          "File": "motions/Tenshi_23.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_15.motion3.json"
+          "File": "motions/Tenshi_30.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_42.motion3.json"
+          "File": "motions/Tenshi_15.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_54.motion3.json"
+          "File": "motions/Tenshi_42.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_43.motion3.json"
+          "File": "motions/Tenshi_54.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_34.motion3.json"
+          "File": "motions/Tenshi_43.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_52.motion3.json"
+          "File": "motions/Tenshi_34.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_32.motion3.json"
+          "File": "motions/Tenshi_52.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_13.motion3.json"
+          "File": "motions/Tenshi_32.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_20.motion3.json"
+          "File": "motions/Tenshi_20.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_22.motion3.json"
+          "File": "motions/Tenshi_22.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_55.motion3.json"
+          "File": "motions/Tenshi_55.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_50.motion3.json"
+          "File": "motions/Tenshi_50.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_21.motion3.json"
+          "File": "motions/Tenshi_21.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_24.motion3.json"
+          "File": "motions/Tenshi_24.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_35.motion3.json"
+          "File": "motions/Tenshi_35.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_40.motion3.json"
+          "File": "motions/Tenshi_40.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_45.motion3.json"
+          "File": "motions/Tenshi_45.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Tenshi_10.motion3.json"
-        },
-        {
-          "File": "motions/Tenshi_25.motion3.json"
-        },
-        {
-          "File": "motions/Tenshi_12.motion3.json"
+          "File": "motions/Tenshi_25.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         }
       ]
     },

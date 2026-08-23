@@ -9,94 +9,158 @@
     "Motions": {
       "Idle": [
         {
-          "File": "motions/Rumia_24.motion3.json"
+          "File": "motions/Rumia_10.motion3.json",
+          "FadeIn": 500,
+          "FadeOut": 500
+        }
+      ],
+      "Tap": [
+        {
+          "File": "motions/Rumia_13.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_53.motion3.json"
+          "File": "motions/Rumia_12.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_13.motion3.json"
+          "File": "motions/Rumia_11.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
+        }
+      ],
+      "Special": [
+        {
+          "File": "motions/Rumia_24.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_45.motion3.json"
+          "File": "motions/Rumia_53.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_14.motion3.json"
+          "File": "motions/Rumia_45.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_40.motion3.json"
+          "File": "motions/Rumia_14.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_12.motion3.json"
+          "File": "motions/Rumia_40.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_41.motion3.json"
+          "File": "motions/Rumia_41.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_33.motion3.json"
+          "File": "motions/Rumia_33.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_22.motion3.json"
+          "File": "motions/Rumia_22.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_54.motion3.json"
+          "File": "motions/Rumia_54.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_35.motion3.json"
+          "File": "motions/Rumia_35.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_21.motion3.json"
+          "File": "motions/Rumia_21.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_44.motion3.json"
+          "File": "motions/Rumia_44.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_43.motion3.json"
+          "File": "motions/Rumia_43.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_20.motion3.json"
+          "File": "motions/Rumia_20.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_34.motion3.json"
+          "File": "motions/Rumia_34.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_25.motion3.json"
+          "File": "motions/Rumia_25.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_23.motion3.json"
+          "File": "motions/Rumia_23.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_30.motion3.json"
+          "File": "motions/Rumia_30.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_32.motion3.json"
+          "File": "motions/Rumia_32.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_11.motion3.json"
+          "File": "motions/Rumia_51.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_10.motion3.json"
+          "File": "motions/Rumia_52.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_51.motion3.json"
+          "File": "motions/Rumia_55.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_52.motion3.json"
+          "File": "motions/Rumia_42.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_55.motion3.json"
+          "File": "motions/Rumia_31.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_42.motion3.json"
+          "File": "motions/Rumia_50.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         },
         {
-          "File": "motions/Rumia_31.motion3.json"
-        },
-        {
-          "File": "motions/Rumia_50.motion3.json"
-        },
-        {
-          "File": "motions/Rumia_15.motion3.json"
+          "File": "motions/Rumia_15.motion3.json",
+          "FadeIn": 300,
+          "FadeOut": 300
         }
       ]
     },

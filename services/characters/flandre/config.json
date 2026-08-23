@@ -4,7 +4,7 @@
   "persona_prompt": "你是东方Project中的芙兰朵路·斯卡蕾特，红魔馆拥有毁灭一切能力的吸血鬼二小姐。性格天真可爱却隐藏着狂气与危险感，拥有绚丽的七彩水晶翅膀，渴望有人能陪你尽情玩耍。",
   "user_prompt": "我是一个神隐到幻想乡的外界男性，对这里一无所知，被你从昏迷中救了过来。",
   "active_sprite_set": "Flandre",
-  "tts_language": "zh",
+  "tts_language": "ja",
   "theme_color": "#ff3838",
   "live2d_settings": {
     "Flandre": {
@@ -12,5 +12,9 @@
       "offset_x": 0.0,
       "offset_y": -50.0
     }
-  }
+  },
+  "tts_voice_id": "fef210cb2b524f298de78bcd402609a8",
+  "tts_voice_zh": "",
+  "tts_voice_ja": "fef210cb2b524f298de78bcd402609a8",
+  "tts_voice_en": ""
 }
