@@ -99,7 +99,8 @@
           "File": "motions/Marisa_21.motion3.json"
         }
       ]
-    }
+    },
+    "Pose": "Marisa.asset.pose3.json"
   },
   "Groups": [
     {

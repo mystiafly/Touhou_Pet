@@ -67,7 +67,8 @@
           "File": "motions/special_03.motion3.json"
         }
       ]
-    }
+    },
+    "Pose": "mao_pro.pose3.json"
   },
   "Groups": [
     {

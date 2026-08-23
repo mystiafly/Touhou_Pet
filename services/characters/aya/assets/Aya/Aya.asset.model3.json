@@ -123,7 +123,8 @@
           "File": "motions/Aya_07.motion3.json"
         }
       ]
-    }
+    },
+    "Pose": "Aya.asset.pose3.json"
   },
   "Groups": [
     {

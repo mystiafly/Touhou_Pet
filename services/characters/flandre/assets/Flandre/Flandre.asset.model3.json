@@ -99,7 +99,8 @@
           "File": "motions/Flandre_51.motion3.json"
         }
       ]
-    }
+    },
+    "Pose": "Flandre.asset.pose3.json"
   },
   "Groups": [
     {

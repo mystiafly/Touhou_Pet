@@ -99,7 +99,8 @@
           "File": "motions/Wriggle_53.motion3.json"
         }
       ]
-    }
+    },
+    "Pose": "Wriggle.asset.pose3.json"
   },
   "Groups": [
     {

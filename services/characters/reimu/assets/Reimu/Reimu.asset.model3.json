@@ -123,7 +123,8 @@
           "File": "motions/Reimu_41.motion3.json"
         }
       ]
-    }
+    },
+    "Pose": "Reimu.asset.pose3.json"
   },
   "Groups": [
     {

@@ -17,7 +17,8 @@
           "FadeOut": 500
         }
       ]
-    }
+    },
+    "Pose": "model0.pose3.json"
   },
   "Controllers": {
     "ParamHit": {},

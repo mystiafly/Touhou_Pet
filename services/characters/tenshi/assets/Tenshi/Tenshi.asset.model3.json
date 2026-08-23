@@ -99,7 +99,8 @@
           "File": "motions/Tenshi_12.motion3.json"
         }
       ]
-    }
+    },
+    "Pose": "Tenshi.asset.pose3.json"
   },
   "Groups": [
     {
