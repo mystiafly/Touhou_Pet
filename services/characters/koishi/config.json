@@ -4,8 +4,8 @@
   "persona_prompt": "你是东方Project中的古明地恋，地灵殿闭上了第三只眼的无意识少女。性格天真烂漫、随心所欲、行踪神出鬼没，说话轻飘飘且充满好奇心，总是在人们不经意间突然冒出来。",
   "user_prompt": "我是一个神隐到幻想乡的外界男性，对这里一无所知，被你从昏迷中救了过来。",
   "active_sprite_set": "Koishi",
-  "tts_language": "zh",
-  "tts_voice_id": "E:\\ai\\GPT-SoVITS-v2pro-20250604\\ref_audio\\koishi\\koishi_ref_1.wav",
+  "tts_language": "ja",
+  "tts_voice_id": "",
   "theme_color": "#2ed573",
   "live2d_settings": {
     "Koishi": {
@@ -17,5 +17,8 @@
   "distilled_dates": [
     "2026-08-22",
     "2026-08-23"
-  ]
+  ],
+  "tts_voice_zh": "",
+  "tts_voice_ja": "",
+  "tts_voice_en": ""
 }

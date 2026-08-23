@@ -161,17 +161,25 @@ class SoullinkLive2DDriver {
             this.app.stage.addChild(this.model);
             this.resizeModel(width, height);
 
-            // 6. 挂载每帧参数注入 Hook (在 Motion 计算之后注入，防止被动作覆写)
+            // 6. 挂载每帧参数注入 Hook (在 Motion 计算和内部更新后注入，防止被动作或默认状态覆写)
             if (this.model.internalModel) {
-                this.model.internalModel.on('afterMotionUpdate', () => {
-                    this.applyParametersOnMotionUpdate();
-                });
+                if (typeof this.model.internalModel.on === 'function') {
+                    this.model.internalModel.on('afterMotionUpdate', () => {
+                        this.applyParametersOnMotionUpdate();
+                    });
+                    this.model.internalModel.on('beforeModelUpdate', () => {
+                        this.applyVirtualPoseOpacities();
+                    });
+                }
             }
 
-            // 7. 注册 Ticker 驱动微表情与音频插值
-            this.app.ticker.add((delta) => this.onTick(delta));
+            // 7. 注册 Ticker 驱动微表情、音频插值与常驻姿态互斥 (每帧无死角执行)
+            this.app.ticker.add((delta) => {
+                this.onTick(delta);
+                this.applyParametersOnMotionUpdate();
+            });
 
-            // 7. 绑定点击互动
+            // 8. 绑定点击互动
             this.model.on('hit', (hitAreas) => {
                 console.log(`[SOULLINK LIVE2D] HitAreas:`, hitAreas);
                 if (hitAreas.some(h => /head|face/i.test(h))) {
@@ -634,38 +642,16 @@ class SoullinkLive2DDriver {
 
             if (!partIds || partIds.length === 0) return;
 
+            // 精准同源变体分组：只将同名且仅尾部数字/字母序号不同的部件归为互斥组 (严禁将左手和右手、裙子与上衣混为同组)
             for (const pid of partIds) {
-                let groupKey = null;
-
-                // ① 左手/左臂组
-                if (/(?:hand.*[lL]|left.*hand|hand_l|part.*left.*hand|arm.*[lL]|left.*arm|l.*hand|l.*arm)/i.test(pid)) {
-                    groupKey = 'left_hand';
-                }
-                // ② 右手/右臂组
-                else if (/(?:hand.*[rR]|right.*hand|hand_r|part.*right.*hand|arm.*[rR]|right.*arm|r.*hand|r.*arm)/i.test(pid)) {
-                    groupKey = 'right_hand';
-                }
-                // ③ 道具/手持物组
-                else if (/(?:item|prop|weapon|equip|acc|glass|hat|fan|sword|mic|tray|food)/i.test(pid)) {
-                    groupKey = 'props';
-                }
-                // ④ 服装/换装变体组
-                else if (/(?:cloth|costume|dress|outfit|skirt|coat|jacket|suit)/i.test(pid)) {
-                    groupKey = 'costumes';
-                }
-                // ⑤ 通用序号后缀组
-                else {
-                    const match = pid.match(/^(.*?[_\-\s]?)([0-9]+|[a-zA-Z])$/i);
-                    if (match) {
-                        groupKey = match[1].toLowerCase().replace(/[_\-\s]+$/, '');
+                // 必须匹配形如: PartLeftHand01, Hand_L1, PartArm_A, Arm02, LegPose_1
+                const match = pid.match(/^(.+?)(?:_)?([0-9]+|[a-zA-Z])$/i);
+                if (match) {
+                    const basePrefix = match[1].toLowerCase();
+                    if (!this.virtualPoseGroups[basePrefix]) {
+                        this.virtualPoseGroups[basePrefix] = [];
                     }
-                }
-
-                if (groupKey) {
-                    if (!this.virtualPoseGroups[groupKey]) {
-                        this.virtualPoseGroups[groupKey] = [];
-                    }
-                    this.virtualPoseGroups[groupKey].push(pid);
+                    this.virtualPoseGroups[basePrefix].push(pid);
                 }
             }
 
@@ -680,7 +666,7 @@ class SoullinkLive2DDriver {
                 }
             }
 
-            console.log(`[SOULLINK LIVE2D] ✨ 通用虚拟姿态引擎构建完成，已自动锁定互斥图层组:`, this.virtualPoseGroups);
+            console.log(`[SOULLINK LIVE2D] ✨ 精准同源姿态互斥引擎构建完成:`, this.virtualPoseGroups);
             this.applyVirtualPoseOpacities();
         } catch (e) {
             console.warn('[SOULLINK LIVE2D] 通用姿态扫描提示:', e);
@@ -714,13 +700,14 @@ class SoullinkLive2DDriver {
      * @param {number} temporaryDuration 临时维持秒数 (0 表示常驻)
      */
     setHandGesture(leftIndex = null, rightIndex = null, temporaryDuration = 0) {
-        if (leftIndex !== null && this.virtualPoseGroups['left_hand']) {
-            const maxL = this.virtualPoseGroups['left_hand'].length;
-            this.activePartIndices['left_hand'] = Math.max(0, Math.min(maxL - 1, leftIndex));
-        }
-        if (rightIndex !== null && this.virtualPoseGroups['right_hand']) {
-            const maxR = this.virtualPoseGroups['right_hand'].length;
-            this.activePartIndices['right_hand'] = Math.max(0, Math.min(maxR - 1, rightIndex));
+        for (const key in this.virtualPoseGroups) {
+            const list = this.virtualPoseGroups[key];
+            if (leftIndex !== null && /(?:left|lh|l_|_l|handl|arml)/i.test(key)) {
+                this.activePartIndices[key] = Math.max(0, Math.min(list.length - 1, leftIndex));
+            }
+            if (rightIndex !== null && /(?:right|rh|r_|_r|handr|armr)/i.test(key)) {
+                this.activePartIndices[key] = Math.max(0, Math.min(list.length - 1, rightIndex));
+            }
         }
 
         if (temporaryDuration > 0) {
@@ -732,20 +719,24 @@ class SoullinkLive2DDriver {
      * 随机或轮播一个可用手势 (例如点击互动或说话强调时)
      */
     triggerRandomGesture(duration = 2.5) {
-        const hasLeft = this.virtualPoseGroups['left_hand'] && this.virtualPoseGroups['left_hand'].length > 1;
-        const hasRight = this.virtualPoseGroups['right_hand'] && this.virtualPoseGroups['right_hand'].length > 1;
+        let leftKey = null;
+        let rightKey = null;
+        for (const key in this.virtualPoseGroups) {
+            if (/(?:left|lh|l_|_l|handl|arml)/i.test(key)) leftKey = key;
+            if (/(?:right|rh|r_|_r|handr|armr)/i.test(key)) rightKey = key;
+        }
 
-        if (!hasLeft && !hasRight) return;
+        if (!leftKey && !rightKey) return;
 
         let leftIdx = null;
         let rightIdx = null;
 
-        if (hasLeft) {
-            const count = this.virtualPoseGroups['left_hand'].length;
-            leftIdx = Math.floor(Math.random() * (count - 1)) + 1; // 随机选择 1..N-1 变体手势
+        if (leftKey) {
+            const count = this.virtualPoseGroups[leftKey].length;
+            leftIdx = Math.floor(Math.random() * (count - 1)) + 1;
         }
-        if (hasRight) {
-            const count = this.virtualPoseGroups['right_hand'].length;
+        if (rightKey) {
+            const count = this.virtualPoseGroups[rightKey].length;
             rightIdx = Math.floor(Math.random() * (count - 1)) + 1;
         }
 
