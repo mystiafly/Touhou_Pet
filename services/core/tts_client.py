@@ -290,6 +290,20 @@ def generate_speech_gpt_sovits(
     target_lang = lang_map.get(language.lower(), "zh")
 
     ref_audio = voice_id or ""
+    # 自动探测有效参考音频
+    if not ref_audio or not os.path.exists(ref_audio):
+        candidates = [
+            r"E:\ai\GPT-SoVITS-v2pro-20250604\ref_audio\koishi\koishi_ref_1.wav",
+            os.path.abspath(r"services\characters\koishi\voice_reference\koishi_ref_1.wav")
+        ]
+        for c in candidates:
+            if os.path.exists(c):
+                ref_audio = c
+                break
+
+    if not ref_audio or not os.path.exists(ref_audio):
+        return False, None, "GPT-SoVITS 缺少有效参考音频 (ref_audio_path)"
+
     prompt_text = ""
     prompt_lang = "zh"
     if "koishi_ref_1" in ref_audio:
@@ -298,26 +312,33 @@ def generate_speech_gpt_sovits(
     elif "koishi_ref_2" in ref_audio:
         prompt_text = "闭上第三只眼之后，就能去任何想去的地方啦！"
         prompt_lang = "zh"
+    elif "koishi_ref_3" in ref_audio:
+        prompt_text = "无意识的感觉，其实很轻松自在呢～"
+        prompt_lang = "zh"
+    else:
+        prompt_lang = target_lang
 
     payload = {
         "text": clean_text,
         "text_lang": target_lang,
         "ref_audio_path": ref_audio,
         "prompt_text": prompt_text,
-        "prompt_lang": prompt_lang
+        "prompt_lang": prompt_lang,
+        "media_type": "wav",
+        "streaming_mode": False
     }
 
     try:
-        print(f"[TTS GPT-SOVITS] 请求本地接口 {base_url} (语种: {target_lang}): {clean_text}")
-        response = requests.post(base_url, json=payload, timeout=30)
-        if response.status_code == 200:
+        print(f"[TTS GPT-SOVITS] 请求本地接口 {base_url} (语种: {target_lang}, 音频: {os.path.basename(ref_audio)}): {clean_text}")
+        response = requests.post(base_url, json=payload, timeout=35)
+        if response.status_code == 200 and len(response.content) > 0:
             audio_bytes = response.content
             print(f"[TTS GPT-SOVITS] 成功合成音频: {len(audio_bytes)} 字节")
             return True, audio_bytes, None
         else:
             # 降级尝试 GET
-            response_get = requests.get(base_url, params=payload, timeout=30)
-            if response_get.status_code == 200:
+            response_get = requests.get(base_url, params=payload, timeout=35)
+            if response_get.status_code == 200 and len(response_get.content) > 0:
                 return True, response_get.content, None
             return False, None, f"GPT-SoVITS 响应错误 ({response.status_code}): {response.text}"
     except Exception as ex:
