@@ -71,5 +71,15 @@
 
 ---
 
+## ⭐ Star History
+
+<div align="center">
+
+[![Star History Chart](https://api.star-history.com/svg?repos=mystiafly/Touhou_Pet&type=Date)](https://star-history.com/#mystiafly/Touhou_Pet&Date)
+
+</div>
+
+---
+
 ## 📄 许可证 (License)
 MIT License. 自由地修改、打包和分享属于你自己的桌面伴侣吧！
