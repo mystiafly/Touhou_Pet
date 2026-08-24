@@ -75,7 +75,7 @@
 
 <div align="center">
 
-[![Star History Chart](https://api.star-history.com/svg?repos=mystiafly/Touhou_Pet&type=Date)](https://star-history.com/#mystiafly/Touhou_Pet&Date)
+[![Star History Chart](assets/star-history.svg)](https://github.com/mystiafly/Touhou_Pet/stargazers)
 
 </div>
 

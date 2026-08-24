@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" width="100%" height="100%">
+  <style>
+    .bg { fill: transparent; }
+    .title { font-family: 'Segoe UI', 'PingFang SC', sans-serif; font-size: 16px; font-weight: bold; fill: #58a6ff; text-anchor: middle; }
+    .axis-text { font-family: 'Segoe UI', monospace; font-size: 12px; fill: #8b949e; }
+    .dot-text { font-family: 'Segoe UI', sans-serif; font-size: 11px; font-weight: bold; fill: #f0883e; }
+    .axis-line { stroke: #8b949e; stroke-width: 1.5; }
+    .grid-line { stroke: #30363d; stroke-width: 1; stroke-dasharray: 4 4; opacity: 0.6; }
+    .trend-line { fill: none; stroke: #e36209; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .star-dot { fill: #f0883e; stroke: #ffffff; stroke-width: 2; }
+    
+    @media (prefers-color-scheme: light) {
+      .title { fill: #0969da; }
+      .axis-text { fill: #57606a; }
+      .grid-line { stroke: #d0d7de; }
+      .axis-line { stroke: #57606a; }
+    }
+  </style>
+
+  <rect width="100%" height="100%" class="bg" />
+
+  <!-- Title -->
+  <text x="400.0" y="28" class="title">⭐ GitHub Star History (mystiafly/Touhou_Pet)</text>
+
+  <!-- Grid Lines & Y Axis -->
+  <text x="65" y="364.0" text-anchor="end" class="axis-text">0</text><line x1="74" y1="360.0" x2="750" y2="360.0" class="grid-line" /><text x="65" y="302.0" text-anchor="end" class="axis-text">1</text><line x1="74" y1="298.0" x2="750" y2="298.0" class="grid-line" /><text x="65" y="240.0" text-anchor="end" class="axis-text">2</text><line x1="74" y1="236.0" x2="750" y2="236.0" class="grid-line" /><text x="65" y="178.0" text-anchor="end" class="axis-text">3</text><line x1="74" y1="174.0" x2="750" y2="174.0" class="grid-line" /><text x="65" y="116.0" text-anchor="end" class="axis-text">4</text><line x1="74" y1="112.0" x2="750" y2="112.0" class="grid-line" /><text x="65" y="54.0" text-anchor="end" class="axis-text">5</text><line x1="74" y1="50.0" x2="750" y2="50.0" class="grid-line" />
+
+  <!-- X Axis Lines & Labels -->
+  <line x1="80" y1="360" x2="750" y2="360" class="axis-line" />
+  <line x1="80" y1="50" x2="80" y2="360" class="axis-line" />
+  <text x="80.0" y="385" text-anchor="middle" class="axis-text">Jul 26</text><line x1="80.0" y1="360" x2="80.0" y2="366" class="axis-line" /><text x="214.0" y="385" text-anchor="middle" class="axis-text">Aug 02</text><line x1="214.0" y1="360" x2="214.0" y2="366" class="axis-line" /><text x="348.0" y="385" text-anchor="middle" class="axis-text">Aug 08</text><line x1="348.0" y1="360" x2="348.0" y2="366" class="axis-line" /><text x="482.0" y="385" text-anchor="middle" class="axis-text">Aug 14</text><line x1="482.0" y1="360" x2="482.0" y2="366" class="axis-line" /><text x="616.0" y="385" text-anchor="middle" class="axis-text">Aug 20</text><line x1="616.0" y1="360" x2="616.0" y2="366" class="axis-line" /><text x="750.0" y="385" text-anchor="middle" class="axis-text">Aug 26</text><line x1="750.0" y1="360" x2="750.0" y2="366" class="axis-line" />
+
+  <!-- Trend Curve -->
+  <path d="M 80.0 360.0 L 123.2 298.0 L 315.8 236.0 L 347.8 174.0 L 706.8 174.0 " class="trend-line" />
+
+  <!-- Star Dots -->
+  <circle cx="123.2" cy="298.0" r="5" class="star-dot" /><text x="123.2" y="288.0" text-anchor="middle" class="dot-text">1 ★</text><circle cx="315.8" cy="236.0" r="5" class="star-dot" /><text x="315.8" y="226.0" text-anchor="middle" class="dot-text">2 ★</text><circle cx="347.8" cy="174.0" r="5" class="star-dot" /><text x="347.8" y="164.0" text-anchor="middle" class="dot-text">3 ★</text>
+</svg>
