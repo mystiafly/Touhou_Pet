@@ -931,21 +931,40 @@
                     </div>
 
                     <div class="form-group" style="margin-top: 12px;">
-                        <label for="character-tts-voice-zh" style="font-weight: 500; font-size: 13px; display: block;">🇨🇳 中文音色 ID (Reference ID)</label>
-                        <input type="text" id="character-tts-voice-zh" class="modern-input" placeholder="留空使用默认，或填入 Fish Audio 中文音色 ID" style="width: 100%; margin-top: 4px;">
+                        <label for="character-tts-voice-zh" style="font-weight: 500; font-size: 13px; display: block;">🇨🇳 中文音色 ID / 名称</label>
+                        <input type="text" id="character-tts-voice-zh" class="modern-input" placeholder="Edge-TTS填音色名(如 zh-CN-XiaoxiaoNeural) 或 Fish Audio 填 32位模型ID" style="width: 100%; margin-top: 4px;">
+                        <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
+                            <span style="font-size: 11px; color: var(--text-secondary); align-self: center;">Edge-TTS 推荐预设:</span>
+                            <button type="button" class="action-btn outline" onclick="document.getElementById('character-tts-voice-zh').value='zh-CN-XiaoxiaoNeural'" style="padding: 2px 8px; font-size: 11px;">晓晓(少女)</button>
+                            <button type="button" class="action-btn outline" onclick="document.getElementById('character-tts-voice-zh').value='zh-CN-XiaoyiNeural'" style="padding: 2px 8px; font-size: 11px;">晓伊(萝莉)</button>
+                            <button type="button" class="action-btn outline" onclick="document.getElementById('character-tts-voice-zh').value='zh-CN-XiaomengNeural'" style="padding: 2px 8px; font-size: 11px;">晓梦(傲娇)</button>
+                            <button type="button" class="action-btn outline" onclick="document.getElementById('character-tts-voice-zh').value='zh-CN-XiaozhenNeural'" style="padding: 2px 8px; font-size: 11px;">晓甄(御姐)</button>
+                        </div>
                     </div>
 
                     <div class="form-group" style="margin-top: 10px;">
-                        <label for="character-tts-voice-ja" style="font-weight: 500; font-size: 13px; display: block;">🇯🇵 日语音色 ID (Reference ID)</label>
-                        <input type="text" id="character-tts-voice-ja" class="modern-input" placeholder="留空使用默认，或填入 Fish Audio 日语音色 ID" style="width: 100%; margin-top: 4px;">
+                        <label for="character-tts-voice-ja" style="font-weight: 500; font-size: 13px; display: block;">🇯🇵 日语音色 ID / 名称</label>
+                        <input type="text" id="character-tts-voice-ja" class="modern-input" placeholder="Edge-TTS填音色名(如 ja-JP-NanamiNeural) 或 Fish Audio 填 32位模型ID" style="width: 100%; margin-top: 4px;">
+                        <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
+                            <span style="font-size: 11px; color: var(--text-secondary); align-self: center;">Edge-TTS 推荐预设:</span>
+                            <button type="button" class="action-btn outline" onclick="document.getElementById('character-tts-voice-ja').value='ja-JP-NanamiNeural'" style="padding: 2px 8px; font-size: 11px;">七海 Nanami(日漫女声)</button>
+                            <button type="button" class="action-btn outline" onclick="document.getElementById('character-tts-voice-ja').value='ja-JP-AoiNeural'" style="padding: 2px 8px; font-size: 11px;">葵 Aoi(清纯女声)</button>
+                            <button type="button" class="action-btn outline" onclick="document.getElementById('character-tts-voice-ja').value='ja-JP-KeitaNeural'" style="padding: 2px 8px; font-size: 11px;">圭太 Keita(元气正太)</button>
+                        </div>
                     </div>
 
                     <div class="form-group" style="margin-top: 10px;">
-                        <label for="character-tts-voice-en" style="font-weight: 500; font-size: 13px; display: block;">🇺🇸 英语音色 ID (Reference ID)</label>
-                        <input type="text" id="character-tts-voice-en" class="modern-input" placeholder="留空使用默认，或填入 Fish Audio 英语音色 ID" style="width: 100%; margin-top: 4px;">
+                        <label for="character-tts-voice-en" style="font-weight: 500; font-size: 13px; display: block;">🇺🇸 英语音色 ID / 名称</label>
+                        <input type="text" id="character-tts-voice-en" class="modern-input" placeholder="Edge-TTS填音色名(如 en-US-AnaNeural) 或 Fish Audio 填 32位模型ID" style="width: 100%; margin-top: 4px;">
                     </div>
 
-                    <p class="help-text" style="margin-top: 8px;">前往 <a href="https://fish.audio/zh-CN/discovery/" target="_blank" style="color: #ff79c6; text-decoration: underline;">Fish Audio 声音广场</a> 复制任何喜欢的二次元模型 ID（如：<code>800a742870194833b584d4b182046461</code>）。</p>
+                    <div style="margin-top: 10px; padding: 10px 12px; background: rgba(0,0,0,0.25); border-radius: 6px; font-size: 12px; line-height: 1.6; color: var(--text-secondary);">
+                        <div>💡 <strong>音色填法指南：</strong></div>
+                        <div>• <strong>微软 Edge TTS（免费）</strong>：填入上述微软预设音色名（如 <code>zh-CN-XiaoxiaoNeural</code>），留空则使用默认。</div>
+                        <div>• <strong>Fish Audio 官方</strong>：前往 <a href="https://fish.audio/zh-CN/discovery/" target="_blank" style="color: #ff79c6; text-decoration: underline;">Fish Audio 声音广场</a> 复制 32 位模型 ID（如 <code>800a742870194833b584d4b182046461</code>）。</div>
+                        <div>• <strong>OpenAI / 硅基流动</strong>：填入系统预设音色（如 <code>nova</code>、<code>alloy</code>、<code>shimmer</code>）。</div>
+                        <div>• <strong>GPT-SoVITS 本地</strong>：填入该角色专属参考音频文件名（如 <code>koishi_ref_1.wav</code>）。</div>
+                    </div>
 
                     <button id="save-char-voice-btn" class="action-btn primary" style="margin-top: 12px;">
                         <i class="fas fa-save"></i> 保存当前角色多语种音色
@@ -1422,10 +1441,13 @@
             <div class="card" style="display: flex; flex-direction: column; min-height: calc(100vh - 190px);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                     <h3 class="card-title" style="margin:0;"><i class="fas fa-comments"></i> 应付词列表与离线语音</h3>
-                    <div style="display: flex; gap: 10px; align-items: center;">
+                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                         <button class="action-btn" id="btn-batch-record-reactions" @click="character.startBatchRecording(false)" :disabled="character.isBatchRecording" style="background: linear-gradient(135deg, #bd93f9, #ff79c6); border: none; color: #fff; padding: 6px 14px; font-size: 13px; cursor: pointer;">
                             <i class="fas" :class="character.isBatchRecording ? 'fa-spinner fa-spin' : 'fa-microphone-alt'"></i>
-                            {{ character.isBatchRecording ? '正在批量录制语音...' : '🎙️ 一键批量录制全量语音' }}
+                            {{ character.isBatchRecording ? '正在批量录制语音...' : '🎙️ 补充录制未生成语音' }}
+                        </button>
+                        <button class="action-btn" id="btn-force-batch-record-reactions" @click="character.startBatchRecording(true)" :disabled="character.isBatchRecording" style="background: rgba(255, 121, 198, 0.18); border: 1px solid #ff79c6; color: #ff79c6; padding: 6px 12px; font-size: 12px; cursor: pointer; border-radius: 6px;" title="换了新音色或修改发音后，点击此处按当前最新音色全部重新生成覆盖旧语音">
+                            <i class="fas fa-redo"></i> 全部重录 (换音色后覆写)
                         </button>
                         <button class="action-btn primary" id="btn-regenerate-reactions" @click="character.regenerateReactions" style="padding: 6px 12px; font-size: 12px;"><i class="fas fa-magic"></i> 重新生成词库</button>
                         <button class="action-btn outline" id="btn-refresh-reactions" @click="character.loadReactions" style="padding: 6px 12px; font-size: 12px;"><i class="fas fa-sync-alt"></i> 刷新</button>
