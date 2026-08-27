@@ -1153,3 +1153,14 @@ input:checked + .slider:before {
     padding: 6px 10px;
 }
 
+.tts-engine-card {
+    transition: all 0.25s ease;
+    border: 2px solid transparent;
+}
+.tts-engine-card:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+
