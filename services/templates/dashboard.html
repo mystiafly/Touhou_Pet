@@ -1484,9 +1484,14 @@
 
                         <div class="reaction-tags-container" style="display: flex; flex-wrap: wrap; gap: 8px;">
                             <div v-for="(item, idx) in (character.reactionsDetail[key] || [])" :key="idx" class="reaction-tag-item">
-                                <!-- 试听 / 即时录制按钮 -->
+                                <!-- 试听 / 首次录制按钮 -->
                                 <button class="reaction-audio-btn" :class="{ 'has-audio': item.has_audio }" @click="character.playOrRecordReaction(key, item)" :title="item.has_audio ? '点击试听离线语音' : '尚未录制语音，点击立即生成收录'">
                                     <i :class="item.isPlaying ? 'fas fa-spinner fa-spin' : (item.has_audio ? 'fas fa-volume-up' : 'fas fa-microphone')"></i>
+                                </button>
+
+                                <!-- 单句重新录制按钮 (已有语音时显示，支持单独按最新音色重录覆写) -->
+                                <button v-if="item.has_audio" class="reaction-rerecord-btn" @click.stop="character.reRecordSingleReaction(key, item)" :disabled="item.isRecording" title="按当前最新音色单独重新录制此句">
+                                    <i :class="item.isRecording ? 'fas fa-spinner fa-spin' : 'fas fa-sync-alt'"></i>
                                 </button>
                                 
                                 <span class="reaction-tag-text">{{ item.text }}</span>

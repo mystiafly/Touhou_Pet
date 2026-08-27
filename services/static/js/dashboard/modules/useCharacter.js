@@ -368,8 +368,9 @@ window.useCharacterModule = function(Vue) {
             const data = await res.json();
             if (data.success && data.audio_url) {
                 item.has_audio = true;
-                item.audio_url = data.audio_url;
-                previewAudio.src = data.audio_url;
+                const freshUrl = data.audio_url + '?t=' + Date.now();
+                item.audio_url = freshUrl;
+                previewAudio.src = freshUrl;
                 previewAudio.play().catch(e => console.log(e));
                 previewAudio.onended = () => { item.isPlaying = false; };
                 previewAudio.onerror = () => { item.isPlaying = false; };
@@ -380,6 +381,40 @@ window.useCharacterModule = function(Vue) {
         } catch (e) {
             item.isPlaying = false;
             alert('录制请求异常: ' + e);
+        }
+    }
+
+    // 单独重新录制指定应付词语音 (覆写当前最新音色)
+    async function reRecordSingleReaction(emotion, item) {
+        if (item.isRecording) return;
+        item.isRecording = true;
+        try {
+            const res = await fetch('/api/pet_reactions/record_single', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    character_id: currentCharacterId.value,
+                    emotion: emotion,
+                    text: item.text
+                })
+            });
+            const data = await res.json();
+            if (data.success && data.audio_url) {
+                item.has_audio = true;
+                const freshUrl = data.audio_url + '?t=' + Date.now();
+                item.audio_url = freshUrl;
+                item.isPlaying = true;
+                previewAudio.src = freshUrl;
+                previewAudio.play().catch(e => console.log(e));
+                previewAudio.onended = () => { item.isPlaying = false; item.isRecording = false; };
+                previewAudio.onerror = () => { item.isPlaying = false; item.isRecording = false; };
+            } else {
+                item.isRecording = false;
+                alert('单个重录失败: ' + (data.error || 'TTS 服务异常'));
+            }
+        } catch (e) {
+            item.isRecording = false;
+            alert('单个重录请求异常: ' + e);
         }
     }
 
@@ -479,6 +514,7 @@ window.useCharacterModule = function(Vue) {
         deleteReaction,
         regenerateReactions,
         playOrRecordReaction,
+        reRecordSingleReaction,
         startBatchRecording,
         stopBatchRecording
     };
