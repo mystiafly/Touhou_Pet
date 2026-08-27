@@ -153,7 +153,10 @@ def generate_speech_fish_audio(styled_text: str, voice_id: Optional[str] = None)
     }
 
     if voice_id and str(voice_id).strip():
-        payload["reference_id"] = str(voice_id).strip()
+        vid = str(voice_id).strip()
+        # 仅当 voice_id 匹配 32 位 hex ID 时才作为 Fish Audio reference_id 传入，防止误传 Edge-TTS 预设音色名导致 400 报错
+        if re.match(r'^[a-f0-9]{32}$', vid, re.I):
+            payload["reference_id"] = vid
 
     try:
         print(f"[TTS FISH AUDIO] 发送 TTS 请求 (长度: {len(styled_text)}): {styled_text}")
@@ -509,6 +512,17 @@ def synthesize_and_cache_audio(
             effective_voice_id = config_data.get("tts_voice_en") or config_data.get("tts_voice_id", "")
         else:
             effective_voice_id = config_data.get("tts_voice_zh") or config_data.get("tts_voice_id", "")
+
+    # 针对不同引擎智能适配音色 ID 格式，彻底防止跨引擎格式冲突
+    if provider in ["fish_audio", "fish"]:
+        if effective_voice_id and not re.match(r'^[a-f0-9]{32}$', str(effective_voice_id).strip(), re.I):
+            # 若当前语言音色非 32 位 hex (如误存了 Edge 音色名)，优先尝试角色主 tts_voice_id
+            main_vid = str(config_data.get("tts_voice_id", "")).strip()
+            effective_voice_id = main_vid if re.match(r'^[a-f0-9]{32}$', main_vid, re.I) else None
+    elif provider in ["edge_tts", "edge", "microsoft", "default", "none", ""]:
+        if effective_voice_id and re.match(r'^[a-f0-9]{32}$', str(effective_voice_id).strip(), re.I):
+            # 若传入的是 32 位 Fish ID，Edge-TTS 自动忽略并采用内置动漫推荐音色
+            effective_voice_id = None
 
     # 执行 Post-LLM 精修 (翻译 + 注入情绪音调标签)
     if not skip_refine:

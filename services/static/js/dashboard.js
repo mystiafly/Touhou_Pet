@@ -95,6 +95,134 @@ window.asyncConfirm = function(message) {
 };
 // -----------------------------------------------------------
 
+// =========================================================================
+// 🎙️ 全局 TTS 引擎调度器 (Fish Audio, Edge-TTS, GPT-SoVITS)
+// =========================================================================
+window.selectTtsEngine = async function(engineKey, skipSave = false) {
+    if (!engineKey) engineKey = 'edge_tts';
+    const fishCard = document.getElementById('engine-card-fish');
+    const edgeCard = document.getElementById('engine-card-edge');
+    const gptCard = document.getElementById('engine-card-gptsovits');
+
+    const fishPanel = document.getElementById('tts-panel-fish');
+    const edgePanel = document.getElementById('tts-panel-edge');
+    const gptPanel = document.getElementById('tts-panel-gptsovits');
+    const providerInput = document.getElementById('tts-provider-select');
+
+    if (providerInput) providerInput.value = engineKey;
+
+    // 重置所有卡片边框高亮与阴影
+    if (fishCard) { fishCard.style.border = '2px solid transparent'; fishCard.style.boxShadow = 'none'; }
+    if (edgeCard) { edgeCard.style.border = '2px solid transparent'; edgeCard.style.boxShadow = 'none'; }
+    if (gptCard) { gptCard.style.border = '2px solid transparent'; gptCard.style.boxShadow = 'none'; }
+
+    // 隐藏所有专属面板
+    if (fishPanel) fishPanel.style.display = 'none';
+    if (edgePanel) edgePanel.style.display = 'none';
+    if (gptPanel) gptPanel.style.display = 'none';
+
+    if (engineKey === 'fish_audio') {
+        if (fishCard) { fishCard.style.border = '2px solid #ff79c6'; fishCard.style.boxShadow = '0 0 14px rgba(255,121,198,0.25)'; }
+        if (fishPanel) fishPanel.style.display = 'block';
+    } else if (engineKey === 'gpt_sovits') {
+        if (gptCard) { gptCard.style.border = '2px solid #8be9fd'; gptCard.style.boxShadow = '0 0 14px rgba(139,233,253,0.25)'; }
+        if (gptPanel) gptPanel.style.display = 'block';
+        if (window.checkGptSovitsStatus) window.checkGptSovitsStatus();
+    } else {
+        // 默认为 edge_tts
+        if (edgeCard) { edgeCard.style.border = '2px solid #50fa7b'; edgeCard.style.boxShadow = '0 0 14px rgba(80,250,123,0.25)'; }
+        if (edgePanel) edgePanel.style.display = 'block';
+    }
+
+    if (!skipSave) {
+        try {
+            await fetch('/api/settings/config', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ tts_provider: engineKey })
+            });
+        } catch (e) {
+            console.error('保存 TTS 服务商失败:', e);
+        }
+    }
+};
+
+window.onEdgeVoiceSelectChange = async function(voiceName, lang) {
+    if (!voiceName) return;
+    const payload = {};
+    if (lang === 'zh') {
+        payload.tts_voice_zh = voiceName;
+        payload.tts_voice_id = voiceName;
+    } else if (lang === 'ja') {
+        payload.tts_voice_ja = voiceName;
+    } else if (lang === 'en') {
+        payload.tts_voice_en = voiceName;
+    }
+    try {
+        await fetch('/api/settings/config', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+    } catch (e) {
+        console.error('更新 Edge-TTS 音色失败:', e);
+    }
+};
+
+window.checkGptSovitsStatus = async function() {
+    const dot = document.getElementById('gptsovits-status-dot');
+    const text = document.getElementById('gptsovits-status-text');
+    const btn = document.getElementById('btn-check-gptsovits');
+
+    if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 检测中...';
+    try {
+        const res = await fetch('/api/tts/gpt_sovits/status');
+        const data = await res.json();
+        if (data.running) {
+            if (dot) dot.style.background = '#50fa7b';
+            if (text) {
+                text.style.color = '#50fa7b';
+                text.innerText = '已连接 (运行中)';
+            }
+        } else {
+            if (dot) dot.style.background = '#ff5555';
+            if (text) {
+                text.style.color = '#ff5555';
+                text.innerText = '未连接 (离线)';
+            }
+        }
+    } catch (e) {
+        if (dot) dot.style.background = '#ff5555';
+        if (text) {
+            text.style.color = '#ff5555';
+            text.innerText = '未连接 (离线)';
+        }
+    } finally {
+        if (btn) btn.innerHTML = '<i class="fas fa-search"></i> 检测连接状态';
+    }
+};
+
+window.launchGptSovitsService = async function() {
+    const btn = document.getElementById('btn-launch-gptsovits');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在自动拉起中...';
+    }
+    try {
+        const res = await fetch('/api/tts/gpt_sovits/launch', { method: 'POST' });
+        const data = await res.json();
+        alert(data.message || (data.success ? '启动成功！' : '启动失败'));
+        await window.checkGptSovitsStatus();
+    } catch (e) {
+        alert('启动请求异常: ' + e);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-rocket"></i> 一键启动本地服务';
+        }
+    }
+};
+
 // dashboard.js - 独立大贤者控制台核心逻辑
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -427,9 +555,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 // 初始化选中当前 TTS 引擎卡片与面板
-                const currentTtsProvider = configData.tts_provider || "edge_tts";
+                const currentTtsProvider = configData.tts_provider || "fish_audio";
                 if (window.selectTtsEngine) {
-                    window.selectTtsEngine(currentTtsProvider);
+                    window.selectTtsEngine(currentTtsProvider, true);
                 }
 
                 const ttsLangSelect = document.getElementById('character-tts-language-select');
@@ -1353,132 +1481,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
-    // =========================================================================
-    // 🎙️ 语音引擎设置 (TTS Settings: Fish Audio, Edge-TTS, GPT-SoVITS)
-    // =========================================================================
-
-    window.selectTtsEngine = async function(engineKey) {
-        const fishCard = document.getElementById('engine-card-fish');
-        const edgeCard = document.getElementById('engine-card-edge');
-        const gptCard = document.getElementById('engine-card-gptsovits');
-
-        const fishPanel = document.getElementById('tts-panel-fish');
-        const edgePanel = document.getElementById('tts-panel-edge');
-        const gptPanel = document.getElementById('tts-panel-gptsovits');
-        const providerInput = document.getElementById('tts-provider-select');
-
-        if (providerInput) providerInput.value = engineKey;
-
-        // 重置所有卡片边框高亮
-        if (fishCard) fishCard.style.borderColor = 'transparent';
-        if (edgeCard) edgeCard.style.borderColor = 'transparent';
-        if (gptCard) gptCard.style.borderColor = 'transparent';
-
-        // 隐藏所有专属面板
-        if (fishPanel) fishPanel.style.display = 'none';
-        if (edgePanel) edgePanel.style.display = 'none';
-        if (gptPanel) gptPanel.style.display = 'none';
-
-        if (engineKey === 'fish_audio') {
-            if (fishCard) fishCard.style.borderColor = '#ff79c6';
-            if (fishPanel) fishPanel.style.display = 'block';
-        } else if (engineKey === 'gpt_sovits') {
-            if (gptCard) gptCard.style.borderColor = '#8be9fd';
-            if (gptPanel) gptPanel.style.display = 'block';
-            checkGptSovitsStatus();
-        } else {
-            // 默认为 edge_tts
-            if (edgeCard) edgeCard.style.borderColor = '#50fa7b';
-            if (edgePanel) edgePanel.style.display = 'block';
-        }
-
-        try {
-            await fetch('/api/settings/config', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ tts_provider: engineKey })
-            });
-        } catch (e) {
-            console.error('保存 TTS 服务商失败:', e);
-        }
-    };
-
-    window.onEdgeVoiceSelectChange = async function(voiceName, lang) {
-        if (!voiceName) return;
-        const payload = {};
-        if (lang === 'zh') {
-            payload.tts_voice_zh = voiceName;
-            payload.tts_voice_id = voiceName;
-        } else if (lang === 'ja') {
-            payload.tts_voice_ja = voiceName;
-        } else if (lang === 'en') {
-            payload.tts_voice_en = voiceName;
-        }
-        try {
-            await fetch('/api/settings/config', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload)
-            });
-        } catch (e) {
-            console.error('更新 Edge-TTS 音色失败:', e);
-        }
-    };
-
-    window.checkGptSovitsStatus = async function() {
-        const dot = document.getElementById('gptsovits-status-dot');
-        const text = document.getElementById('gptsovits-status-text');
-        const btn = document.getElementById('btn-check-gptsovits');
-
-        if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 检测中...';
-        try {
-            const res = await fetch('/api/tts/gpt_sovits/status');
-            const data = await res.json();
-            if (data.running) {
-                if (dot) dot.style.background = '#50fa7b';
-                if (text) {
-                    text.style.color = '#50fa7b';
-                    text.innerText = '已连接 (运行中)';
-                }
-            } else {
-                if (dot) dot.style.background = '#ff5555';
-                if (text) {
-                    text.style.color = '#ff5555';
-                    text.innerText = '未连接 (离线)';
-                }
-            }
-        } catch (e) {
-            if (dot) dot.style.background = '#ff5555';
-            if (text) {
-                text.style.color = '#ff5555';
-                text.innerText = '未连接 (离线)';
-            }
-        } finally {
-            if (btn) btn.innerHTML = '<i class="fas fa-search"></i> 检测连接状态';
-        }
-    };
-
-    window.launchGptSovitsService = async function() {
-        const btn = document.getElementById('btn-launch-gptsovits');
-        if (btn) {
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在自动拉起中...';
-        }
-        try {
-            const res = await fetch('/api/tts/gpt_sovits/launch', { method: 'POST' });
-            const data = await res.json();
-            alert(data.message || (data.success ? '启动成功！' : '启动失败'));
-            await checkGptSovitsStatus();
-        } catch (e) {
-            alert('启动请求异常: ' + e);
-        } finally {
-            if (btn) {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-rocket"></i> 一键启动本地服务';
-            }
-        }
-    };
 
     // Fish Audio API Key / URL 变更自动保存
     const fishAudioKeyInput = document.getElementById('fish-audio-key-input');

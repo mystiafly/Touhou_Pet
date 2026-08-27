@@ -1,6 +1,6 @@
 {
   "character_id": "flandre",
-  "character_name": "芙兰朵路",
+  "character_name": "芙兰朵露",
   "persona_prompt": "你是东方Project中的芙兰朵路·斯卡蕾特，红魔馆拥有毁灭一切能力的吸血鬼二小姐。性格天真可爱却隐藏着狂气与危险感，拥有绚丽的七彩水晶翅膀，渴望有人能陪你尽情玩耍。",
   "user_prompt": "我是一个神隐到幻想乡的外界男性，对这里一无所知，被你从昏迷中救了过来。",
   "active_sprite_set": "Flandre",
@@ -16,5 +16,14 @@
   "tts_voice_id": "fef210cb2b524f298de78bcd402609a8",
   "tts_voice_zh": "",
   "tts_voice_ja": "fef210cb2b524f298de78bcd402609a8",
-  "tts_voice_en": ""
+  "tts_voice_en": "",
+  "distilled_dates": [
+    "2026-08-24",
+    "2026-08-25"
+  ],
+  "immersive_bg_mode": "video",
+  "immersive_wallpaper": "/api/wallpaper_engine/media?path=H%3A%5CSteamLibrary%5Csteamapps%5Cworkshop%5Ccontent%5C431960%5C1983268336%5Cpreview.jpg",
+  "immersive_media_url": "/api/wallpaper_engine/media?path=H%3A%5CSteamLibrary%5Csteamapps%5Cworkshop%5Ccontent%5C431960%5C1983268336%5C%E7%BA%A2%E9%AD%94%E9%A6%86%E6%97%A0%E9%99%90%E5%BE%AA%E7%8E%AF01.mp4",
+  "immersive_bgm_url": "",
+  "enable_immersive_parallax": true
 }
