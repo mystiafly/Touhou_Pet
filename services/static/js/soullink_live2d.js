@@ -46,6 +46,7 @@ class SoullinkLive2DDriver {
         this.allMotionGroups = [];
         this.idleMotionTimer = null;
         this.lastMotionTriggerTime = 0;
+        this.currentExpression = null; // 缓存当前激活的表情，防止高频重复触发淡入导致疯狂眨眼
 
         // 方案一：程序化物理弹性微动与拖拽阻尼惯性引擎 (告别机械假人)
         this.bounceSpring = 0.0;     // 点击 Q 弹位移
@@ -271,6 +272,17 @@ class SoullinkLive2DDriver {
                 全部动作组: this.allMotionGroups
             });
         }
+
+        // 3. 优化 Live2D 内置眨眼控制器 (防止高刷屏或短周期触发疯狂抽搐眨眼)
+        try {
+            const eyeBlink = this.model.internalModel?.eyeBlink;
+            if (eyeBlink) {
+                eyeBlink.blinkingInterval = 4000; // 自然眨眼周期 4 秒
+                eyeBlink.closingDuration = 100;   // 闭眼速度 100ms
+                eyeBlink.closedDuration = 60;     // 闭眼停留 60ms
+                eyeBlink.openingDuration = 150;   // 睁眼速度 150ms
+            }
+        } catch (e) {}
     }
 
     /**
@@ -328,9 +340,16 @@ class SoullinkLive2DDriver {
                 }
 
                 if (matchedExp !== null) {
-                    this.model.expression(matchedExp);
+                    if (this.currentExpression !== matchedExp) {
+                        this.currentExpression = matchedExp;
+                        this.model.expression(matchedExp);
+                    }
                 } else if (emotionKey === 'normal' && expressions.length > 0) {
-                    this.model.expression(expressions[0].Name || 0);
+                    const defaultExp = expressions[0].Name || 0;
+                    if (this.currentExpression !== defaultExp) {
+                        this.currentExpression = defaultExp;
+                        this.model.expression(defaultExp);
+                    }
                 }
             }
         } catch (e) {
@@ -503,6 +522,15 @@ class SoullinkLive2DDriver {
             } else if (this.targetEmotion === 'sleeping') {
                 this.setCoreParam(coreModel, 'ParamEyeLOpen', 0.0);
                 this.setCoreParam(coreModel, 'ParamEyeROpen', 0.0);
+                this.setCoreParam(coreModel, 'ParamEyeOpen', 0.0);
+            } else {
+                // 眼睛开合一致性同步 (针对 Flandre 等同时包含 ParamEyeOpen 与 ParamEyeLOpen/ROpen 的模型，防止表情覆盖值与眨眼控制器拉扯冲突)
+                const eyeL = this.getCoreParam(coreModel, 'ParamEyeLOpen');
+                const eyeR = this.getCoreParam(coreModel, 'ParamEyeROpen');
+                if (eyeL !== null && eyeR !== null) {
+                    const avgEye = Math.max(eyeL, eyeR);
+                    this.setCoreParam(coreModel, 'ParamEyeOpen', avgEye);
+                }
             }
 
             // 4. 点击物理弹性 Q 弹微动 (极其自然的起伏与微偏头，激发内置物理引擎自然抖拂)
