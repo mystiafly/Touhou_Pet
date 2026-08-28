@@ -20,7 +20,7 @@ if not errorlevel 1 (
 
 echo [SYSTEM] Clearing old processes and port 5000...
 taskkill /F /IM electron.exe >nul 2>&1
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5000') do taskkill /f /pid %%a >nul 2>&1
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5000 ^| findstr /v " 0$" ^| findstr /v " 0 "') do if not "%%a"=="0" taskkill /f /pid %%a >nul 2>&1
 
 echo ========================================
 echo         Rumia Desktop Pet Startup

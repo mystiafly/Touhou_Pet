@@ -73,64 +73,57 @@ def main():
     print(f"根目录: {root_dir}")
 
     # ==========================================
-    # 0. 清理残留进程 (防止端口冲突)
+    # 0. 毫秒级极速拉起 Electron 启动加载界面 (Splash Screen)
     # ==========================================
-    print("\n[0/2] 正在清理前次残留进程 (防止端口 5000 被占用)...")
-    try:
-        if os.name == 'nt':
-            # 杀死所有占用 5000 端口的进程
-            subprocess.call('for /f "tokens=5" %a in (\'netstat -aon ^| findstr :5000\') do taskkill /f /pid %a >nul 2>&1', shell=True)
-            # 杀死孤立的 electron 进程
-            subprocess.call('taskkill /F /IM electron.exe >nul 2>&1', shell=True)
-    except Exception as e:
-        print(f"清理残留进程时出现警告: {e}")
+    print("\n[1/2] 正在呈现启动加载界面 (Electron Splash)...")
+
+    electron_bin = os.path.join(root_dir, 'node_modules', 'electron', 'dist', 'electron.exe')
+    electron_env = os.environ.copy()
+    electron_env["RUMIA_BACKEND_SPAWNED"] = "1"
+
+    electron_process = None
+
+    if os.path.exists(electron_bin):
+        # 极速毫秒级直启
+        electron_process = subprocess.Popen(
+            [electron_bin, '.'],
+            cwd=root_dir,
+            env=electron_env
+        )
+    else:
+        # 首次安装检查
+        npm_cmd = get_npm_command(root_dir)
+        node_modules_dir = os.path.join(root_dir, 'node_modules')
+        if not os.path.exists(node_modules_dir):
+            print("\n[SYSTEM] 初次运行或未检测到前端依赖 (node_modules)，正在自动为您执行 npm install，请稍候...")
+            try:
+                npm_env = os.environ.copy()
+                npm_env["ELECTRON_MIRROR"] = "https://npmmirror.com/mirrors/electron/"
+                npm_env["npm_config_registry"] = "https://registry.npmmirror.com"
+                subprocess.call([npm_cmd, 'install'], cwd=root_dir, shell=False, env=npm_env)
+            except Exception as e:
+                print(f"\n[ERROR] 安装前端依赖失败: {e}")
+                sys.exit(1)
+
+        try:
+            electron_process = subprocess.Popen(
+                [npm_cmd, 'start'],
+                cwd=root_dir,
+                shell=False,
+                env=electron_env
+            )
+        except Exception as e:
+            print(f"\n[ERROR] 启动前端失败: {e}")
+            sys.exit(1)
 
     # ==========================================
-    # 1. 启动身体 (Electron 前端 - 毫秒级展示 Splash 加载页) 与 大脑 (FastAPI 后端) 并行拉起
+    # 1. 并发启动大脑 (FastAPI 后端)
     # ==========================================
-    print("\n[1/2] 正在唤醒大脑 (FastAPI Backend)...")
+    print("[2/2] 正在并发唤醒大脑 (FastAPI Backend)...")
     flask_process = subprocess.Popen(
         [sys.executable, 'web_interface.py'],
         cwd=services_dir
     )
-
-    print("[2/2] 正在构建身体并呈现启动加载界面 (Electron Frontend)...")
-
-    # 获取 npm 命令 (自动寻找全局或下载便携版)
-    npm_cmd = get_npm_command(root_dir)
-
-    # 自动检查并安装前端依赖
-    node_modules_dir = os.path.join(root_dir, 'node_modules')
-    if not os.path.exists(node_modules_dir):
-        print("\n[SYSTEM] 初次运行或未检测到前端依赖 (node_modules)，正在自动为您执行 npm install，请稍候...")
-        try:
-            npm_env = os.environ.copy()
-            npm_env["ELECTRON_MIRROR"] = "https://npmmirror.com/mirrors/electron/"
-            npm_env["npm_config_registry"] = "https://registry.npmmirror.com"
-            subprocess.call([npm_cmd, 'install'], cwd=root_dir, shell=False, env=npm_env)
-        except FileNotFoundError:
-            print("\n[ERROR] 未找到 npm 命令！请确认您是否已经安装了 Node.js (https://nodejs.org) 并已将其添加到 PATH。")
-            flask_process.terminate()
-            if os.name == 'nt':
-                subprocess.call(['taskkill', '/F', '/T', '/PID', str(flask_process.pid)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            sys.exit(1)
-
-    try:
-        # 运行 npm start (传递环境变量标识后端已由 run.py 拉起)
-        electron_env = os.environ.copy()
-        electron_env["RUMIA_BACKEND_SPAWNED"] = "1"
-        electron_process = subprocess.Popen(
-            [npm_cmd, 'start'],
-            cwd=root_dir,
-            shell=False,
-            env=electron_env
-        )
-    except FileNotFoundError:
-        print("\n[ERROR] 未找到 npm 命令！请确认您是否已经安装了 Node.js (https://nodejs.org) 并已将其添加到 PATH。")
-        flask_process.terminate()
-        if os.name == 'nt':
-            subprocess.call(['taskkill', '/F', '/T', '/PID', str(flask_process.pid)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        sys.exit(1)
 
     print("\n>>> 桌宠已召唤成功！ <<<")
     print("提示：关闭桌宠窗口，或者关闭此黑框，都会结束程序。")
