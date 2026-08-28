@@ -1534,7 +1534,7 @@ def export_system_logs_api():
 
 @router.post("/api/system/check_update")
 def check_system_update_api():
-    """检测远程 GitHub 仓库最新版本与 Commit 日志 (支持 Git 与非 Git 解压目录)"""
+    """检测远程 GitHub 仓库最新版本与 Commit 日志 (支持 Git 镜像与 CDN 直连检测)"""
     import subprocess
     import requests
     try:
@@ -1549,15 +1549,30 @@ def check_system_update_api():
         is_git_repo = os.path.exists(os.path.join(root_dir, ".git"))
         
         if is_git_repo:
-            fetch_res = subprocess.run(["git", "fetch", "origin", "main"], cwd=root_dir, capture_output=True, text=True, timeout=15)
-            if fetch_res.returncode == 0:
-                local_hash = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=root_dir, capture_output=True, text=True, timeout=5).stdout.strip()
-                remote_hash = subprocess.run(["git", "rev-parse", "--short", "origin/main"], cwd=root_dir, capture_output=True, text=True, timeout=5).stdout.strip()
+            # 1. 尝试直接 fetch 或通过高可用 Git 镜像源 fetch
+            fetch_remotes = [
+                ["git", "fetch", "origin", "main"],
+                ["git", "fetch", "https://ghfast.top/https://github.com/mystiafly/Touhou_Pet.git", "main"],
+                ["git", "fetch", "https://gh-proxy.com/https://github.com/mystiafly/Touhou_Pet.git", "main"]
+            ]
+            fetch_success = False
+            for cmd in fetch_remotes:
+                try:
+                    res = subprocess.run(cmd, cwd=root_dir, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10)
+                    if res.returncode == 0:
+                        fetch_success = True
+                        break
+                except Exception:
+                    continue
+
+            if fetch_success:
+                local_hash = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=root_dir, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=5).stdout.strip()
+                remote_hash = subprocess.run(["git", "rev-parse", "--short", "FETCH_HEAD"], cwd=root_dir, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=5).stdout.strip()
                 has_update = (local_hash != remote_hash)
 
                 latest_version = current_version
                 try:
-                    remote_pkg_str = subprocess.run(["git", "show", "origin/main:package.json"], cwd=root_dir, capture_output=True, text=True, timeout=5).stdout
+                    remote_pkg_str = subprocess.run(["git", "show", "FETCH_HEAD:package.json"], cwd=root_dir, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=5).stdout
                     if remote_pkg_str:
                         latest_version = json.loads(remote_pkg_str).get("version", current_version)
                 except:
@@ -1566,8 +1581,8 @@ def check_system_update_api():
                 commit_logs = []
                 if has_update:
                     log_res = subprocess.run(
-                        ["git", "log", "HEAD..origin/main", "-n", "10", "--pretty=format:%h - %s (%cr)"],
-                        cwd=root_dir, capture_output=True, text=True, timeout=5
+                        ["git", "log", "HEAD..FETCH_HEAD", "-n", "10", "--pretty=format:%h - %s (%cr)"],
+                        cwd=root_dir, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=5
                     )
                     if log_res.returncode == 0 and log_res.stdout.strip():
                         commit_logs = log_res.stdout.strip().split("\n")
@@ -1583,24 +1598,22 @@ def check_system_update_api():
                     "is_git": True
                 }
 
-        # 非 Git 仓库或 Git Fetch 失败时，通过 GitHub API / CDN 直连检测版本
+        # 2. 非 Git 仓库或 Git Fetch 失败时，通过高可用 CDN 直连检测版本
         latest_version = current_version
-        try:
-            urls = [
-                "https://raw.githubusercontent.com/mystiafly/Touhou_Pet/main/package.json",
-                "https://raw.gitmirror.com/mystiafly/Touhou_Pet/main/package.json",
-                "https://mirror.ghproxy.com/https://raw.githubusercontent.com/mystiafly/Touhou_Pet/main/package.json"
-            ]
-            for url in urls:
-                try:
-                    resp = requests.get(url, timeout=5)
-                    if resp.status_code == 200:
-                        latest_version = resp.json().get("version", current_version)
-                        break
-                except:
-                    continue
-        except Exception:
-            pass
+        urls = [
+            "https://cdn.jsdelivr.net/gh/mystiafly/Touhou_Pet@main/package.json",
+            "https://ghfast.top/https://raw.githubusercontent.com/mystiafly/Touhou_Pet/main/package.json",
+            "https://gh-proxy.com/https://raw.githubusercontent.com/mystiafly/Touhou_Pet/main/package.json",
+            "https://raw.githubusercontent.com/mystiafly/Touhou_Pet/main/package.json"
+        ]
+        for url in urls:
+            try:
+                resp = requests.get(url, timeout=5)
+                if resp.status_code == 200:
+                    latest_version = resp.json().get("version", current_version)
+                    break
+            except Exception:
+                continue
 
         has_update = (current_version != latest_version)
         commit_logs = [f"发现新版本 v{latest_version}（本地当前为 v{current_version}）"] if has_update else ["当前已是最新版本"]
@@ -1621,81 +1634,110 @@ def check_system_update_api():
 
 @router.post("/api/system/perform_update")
 def perform_system_update_api():
-    """执行一键更新 (优先 Git Pull，若无 Git 仓库则自动初始化 Git 或下载源码包增量覆盖)"""
+    """执行一键更新 (优先 Git 拉取与智能镜像，若无 Git 或 Git 失败则自动流式下载源码包增量覆盖)"""
     import subprocess
     import zipfile
-    import io
     import requests
+    import shutil
     try:
         root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         is_git_repo = os.path.exists(os.path.join(root_dir, ".git"))
         
-        # 1. 尝试使用 Git 更新
+        # 1. 尝试使用 Git 更新 (极速毫秒级，增量仅几 KB~几 MB)
         git_installed = False
         try:
-            git_ver = subprocess.run(["git", "--version"], capture_output=True, text=True, timeout=5)
+            git_ver = subprocess.run(["git", "--version"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=5)
             git_installed = (git_ver.returncode == 0)
         except Exception:
             git_installed = False
 
         if git_installed:
             if not is_git_repo:
-                # 自动将 ZIP 解压的普通目录升级为 Git 跟踪仓库
                 print("[SYSTEM UPDATE] 当前目录缺少 .git，正在自动初始化 Git 仓库...")
-                subprocess.run(["git", "init"], cwd=root_dir, capture_output=True, text=True, timeout=10)
-                subprocess.run(["git", "remote", "add", "origin", "https://github.com/mystiafly/Touhou_Pet.git"], cwd=root_dir, capture_output=True, text=True, timeout=10)
+                subprocess.run(["git", "init"], cwd=root_dir, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10)
+                subprocess.run(["git", "remote", "add", "origin", "https://github.com/mystiafly/Touhou_Pet.git"], cwd=root_dir, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10)
 
-            pull_res = subprocess.run(["git", "pull", "origin", "main"], cwd=root_dir, capture_output=True, text=True, timeout=60)
-            if pull_res.returncode == 0:
-                return {
-                    "status": "success",
-                    "message": "更新成功！增量代码已更新至最新状态。建议重启桌宠生效。",
-                    "output": pull_res.stdout.strip()
-                }
-            elif not is_git_repo or "fatal" in (pull_res.stderr or "").lower():
-                # 尝试强制拉取并对齐
-                fetch_res = subprocess.run(["git", "fetch", "origin", "main"], cwd=root_dir, capture_output=True, text=True, timeout=60)
-                if fetch_res.returncode == 0:
-                    subprocess.run(["git", "reset", "--mixed", "origin/main"], cwd=root_dir, capture_output=True, text=True, timeout=10)
-                    subprocess.run(["git", "checkout", "-f", "main"], cwd=root_dir, capture_output=True, text=True, timeout=10)
+            # 尝试通过多个镜像源执行 fetch
+            fetch_remotes = [
+                ["git", "fetch", "origin", "main"],
+                ["git", "fetch", "https://ghfast.top/https://github.com/mystiafly/Touhou_Pet.git", "main"],
+                ["git", "fetch", "https://gh-proxy.com/https://github.com/mystiafly/Touhou_Pet.git", "main"]
+            ]
+            git_fetch_ok = False
+            for cmd in fetch_remotes:
+                try:
+                    res = subprocess.run(cmd, cwd=root_dir, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
+                    if res.returncode == 0:
+                        git_fetch_ok = True
+                        break
+                except Exception:
+                    continue
+
+            if git_fetch_ok:
+                try:
+                    # 先暂存或重置已跟踪文件的冲突，安全保留用户数据目录
+                    subprocess.run(["git", "reset", "--hard", "FETCH_HEAD"], cwd=root_dir, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=15)
+                    # 恢复主远程仓库 URL
+                    subprocess.run(["git", "remote", "set-url", "origin", "https://github.com/mystiafly/Touhou_Pet.git"], cwd=root_dir, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=5)
                     return {
                         "status": "success",
-                        "message": "更新成功！已将本地项目同步至最新代码版本。建议重启桌宠生效。",
-                        "output": "Git 同步完成"
+                        "message": "更新成功！已通过 Git 极速同步至最新版本。建议重启桌宠生效。",
+                        "output": "Git 增量更新完成"
                     }
+                except Exception as e:
+                    print(f"[SYSTEM UPDATE] Git reset 遇到问题: {e}，将降级到 ZIP 覆盖更新...")
 
-        # 2. 如果无 Git 或 Git 网络受阻，通过 ZIP 增量下载覆盖更新 (保护用户数据)
-        print("[SYSTEM UPDATE] 正在通过 GitHub ZIP 归档包进行增量覆盖更新...")
+        # 2. 如果无 Git 或 Git 网络受阻，通过高可用镜像源流式下载 ZIP 归档包进行增量覆盖更新
+        print("[SYSTEM UPDATE] 正在通过 GitHub 镜像源流式下载增量更新包...")
         zip_urls = [
-            "https://mirror.ghproxy.com/https://github.com/mystiafly/Touhou_Pet/archive/refs/heads/main.zip",
+            "https://gh-proxy.com/https://github.com/mystiafly/Touhou_Pet/archive/refs/heads/main.zip",
+            "https://ghfast.top/https://github.com/mystiafly/Touhou_Pet/archive/refs/heads/main.zip",
+            "https://github.moeyy.xyz/https://github.com/mystiafly/Touhou_Pet/archive/refs/heads/main.zip",
             "https://github.com/mystiafly/Touhou_Pet/archive/refs/heads/main.zip"
         ]
         
-        zip_bytes = None
+        temp_dir = os.path.join(root_dir, "data", "temp_update")
+        os.makedirs(temp_dir, exist_ok=True)
+        temp_zip_path = os.path.join(temp_dir, "update_archive.zip")
+
+        download_success = False
+        last_error_msg = ""
         for url in zip_urls:
             try:
-                resp = requests.get(url, timeout=30)
-                if resp.status_code == 200:
-                    zip_bytes = resp.content
-                    break
-            except Exception:
+                print(f"[SYSTEM UPDATE] 尝试连接更新源: {url}")
+                with requests.get(url, stream=True, timeout=(10, 180)) as resp:
+                    if resp.status_code == 200:
+                        with open(temp_zip_path, "wb") as f_zip:
+                            for chunk in resp.iter_content(chunk_size=512 * 1024):
+                                if chunk:
+                                    f_zip.write(chunk)
+                        download_success = True
+                        print(f"[SYSTEM UPDATE] 成功下载更新包，大小: {os.path.getsize(temp_zip_path)} 字节")
+                        break
+                    else:
+                        last_error_msg = f"HTTP {resp.status_code}"
+            except Exception as ex:
+                last_error_msg = str(ex)
+                print(f"[SYSTEM UPDATE] 更新源 {url} 失败: {ex}")
                 continue
-                
-        if not zip_bytes:
+
+        if not download_success or not os.path.exists(temp_zip_path):
             return JSONResponse({
                 "status": "error",
-                "message": "一键更新失败：无法连接远程 GitHub 下载源，请检查网络或开启代理后重试。"
+                "message": f"一键更新失败：无法从镜像源下载完整安装包 ({last_error_msg})，请检查网络或开启代理后重试。"
             }, status_code=500)
 
-        with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
+        # 3. 解压并安全覆盖，严格保护用户隐私与配置数据
+        updated_count = 0
+        skipped_count = 0
+        with zipfile.ZipFile(temp_zip_path, "r") as zf:
             for member in zf.infolist():
-                # 剔除顶层目录名 (如 Touhou_Pet-main/)
                 parts = member.filename.split("/", 1)
                 if len(parts) < 2 or not parts[1]:
                     continue
                 rel_path = parts[1]
                 
-                # 安全保护：绝不覆盖用户个人数据与本地历史配置
+                # 个人数据保护与本地持久化配置白名单保护
                 target_path = os.path.join(root_dir, rel_path.replace("/", os.sep))
                 if (
                     rel_path.startswith("data/")
@@ -1703,22 +1745,40 @@ def perform_system_update_api():
                     or rel_path.endswith(".env")
                     or rel_path == "global_config.json"
                     or "daily_history" in rel_path
+                    or rel_path.endswith(".db")
+                    or rel_path.endswith(".sqlite3")
                     or rel_path.endswith("dialog_history.json")
                     or rel_path.endswith("favorability.json")
                     or (rel_path.endswith("config.json") and os.path.exists(target_path))
                 ):
+                    skipped_count += 1
                     continue
+
                 if member.is_dir():
                     os.makedirs(target_path, exist_ok=True)
                 else:
-                    os.makedirs(os.path.dirname(target_path), exist_ok=True)
-                    with zf.open(member) as src, open(target_path, "wb") as dst:
-                        dst.write(src.read())
+                    try:
+                        os.makedirs(os.path.dirname(target_path), exist_ok=True)
+                        with zf.open(member) as src, open(target_path, "wb") as dst:
+                            shutil.copyfileobj(src, dst)
+                        updated_count += 1
+                    except PermissionError:
+                        # 正在运行的被占用文件跳过，待重启时生效
+                        skipped_count += 1
+                    except Exception as e:
+                        print(f"[SYSTEM UPDATE] 写入文件 {rel_path} 警告: {e}")
+
+        # 清理临时下载文件
+        try:
+            if os.path.exists(temp_zip_path):
+                os.remove(temp_zip_path)
+        except:
+            pass
 
         return {
             "status": "success",
-            "message": "更新成功！已通过增量压缩包同步至最新代码（已安全保留您的用户配置与记忆数据）。建议重启桌宠生效。",
-            "output": "ZIP 覆盖更新完成"
+            "message": f"更新成功！已覆盖同步 {updated_count} 个最新核心文件（已安全保留所有个人配置与记忆）。建议重启桌宠生效。",
+            "output": f"增量覆盖完成：更新 {updated_count} 个文件，安全保留 {skipped_count} 个数据项。"
         }
     except Exception as e:
         return JSONResponse({"status": "error", "message": f"一键更新异常: {str(e)}"}, status_code=500)
