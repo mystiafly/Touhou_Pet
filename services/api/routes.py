@@ -1784,6 +1784,113 @@ def perform_system_update_api():
         return JSONResponse({"status": "error", "message": f"一键更新异常: {str(e)}"}, status_code=500)
 
 
+@router.post("/api/system/import_update_zip")
+async def import_system_update_zip_api(file: UploadFile = File(...)):
+    """接收用户上传的本地 ZIP 源码包，执行强制增量覆盖更新 (严格保护用户数据与个人配置)"""
+    import zipfile
+    import shutil
+    try:
+        if not file.filename or not file.filename.lower().endswith(".zip"):
+            return JSONResponse({"status": "error", "message": "上传的文件不是 ZIP 格式压缩包"}, status_code=400)
+
+        root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        temp_dir = os.path.join(root_dir, "data", "temp_update")
+        os.makedirs(temp_dir, exist_ok=True)
+        uploaded_zip_path = os.path.join(temp_dir, "user_uploaded_update.zip")
+
+        # 写入临时文件
+        with open(uploaded_zip_path, "wb") as f_out:
+            while content := await file.read(1024 * 1024):
+                f_out.write(content)
+
+        if not os.path.exists(uploaded_zip_path) or os.path.getsize(uploaded_zip_path) < 50:
+            if os.path.exists(uploaded_zip_path):
+                os.remove(uploaded_zip_path)
+            return JSONResponse({"status": "error", "message": "上传的 ZIP 文件内容过小或已损坏"}, status_code=400)
+
+        updated_count = 0
+        skipped_count = 0
+        new_version = None
+
+        with zipfile.ZipFile(uploaded_zip_path, "r") as zf:
+            namelist = zf.namelist()
+            
+            # 检测是否存在公共顶层文件夹 (如 Touhou_Pet-main/ 或 rumia/)
+            prefix_to_strip = ""
+            for name in namelist:
+                parts = name.split("/")
+                if len(parts) >= 2 and parts[-1] in ["package.json", "main.js", "run.py"]:
+                    prefix_to_strip = parts[0] + "/"
+                    break
+
+            for member in zf.infolist():
+                filename = member.filename
+                if prefix_to_strip and filename.startswith(prefix_to_strip):
+                    rel_path = filename[len(prefix_to_strip):]
+                else:
+                    rel_path = filename
+
+                if not rel_path or rel_path.endswith("/"):
+                    continue
+
+                # 安全保护白名单：绝不覆盖用户个人数据与本地历史配置
+                target_path = os.path.join(root_dir, rel_path.replace("/", os.sep))
+                if (
+                    rel_path.startswith("data/")
+                    or rel_path.startswith("logs/")
+                    or rel_path.endswith(".env")
+                    or rel_path == "global_config.json"
+                    or "daily_history" in rel_path
+                    or rel_path.endswith(".db")
+                    or rel_path.endswith(".sqlite3")
+                    or rel_path.endswith("dialog_history.json")
+                    or rel_path.endswith("favorability.json")
+                    or (rel_path.endswith("config.json") and os.path.exists(target_path))
+                ):
+                    skipped_count += 1
+                    continue
+
+                # 检查是否包含 package.json 以提取新版本号
+                if rel_path == "package.json":
+                    try:
+                        with zf.open(member) as f_pkg:
+                            pkg_data = json.loads(f_pkg.read().decode("utf-8"))
+                            new_version = pkg_data.get("version")
+                    except Exception:
+                        pass
+
+                if member.is_dir():
+                    os.makedirs(target_path, exist_ok=True)
+                else:
+                    try:
+                        os.makedirs(os.path.dirname(target_path), exist_ok=True)
+                        with zf.open(member) as src, open(target_path, "wb") as dst:
+                            shutil.copyfileobj(src, dst)
+                        updated_count += 1
+                    except PermissionError:
+                        skipped_count += 1
+                    except Exception as e:
+                        print(f"[SYSTEM UPDATE] 写入文件 {rel_path} 警告: {e}")
+
+        # 清理临时文件
+        try:
+            if os.path.exists(uploaded_zip_path):
+                os.remove(uploaded_zip_path)
+        except Exception:
+            pass
+
+        version_msg = f"（已升级至 v{new_version}）" if new_version else ""
+        return {
+            "status": "success",
+            "message": f"离线包强制导入更新成功{version_msg}！已覆盖同步 {updated_count} 个核心代码文件（已安全保留所有个人配置与记忆）。请重启桌宠生效。",
+            "updated_count": updated_count,
+            "skipped_count": skipped_count,
+            "new_version": new_version
+        }
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": f"导入更新发生异常: {str(e)}"}, status_code=500)
+
+
 @router.get("/api/system/backend_log")
 def get_backend_log_api(lines: int = 200):
     """读取后端实时全量输出日志 (logs/backend_output.log)"""

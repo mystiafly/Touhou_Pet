@@ -5456,14 +5456,89 @@ async function initAboutVersionView() {
     // Bind Restart App Click
     btnRestartApp.addEventListener('click', async () => {
         if (confirm('确认立即重启桌宠应用以加载最新版本的代码吗？')) {
-            try {
-                await fetch('/api/restart', { method: 'POST' });
-                alert('系统正在重启中，请稍候...');
-            } catch (e) {
-                alert('触发重启时发生错误: ' + e.toString());
+            if (typeof window.triggerAppRestart === 'function') {
+                window.triggerAppRestart();
+            } else {
+                try {
+                    await fetch('/api/restart', { method: 'POST' });
+                    alert('系统正在重启中，请稍候...');
+                } catch (e) {
+                    alert('触发重启时发生错误: ' + e.toString());
+                }
             }
         }
     });
+
+    // Bind Offline ZIP Force Update
+    const inputZipUpdateFile = document.getElementById('input-zip-update-file');
+    const btnImportZipCard = document.getElementById('btn-import-zip-update-card');
+
+    if (btnImportZipCard && inputZipUpdateFile) {
+        btnImportZipCard.addEventListener('click', () => {
+            inputZipUpdateFile.click();
+        });
+
+        inputZipUpdateFile.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (!file.name.toLowerCase().endsWith('.zip')) {
+                alert('请选择 .zip 格式的源码压缩包！');
+                inputZipUpdateFile.value = '';
+                return;
+            }
+
+            if (!confirm(`确定要从本地 ZIP 压缩包「${file.name}」强制导入更新代码吗？\n（个人数据、记忆库与 API 配置将被安全保留）`)) {
+                inputZipUpdateFile.value = '';
+                return;
+            }
+
+            btnImportZipCard.disabled = true;
+            btnImportZipCard.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i> 正在解压并覆盖更新...';
+
+            statusContainer.classList.remove('hidden');
+            statusHeader.style.color = '#ffb86c';
+            statusHeader.innerHTML = '<i class="fas fa-file-import fa-spin"></i> 正在上传并解析 ZIP 增量代码包...';
+            changelogList.textContent = `已选文件: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)\n正在安全校验目录并执行增量写入，请稍候...`;
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const res = await fetch('/api/system/import_update_zip', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+
+                if (res.ok && data.status === 'success') {
+                    statusHeader.style.color = '#50fa7b';
+                    statusHeader.innerHTML = `<i class="fas fa-check-circle"></i> ${data.message}`;
+                    changelogList.textContent = `✅ 成功覆盖同步 ${data.updated_count} 个核心代码文件\n🛡️ 安全保留 ${data.skipped_count} 个用户个人数据与本地配置文件\n\n代码已成功写入本地项目，请点击「重启桌宠生效」加载新版本！`;
+                    
+                    if (data.new_version) {
+                        const currentBadge = document.getElementById('current-version-badge');
+                        if (currentBadge) currentBadge.textContent = `当前版本: v${data.new_version}`;
+                    }
+
+                    btnPerformUpdate.classList.add('hidden');
+                    btnRestartApp.classList.remove('hidden');
+                } else {
+                    statusHeader.style.color = '#ff5555';
+                    statusHeader.innerHTML = `<i class="fas fa-exclamation-triangle"></i> 离线包导入更新失败`;
+                    changelogList.textContent = data.message || '未知错误。';
+                }
+            } catch (err) {
+                statusHeader.style.color = '#ff5555';
+                statusHeader.innerHTML = `<i class="fas fa-times-circle"></i> 导入更新请求异常`;
+                changelogList.textContent = err.toString();
+            } finally {
+                btnImportZipCard.disabled = false;
+                btnImportZipCard.innerHTML = '<i class="fas fa-upload" style="margin-right: 8px;"></i> 选择本地 ZIP 文件更新';
+                inputZipUpdateFile.value = '';
+            }
+        });
+    }
 
     // Bind Export Logs Click
     const handleExportLogs = () => {

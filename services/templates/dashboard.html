@@ -1376,6 +1376,26 @@
                     </p>
                 </div>
 
+                <div class="settings-card" style="grid-column: 1 / -1; border-left: 4px solid #ff79c6;">
+                    <h3><i class="fas fa-file-import" style="color: #ff79c6;"></i> 离线源码包强制导入更新 (ZIP)</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-top: 10px;">
+                        <div style="flex: 1; min-width: 280px;">
+                            <p class="help-text" style="margin: 0; line-height: 1.5; color: #f8f8f2; font-size: 13px;">
+                                如果您无法连接 GitHub 或已从 QQ 群/网盘下载了最新源码压缩包 (<code>.zip</code>)，可在此直接选择 ZIP 文件进行本地强制增量覆盖更新。
+                            </p>
+                            <p class="help-text" style="margin-top: 6px; margin-bottom: 0; font-size: 12px; color: var(--text-muted);">
+                                🛡️ <strong>安全保护：</strong> 导入更新将智能跳过您的个人数据目录 (<code>data/</code>)、模型密钥配置 (<code>.env</code>) 与聊天记忆，安全无损保留。
+                            </p>
+                        </div>
+                        <div>
+                            <input type="file" id="input-zip-update-file" accept=".zip" style="display: none;">
+                            <button id="btn-import-zip-update-card" class="action-btn" style="display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #ff79c6, #bd93f9); color: #0f172a; font-weight: 700; padding: 10px 20px; border-radius: 8px; white-space: nowrap; box-shadow: 0 4px 14px rgba(255, 121, 198, 0.3);">
+                                <i class="fas fa-upload" style="margin-right: 8px;"></i> 选择本地 ZIP 文件更新
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="settings-card" style="grid-column: 1 / -1; border-left: 4px solid #8be9fd;">
                     <h3><i class="fas fa-file-archive" style="color: #8be9fd;"></i> 系统日志与环境诊断导出</h3>
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-top: 10px;">
