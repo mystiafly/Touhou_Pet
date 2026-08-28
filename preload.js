@@ -75,7 +75,14 @@ window.__petIPC = {
     },
     getAutostart: () => {
         return ipcRenderer.invoke('get-autostart');
+    },
+    restartApp: () => {
+        ipcRenderer.send('restart-app');
     }
+};
+
+window.electronAPI = {
+    restartApp: () => ipcRenderer.send('restart-app')
 };
 
 console.log('[PRELOAD] Pet IPC bridge ready');

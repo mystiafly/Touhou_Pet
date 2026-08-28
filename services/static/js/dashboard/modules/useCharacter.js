@@ -116,13 +116,14 @@ window.useCharacterModule = function(Vue) {
                 body: JSON.stringify({ character_id: charId })
             });
             const data = await res.json();
-            if (data.success) {
-                currentCharacterId.value = charId;
-                await loadCharacterInfo();
-                await loadSpriteSets();
-                await loadReactions();
+            if (data.success || data.status === 'success') {
+                if (window.triggerAppRestart) {
+                    await window.triggerAppRestart(`已成功切换灵魂为【${charId}】，正在重启系统...`);
+                } else {
+                    window.location.reload();
+                }
             } else {
-                alert('切换角色失败: ' + (data.error || ''));
+                alert('切换角色失败: ' + (data.error || data.message || ''));
             }
         } catch (e) {
             console.error('切换角色异常:', e);
@@ -182,8 +183,11 @@ window.useCharacterModule = function(Vue) {
             });
             const data = await res.json();
             if (data.success) {
-                activeSpriteSet.value = setName;
-                alert('立绘套装切换成功');
+                if (window.triggerAppRestart) {
+                    await window.triggerAppRestart(`立绘套装已成功更换为【${setName}】，正在重启桌宠系统...`);
+                } else {
+                    alert('立绘套装切换成功，请重启程序生效');
+                }
             } else {
                 alert('切换立绘失败: ' + data.message);
             }

@@ -96,6 +96,40 @@ window.asyncConfirm = function(message) {
 // -----------------------------------------------------------
 
 // =========================================================================
+// 🔄 全局统一重启应用调度器 (切换角色、切换立绘或底层重载时触发)
+// =========================================================================
+window.triggerAppRestart = async function(reason = "操作已生效，系统正在自动重启以加载最新人设与立绘...") {
+    if (reason) alert(reason);
+    
+    // 1. Electron Preload API
+    if (window.__petIPC && typeof window.__petIPC.restartApp === 'function') {
+        window.__petIPC.restartApp();
+        return;
+    }
+    if (window.electronAPI && typeof window.electronAPI.restartApp === 'function') {
+        window.electronAPI.restartApp();
+        return;
+    }
+    // 2. Node.js require (若有)
+    if (typeof require !== 'undefined') {
+        try {
+            const { ipcRenderer } = require('electron');
+            ipcRenderer.send('restart-app');
+            return;
+        } catch(e) {}
+    }
+    // 3. 后端 API 重启接口兜底
+    try {
+        await fetch('/api/restart', { method: 'POST' });
+    } catch(e) {}
+    
+    // 4. 浏览器端重载
+    setTimeout(() => {
+        window.location.reload();
+    }, 1200);
+};
+
+// =========================================================================
 // 🎙️ 全局 TTS 引擎调度器 (Fish Audio, Edge-TTS, GPT-SoVITS)
 // =========================================================================
 window.selectTtsEngine = async function(engineKey, skipSave = false) {
@@ -1707,23 +1741,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (charSelect) {
         charSelect.addEventListener('change', async (e) => {
-            const confirmSwitch = await window.asyncConfirm(`确定要切换灵魂为 ${e.target.options[e.target.selectedIndex].text} 吗？\n为保证记忆环境纯净，这将会自动重启桌宠！`);
+            const targetCharId = e.target.value;
+            const targetCharName = e.target.options[e.target.selectedIndex].text;
+            const confirmSwitch = await window.asyncConfirm(`确定要切换灵魂为【${targetCharName}】吗？\n为保证大模型记忆、性格设定与立绘环境绝对纯净，将立即自动重启桌宠系统！`);
             if (confirmSwitch) {
                 try {
                     await fetch('/api/switch_character', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ character_id: e.target.value })
+                        body: JSON.stringify({ character_id: targetCharId })
                     });
-                    
-                    // 触发主进程重启
-                    if (window.electronAPI) {
-                        window.electronAPI.restartApp();
-                    } else {
-                        alert("重启指令已发送，请手动重启程序。");
-                    }
+                    await window.triggerAppRestart(`已成功切换为【${targetCharName}】，正在重启系统...`);
                 } catch (e) {
-                    alert("切换请求失败！");
+                    alert("切换请求失败: " + e);
                 }
             } else {
                 // 恢复原值
@@ -1787,7 +1817,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.addEventListener('click', async () => {
                 const charId = btn.getAttribute('data-id');
                 const charName = btn.getAttribute('data-name');
-                const confirmSwitch = await window.asyncConfirm(`确定要切换灵魂为【${charName} (${charId})】吗？\n为保证记忆环境纯净，这将会自动重启生效！`);
+                const confirmSwitch = await window.asyncConfirm(`确定要切换灵魂为【${charName} (${charId})】吗？\n为保证记忆环境纯净并加载全新人设，系统将立即重启生效！`);
                 if (confirmSwitch) {
                     try {
                         await fetch('/api/switch_character', {
@@ -1795,12 +1825,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             headers: {'Content-Type': 'application/json'},
                             body: JSON.stringify({ character_id: charId })
                         });
-                        if (window.electronAPI) {
-                            window.electronAPI.restartApp();
-                        } else {
-                            alert("切换成功，页面即将刷新。");
-                            window.location.reload();
-                        }
+                        await window.triggerAppRestart(`已成功切换为【${charName}】，正在重启系统...`);
                     } catch (e) {
                         alert("切换角色请求失败: " + e);
                     }
@@ -1813,17 +1838,17 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.addEventListener('click', async () => {
                 const charId = btn.getAttribute('data-id');
                 if (charId !== cachedActiveCharId) {
-                    const wantSwitch = await window.asyncConfirm(`角色设置仅作用于当前活跃角色。\n是否切换到【${charId}】并前往其设置页面？`);
+                    const wantSwitch = await window.asyncConfirm(`角色设置仅作用于当前活跃角色。\n是否切换活跃角色为【${charId}】并重启系统？`);
                     if (wantSwitch) {
-                        await fetch('/api/switch_character', {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({ character_id: charId })
-                        });
-                        if (window.electronAPI) {
-                            window.electronAPI.restartApp();
-                        } else {
-                            window.location.reload();
+                        try {
+                            await fetch('/api/switch_character', {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify({ character_id: charId })
+                            });
+                            await window.triggerAppRestart(`已切换活跃角色为【${charId}】，正在重启系统...`);
+                        } catch(e) {
+                            alert("切换失败: " + e);
                         }
                     }
                 } else {
@@ -4912,6 +4937,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const setName = setSelect.value;
         if (!setName) return;
         
+        const confirmSet = await window.asyncConfirm(`确定要将当前使用的立绘套装切换为【${setName}】吗？\n为确保底层 Live2D 骨骼模型与表情图集彻底重新装载，系统将立即自动重启！`);
+        if (!confirmSet) return;
+
         try {
             const res = await fetch('/api/sprites/set_active', {
                 method: 'POST',
@@ -4920,14 +4948,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const data = await res.json();
             if (data.success) {
-                alert('套装已激活！提示：由于立绘资源属于底层引擎加载内容，请重新启动桌宠以使更换生效。');
-                loadSpriteSets();
+                await window.triggerAppRestart(`立绘套装已成功更换为【${setName}】，正在重启桌宠系统...`);
             } else {
                 alert('激活失败: ' + data.message);
             }
         } catch(err) {
             console.error(err);
-            alert('激活错误');
+            alert('激活发生异常: ' + err);
         }
     });
 
@@ -5171,9 +5198,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await res.json();
 
                 if (data.success) {
-                    alert(`🎉 恭喜！Live2D 模型套装「${data.set_name}」导入成功并已设为当前使用套装！`);
                     closeLive2dModal();
-                    loadSpriteSets();
+                    await window.triggerAppRestart(`🎉 恭喜！Live2D 模型套装「${data.set_name}」导入成功并已设为默认套装！\n系统正在重启以载入新模型...`);
                 } else {
                     alert('导入失败: ' + (data.message || '未知错误'));
                 }

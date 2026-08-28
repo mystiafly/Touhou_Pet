@@ -128,7 +128,7 @@ GLOBAL_KEYS = {
 
 CHARACTER_CONFIG_WHITELIST = {
     "character_id", "character_name", "persona_prompt", "user_prompt",
-    "theme_color", "active_skin", "wallpaper_url", "wallpaper_fit",
+    "theme_color", "active_skin", "active_sprite_set", "wallpaper_url", "wallpaper_fit",
     "bgm_url", "immersive_effects", "created_at", "version",
     "tts_voice_id", "tts_language", "tts_voice_zh", "tts_voice_ja", "tts_voice_en"
 }
