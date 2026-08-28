@@ -27,6 +27,21 @@ echo         Rumia Desktop Pet Startup
 echo ========================================
 echo.
 
+:: Auto-detect Node.js / npm paths and prepend to PATH
+where npm >nul 2>&1
+if errorlevel 1 (
+    if exist "%ProgramFiles%\nodejs\npm.cmd" set "PATH=%ProgramFiles%\nodejs;%PATH%"
+    if exist "%ProgramFiles(x86)%\nodejs\npm.cmd" set "PATH=%ProgramFiles(x86)%\nodejs;%PATH%"
+    if exist "%LocalAppData%\Programs\nodejs\npm.cmd" set "PATH=%LocalAppData%\Programs\nodejs;%PATH%"
+    if exist "%AppData%\npm\npm.cmd" set "PATH=%AppData%\npm;%PATH%"
+    if exist "C:\nodejs\npm.cmd" set "PATH=C:\nodejs;%PATH%"
+    if exist "D:\nodejs\npm.cmd" set "PATH=D:\nodejs;%PATH%"
+    if exist "E:\nodejs\npm.cmd" set "PATH=E:\nodejs;%PATH%"
+    if exist "D:\Program Files\nodejs\npm.cmd" set "PATH=D:\Program Files\nodejs;%PATH%"
+    if exist "E:\Program Files\nodejs\npm.cmd" set "PATH=E:\Program Files\nodejs;%PATH%"
+    if exist "%~dp0.node_env\node-v20.11.1-win-x64\npm.cmd" set "PATH=%~dp0.node_env\node-v20.11.1-win-x64;%PATH%"
+)
+
 set PYTHON_EXE=python
 
 if not exist .venv\Scripts\python.exe goto NO_VENV
