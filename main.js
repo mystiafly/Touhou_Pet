@@ -595,6 +595,10 @@ function startBackendService() {
             logDebug(`[PACKAGED ERROR] Backend EXE not found in paths: ${JSON.stringify(exePaths)}`);
         }
     } else {
+        if (process.env.RUMIA_BACKEND_SPAWNED === "1") {
+            // 后端已由 run.py 并行拉起，无需重复拉起
+            return;
+        }
         const { spawn } = require('child_process');
         const req = http.get('http://127.0.0.1:5000/api/characters/list', (res) => {
             // Already running

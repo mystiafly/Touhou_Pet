@@ -86,22 +86,15 @@ def main():
         print(f"清理残留进程时出现警告: {e}")
 
     # ==========================================
-    # 1. 启动大脑 (FastAPI 后端)
+    # 1. 启动身体 (Electron 前端 - 毫秒级展示 Splash 加载页) 与 大脑 (FastAPI 后端) 并行拉起
     # ==========================================
     print("\n[1/2] 正在唤醒大脑 (FastAPI Backend)...")
-
     flask_process = subprocess.Popen(
         [sys.executable, 'web_interface.py'],
         cwd=services_dir
     )
 
-    # 给后端充足的时间初始化与加载本地嵌入特征权重 (自适应调整为 8 秒，保障极其流畅的启动)
-    time.sleep(8)
-
-    # ==========================================
-    # 2. 启动身体 (Electron 前端)
-    # ==========================================
-    print("[2/2] 正在构建身体 (Electron Frontend)...")
+    print("[2/2] 正在构建身体并呈现启动加载界面 (Electron Frontend)...")
 
     # 获取 npm 命令 (自动寻找全局或下载便携版)
     npm_cmd = get_npm_command(root_dir)
@@ -123,11 +116,14 @@ def main():
             sys.exit(1)
 
     try:
-        # 运行 npm start
+        # 运行 npm start (传递环境变量标识后端已由 run.py 拉起)
+        electron_env = os.environ.copy()
+        electron_env["RUMIA_BACKEND_SPAWNED"] = "1"
         electron_process = subprocess.Popen(
             [npm_cmd, 'start'],
             cwd=root_dir,
-            shell=False
+            shell=False,
+            env=electron_env
         )
     except FileNotFoundError:
         print("\n[ERROR] 未找到 npm 命令！请确认您是否已经安装了 Node.js (https://nodejs.org) 并已将其添加到 PATH。")
