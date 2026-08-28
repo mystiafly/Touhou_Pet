@@ -380,7 +380,46 @@ ipcMain.on('open-settings-window', (event) => {
 });
 
 
-function createWindow() {
+let splashWindow = null;
+
+function createSplashWindow() {
+    splashWindow = new BrowserWindow({
+        width: 480,
+        height: 290,
+        center: true,
+        frame: false,
+        transparent: true,
+        alwaysOnTop: true,
+        skipTaskbar: true,
+        resizable: false,
+        show: true,
+        backgroundColor: '#00000000',
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false,
+            preload: path.join(__dirname, 'preload.js')
+        }
+    });
+
+    const splashFile = path.join(__dirname, 'services', 'templates', 'splash.html');
+    splashWindow.loadFile(splashFile).catch(err => {
+        logDebug(`[SPLASH] Load splash failed: ${err.message}`);
+    });
+
+    splashWindow.on('closed', () => {
+        splashWindow = null;
+    });
+}
+
+function createWindow(showImmediately = false) {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        if (showImmediately) {
+            mainWindow.show();
+            mainWindow.focus();
+        }
+        return;
+    }
+
     const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 
     mainWindow = new BrowserWindow({
@@ -394,6 +433,7 @@ function createWindow() {
         skipTaskbar: false,
         type: 'toolbar',
         resizable: false,
+        show: showImmediately,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
@@ -408,6 +448,41 @@ function createWindow() {
     win.setAlwaysOnTop(true, 'screen-saver');
 
     const petUrl = 'http://127.0.0.1:5000/pet?t=' + Date.now();
+    let isTransitionDone = false;
+
+    function finishStartupTransition() {
+        if (isTransitionDone) return;
+        isTransitionDone = true;
+
+        if (splashWindow && !splashWindow.isDestroyed()) {
+            try {
+                splashWindow.webContents.send('splash-progress', {
+                    percent: 100,
+                    message: "准备就绪，欢迎回来！",
+                    step: "ready"
+                });
+                splashWindow.webContents.send('splash-close');
+            } catch(e) {}
+
+            setTimeout(() => {
+                if (splashWindow && !splashWindow.isDestroyed()) {
+                    splashWindow.close();
+                    splashWindow = null;
+                }
+                if (win && !win.isDestroyed()) {
+                    win.show();
+                    win.focus();
+                    logDebug(`[ELECTRON] Splash transition finished, pet window shown`);
+                }
+            }, 450);
+        } else {
+            if (win && !win.isDestroyed()) {
+                win.show();
+                win.focus();
+            }
+        }
+    }
+
     function loadPetPage() {
         win.webContents.session.clearCache().then(() => {
             win.loadURL(petUrl).then(() => {
@@ -416,6 +491,7 @@ function createWindow() {
                     win.webContents.setZoomFactor(1.0);
                 } catch(e) {}
                 logDebug(`[ELECTRON] Page loaded successfully`);
+                setTimeout(finishStartupTransition, 300);
             }).catch(err => {
                 logDebug(`[ELECTRON] Page load failed, retrying in 1.5s...`);
                 setTimeout(loadPetPage, 1500);
@@ -423,6 +499,13 @@ function createWindow() {
         });
     }
     loadPetPage();
+
+    // 15 秒超时保底，防止极端异常卡在启动屏
+    setTimeout(() => {
+        if (!isTransitionDone) {
+            finishStartupTransition();
+        }
+    }, 15000);
 
     const mouseTimer = setInterval(() => {
         if (win && !win.isDestroyed()) {
@@ -476,10 +559,9 @@ function createWindow() {
 
 let backendProcess = null;
 
-app.whenReady().then(() => {
+function startBackendService() {
     if (app.isPackaged) {
-        const { execSync, exec, spawn } = require('child_process');
-        // 先清理旧端口
+        const { execSync, spawn } = require('child_process');
         try {
             execSync('powershell -Command "Get-NetTCPConnection -LocalPort 5000 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }"', { stdio: 'ignore' });
         } catch(e) {}
@@ -513,33 +595,96 @@ app.whenReady().then(() => {
             logDebug(`[PACKAGED ERROR] Backend EXE not found in paths: ${JSON.stringify(exePaths)}`);
         }
     } else {
-        // 开发模式下：自动检测 5000 端口，未运行则自动拉起 Python 后台
         const { spawn } = require('child_process');
-        const checkBackend = () => {
-            return new Promise((resolve) => {
-                const req = http.get('http://127.0.0.1:5000/api/characters/list', (res) => {
-                    resolve(res.statusCode === 200);
-                });
-                req.on('error', () => resolve(false));
-                req.setTimeout(800, () => {
-                    req.destroy();
-                    resolve(false);
-                });
-            });
-        };
-
-        checkBackend().then((alive) => {
-            if (!alive) {
-                console.log('[DEV AUTO-START] Python 后端服务未运行，正在自动拉起 services/web_interface.py...');
-                backendProcess = spawn('python', ['services/web_interface.py'], {
-                    cwd: __dirname,
-                    stdio: 'inherit'
-                });
-            }
+        const req = http.get('http://127.0.0.1:5000/api/characters/list', (res) => {
+            // Already running
         });
+        req.on('error', () => {
+            console.log('[DEV AUTO-START] Python 后端服务未运行，正在自动拉起 services/web_interface.py...');
+            backendProcess = spawn('python', ['services/web_interface.py'], {
+                cwd: __dirname,
+                stdio: 'inherit'
+            });
+        });
+        req.setTimeout(600, () => req.destroy());
     }
+}
+
+function updateSplashLoading(count) {
+    if (!splashWindow || splashWindow.isDestroyed()) return;
+    const p = Math.min(80, 20 + count * 4.5);
+    let msg = "正在唤醒神经中枢 (FastAPI)...";
+    let step = "core";
+    if (p > 45) {
+        msg = "正在载入向量记忆库 (Qdrant & Mem0)...";
+        step = "memory";
+    }
+    try {
+        splashWindow.webContents.send('splash-progress', {
+            percent: p,
+            message: msg,
+            step: step
+        });
+    } catch(e) {}
+}
+
+app.whenReady().then(() => {
+    // 1. 毫秒级展示启动加载界面 (Splash Screen)
+    createSplashWindow();
+
+    // 2. 拉起后端服务
+    startBackendService();
+
+    // 3. 轮询健康检测与进度流转
+    let pollCount = 0;
+    let backendReady = false;
+
+    const pollInterval = setInterval(() => {
+        pollCount++;
+        http.get('http://127.0.0.1:5000/api/characters/list', (res) => {
+            if (res.statusCode === 200 && !backendReady) {
+                backendReady = true;
+                clearInterval(pollInterval);
+
+                let data = '';
+                res.on('data', chunk => data += chunk);
+                res.on('end', () => {
+                    let activeChar = null;
+                    try {
+                        const json = JSON.parse(data);
+                        if (json.characters && json.characters.length > 0) {
+                            const activeId = json.active_character || json.characters[0].character_id;
+                            activeChar = json.characters.find(c => c.character_id === activeId);
+                        }
+                    } catch(e) {}
+
+                    if (splashWindow && !splashWindow.isDestroyed()) {
+                        splashWindow.webContents.send('splash-progress', {
+                            percent: 88,
+                            message: "正在初始化 Live2D 渲染视界...",
+                            step: "render",
+                            character: activeChar ? { name: activeChar.character_name, avatar: activeChar.avatar_url } : null
+                        });
+                    }
+
+                    // 后端就绪，创建并预载桌宠窗口
+                    createWindow(false);
+                });
+            } else if (!backendReady) {
+                updateSplashLoading(pollCount);
+            }
+        }).on('error', () => {
+            if (!backendReady) updateSplashLoading(pollCount);
+        });
+
+        // 超过 20 秒超时兜底
+        if (pollCount > 40 && !backendReady) {
+            clearInterval(pollInterval);
+            createWindow(true);
+        }
+    }, 450);
+
     syncInitialAutoStart();
-    createWindow();
 });
 
 app.on('will-quit', () => {

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoulLink · 大贤者桌宠系统启动中</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        .splash-card {
+            width: 460px;
+            height: 270px;
+            background: rgba(23, 21, 37, 0.94);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-radius: 22px;
+            border: 1px solid rgba(189, 147, 249, 0.35);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65), 0 0 35px rgba(189, 147, 249, 0.22);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 24px 28px;
+            color: #f8f8f2;
+            position: relative;
+            overflow: hidden;
+            -webkit-app-region: drag;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        /* 顶部霓虹流光背景条纹 */
+        .splash-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 50% 20%, rgba(189, 147, 249, 0.15), transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .splash-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .avatar-box {
+            position: relative;
+            width: 58px;
+            height: 58px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(189, 147, 249, 0.3), rgba(255, 121, 198, 0.3));
+            border: 1.5px solid rgba(255, 121, 198, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 18px rgba(255, 121, 198, 0.35);
+        }
+
+        .avatar-box img {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            object-fit: cover;
+        }
+
+        .avatar-glow {
+            position: absolute;
+            inset: -4px;
+            border-radius: 20px;
+            border: 1.5px solid rgba(189, 147, 249, 0.5);
+            animation: pulseRing 2.4s cubic-bezier(0.25, 0.8, 0.25, 1) infinite;
+            pointer-events: none;
+        }
+
+        @keyframes pulseRing {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 0.2; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+
+        .header-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .title-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .main-title {
+            font-size: 19px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            background: linear-gradient(135deg, #ffffff 30%, #bd93f9 70%, #ff79c6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .version-badge {
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(189, 147, 249, 0.2);
+            color: #bd93f9;
+            padding: 2px 7px;
+            border-radius: 8px;
+            border: 1px solid rgba(189, 147, 249, 0.35);
+        }
+
+        .sub-title {
+            font-size: 12.5px;
+            color: #a0a8c7;
+        }
+
+        /* 进度区域 */
+        .progress-section {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .status-text {
+            color: #f1fa8c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .status-percent {
+            font-weight: 700;
+            color: #8be9fd;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 7px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 15%;
+            background: linear-gradient(90deg, #bd93f9, #ff79c6, #8be9fd);
+            border-radius: 10px;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+            animation: shimmer 1.8s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(200%); }
+        }
+
+        /* 底部信息与阶段节点 */
+        .splash-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            z-index: 1;
+            padding-top: 4px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 11.5px;
+            color: #6272a4;
+        }
+
+        .steps-container {
+            display: flex;
+            gap: 14px;
+        }
+
+        .step-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: color 0.3s;
+        }
+
+        .step-item.active {
+            color: #50fa7b;
+            font-weight: 600;
+        }
+
+        .step-item.done {
+            color: #bd93f9;
+        }
+
+        .step-item i {
+            font-size: 10px;
+        }
+
+        .fade-out {
+            opacity: 0;
+            transform: scale(0.96);
+        }
+    </style>
+</head>
+<body>
+    <div class="splash-card" id="splash-card">
+        <!-- 头部品牌与头像 -->
+        <div class="splash-header">
+            <div class="avatar-box">
+                <div class="avatar-glow"></div>
+                <img id="splash-avatar" src="/static/images/default_robot_avatar.svg" alt="Pet Avatar" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'45\' fill=\'%23bd93f9\'/><circle cx=\'35\' cy=\'40\' r=\'6\' fill=\'%23282a36\'/><circle cx=\'65\' cy=\'40\' r=\'6\' fill=\'%23282a36\'/><path d=\'M 35 65 Q 50 80 65 65\' stroke=\'%23282a36\' stroke-width=\'4\' fill=\'none\'/></svg>'">
+            </div>
+            <div class="header-info">
+                <div class="title-row">
+                    <span class="main-title" id="splash-title">SoulLink · 大贤者系统</span>
+                    <span class="version-badge" id="splash-version">v1.39.0</span>
+                </div>
+                <span class="sub-title" id="splash-sub">正在与幻想乡建立神经连接...</span>
+            </div>
+        </div>
+
+        <!-- 进度条与实时状态 -->
+        <div class="progress-section">
+            <div class="status-row">
+                <span class="status-text" id="status-text">
+                    <i class="fas fa-circle-notch fa-spin"></i> 正在唤醒大脑 (FastAPI)...
+                </span>
+                <span class="status-percent" id="status-percent">15%</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+        </div>
+
+        <!-- 底部阶段指示器 -->
+        <div class="splash-footer">
+            <div class="steps-container">
+                <span class="step-item active" id="step-core"><i class="fas fa-microchip"></i> 核心服务</span>
+                <span class="step-item" id="step-memory"><i class="fas fa-brain"></i> 记忆中枢</span>
+                <span class="step-item" id="step-render"><i class="fas fa-magic"></i> Live2D</span>
+                <span class="step-item" id="step-ready"><i class="fas fa-check-circle"></i> 就绪</span>
+            </div>
+            <span id="splash-footnote">Touhou Pet AI</span>
+        </div>
+    </div>
+
+    <script>
+        // 渲染进度与状态更新逻辑
+        const progressBar = document.getElementById('progress-bar');
+        const statusText = document.getElementById('status-text');
+        const statusPercent = document.getElementById('status-percent');
+        const splashAvatar = document.getElementById('splash-avatar');
+        const splashTitle = document.getElementById('splash-title');
+        const splashCard = document.getElementById('splash-card');
+
+        const stepCore = document.getElementById('step-core');
+        const stepMemory = document.getElementById('step-memory');
+        const stepRender = document.getElementById('step-render');
+        const stepReady = document.getElementById('step-ready');
+
+        window.updateProgress = function(percent, message, step = 'core', characterData = null) {
+            if (progressBar) progressBar.style.width = Math.min(100, Math.max(5, percent)) + '%';
+            if (statusPercent) statusPercent.textContent = Math.round(percent) + '%';
+            if (statusText && message) {
+                statusText.innerHTML = percent >= 100 
+                    ? `<i class="fas fa-check" style="color: #50fa7b;"></i> ${message}` 
+                    : `<i class="fas fa-circle-notch fa-spin"></i> ${message}`;
+            }
+
+            // 更新步骤高亮
+            if (stepCore && stepMemory && stepRender && stepReady) {
+                [stepCore, stepMemory, stepRender, stepReady].forEach(el => el.className = 'step-item');
+                if (step === 'core') {
+                    stepCore.className = 'step-item active';
+                } else if (step === 'memory') {
+                    stepCore.className = 'step-item done';
+                    stepMemory.className = 'step-item active';
+                } else if (step === 'render') {
+                    stepCore.className = 'step-item done';
+                    stepMemory.className = 'step-item done';
+                    stepRender.className = 'step-item active';
+                } else if (step === 'ready' || percent >= 100) {
+                    stepCore.className = 'step-item done';
+                    stepMemory.className = 'step-item done';
+                    stepRender.className = 'step-item done';
+                    stepReady.className = 'step-item active';
+                }
+            }
+
+            if (characterData) {
+                if (characterData.name && splashTitle) {
+                    splashTitle.textContent = `${characterData.name} · 桌宠系统`;
+                }
+                if (characterData.avatar && splashAvatar) {
+                    splashAvatar.src = characterData.avatar;
+                }
+            }
+        };
+
+        // 监听来自 Electron 主进程的 IPC 状态推送 (若有)
+        if (typeof require !== 'undefined') {
+            try {
+                const { ipcRenderer } = require('electron');
+                ipcRenderer.on('splash-progress', (event, data) => {
+                    window.updateProgress(data.percent, data.message, data.step, data.character);
+                });
+                ipcRenderer.on('splash-close', () => {
+                    if (splashCard) splashCard.classList.add('fade-out');
+                });
+            } catch(e) {}
+        }
+    </script>
+</body>
+</html>

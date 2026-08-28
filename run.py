@@ -163,6 +163,7 @@ def main():
             flask_process.kill()
 
         print("晚安，再见。")
+        sys.exit(0)
 
 if __name__ == '__main__':
     main()

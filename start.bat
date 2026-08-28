@@ -5,8 +5,8 @@ cd /d "%~dp0"
 
 :: Auto-guarded process launcher to prevent console auto-close on crash
 if not "%~1"=="--guarded" (
-    cmd /k ""%~f0" --guarded %*"
-    exit /b
+    cmd /c ""%~f0" --guarded %*"
+    exit /b %ERRORLEVEL%
 )
 
 :: Check if running directly inside ZIP preview
@@ -113,11 +113,16 @@ echo == Step 3/3 == Waking up Rumia. Please wait...
 echo.
 set HF_ENDPOINT=https://hf-mirror.com
 %PYTHON_EXE% run.py
-if errorlevel 1 (
+set EXIT_CODE=%ERRORLEVEL%
+if %EXIT_CODE% NEQ 0 (
     echo.
-    echo [ERROR] Desktop pet execution interrupted. See logs above.
+    echo [ERROR] Desktop pet execution interrupted with code %EXIT_CODE%. See logs above.
     goto ALWAYS_FREEZE
 )
+
+echo.
+echo [SYSTEM] Desktop pet closed cleanly. Goodbye!
+exit /b 0
 
 :ALWAYS_FREEZE
 echo.
