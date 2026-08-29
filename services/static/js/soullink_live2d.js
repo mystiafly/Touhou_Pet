@@ -725,12 +725,11 @@ class SoullinkLive2DDriver {
     }
 
     /**
-     * 鼠标视线追踪 (支持传入 Canvas 元素以进行精确相对视线投影)
+     * 鼠标视线追踪 (支持动态注意力距离半径与超出范围自然平滑回正)
      */
-    focus(clientX, clientY, canvasElement = null) {
+    focus(clientX, clientY, canvasElement = null, isImmersive = false) {
         if (!this.model || !this.isLoaded || this.isSleeping) return;
         this.lastMouseMoveTime = Date.now();
-        this.isMouseHovering = true;
 
         try {
             const targetCanvas = canvasElement || this.canvas;
@@ -738,9 +737,32 @@ class SoullinkLive2DDriver {
                 const rect = targetCanvas.getBoundingClientRect();
                 const centerX = rect.left + rect.width / 2;
                 const centerY = rect.top + rect.height / 2;
-                this.targetFocusX = Math.max(-1, Math.min(1, (clientX - centerX) / (rect.width / 2 || 1)));
-                this.targetFocusY = Math.max(-1, Math.min(1, (clientY - centerY) / (rect.height / 2 || 1)));
-                this.model.focus(clientX - rect.left, clientY - rect.top);
+                const dx = clientX - centerX;
+                const dy = clientY - centerY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                // 最大关注视线距离半径：超出该区域桌宠自然回正直视，不再强行歪头死盯远处的鼠标
+                const maxTrackingDist = isImmersive ? Math.max(rect.width * 1.1, 400) : (rect.width * 1.4);
+
+                if (distance > maxTrackingDist) {
+                    // 鼠标离角色过远：平滑恢复直视前方 (回正)
+                    this.isMouseHovering = false;
+                    this.targetFocusX = 0.0;
+                    this.targetFocusY = 0.0;
+                    if (this.model && this.model.internalModel && this.model.internalModel.focusController) {
+                        this.model.internalModel.focusController.focus(0, 0);
+                    }
+                } else {
+                    // 鼠标在有效互动半径内：带距离平方反比平滑衰减跟随
+                    this.isMouseHovering = true;
+                    const falloff = Math.max(0, 1 - Math.pow(distance / maxTrackingDist, 1.8));
+                    const rawFx = Math.max(-1, Math.min(1, (dx / (rect.width / 2 || 1))));
+                    const rawFy = Math.max(-1, Math.min(1, (dy / (rect.height / 2 || 1))));
+
+                    this.targetFocusX = rawFx * falloff;
+                    this.targetFocusY = rawFy * falloff;
+                    this.model.focus(clientX - rect.left, clientY - rect.top);
+                }
             } else {
                 this.model.focus(clientX, clientY);
             }

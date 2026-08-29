@@ -265,7 +265,7 @@ class DesktopPetCore {
 
             window.addEventListener('mousemove', (e) => {
                 if (this.spriteType === 'live2d' && window.SoullinkLive2D) {
-                    window.SoullinkLive2D.focus(e.clientX, e.clientY, live2dCanvas);
+                    window.SoullinkLive2D.focus(e.clientX, e.clientY, live2dCanvas, this.immersive?.isImmersiveMode);
                 }
                 if (isDragging) {
                     const deltaX = e.screenX - startX;
@@ -331,7 +331,7 @@ class DesktopPetCore {
                         if (isInteractive) {
                             const mouseX = point.x - window.screenX;
                             const mouseY = point.y - window.screenY;
-                            window.SoullinkLive2D.focus(mouseX, mouseY, live2dCanvas);
+                            window.SoullinkLive2D.focus(mouseX, mouseY, live2dCanvas, this.immersive?.isImmersiveMode);
                         } else {
                             window.SoullinkLive2D.resetFocus();
                         }
