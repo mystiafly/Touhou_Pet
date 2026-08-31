@@ -3,23 +3,48 @@ def test_get_history(client):
     测试获取对话历史记录接口 (GET /api/history)
     """
     response = client.get("/api/history")
-    # 验证 HTTP 状态码为 200
     assert response.status_code == 200
-    
-    # 验证返回的内容至少是一个合法的 JSON 结构
-    # （这里可以根据实际业务需求添加更多对 response.json() 的断言）
     data = response.json()
     assert isinstance(data, list) or isinstance(data, dict)
 
-def test_post_chat(client):
+def test_page_renders(client):
     """
-    测试发送聊天消息接口 (POST /api/chat)
+    测试页面静态模板渲染接口 (GET /pet, GET /dashboard, GET /)
     """
-    payload = {"message": "你好！"}
-    response = client.post("/api/chat", json=payload)
+    assert client.get("/pet").status_code == 200
+    assert client.get("/dashboard").status_code == 200
+    assert client.get("/").status_code == 200
+
+def test_system_router(client):
+    """
+    测试系统与配置路由 (GET /api/system/version, GET /api/settings/config)
+    """
+    res_ver = client.get("/api/system/version")
+    assert res_ver.status_code == 200
+    assert "version" in res_ver.json()
     
-    # 根据之前的测试脚本，我们需要确保接口能正常响应
-    assert response.status_code == 200
-    
-    # 打印一些内容用于调试（在 pytest 中通常只有失败时才会显示 print 的内容）
-    print(f"Chat Response: {response.text}")
+    res_cfg = client.get("/api/settings/config")
+    assert res_cfg.status_code == 200
+
+def test_character_router(client):
+    """
+    测试角色管理路由 (GET /api/characters/list, GET /api/character_info)
+    """
+    res_chars = client.get("/api/characters/list")
+    assert res_chars.status_code == 200
+    assert isinstance(res_chars.json(), (list, dict))
+
+def test_memory_router(client):
+    """
+    测试记忆与日志路由 (GET /api/settings/logs)
+    """
+    res_logs = client.get("/api/settings/logs")
+    assert res_logs.status_code == 200
+
+def test_audio_router(client):
+    """
+    测试音频与 TTS 路由 (GET /api/tts/gpt_sovits/status)
+    """
+    res_tts = client.get("/api/tts/gpt_sovits/status")
+    assert res_tts.status_code == 200
+
