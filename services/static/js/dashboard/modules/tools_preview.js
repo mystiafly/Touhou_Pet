@@ -478,4 +478,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    window.loadToolsList = typeof loadToolsList !== 'undefined' ? loadToolsList : null;
 });

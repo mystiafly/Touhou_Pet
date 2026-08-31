@@ -595,4 +595,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+    window.loadSpriteSets = typeof loadSpriteSets !== 'undefined' ? loadSpriteSets : null;
 });

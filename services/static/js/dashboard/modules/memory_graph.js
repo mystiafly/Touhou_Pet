@@ -159,4 +159,5 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    window.loadMemoryGraph = typeof loadMemoryGraph !== 'undefined' ? loadMemoryGraph : null;
 });

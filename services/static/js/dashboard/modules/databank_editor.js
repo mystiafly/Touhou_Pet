@@ -654,4 +654,5 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
+    window.loadDataBank = typeof loadDataBank !== 'undefined' ? loadDataBank : null;
 });

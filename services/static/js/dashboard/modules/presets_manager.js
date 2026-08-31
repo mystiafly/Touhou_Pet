@@ -293,5 +293,4 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
-
 });

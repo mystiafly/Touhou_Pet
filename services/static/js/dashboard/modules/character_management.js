@@ -551,4 +551,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
+    window.loadCharacters = typeof loadCharacters !== 'undefined' ? loadCharacters : null;
+    window.renderCharacterManagementGrid = typeof renderCharacterManagementGrid !== 'undefined' ? renderCharacterManagementGrid : null;
+    window.refreshAvatarPreview = typeof refreshAvatarPreview !== 'undefined' ? refreshAvatarPreview : null;
+    window.triggerAppRestart = typeof triggerAppRestart !== 'undefined' ? triggerAppRestart : null;
 });

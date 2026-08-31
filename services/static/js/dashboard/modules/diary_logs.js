@@ -304,4 +304,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
+    window.loadLogsList = typeof loadLogsList !== 'undefined' ? loadLogsList : null;
 });
