@@ -33,6 +33,11 @@ def test_character_router(client):
     res_chars = client.get("/api/characters/list")
     assert res_chars.status_code == 200
     assert isinstance(res_chars.json(), (list, dict))
+    
+    res_info = client.get("/api/character_info")
+    assert res_info.status_code == 200
+    info_data = res_info.json()
+    assert "character_name" in info_data or "id" in info_data
 
 def test_memory_router(client):
     """

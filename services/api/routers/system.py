@@ -1,3 +1,4 @@
+import struct
 import os
 import json
 import time

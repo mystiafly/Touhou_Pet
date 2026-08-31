@@ -5,7 +5,9 @@ from datetime import datetime
 from typing import Dict, Any, Optional, List
 from fastapi import BackgroundTasks, APIRouter, Request, Body, HTTPException
 from fastapi.responses import JSONResponse
-from core.config_manager import get_config, get_active_character_id
+from core.config_manager import get_config, save_config, get_active_character_id
+from core.memory_manager import load_history, DAILY_HISTORY_DIR, get_memory_agent
+from core.profile_manager import get_favorability
 from core.memory_manager import DAILY_HISTORY_DIR, get_memory_agent
 from workers.distillation import generate_pet_diary
 

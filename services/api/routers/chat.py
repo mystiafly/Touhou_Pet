@@ -16,6 +16,8 @@ from graph.nodes import post_llm_node, update_history_node
 from workers.distillation import generate_pet_diary
 from time_system import get_time_greeting_prompt
 from core.stats_manager import stats_manager
+from tools.presets_manager import get_self_talk_presets_file
+from api.routers.common import clean_history_text, run_post_and_history, format_tool_prefix, safe_recycle_delete
 
 router = APIRouter()
 SERVICES_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -515,19 +517,9 @@ def test_timer_1min():
     return {"success": True}
 import shutil
 
-def ensure_live2d_pose_configured(model_json_path: str):
-    """安全保留占位：不再自动篡改用户的 Live2D model3.json 或强加互斥 pose3.json，确保第三方及所有模型图层完整渲染"""
-    pass
 
-def find_live2d_model_file(directory: str) -> Optional[str]:
-    """递归查找目录下的 .model3.json 或 .model.json 相对路径"""
-    for root, dirs, files in os.walk(directory):
-        for f in files:
-            if f.lower().endswith('.model3.json') or f.lower().endswith('.model.json'):
-                abs_path = os.path.join(root, f)
-                rel_path = os.path.relpath(abs_path, directory)
-                return rel_path.replace('\\', '/')
-    return None
+
+
 
 
 @router.post("/api/clean_memory")

@@ -13,6 +13,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from core.config_manager import get_config, save_config, get_active_character_id, GLOBAL_CONFIG_FILE
 from core.databank_manager import load_databank, save_databank_state_sheet, save_databank_template_raw, get_databank_paths
 from tools.presets_manager import get_self_talk_presets_file
+from api.routers.common import safe_recycle_delete, find_live2d_model_file, ensure_live2d_pose_configured
 
 router = APIRouter()
 SERVICES_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -52,60 +53,6 @@ def update_databank_template(payload: dict = Body(...)):
     success, msg = save_databank_template_raw(raw_json)
     return {"status": "success" if success else "error", "message": msg}
 
-# --- 后台任务包装器 ---
-def run_post_and_history(state: dict):
-    log_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "bg_task_log.txt")
-    os.makedirs(os.path.dirname(log_path), exist_ok=True)
-    with open(log_path, "a", encoding="utf-8") as f:
-        f.write(f"\\n--- BG Task Started ---\\n")
-        f.write(f"User Message: {state.get('user_message')}\\n")
-        f.write(f"Main LLM Reply: {state.get('main_llm_reply')}\\n")
-    try:
-        post_delta = post_llm_node(state)
-        state.update(post_delta)
-        update_history_node(state)
-        with open(log_path, "a", encoding="utf-8") as f:
-            f.write(f"BG Task Success. Post Delta: {post_delta}\\n")
-    except Exception as e:
-        import traceback
-        err_str = traceback.format_exc()
-        with open(log_path, "a", encoding="utf-8") as f:
-            f.write(f"BG Task Error: {e}\\n{err_str}\\n")
-        print(f"后台任务 (post_llm & update_history) 执行异常: {e}")
-
-def format_tool_prefix(final_state: dict) -> str:
-    """提取 Pre 模型触发的工具调用并格式化为对话框前缀"""
-    tool_labels = []
-    if final_state.get("process_task"):
-        tool_labels.append("前台进程探测")
-    if final_state.get("vision_task"):
-        tool_labels.append("屏幕画面解析")
-    if final_state.get("search_task"):
-        kw = final_state.get("search_task")
-        tool_labels.append(f"网络搜索: {kw}" if kw else "网络搜索")
-    if final_state.get("browser_task"):
-        target = final_state.get("browser_task")
-        tool_labels.append(f"网页浏览: {target}" if target else "网页浏览")
-    if final_state.get("launcher_task"):
-        app = final_state.get("launcher_task")
-        tool_labels.append(f"启动应用: {app}" if app else "启动应用")
-    if final_state.get("clean_memory_task"):
-        tool_labels.append("内存清理优化")
-    if final_state.get("weather_task"):
-        w_city = final_state.get("weather_task")
-        if w_city and w_city.lower() != "auto":
-            tool_labels.append(f"实时天气查询: {w_city}")
-        else:
-            tool_labels.append("实时天气查询")
-    if final_state.get("selected_memory"):
-        tool_labels.append("调取深层日记")
-
-    if not tool_labels:
-        return ""
-    
-    return f"[🔧 触发工具: {' | '.join(tool_labels)}]\n"
-
-# 3. 核心聊天对话接口
 
 @router.get("/api/characters/list")
 async def api_characters_list():
