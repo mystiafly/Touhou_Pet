@@ -47,26 +47,12 @@ def index():
         html = f.read()
     return HTMLResponse(content=html, headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"})
 
-def render_dashboard_html() -> str:
-    tpl_dir = os.path.join(SERVICES_DIR, "templates")
-    host_path = os.path.join(tpl_dir, "dashboard.html")
-    with open(host_path, "r", encoding="utf-8") as f:
-        host_html = f.read()
-
-    def replacer(match):
-        rel_path = match.group(1).strip()
-        frag_path = os.path.join(tpl_dir, "dashboard", rel_path)
-        if os.path.exists(frag_path):
-            with open(frag_path, "r", encoding="utf-8") as pf:
-                return pf.read()
-        return f"<!-- Missing partial: {rel_path} -->"
-
-    return re.sub(r'<!--\s*INCLUDE:\s*(.*?)\s*-->', replacer, host_html)
-
 @router.get("/dashboard", response_class=HTMLResponse)
 def dashboard():
-    """渲染独立大窗体设置面板 (Dashboard - 支持 Tab 片段即时热加载)"""
-    html = render_dashboard_html()
+    """渲染独立大窗体设置面板 (Dashboard)"""
+    path = os.path.join(SERVICES_DIR, "templates", "dashboard.html")
+    with open(path, "r", encoding="utf-8") as f:
+        html = f.read()
     return HTMLResponse(content=html, headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"})
 
 # 2. 对话历史与好感度接口
