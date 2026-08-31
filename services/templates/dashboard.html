@@ -88,13 +88,10 @@
             </a>
         </nav>
 
-        <div class="sidebar-footer">
-            <div class="status-indicator">
-                <span class="status-dot"></span>
-                <span>系统状态: 运行中</span>
-            </div>
-            <button class="action-btn" style="width: 100%; margin-top: 10px; padding: 8px; font-size: 13px; background: rgba(255, 85, 85, 0.2); border: 1px solid rgba(255, 85, 85, 0.4); color: #ff5555;" @click="config.restartApp()">
-                <i class="fas fa-sync-alt"></i> 重启大贤者
+        <div class="sidebar-bottom">
+            <p class="status-text">系统状态: <span class="status-ok">运行中</span></p>
+            <button id="restart-app-btn" class="action-btn outline" style="width: 100%; margin-top: 15px; justify-content: center; border-color: #f77272; color: #f77272;" @click="config.restartApp()">
+                <i class="fas fa-redo"></i> 重启大贤者
             </button>
         </div>
     </aside>
