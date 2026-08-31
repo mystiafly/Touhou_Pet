@@ -1,6 +1,6 @@
 {
   "name": "rumia",
-  "version": "1.41.3",
+  "version": "1.42.0",
   "description": "Desktop Pet AI",
   "main": "main.js",
   "scripts": {

@@ -1,0 +1,31 @@
+        <section id="logs-view" class="content-section">
+            <header class="section-header">
+                <h1>每日回忆与日记</h1>
+                <p>翻阅过去的对话与秘密日记</p>
+            </header>
+            
+            <div class="logs-layout">
+                <div class="logs-sidebar-inner">
+                    <h3>归档列表</h3>
+                    <select id="log-date-select" class="modern-select list-style" size="10">
+                        <option value="">加载中...</option>
+                    </select>
+                </div>
+                
+                <div class="logs-main-area">
+                    <div class="log-tabs">
+                        <button id="subtab-chat" class="tab-btn active">聊天对话</button>
+                        <button id="subtab-diary" class="tab-btn">后台日记</button>
+                        <div class="spacer"></div>
+                        <button id="rewrite-diary-btn" class="action-btn primary" style="display: none;">
+                            <i class="fas fa-sync-alt"></i> 重写日记
+                        </button>
+                    </div>
+                    <div class="log-content-box">
+                        <pre id="log-content-area">请从左侧选择一个日期来查阅回忆...</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. 人格海 (RAG记忆向量星图) 视图 -->

@@ -1,0 +1,79 @@
+        <section id="reactions-view" class="content-section" :class="{ active: activeView === 'reactions-view' }">
+            <div class="section-header">
+                <h2>💬 互动应付词与离线语音 (Reactions)</h2>
+                <p>管理桌宠在不同情绪下被点击时说出的对白短句。支持主动播放收录离线语音与一键批量翻译精修录制。</p>
+            </div>
+            
+            <div class="card" style="display: flex; flex-direction: column; min-height: calc(100vh - 190px);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <h3 class="card-title" style="margin:0;"><i class="fas fa-comments"></i> 应付词列表与离线语音</h3>
+                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                        <button class="action-btn" id="btn-batch-record-reactions" @click="character.startBatchRecording(false)" :disabled="character.isBatchRecording" style="background: linear-gradient(135deg, #bd93f9, #ff79c6); border: none; color: #fff; padding: 6px 14px; font-size: 13px; cursor: pointer;">
+                            <i class="fas" :class="character.isBatchRecording ? 'fa-spinner fa-spin' : 'fa-microphone-alt'"></i>
+                            {{ character.isBatchRecording ? '正在批量录制语音...' : '🎙️ 补充录制未生成语音' }}
+                        </button>
+                        <button class="action-btn" id="btn-force-batch-record-reactions" @click="character.startBatchRecording(true)" :disabled="character.isBatchRecording" style="background: rgba(255, 121, 198, 0.18); border: 1px solid #ff79c6; color: #ff79c6; padding: 6px 12px; font-size: 12px; cursor: pointer; border-radius: 6px;" title="换了新音色或修改发音后，点击此处按当前最新音色全部重新生成覆盖旧语音">
+                            <i class="fas fa-redo"></i> 全部重录 (换音色后覆写)
+                        </button>
+                        <button class="action-btn primary" id="btn-regenerate-reactions" @click="character.regenerateReactions" style="padding: 6px 12px; font-size: 12px;"><i class="fas fa-magic"></i> 重新生成词库</button>
+                        <button class="action-btn outline" id="btn-refresh-reactions" @click="character.loadReactions" style="padding: 6px 12px; font-size: 12px;"><i class="fas fa-sync-alt"></i> 刷新</button>
+                    </div>
+                </div>
+
+                <!-- 批量录制进度条 -->
+                <div v-if="character.isBatchRecording" style="background: var(--bg-secondary); border: 1px solid rgba(255,121,198,0.4); border-radius: 10px; padding: 14px 18px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(255,121,198,0.15);">
+                    <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
+                        <span><i class="fas fa-satellite-dish" style="color: #ff79c6; margin-right: 6px;"></i> {{ character.batchProgress.current_text ? `[${character.batchProgress.current_emotion}] 正在精修与录制: "${character.batchProgress.current_text}"` : '准备启动录制流水线...' }}</span>
+                        <span style="font-weight: 600; color: #ff79c6;">{{ character.batchProgress.completed }} / {{ character.batchProgress.total }} ({{ character.batchProgress.percent }}%)</span>
+                    </div>
+                    <div style="height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; display: flex;">
+                        <div style="height: 100%; background: linear-gradient(90deg, #bd93f9, #ff79c6); transition: width 0.3s ease;" :style="{ width: character.batchProgress.percent + '%' }"></div>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+                        <button class="action-btn outline" @click="character.stopBatchRecording" style="padding: 3px 12px; font-size: 12px; color: #ff5555; border-color: #ff5555;">停止录制</button>
+                    </div>
+                </div>
+
+                <div id="reactions-list-container" style="display: flex; flex-direction: column; gap: 16px; overflow-y: auto; flex: 1; padding-right: 6px;">
+                    <div v-for="(name, key) in character.emotionNames" :key="key" class="reaction-category-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                            <span style="font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                                <i :class="character.emotionIcons[key]" style="color: var(--accent-color);"></i>
+                                {{ name }} <span style="opacity: 0.6; font-size: 12px;">({{ key }})</span>
+                                <span style="font-size: 11px; opacity: 0.7; font-weight: normal; background: rgba(255,255,255,0.08); padding: 2px 8px; border-radius: 10px;">共 {{ (character.reactionsDetail[key] || []).length }} 句</span>
+                            </span>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" v-model="character.newReactionInputs[key]" @keyup.enter="character.handleAddReaction(key)" :placeholder="'添加' + name + '反应短句...'" class="modern-input" style="padding: 4px 10px; font-size: 12px; width: 220px;">
+                                <button class="action-btn primary" @click="character.handleAddReaction(key)" style="padding: 4px 10px; font-size: 12px;"><i class="fas fa-plus"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="reaction-tags-container" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            <div v-for="(item, idx) in (character.reactionsDetail[key] || [])" :key="idx" class="reaction-tag-item">
+                                <!-- 试听 / 首次录制按钮 -->
+                                <button class="reaction-audio-btn" :class="{ 'has-audio': item.has_audio }" @click="character.playOrRecordReaction(key, item)" :title="item.has_audio ? '点击试听离线语音' : '尚未录制语音，点击立即生成收录'">
+                                    <i :class="item.isPlaying ? 'fas fa-spinner fa-spin' : (item.has_audio ? 'fas fa-volume-up' : 'fas fa-microphone')"></i>
+                                </button>
+
+                                <!-- 单句重新录制按钮 (已有语音时显示，支持单独按最新音色重录覆写) -->
+                                <button v-if="item.has_audio" class="reaction-rerecord-btn" @click.stop="character.reRecordSingleReaction(key, item)" :disabled="item.isRecording" title="按当前最新音色单独重新录制此句">
+                                    <i :class="item.isRecording ? 'fas fa-spinner fa-spin' : 'fas fa-sync-alt'"></i>
+                                </button>
+                                
+                                <span class="reaction-tag-text">{{ item.text }}</span>
+
+                                <!-- 删除按钮 (完美居中对齐) -->
+                                <button class="reaction-delete-btn" @click="character.deleteReaction(key, item.text)" title="删除此句">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div v-if="!(character.reactionsDetail[key] && character.reactionsDetail[key].length)" style="color: var(--text-secondary); font-size: 12px; padding: 6px 0;">
+                                暂无此情绪反应词，系统将在后台自动补全。
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 7. 动态数据库视图 -->

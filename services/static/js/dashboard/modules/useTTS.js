@@ -1,4 +1,4 @@
-// useTTS.js - TTS 语音引擎配置、声音调试与试听模块
+// useTTS.js - TTS 语音引擎配置、声音调试与试听模块 (Vue 3 纯净驱动)
 window.useTTSModule = function(Vue) {
     const { ref, reactive, computed } = Vue;
 
@@ -58,7 +58,10 @@ window.useTTSModule = function(Vue) {
         tts_pitch: 0.0,
         showKey: false,
         isTesting: false,
-        testText: '你好呀！我是桌宠，今天也要一起开心度过哦！'
+        testText: '你好呀！我是桌宠，今天也要一起开心度过哦！',
+        gptSovitsStatusText: '未检测',
+        gptSovitsStatusClass: 'badge-secondary',
+        isLaunchingGptSovits: false
     });
 
     const currentProviderTip = computed(() => {
@@ -73,19 +76,25 @@ window.useTTSModule = function(Vue) {
 
     let testAudio = new Audio();
 
-    function onProviderChange(provider) {
+    function onProviderChange(provider, skipSave = false) {
         ttsState.tts_provider = provider;
         const def = TTS_PROVIDER_DEFAULTS[provider];
         if (def) {
-            ttsState.tts_base_url = def.url;
-            ttsState.tts_model_name = def.model;
+            if (!ttsState.tts_base_url || Object.values(TTS_PROVIDER_DEFAULTS).some(d => d.url === ttsState.tts_base_url)) {
+                ttsState.tts_base_url = def.url;
+            }
+            if (!ttsState.tts_model_name || Object.values(TTS_PROVIDER_DEFAULTS).some(d => d.model === ttsState.tts_model_name)) {
+                ttsState.tts_model_name = def.model;
+            }
         }
-        saveTTSConfig();
+        if (!skipSave) {
+            saveTTSConfig();
+        }
     }
 
     async function saveTTSConfig() {
         try {
-            await fetch('/api/settings/config', {
+            const res = await fetch('/api/settings/config', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -99,50 +108,89 @@ window.useTTSModule = function(Vue) {
                     tts_pitch: ttsState.tts_pitch
                 })
             });
+            const data = await res.json();
+            if (data.status === 'success' || data.success) {
+                // saved
+            }
         } catch (e) {
             console.error('保存 TTS 配置异常:', e);
         }
     }
 
-    async function testSpeak() {
-        if (!ttsState.testText.trim()) return;
+    async function testTTS(textOverride) {
+        const text = textOverride || ttsState.testText || '测试语音合成。';
         ttsState.isTesting = true;
-
         try {
-            const resp = await fetch('/api/tts/speak', {
+            const res = await fetch('/api/tts/speak', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    text: ttsState.testText.trim(),
-                    lang: ttsState.character_tts_lang,
-                    voice: ttsState.character_voice
+                    text: text,
+                    emotion: 'normal',
+                    language: ttsState.character_tts_lang,
+                    voice_id: ttsState.character_voice,
+                    skip_refine: true
                 })
             });
-
-            if (resp.ok) {
-                const blob = await resp.blob();
-                const audioUrl = URL.createObjectURL(blob);
-                testAudio.src = audioUrl;
-                testAudio.play();
+            const data = await res.json();
+            if (data.success && data.audio_url) {
+                testAudio.src = data.audio_url + '?t=' + Date.now();
+                testAudio.playbackRate = parseFloat(ttsState.tts_speed) || 1.0;
+                await testAudio.play();
             } else {
-                const errData = await resp.json().catch(() => ({}));
-                alert('TTS 语音合成失败: ' + (errData.detail || resp.statusText));
+                alert('TTS 试听生成失败: ' + (data.error || '未知错误'));
             }
         } catch (e) {
-            console.error('TTS 试听异常:', e);
-            alert('TTS 试听连接失败，请检查网络或服务商配置');
+            alert('TTS 试听请求失败: ' + e);
         } finally {
             ttsState.isTesting = false;
         }
     }
 
+    async function checkGptSovitsStatus() {
+        try {
+            ttsState.gptSovitsStatusText = '检测中...';
+            const res = await fetch('/api/tts/gpt_sovits/status');
+            const data = await res.json();
+            if (data.status === 'running') {
+                ttsState.gptSovitsStatusText = '运行中 (PID: ' + (data.pid || '已连接') + ')';
+                ttsState.gptSovitsStatusClass = 'badge-success';
+            } else {
+                ttsState.gptSovitsStatusText = '未运行';
+                ttsState.gptSovitsStatusClass = 'badge-warning';
+            }
+        } catch (e) {
+            ttsState.gptSovitsStatusText = '连接失败';
+            ttsState.gptSovitsStatusClass = 'badge-danger';
+        }
+    }
+
+    async function launchGptSovitsService() {
+        ttsState.isLaunchingGptSovits = true;
+        try {
+            const res = await fetch('/api/tts/gpt_sovits/launch', { method: 'POST' });
+            const data = await res.json();
+            if (data.status === 'success') {
+                alert('已成功发起 GPT-SoVITS 启动指令！请等待模型就绪。');
+                setTimeout(checkGptSovitsStatus, 3000);
+            } else {
+                alert('启动 GPT-SoVITS 失败: ' + (data.message || ''));
+            }
+        } catch (e) {
+            alert('发送启动指令异常: ' + e);
+        } finally {
+            ttsState.isLaunchingGptSovits = false;
+        }
+    }
+
     return {
-        TTS_PROVIDER_DEFAULTS,
         ttsState,
         currentProviderTip,
         currentKeyPlaceholder,
         onProviderChange,
         saveTTSConfig,
-        testSpeak
+        testTTS,
+        checkGptSovitsStatus,
+        launchGptSovitsService
     };
 };

@@ -1,0 +1,161 @@
+        <section id="immersive-settings-view" class="content-section">
+            <header class="section-header">
+                <h1>沉浸模式 (Immersive Mode)</h1>
+                <p>配置当前角色的专属沉浸背景壁纸与全屏显示偏好</p>
+            </header>
+            
+            <div class="card-container">
+                <div class="settings-card" style="grid-column: 1 / -1;">
+                    <h3><i class="fas fa-image"></i> 专属沉浸背景壁纸</h3>
+                    <div class="form-group">
+                        <p class="help-text" style="margin-bottom: 12px;">您可以直接点击<b>【选择本地壁纸文件】</b>上传图片或动图 (GIF/PNG/JPG/WEBP)，系统会自动重命名并保存至该角色的资源目录中。也支持手动填写网络 URL/路径。</p>
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <input type="file" id="wallpaper-file-input" accept="image/*,.gif,.png,.jpg,.jpeg,.webp" style="display: none;">
+                            <button id="upload-wallpaper-btn" class="action-btn primary-btn" style="white-space: nowrap; background: linear-gradient(135deg, #bd93f9, #ff79c6); border: none; color: #fff; padding: 8px 16px;">
+                                <i class="fas fa-file-upload"></i> 选择本地壁纸文件...
+                            </button>
+                            <input type="text" id="immersive-wallpaper-input" class="modern-input" placeholder="例如：/char_assets/rumia/assets/wallpaper.gif 或网络图片/GIF链接" style="flex: 1; min-width: 240px;">
+                            <button id="preview-wallpaper-btn" class="action-btn outline" style="white-space: nowrap;">
+                                <i class="fas fa-eye"></i> 预览
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;">
+                        <label for="wallpaper-fit-select" style="font-weight: 500; font-size: 14px; display: block; margin-bottom: 6px;">壁纸缩放/适应模式 (Wallpaper Fit)</label>
+                        <select id="wallpaper-fit-select" class="modern-select" style="width: 100%;">
+                            <option value="cover">铺满全屏 (默认，等比例放大裁剪填满全屏)</option>
+                            <option value="contain">完整显示 (等比例缩放完整保留原图，不裁剪放大)</option>
+                            <option value="100% 100%">拉伸铺满 (自适应屏幕宽高，不裁剪、不留空)</option>
+                            <option value="auto">原始大小居中 (完全按图片原分辨率显示，不被放大)</option>
+                        </select>
+                        <p class="help-text" style="margin-top: 6px;">如果上传的 GIF 或图片分辨率较小被过度放大致模糊，可调整为此处的“原始大小居中”或“拉伸铺满/完整显示”。</p>
+                    </div>
+                </div>
+
+                <!-- 专属沉浸背景音乐 (BGM) 卡片 -->
+                <div class="settings-card" style="grid-column: 1 / -1;">
+                    <h3><i class="fas fa-music" style="color: #ff79c6;"></i> 专属沉浸背景音乐 (BGM)</h3>
+                    <p class="help-text" style="margin-bottom: 12px;">进入沉浸模式后，系统会自动淡入并循环播放此处配置的背景音乐。支持上传本地音频文件 (MP3/WAV/OGG/FLAC/M4A/AAC) 或直接填写网络/本地 URL。</p>
+                    
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+                        <div>
+                            <label style="font-weight: 500; font-size: 14px;">开启沉浸模式背景音乐自动播放</label>
+                            <p class="help-text" style="margin-top: 5px;">开启后，每次进入全屏沉浸模式都会自动淡入播放背景音乐。</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="immersive-bgm-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <input type="file" id="bgm-file-input" accept="audio/*,.mp3,.wav,.ogg,.flac,.m4a,.aac" style="display: none;">
+                            <button id="upload-bgm-btn" class="action-btn primary-btn" style="white-space: nowrap; background: linear-gradient(135deg, #ff79c6, #bd93f9); border: none; color: #fff; padding: 8px 16px;">
+                                <i class="fas fa-file-audio"></i> 选择本地音乐文件...
+                            </button>
+                            <input type="text" id="immersive-bgm-input" class="modern-input" placeholder="例如：/char_assets/rumia/assets/bgm.mp3 或网络音乐链接" style="flex: 1; min-width: 240px;">
+                            <button id="test-bgm-btn" class="action-btn outline" style="white-space: nowrap;">
+                                <i class="fas fa-play"></i> 试听
+                            </button>
+                        </div>
+                        <audio id="dashboard-bgm-preview" style="display: none;"></audio>
+                    </div>
+                <!-- 沉浸视觉与互动特效卡片 -->
+                <div class="settings-card" style="grid-column: 1 / -1; border-left: 4px solid #50fa7b;">
+                    <h3><i class="fas fa-magic" style="color: #50fa7b;"></i> 沉浸视觉与互动特效</h3>
+                    <p class="help-text" style="margin-bottom: 15px;">在全屏沉浸模式下叠加炫酷的氛围视觉效果与动态互动反馈。</p>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
+                        <!-- 星光特效 -->
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 15px; display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <div style="font-weight: 600; font-size: 14px; color: #f8f8f2;"><i class="fas fa-star" style="color: #f1fa8c; margin-right: 6px;"></i> 星光闪烁 (Starlight)</div>
+                                <div class="help-text" style="margin-top: 4px; font-size: 12px;">背景漫天柔和星光随呼吸脉动闪烁</div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="immersive-effect-starlight">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+
+                        <!-- 流星特效 -->
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 15px; display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <div style="font-weight: 600; font-size: 14px; color: #f8f8f2;"><i class="fas fa-meteor" style="color: #8be9fd; margin-right: 6px;"></i> 划过流星 (Meteors)</div>
+                                <div class="help-text" style="margin-top: 4px; font-size: 12px;">夜空中偶尔拖着尾迹划过的浪漫流星</div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="immersive-effect-meteors">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+
+                        <!-- 鼠标视差移动特效 -->
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 15px; display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <div style="font-weight: 600; font-size: 14px; color: #f8f8f2;"><i class="fas fa-mouse-pointer" style="color: #ff79c6; margin-right: 6px;"></i> 鼠标视差悬浮 (Mouse Parallax)</div>
+                                <div class="help-text" style="margin-top: 4px; font-size: 12px;">开启后背景自动放大1.08倍，并随鼠标反向物理视差挪动</div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="immersive-effect-parallax">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+
+                        <!-- 沉浸界面截图按钮显隐开关 -->
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 15px; display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <div style="font-weight: 600; font-size: 14px; color: #f8f8f2;"><i class="fas fa-camera" style="color: #bd93f9; margin-right: 6px;"></i> 沉浸界面显示 📷 截图 按钮</div>
+                                <div class="help-text" style="margin-top: 4px; font-size: 12px;">默认关闭（保持界面纯净）。无论是否显示按键，随时按 P 键或 F12 均可直接一键截图！</div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="immersive-effect-screenshot-btn">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 壁纸实时预览卡片 -->
+                <div class="settings-card" style="grid-column: 1 / -1;">
+                    <h3><i class="fas fa-desktop"></i> 壁纸实时预览</h3>
+                    <div id="wallpaper-preview-container" style="width: 100%; height: 320px; border-radius: 12px; overflow: hidden; background: #1a1a24; border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; position: relative;">
+                        <img id="wallpaper-preview-img" src="" alt="壁纸预览" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                        <div id="wallpaper-preview-placeholder" style="color: var(--text-muted); text-align: center;">
+                            <i class="fas fa-image" style="font-size: 40px; margin-bottom: 10px; opacity: 0.5;"></i>
+                            <p>暂未设置自定义壁纸，沉浸模式将使用默认极光渐变背景</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Steam Wallpaper Engine 联动工坊卡片 -->
+                <div class="settings-card" style="grid-column: 1 / -1;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3><i class="fab fa-steam" style="color: #bd93f9;"></i> Steam Wallpaper Engine 创意工坊联动库</h3>
+                        <button id="use-transparent-mode-btn" class="action-btn outline" style="font-size: 12px; border-color: #ff79c6; color: #ff79c6;">
+                            <i class="fas fa-ghost"></i> 切换为桌面透传模式
+                        </button>
+                    </div>
+                    <p class="help-text" style="margin-bottom: 15px;">智能扫描已订阅的 Wallpaper Engine 动态壁纸（支持视频 MP4/WebM 原生60帧流畅播放、网页 HTML5 原生嵌入及 WE 桌面透传模式）。</p>
+                    
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px; flex-wrap: wrap;">
+                        <input type="text" id="we-custom-path-input" class="modern-input" placeholder="自定义 Workshop 路径 (如：H:\SteamLibrary\steamapps\workshop\content\431960)" style="flex: 1; min-width: 300px;">
+                        <button id="scan-we-btn" class="action-btn primary-btn" style="white-space: nowrap; background: linear-gradient(135deg, #11998e, #38ef7d); border: none; color: #fff; padding: 8px 16px;">
+                            <i class="fas fa-sync-alt"></i> 扫描/刷新 WE 壁纸库
+                        </button>
+                    </div>
+
+                    <div id="we-scan-status" style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-info-circle"></i> <span>初始化壁纸库中...</span>
+                    </div>
+
+                    <div id="we-wallpaper-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; max-height: 480px; overflow-y: auto; padding-right: 6px;">
+                        <!-- 动态生成的 WE 壁纸列表 -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 角色设置视图 (当前角色专属设定) -->

@@ -1,0 +1,150 @@
+        <section id="create-soul-view" class="content-section">
+            <header class="section-header">
+                <h1>孕育新灵魂</h1>
+                <p>借助大模型提炼，或者直接亲手注入底层配置代码</p>
+                
+                <div class="mode-tabs" style="margin-top: 15px; display: flex; gap: 10px;">
+                    <button id="mode-lazy-btn" class="action-btn active" style="flex: 1; justify-content: center;"><i class="fas fa-magic"></i> 懒人模式</button>
+                    <button id="mode-pro-btn" class="action-btn outline" style="flex: 1; justify-content: center;"><i class="fas fa-hammer"></i> 构建模式</button>
+                    <button id="mode-import-btn" class="action-btn outline" style="flex: 1; justify-content: center;"><i class="fas fa-file-import"></i> 导入模式</button>
+                    <button id="mode-export-btn" class="action-btn outline" style="flex: 1; justify-content: center; border-color: #50fa7b; color: #50fa7b;"><i class="fas fa-file-export"></i> 导出模式</button>
+                    <button id="mode-delete-btn" class="action-btn outline" style="flex: 1; justify-content: center; border-color: #ff4d4f; color: #ff4d4f;"><i class="fas fa-trash-alt"></i> 删除模式</button>
+                </div>
+            </header>
+            
+            <div class="card-container">
+                <!-- 懒人模式表单 -->
+                <div id="form-lazy-mode" class="settings-card">
+                    <h3><i class="fas fa-dna"></i> 基础设定输入 (懒人)</h3>
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="new-char-name" style="font-weight: 500; font-size: 14px;">期待的中文名字</label>
+                        <input type="text" id="new-char-name" class="modern-input" placeholder="例如：猫娘" style="margin-top: 8px; width: 100%;">
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="new-char-desc" style="font-weight: 500; font-size: 14px;">角色特质描述 (随心所欲地写)</label>
+                        <textarea id="new-char-desc" class="modern-input" rows="5" placeholder="描述越详细，灵魂越饱满。例如：傲娇毒舌的白毛萝莉，喜欢吃鱼，口癖是‘喵’，平时在咖啡厅打工，特别讨厌被摸尾巴..." style="margin-top: 8px; width: 100%; resize: vertical;"></textarea>
+                    </div>
+
+                    <button id="generate-soul-btn" class="action-btn" style="margin-top: 20px; width: 100%; justify-content: center;">
+                        <i class="fas fa-magic"></i> 开始炼丹 (交由大模型处理)
+                    </button>
+                    <p id="generate-status" class="help-text" style="margin-top: 10px; text-align: center; display: none;">正在请求大模型塑魂，请稍候...</p>
+                </div>
+
+                <!-- 构建模式表单 (取代旧高手模式) -->
+                <div id="form-pro-mode" class="settings-card hidden" style="display: none;">
+                    <h3><i class="fas fa-hammer"></i> 样本沙盒克隆与即时构建 (构建模式)</h3>
+                    
+                    <div style="margin-top: 10px; padding: 12px 14px; background: rgba(189, 147, 249, 0.12); border: 1px solid rgba(189, 147, 249, 0.35); border-radius: 8px; font-size: 13px; line-height: 1.6; color: #f8f8f2;">
+                        <i class="fas fa-info-circle" style="color: #bd93f9; margin-right: 6px;"></i>
+                        <strong>构建工作台说明：</strong> 系统将从受保护的示例角色母本（已预装莉莉白 7 表动态数据库与露米娅静态/Live2D 双皮肤）<strong>无损克隆一份独立的沙盒副本</strong>，并<strong>自动为您切换至该新角色</strong>，供您在各功能模块中随意测试与微调，绝不影响母本。
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="pro-char-id" style="font-weight: 500; font-size: 14px;">英文唯一 ID (必填)</label>
+                        <input type="text" id="pro-char-id" class="modern-input" placeholder="例如：my_custom_pet" style="margin-top: 8px; width: 100%;">
+                        <p class="help-text">仅限小写英文字母、数字和下划线，作为独立角色文件夹名。</p>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="pro-char-name" style="font-weight: 500; font-size: 14px;">中文角色名 (必填)</label>
+                        <input type="text" id="pro-char-name" class="modern-input" placeholder="例如：我的桌宠" style="margin-top: 8px; width: 100%;">
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="pro-persona-prompt" style="font-weight: 500; font-size: 14px;">核心人设 / 提示词 (可选)</label>
+                        <textarea id="pro-persona-prompt" class="modern-input" rows="4" placeholder="例如：你是我的专属贴心桌宠助手，性格温柔活泼，喜欢在我工作和学习时给予陪伴与鼓励..." style="margin-top: 8px; width: 100%; resize: vertical;"></textarea>
+                        <p class="help-text">留空将使用示例标准人设，创建后可随时在「专属预设」中无缝修改。</p>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="pro-theme-color" style="font-weight: 500; font-size: 14px;">专属主题主色调 (可选)</label>
+                        <input type="text" id="pro-theme-color" class="modern-input" placeholder="例如：#bd93f9 或 #ff79c6" style="margin-top: 8px; width: 100%;">
+                        <p class="help-text">填入十六进制颜色代码（留空则继承默认主题色）。</p>
+                    </div>
+
+                    <button id="generate-pro-btn" class="action-btn" style="background: linear-gradient(135deg, #bd93f9, #ff79c6); border: none; color: #fff; margin-top: 20px; width: 100%; justify-content: center; font-size: 14px; font-weight: 600;">
+                        <i class="fas fa-rocket"></i> 🚀 启动构建工作台 (克隆样本并即刻切换)
+                    </button>
+                    <p id="generate-pro-status" class="help-text text-success" style="margin-top: 10px; text-align: center; display: none;">沙盒副本已构建完成！</p>
+                </div>
+                
+                <!-- 导入模式表单 -->
+                <div id="form-import-mode" class="settings-card hidden" style="display: none;">
+                    <h3><i class="fas fa-file-archive"></i> 导入角色卡 (压缩包)</h3>
+                    
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="import-char-file" style="font-weight: 500; font-size: 14px;">角色卡文件 (.zip)</label>
+                        <input type="file" id="import-char-file" class="modern-input" accept=".zip,.rumia" style="margin-top: 8px; width: 100%;">
+                        <p class="help-text">请选择符合标准的角色卡压缩包，系统将自动预检包内元数据。</p>
+                    </div>
+
+                    <div id="import-preview-badge" style="display: none; margin-top: 12px; padding: 12px; background: rgba(80, 250, 123, 0.1); border: 1px solid rgba(80, 250, 123, 0.3); border-radius: 8px;">
+                        <div style="font-weight: 600; color: #50fa7b; font-size: 14px;" id="import-detected-title">✨ 已识别角色</div>
+                        <div style="font-size: 12px; color: #f8f8f2; margin-top: 4px;" id="import-detected-desc"></div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="import-char-id" style="font-weight: 500; font-size: 14px;">安装英文 ID (必填)</label>
+                        <input type="text" id="import-char-id" class="modern-input" placeholder="例如：wriggle_test" style="margin-top: 8px; width: 100%;">
+                        <p class="help-text">底层英文ID文件夹名（通常填入角色英文名），不可与现有角色重复。</p>
+                    </div>
+
+                    <button id="import-btn" class="action-btn" style="margin-top: 20px; width: 100%; justify-content: center;">
+                        <i class="fas fa-upload"></i> 导入并解析角色卡
+                    </button>
+                    <p id="import-status" class="help-text" style="margin-top: 10px; text-align: center; display: none;">正在导入，请稍候...</p>
+                </div>
+
+                <!-- 导出模式表单 -->
+                <div id="form-export-mode" class="settings-card hidden" style="display: none;">
+                    <h3><i class="fas fa-file-export"></i> 导出当前灵魂 (压缩包)</h3>
+                    
+                    <p style="font-size: 13px; color: var(--text-secondary); margin-top: 10px; margin-bottom: 20px;">
+                        导出将自动包含纯净的 <code>config.json</code>（已自动剔除全局设置与敏感Key）、角色人设词、专属预设、互动应付词 (<code>reactions.json</code>)，以及立绘和背景资源。
+                    </p>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label style="font-weight: 500; font-size: 14px; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="export-memory-chk" class="modern-checkbox">
+                            包含对话记忆、日记数据与好感度 (涉及隐私)
+                        </label>
+                        <p class="help-text" style="margin-left: 24px;">包括历史对话记录、生成的日记记录、角色好感度状态以及向量记忆数据库内容。</p>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label style="font-weight: 500; font-size: 14px; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="export-databank-chk" class="modern-checkbox">
+                            包含动态数据库当前状态数据
+                        </label>
+                        <p class="help-text" style="margin-left: 24px;">无论是否勾选，数据库模板 (template) 都会被导出。此选项决定是否导出当前的真实数值记录。</p>
+                    </div>
+
+                    <button id="btn-export-character" class="action-btn" style="margin-top: 25px; width: 100%; justify-content: center; background: #50fa7b; color: #282a36;">
+                        <i class="fas fa-box-open"></i> 封装灵魂为压缩包
+                    </button>
+                    <p id="export-status-text" class="help-text" style="margin-top: 10px; text-align: center; display: none;">正在封装，请稍候...</p>
+                </div>
+
+                <!-- 删除模式表单 -->
+                <div id="form-delete-mode" class="settings-card hidden" style="display: none;">
+                    <h3><i class="fas fa-skull"></i> 抹除灵魂 (放入回收站)</h3>
+                    
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="delete-char-id" style="font-weight: 500; font-size: 14px;">要删除的角色英文 ID (必填)</label>
+                        <input type="text" id="delete-char-id" class="modern-input" placeholder="例如：wriggle_test" style="margin-top: 8px; width: 100%;">
+                        <p class="help-text" style="color: #ff4d4f;">警告：删除后该角色将无法使用！</p>
+                    </div>
+
+                    <button id="delete-char-btn" class="action-btn" style="margin-top: 20px; width: 100%; justify-content: center; background-color: #ff4d4f; border-color: #ff4d4f; color: white;">
+                        <i class="fas fa-trash"></i> 彻底剥离 (移入回收站)
+                    </button>
+                    <p id="delete-status" class="help-text" style="margin-top: 10px; text-align: center; display: none;">正在删除，请稍候...</p>
+                </div>
+            </div>
+        </section>
+
+    
+        <!-- 6. 预设准备视图 -->
+        <!-- 6. 公用预设视图 -->
