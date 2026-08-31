@@ -56,7 +56,8 @@ def clean_history_text(text: str) -> str:
     return '\n'.join(lines)
 
 def run_post_and_history(state: dict):
-    log_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "bg_task_log.txt")
+    from core.config_manager import USER_DATA_DIR
+    log_path = os.path.join(USER_DATA_DIR, "bg_task_log.txt")
     os.makedirs(os.path.dirname(log_path), exist_ok=True)
     with open(log_path, "a", encoding="utf-8") as f:
         f.write(f"\n--- BG Task Started ---\n")
