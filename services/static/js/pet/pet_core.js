@@ -678,6 +678,12 @@ class DesktopPetCore {
             const data = await response.json();
 
             if (data.success) {
+                // 如果触发了启动应用或浏览器任务，沉浸模式下自动退出沉浸模式以展示被拉起的外部程序
+                if ((data.launcher_task || data.browser_task) && this.immersive?.isImmersiveMode) {
+                    console.log(`[IMMERSIVE] 检测到应用启动或浏览器任务 (${data.launcher_task || data.browser_task})，正在自动退出沉浸模式...`);
+                    this.immersive.exitImmersiveMode();
+                }
+
                 this.showBubble(data.reply, null, false, data.thought);
                 this.setEmotion(data.emotion);
                 if (this.immersive?.isImmersiveMode) {
@@ -780,6 +786,10 @@ class DesktopPetCore {
             });
             const data = await response.json();
             if (data.success) {
+                if ((data.launcher_task || data.browser_task) && this.immersive?.isImmersiveMode) {
+                    console.log(`[IMMERSIVE] 问候中触发应用启动 (${data.launcher_task || data.browser_task})，正在自动退出沉浸模式...`);
+                    this.immersive.exitImmersiveMode();
+                }
                 this.showBubble(data.reply, -1, false, data.thought);
                 this.setEmotion(data.emotion);
                 if (data.favorability !== undefined) {
@@ -891,6 +901,10 @@ class DesktopPetCore {
             });
             const data = await response.json();
             if (data.success) {
+                if ((data.launcher_task || data.browser_task) && this.immersive?.isImmersiveMode) {
+                    console.log(`[IMMERSIVE] 主动任务触发应用启动 (${data.launcher_task || data.browser_task})，正在自动退出沉浸模式...`);
+                    this.immersive.exitImmersiveMode();
+                }
                 this.showBubble(data.reply, -1, false, data.thought);
                 this.setEmotion(data.emotion);
                 if (this.immersive?.isImmersiveMode) {

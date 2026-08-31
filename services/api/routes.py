@@ -321,7 +321,11 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
             "fav_change": change,
             "history_count": len(updated_history) - 1,
             "force_sleep": force_sleep,
-            "audio_url": audio_url
+            "audio_url": audio_url,
+            "launcher_task": final_state.get("launcher_task"),
+            "launcher_result": final_state.get("launcher_result"),
+            "browser_task": final_state.get("browser_task"),
+            "browser_result": final_state.get("browser_result")
         }
 
     except Exception as e:
@@ -2059,7 +2063,11 @@ def pet_speak(payload: dict = Body(...), background_tasks: BackgroundTasks = Bac
             "favorability": current_fav,
             "fav_change": change,
             "history_count": len(updated_history) - 1,
-            "audio_url": audio_url
+            "audio_url": audio_url,
+            "launcher_task": final_state.get("launcher_task"),
+            "launcher_result": final_state.get("launcher_result"),
+            "browser_task": final_state.get("browser_task"),
+            "browser_result": final_state.get("browser_result")
         }
 
     except Exception as e:

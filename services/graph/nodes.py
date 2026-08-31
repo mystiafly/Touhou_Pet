@@ -9,7 +9,7 @@ from core.config_manager import get_config, get_active_character_id
 from core.llm_client import get_langchain_model
 from tools.presets_manager import load_and_trigger_presets
 from core.databank_manager import get_active_tables, get_databank_rules_for_llm, parse_and_execute_databank_commands
-from tools.tool_executor import parse_reply, extract_character_thought
+from tools.tool_executor import parse_reply, extract_character_thought, execute_launcher_task_node
 
 from time_system import get_time_greeting_prompt
 from real_world_system import get_meta_context_for_chat
@@ -538,17 +538,6 @@ def main_llm_node(state: AgentState) -> Dict[str, Any]:
         "thought": thought
     }
 
-def execute_launcher_task_node(state: AgentState) -> Dict[str, Any]:
-    from core.launcher_manager import launch_app
-    app_name = state.get("launcher_task")
-    if not app_name:
-        return {"launcher_result": "Error: No app specified"}
-        
-    config_data = get_config()
-    app_launcher = config_data.get("app_launcher", {})
-    success, msg = launch_app(app_name, app_launcher)
-    return {"launcher_result": msg}
-    
 def execute_clean_memory_task_node(state: AgentState) -> Dict[str, Any]:
     from core.optimizer_manager import clean_memory
     if not state.get("clean_memory_task"):
