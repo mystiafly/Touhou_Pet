@@ -379,7 +379,7 @@ def post_test_vision(payload: dict = Body(...)):
 def get_system_version_api():
     """获取当前系统版本与 Git Commit"""
     try:
-        root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        root_dir = ROOT_DIR
         pkg_path = os.path.join(root_dir, "package.json")
         version = "1.21.0"
         if os.path.exists(pkg_path):
@@ -524,7 +524,7 @@ def check_system_update_api():
     import subprocess
     import requests
     try:
-        root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        root_dir = ROOT_DIR
         
         pkg_path = os.path.join(root_dir, "package.json")
         current_version = "1.21.0"
@@ -626,7 +626,7 @@ def perform_system_update_api():
     import requests
     import shutil
     try:
-        root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        root_dir = ROOT_DIR
         is_git_repo = os.path.exists(os.path.join(root_dir, ".git"))
         
         # 1. 尝试使用 Git 更新 (极速毫秒级，增量仅几 KB~几 MB)
@@ -779,7 +779,7 @@ async def import_system_update_zip_api(file: UploadFile = File(...)):
         if not file.filename or not file.filename.lower().endswith(".zip"):
             return JSONResponse({"status": "error", "message": "上传的文件不是 ZIP 格式压缩包"}, status_code=400)
 
-        root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        root_dir = ROOT_DIR
         temp_dir = os.path.join(root_dir, "data", "temp_update")
         os.makedirs(temp_dir, exist_ok=True)
         uploaded_zip_path = os.path.join(temp_dir, "user_uploaded_update.zip")
@@ -881,7 +881,7 @@ async def import_system_update_zip_api(file: UploadFile = File(...)):
 def get_backend_log_api(lines: int = 200):
     """读取后端实时全量输出日志 (logs/backend_output.log)"""
     try:
-        root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        root_dir = ROOT_DIR
         log_path = os.path.join(root_dir, "logs", "backend_output.log")
         if not os.path.exists(log_path):
             return {"status": "success", "lines": [], "path": os.path.abspath(log_path), "message": "日志文件尚未生成"}
