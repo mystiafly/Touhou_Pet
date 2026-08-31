@@ -71,13 +71,15 @@
 
 ---
 
-## ⭐ Star History
+## Star History
 
-<div align="center">
-
-[![Star History Chart](https://api.star-history.com/svg?repos=mystiafly/Touhou_Pet&type=Date)](https://star-history.com/#mystiafly/Touhou_Pet&Date)
-
-</div>
+<a href="https://www.star-history.com/?type=date&repos=mystiafly%2FTouhou_Pet">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=mystiafly/Touhou_Pet&type=date&theme=dark&legend=top-left&sealed_token=XSBTu-06HGN34OPAHBNbsuTQlBnXRNP14KB4o8r-VlzbuTTpO8SbsaYX9Ozqp9iK9xj9-_FBfM9Bh6MaBvk_aTAos1H8GT5IRWK1z9Ldf_qSMjb9YUC9zg" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=mystiafly/Touhou_Pet&type=date&legend=top-left&sealed_token=XSBTu-06HGN34OPAHBNbsuTQlBnXRNP14KB4o8r-VlzbuTTpO8SbsaYX9Ozqp9iK9xj9-_FBfM9Bh6MaBvk_aTAos1H8GT5IRWK1z9Ldf_qSMjb9YUC9zg" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=mystiafly/Touhou_Pet&type=date&legend=top-left&sealed_token=XSBTu-06HGN34OPAHBNbsuTQlBnXRNP14KB4o8r-VlzbuTTpO8SbsaYX9Ozqp9iK9xj9-_FBfM9Bh6MaBvk_aTAos1H8GT5IRWK1z9Ldf_qSMjb9YUC9zg" />
+ </picture>
+</a>
 
 ---
 
