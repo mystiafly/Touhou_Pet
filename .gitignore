@@ -1,6 +1,12 @@
-# === 系统文件 ===
+# === 系统与临时文件 ===
 .DS_Store
 Thumbs.db
+*.bak
+*.tmp
+*.temp
+*.whl
+*.zip
+*.cmo3
 
 # === Node.js (Electron) ===
 node_modules/
@@ -8,53 +14,42 @@ dist/
 out/
 .npm
 npm-debug.log
+.node_env/
+node_temp.zip
 
-# === Python (Flask) ===
+# === Python 虚拟环境与编译缓存 ===
 __pycache__/
 *.py[cod]
-*$py.class
+*.class
 venv/
 .venv/
 env/
 .pytest_cache/
+build/
 
-# === 动态生成的文件与数据库 ===
+# === 动态生成的数据库与缓存 ===
 services/*.db*
 services/*.log
 services/qdrant_db/
 services/qdrant_db_temp/
 services/characters/*/qdrant_db/
 .cache/
+temp_home/
+downloads/
+data/tts_cache/
+data/temp_update/
+services/data/tts_cache/
+logs/
+*.log
 
-# === 临时与测试文件 ===
-scratch/
-/*.py
-!test_*.py
+# === 模型缓存 ===
+services/models/
 
-# === 安全隐私 (绝对不能上传！) ===
+# === 隐私与安全文件 (绝不上传) ===
 .env
-# === ��ɫ��˽����˼�¼ ===
 services/characters/*/dialog_history.json
 services/characters/*/favorability.json
 services/characters/*/databank_state.json
 services/characters/*/daily_history/
 services/characters/*/qdrant_db/
 legacy_backup/*
-
-# === Node.js ��Я�� ===
-.node_env/
-node_temp.zip
-
-logs/
-*.log
-
-services/models/
-
-build/
-dist/
-services/models/
-
-# === TTS Cache ===
-data/tts_cache/
-services/data/tts_cache/
-
