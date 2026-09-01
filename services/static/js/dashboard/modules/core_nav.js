@@ -427,4 +427,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedBg = localStorage.getItem('dashboard_bg_color');
     if (savedBg) applyDashboardBgColor(savedBg);
 
+    window.applyDashboardThemeColor = applyDashboardThemeColor;
+    window.applyDashboardBgColor = applyDashboardBgColor;
 });

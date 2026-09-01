@@ -176,18 +176,26 @@ def get_memory_graph():
         linked_entities_list = []
         try:
             if hasattr(agent, "entity_store") and agent.entity_store:
-                entities_data = agent.entity_store.get_all()
-                if isinstance(entities_data, list):
-                    linked_entities_list = entities_data
-                elif isinstance(entities_data, dict) and "results" in entities_data:
-                    linked_entities_list = entities_data["results"]
+                if hasattr(agent.entity_store, "list"):
+                    entities_result = agent.entity_store.list()
+                    if isinstance(entities_result, tuple) and len(entities_result) > 0:
+                        linked_entities_list = entities_result[0] if isinstance(entities_result[0], list) else []
+                    elif isinstance(entities_result, list):
+                        linked_entities_list = entities_result
+                elif hasattr(agent.entity_store, "get_all"):
+                    entities_data = agent.entity_store.get_all()
+                    if isinstance(entities_data, list):
+                        linked_entities_list = entities_data
+                    elif isinstance(entities_data, dict) and "results" in entities_data:
+                        linked_entities_list = entities_data["results"]
         except Exception as ee:
             print(f"[MEMORY GRAPH] Failed to fetch raw entity store: {ee}")
             
-        for entity in linked_entities_list:
+        for raw_entity in linked_entities_list:
+            entity = raw_entity.payload if hasattr(raw_entity, "payload") and isinstance(raw_entity.payload, dict) else raw_entity
             if not isinstance(entity, dict):
                 continue
-            e_name = entity.get("value") or entity.get("entity")
+            e_name = entity.get("value") or entity.get("entity") or entity.get("data")
             linked_ids = entity.get("linked_memory_ids", [])
             
             if not e_name or not isinstance(linked_ids, list):

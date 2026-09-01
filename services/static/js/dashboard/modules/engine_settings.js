@@ -593,7 +593,9 @@ window.deleteCustomEngine = async function(id) {
                 }
 
                 if (configData.theme_color) {
-                    applyDashboardThemeColor(configData.theme_color);
+                    if (window.applyDashboardThemeColor) {
+                        window.applyDashboardThemeColor(configData.theme_color);
+                    }
                     document.querySelectorAll('.theme-color-swatch').forEach(s => {
                         s.classList.toggle('selected', s.dataset.color === configData.theme_color);
                     });
@@ -1266,7 +1268,7 @@ window.deleteCustomEngine = async function(id) {
     const customThemePicker = document.getElementById('custom-theme-color-picker');
     
     function saveThemeColor(color) {
-        applyDashboardThemeColor(color);
+        if (window.applyDashboardThemeColor) window.applyDashboardThemeColor(color);
         document.querySelectorAll('.theme-color-swatch').forEach(s => {
             s.classList.toggle('selected', s.dataset.color === color);
         });
@@ -1285,7 +1287,7 @@ window.deleteCustomEngine = async function(id) {
     
     if (customThemePicker) {
         customThemePicker.addEventListener('input', (e) => {
-            applyDashboardThemeColor(e.target.value);
+            if (window.applyDashboardThemeColor) window.applyDashboardThemeColor(e.target.value);
             document.querySelectorAll('.theme-color-swatch').forEach(s => s.classList.remove('selected'));
             customThemePicker.closest('.theme-color-swatch').classList.add('selected');
         });
