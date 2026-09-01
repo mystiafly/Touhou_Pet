@@ -91,12 +91,12 @@ async def api_get_character_avatar(char_id: str):
         av_path = os.path.join(SERVICES_DIR, "characters", char_id, f"avatar.{ext}")
         if os.path.exists(av_path):
             media = "image/png" if ext == "png" else f"image/{ext}"
-            return FileResponse(av_path, media_type=media, headers={"Cache-Control": "no-cache, max-age=0"})
+            return FileResponse(av_path, media_type=media, headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "Expires": "0"})
             
     # 2. 检查是否有 normal.png 静态立绘作为次级备用
     normal_sprite = os.path.join(SERVICES_DIR, "characters", char_id, "assets", "main_sprites", "normal.png")
     if os.path.exists(normal_sprite):
-        return FileResponse(normal_sprite, media_type="image/png", headers={"Cache-Control": "no-cache, max-age=0"})
+        return FileResponse(normal_sprite, media_type="image/png", headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "Expires": "0"})
         
     # 3. 回退为默认机器人 SVG 头像
     default_svg = os.path.join(SERVICES_DIR, "static", "images", "default_robot_avatar.svg")
