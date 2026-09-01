@@ -134,27 +134,34 @@ document.addEventListener('DOMContentLoaded', () => {
             if (pngContainer) pngContainer.classList.add('hidden');
 
             const canvas = document.getElementById('dashboard-live2d-canvas');
-            if (canvas && window.SoullinkLive2D && setData.model_url) {
-                window.SoullinkLive2D.load(canvas, setData.model_url).then(() => {
-                    const scale = setData.scale !== undefined ? setData.scale : 1.0;
-                    const offX = setData.offset_x !== undefined ? setData.offset_x : 0.0;
-                    const offY = setData.offset_y !== undefined ? setData.offset_y : 0.0;
-                    window.SoullinkLive2D.setTransform(scale, offX, offY);
+            if (canvas && setData.model_url) {
+                const tryLoadLive2D = () => {
+                    if (window.SoullinkLive2D) {
+                        window.SoullinkLive2D.load(canvas, setData.model_url).then(() => {
+                            const scale = setData.scale !== undefined ? setData.scale : 1.0;
+                            const offX = setData.offset_x !== undefined ? setData.offset_x : 0.0;
+                            const offY = setData.offset_y !== undefined ? setData.offset_y : 0.0;
+                            window.SoullinkLive2D.setTransform(scale, offX, offY);
 
-                    const scaleSlider = document.getElementById('live2d-scale-slider');
-                    const scaleVal = document.getElementById('live2d-scale-val');
-                    const offXSlider = document.getElementById('live2d-offset-x-slider');
-                    const offXVal = document.getElementById('live2d-offset-x-val');
-                    const offYSlider = document.getElementById('live2d-offset-y-slider');
-                    const offYVal = document.getElementById('live2d-offset-y-val');
+                            const scaleSlider = document.getElementById('live2d-scale-slider');
+                            const scaleVal = document.getElementById('live2d-scale-val');
+                            const offXSlider = document.getElementById('live2d-offset-x-slider');
+                            const offXVal = document.getElementById('live2d-offset-x-val');
+                            const offYSlider = document.getElementById('live2d-offset-y-slider');
+                            const offYVal = document.getElementById('live2d-offset-y-val');
 
-                    if (scaleSlider) scaleSlider.value = scale;
-                    if (scaleVal) scaleVal.textContent = scale.toFixed(2) + 'x';
-                    if (offXSlider) offXSlider.value = offX;
-                    if (offXVal) offXVal.textContent = Math.round(offX) + 'px';
-                    if (offYSlider) offYSlider.value = offY;
-                    if (offYVal) offYVal.textContent = Math.round(offY) + 'px';
-                });
+                            if (scaleSlider) scaleSlider.value = scale;
+                            if (scaleVal) scaleVal.textContent = scale.toFixed(2) + 'x';
+                            if (offXSlider) offXSlider.value = offX;
+                            if (offXVal) offXVal.textContent = Math.round(offX) + 'px';
+                            if (offYSlider) offYSlider.value = offY;
+                            if (offYVal) offYVal.textContent = Math.round(offY) + 'px';
+                        });
+                    } else {
+                        setTimeout(tryLoadLive2D, 100);
+                    }
+                };
+                tryLoadLive2D();
             }
             return;
         }

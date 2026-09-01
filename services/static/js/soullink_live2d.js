@@ -102,7 +102,7 @@ class SoullinkLive2DDriver {
      */
     async load(canvas, modelUrl) {
         if (!canvas || !modelUrl) return false;
-        if (this.currentModelUrl === modelUrl && this.model) {
+        if (this.currentModelUrl === modelUrl && this.model && this.canvas === canvas) {
             return true;
         }
 
@@ -989,7 +989,7 @@ class SoullinkLive2DDriver {
         }
         if (this.app) {
             try {
-                this.app.destroy(true, { children: true, texture: true, baseTexture: true });
+                this.app.destroy(false, { children: true });
             } catch (e) {}
             this.app = null;
         }

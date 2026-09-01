@@ -161,6 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
             avatarImg.src = `/api/characters/${charId}/avatar?t=${Date.now()}`;
         }
     }
+    window.refreshAvatarPreview = refreshAvatarPreview;
 
     if (uploadAvatarBtn && avatarInput) {
         uploadAvatarBtn.addEventListener('click', () => {

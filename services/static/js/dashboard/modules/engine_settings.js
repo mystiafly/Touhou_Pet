@@ -632,6 +632,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 charSelect.value = charData.character_id;
             }
             if (charData.character_id) {
+                const avatarImg = document.getElementById('current-char-avatar-img');
+                if (avatarImg) {
+                    avatarImg.src = `/api/characters/${charData.character_id}/avatar?t=${Date.now()}`;
+                }
                 if (window.refreshAvatarPreview) {
                     window.refreshAvatarPreview(charData.character_id);
                 }
