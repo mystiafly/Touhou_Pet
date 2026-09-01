@@ -381,6 +381,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (activeSection) activeSection.classList.add('active');
 
             // 切换对应视图时触发数据加载
+            if (targetId === 'character-settings-view') {
+                if (window.loadConfig) window.loadConfig();
+                if (window.refreshAvatarPreview) window.refreshAvatarPreview();
+            }
             if (targetId === 'character-management-view') {
                 if (window.loadCharacters) window.loadCharacters();
             }

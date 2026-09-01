@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (characters) cachedCharacters = characters;
         if (activeCharId) cachedActiveCharId = activeCharId;
+        refreshAvatarPreview(cachedActiveCharId);
 
         if (!cachedCharacters || cachedCharacters.length === 0) {
             grid.innerHTML = '<div style="text-align: center; color: #6272a4; padding: 40px; grid-column: 1 / -1;"><i class="fas fa-ghost" style="font-size: 32px; margin-bottom: 10px;"></i><br>暂无可用角色</div>';
@@ -157,8 +158,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const avatarUploadStatus = document.getElementById('avatar-upload-status');
 
     function refreshAvatarPreview(charId) {
-        if (avatarImg && charId) {
-            avatarImg.src = `/api/characters/${charId}/avatar?t=${Date.now()}`;
+        const id = charId || cachedActiveCharId;
+        const img = document.getElementById('current-char-avatar-img');
+        if (img && id) {
+            img.src = `/api/characters/${id}/avatar?t=${Date.now()}`;
         }
     }
     window.refreshAvatarPreview = refreshAvatarPreview;
