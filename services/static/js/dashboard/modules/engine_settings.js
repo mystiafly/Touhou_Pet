@@ -620,7 +620,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             charSelect.appendChild(option);
                         });
                     }
-                    renderCharacterManagementGrid(charsData.characters, charsData.active_character || charData.character_id);
+                    if (window.renderCharacterManagementGrid) {
+                        window.renderCharacterManagementGrid(charsData.characters, charsData.active_character || charData.character_id);
+                    }
                 }
             } catch (e) {
                 console.error("加载角色列表失败:", e);
@@ -630,8 +632,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 charSelect.value = charData.character_id;
             }
             if (charData.character_id) {
-                cachedActiveCharId = charData.character_id;
-                refreshAvatarPreview(charData.character_id);
+                if (window.refreshAvatarPreview) {
+                    window.refreshAvatarPreview(charData.character_id);
+                }
             }
         } catch (e) {
             console.error("加载配置失败:", e);

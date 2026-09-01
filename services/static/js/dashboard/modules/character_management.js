@@ -550,9 +550,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    async function loadCharacters() {
+        try {
+            const [charsRes, charInfoRes] = await Promise.all([
+                fetch('/api/characters/list'),
+                fetch('/api/character_info')
+            ]);
+            const charsData = await charsRes.json();
+            const charInfo = await charInfoRes.json();
+            if (charsData.status === "success" || charsData.characters) {
+                renderCharacterManagementGrid(charsData.characters, charsData.active_character || charInfo.character_id);
+            }
+        } catch (e) {
+            console.error("加载角色列表失败:", e);
+        }
+    }
 
-    window.loadCharacters = typeof loadCharacters !== 'undefined' ? loadCharacters : null;
-    window.renderCharacterManagementGrid = typeof renderCharacterManagementGrid !== 'undefined' ? renderCharacterManagementGrid : null;
+    loadCharacters();
+
+    window.loadCharacters = loadCharacters;
+    window.renderCharacterManagementGrid = renderCharacterManagementGrid;
     window.refreshAvatarPreview = typeof refreshAvatarPreview !== 'undefined' ? refreshAvatarPreview : null;
     window.triggerAppRestart = typeof triggerAppRestart !== 'undefined' ? triggerAppRestart : null;
 });

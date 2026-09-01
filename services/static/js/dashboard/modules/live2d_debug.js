@@ -1,4 +1,3 @@
-document.addEventListener('DOMContentLoaded', () => {
 // ==================== SPRITE SETTINGS LOGIC ====================
 document.addEventListener('DOMContentLoaded', () => {
     const spriteView = document.getElementById('sprite-settings-view');
@@ -591,9 +590,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-});
 
-
-
-    window.loadSpriteSets = typeof loadSpriteSets !== 'undefined' ? loadSpriteSets : null;
+    window.loadSpriteSets = loadSpriteSets;
 });

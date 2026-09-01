@@ -377,22 +377,36 @@ document.addEventListener('DOMContentLoaded', () => {
             item.classList.add('active');
             
             sections.forEach(sec => sec.classList.remove('active'));
-            document.getElementById(targetId).classList.add('active');
+            const activeSection = document.getElementById(targetId);
+            if (activeSection) activeSection.classList.add('active');
 
-            // 如果切换到图谱，延迟渲染以保证容器可见
-            if (targetId === 'graph-view' && !window.graphLoaded) {
-                loadMemoryGraph();
-                window.graphLoaded = true;
+            // 切换对应视图时触发数据加载
+            if (targetId === 'character-management-view') {
+                if (window.loadCharacters) window.loadCharacters();
             }
-            if (targetId === 'logs-view' && !window.logsLoaded) {
-                loadLogsList();
-                window.logsLoaded = true;
+            if (targetId === 'sprite-settings-view') {
+                if (window.loadSpriteSets) window.loadSpriteSets();
+            }
+            if (targetId === 'reactions-view') {
+                if (window.loadReactions) window.loadReactions();
+            }
+            if (targetId === 'dashboard-stats-view') {
+                if (window.loadDashboardStats) window.loadDashboardStats();
+            }
+            if (targetId === 'global-presets-view' || targetId === 'custom-presets-view') {
+                if (window.loadPresets) window.loadPresets();
+            }
+            if (targetId === 'graph-view') {
+                if (window.loadMemoryGraph) window.loadMemoryGraph();
+            }
+            if (targetId === 'logs-view') {
+                if (window.loadLogsList) window.loadLogsList();
             }
             if (targetId === 'databank-view') {
-                if(window.loadDataBank) window.loadDataBank();
+                if (window.loadDataBank) window.loadDataBank();
             }
             if (targetId === 'tools-view' && !window.toolsLoaded) {
-                if(window.loadToolsList) window.loadToolsList();
+                if (window.loadToolsList) window.loadToolsList();
                 window.toolsLoaded = true;
             }
             if (targetId === 'personalization-view' && !window.personalizationInited) {
