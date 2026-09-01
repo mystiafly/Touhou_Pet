@@ -160,9 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         tr.addEventListener('click', (e) => {
             if (e.target.closest('button')) return; // Ignore if clicking action buttons
-            if (typeof openDataRowModal === 'function') {
-                openDataRowModal(tr);
-            }
+            openDataRowModal(tr);
         });
 
         rowData.forEach(cellText => {
@@ -568,64 +566,72 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-// --- DataBank Modal Editor Logic ---
-let currentRowElement = null;
+    // --- DataBank Modal Editor Logic ---
+    let currentRowElement = null;
 
-window.openDataRowModal = function(trElement) {
+    function openDataRowModal(trElement) {
+        const databankRowModal = document.getElementById('databank-row-modal');
+        const databankRowForm = document.getElementById('databank-row-form');
+        if (!databankRowModal || !databankRowForm) return;
+        currentRowElement = trElement;
+        
+        const tableEl = document.getElementById('databank-table');
+        const thead = tableEl ? tableEl.querySelector('thead') : null;
+        if (!thead) return;
+        
+        const headers = Array.from(thead.querySelectorAll('th')).slice(0, -1).map(th => th.textContent.trim());
+        const cells = trElement ? Array.from(trElement.querySelectorAll('td')).slice(0, -1).map(td => td.textContent) : [];
+        
+        databankRowForm.innerHTML = '';
+        
+        headers.forEach((header, index) => {
+            let val = cells[index] || '';
+            if (!trElement && header === 'row_id') {
+                val = 'row_' + Math.random().toString(16).substring(2, 10);
+            }
+            
+            const group = document.createElement('div');
+            group.className = 'form-group';
+            group.style.marginBottom = '15px';
+            
+            const label = document.createElement('label');
+            label.textContent = header;
+            label.style.display = 'block';
+            label.style.marginBottom = '5px';
+            
+            const input = document.createElement('textarea');
+            input.className = 'modern-input';
+            input.style.width = '100%';
+            input.style.resize = 'vertical';
+            input.style.minHeight = '40px';
+            input.style.fontFamily = 'monospace';
+            input.value = val;
+            
+            if (header === 'row_id') {
+                input.style.backgroundColor = 'var(--bg-secondary)';
+                input.placeholder = "通常由系统自动生成";
+            }
+            
+            group.appendChild(label);
+            group.appendChild(input);
+            databankRowForm.appendChild(group);
+        });
+        
+        databankRowModal.classList.remove('hidden');
+    }
+
     const databankRowModal = document.getElementById('databank-row-modal');
-    const databankRowForm = document.getElementById('databank-row-form');
-    currentRowElement = trElement;
-    
-    const tableEl = document.getElementById('databank-table');
-    const thead = tableEl.querySelector('thead');
-    if(!thead) return;
-    
-    const headers = Array.from(thead.querySelectorAll('th')).slice(0, -1).map(th => th.textContent.trim());
-    const cells = trElement ? Array.from(trElement.querySelectorAll('td')).slice(0, -1).map(td => td.textContent) : [];
-    
-    databankRowForm.innerHTML = '';
-    
-    headers.forEach((header, index) => {
-        let val = cells[index] || '';
-        if (!trElement && header === 'row_id') {
-            val = 'row_' + Math.random().toString(16).substring(2, 10);
-        }
-        
-        const group = document.createElement('div');
-        group.className = 'form-group';
-        group.style.marginBottom = '15px';
-        
-        const label = document.createElement('label');
-        label.textContent = header;
-        label.style.display = 'block';
-        label.style.marginBottom = '5px';
-        
-        const input = document.createElement('textarea');
-        input.className = 'modern-input';
-        input.style.width = '100%';
-        input.style.resize = 'vertical';
-        input.style.minHeight = '40px';
-        input.style.fontFamily = 'monospace';
-        input.value = val;
-        
-        if (header === 'row_id') {
-            input.style.backgroundColor = 'var(--bg-secondary)';
-            input.placeholder = "通常由系统自动生成";
-        }
-        
-        group.appendChild(label);
-        group.appendChild(input);
-        databankRowForm.appendChild(group);
-    });
-    
-    databankRowModal.classList.remove('hidden');
-};
-
-document.addEventListener('DOMContentLoaded', () => {
     const closeDatabankRowModalBtn = document.getElementById('close-databank-row-modal-btn');
-    if (closeDatabankRowModalBtn) {
+    if (closeDatabankRowModalBtn && databankRowModal) {
         closeDatabankRowModalBtn.addEventListener('click', () => {
-            document.getElementById('databank-row-modal').classList.add('hidden');
+            databankRowModal.classList.add('hidden');
+        });
+    }
+    if (databankRowModal) {
+        databankRowModal.addEventListener('click', (e) => {
+            if (e.target === databankRowModal) {
+                databankRowModal.classList.add('hidden');
+            }
         });
     }
 
@@ -633,6 +639,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (saveDatabankRowBtn) {
         saveDatabankRowBtn.addEventListener('click', () => {
             const databankRowForm = document.getElementById('databank-row-form');
+            if (!databankRowForm) return;
             const inputs = Array.from(databankRowForm.querySelectorAll('textarea'));
             const newValues = inputs.map(input => input.value);
             
@@ -643,16 +650,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (tds[index]) tds[index].textContent = val;
                 });
             } else {
-                const tbody = document.getElementById('databank-table').querySelector('tbody');
-                if (tbody && window.createDataRowGlobal) {
-                    tbody.appendChild(window.createDataRowGlobal(newValues));
+                const tbody = document.getElementById('databank-table')?.querySelector('tbody');
+                if (tbody) {
+                    tbody.appendChild(createDataRow(newValues));
                 }
             }
-            document.getElementById('databank-row-modal').classList.add('hidden');
+            if (databankRowModal) databankRowModal.classList.add('hidden');
         });
     }
-});
 
-
+    window.openDataRowModal = openDataRowModal;
     window.loadDataBank = typeof loadDataBank !== 'undefined' ? loadDataBank : null;
 });

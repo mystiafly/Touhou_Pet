@@ -133,7 +133,6 @@ window.deleteCustomEngine = async function(id) {
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
     const manageBtn = document.getElementById('manage-engines-btn');
     const modal = document.getElementById('engine-modal');
     const closeBtn = document.getElementById('close-engine-modal-btn');
@@ -353,8 +352,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-});
-
 
     // ========== 大脑引擎配置 ==========
     const apiSelect = document.getElementById('api-provider-select');
