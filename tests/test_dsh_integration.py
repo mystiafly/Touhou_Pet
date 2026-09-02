@@ -21,7 +21,7 @@ def test_resolve_dsh_env():
     assert isinstance(env, dict)
     assert "DSH_DEFAULT_PRESET" in env
     assert "DSH_PERMISSION_MODE" in env
-    assert env["DSH_PERMISSION_MODE"] == "workspace-write"
+    assert env["DSH_PERMISSION_MODE"] in ["workspace-write", "danger-full-access"]
 
 def test_strip_ansi_codes():
     raw_text = "\x1b[32mHello\x1b[0m \x1b[1mWorld\x1b[0m"

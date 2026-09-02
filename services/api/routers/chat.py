@@ -148,6 +148,8 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
             "process_result": None,
             "weather_task": None,
             "weather_result": None,
+            "dsh_task": None,
+            "dsh_result": None,
             "selected_memory": "",
             "request_type": "chat",
             "retry_count": 0
@@ -385,6 +387,8 @@ def pet_speak(payload: dict = Body(...), background_tasks: BackgroundTasks = Bac
             "process_result": None,
             "weather_task": None,
             "weather_result": None,
+            "dsh_task": None,
+            "dsh_result": None,
             "selected_memory": "",
             "request_type": request_type,
             "retry_count": 0

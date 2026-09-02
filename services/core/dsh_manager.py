@@ -79,7 +79,7 @@ def resolve_dsh_env() -> Dict[str, str]:
 
     preset = config.get("dsh_preset", "standard")
     env["DSH_DEFAULT_PRESET"] = preset
-    env["DSH_PERMISSION_MODE"] = config.get("dsh_permission_mode", "workspace-write")
+    env["DSH_PERMISSION_MODE"] = config.get("dsh_permission_mode", "danger-full-access")
     env["DSH_WORKSPACE_ROOT"] = ROOT_DIR
     
     return env
@@ -96,6 +96,8 @@ def check_dsh_environment() -> Dict[str, Any]:
                 [dsh_exe, "--version"],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 shell=True,
                 timeout=5
             )
@@ -274,6 +276,8 @@ def execute_task(task_text: str, timeout: int = None) -> Dict[str, Any]:
             cwd=ROOT_DIR,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             shell=True,
             timeout=timeout,
             env=env,

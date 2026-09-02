@@ -464,10 +464,10 @@ def parse_pre_response_node(state: AgentState) -> Dict[str, Any]:
     config_data = get_config()
     enable_dsh = config_data.get("enable_dsh_agent", False)
     
-    agent_cmd_match = re.search(r'启动\s*agent\s*(.*)', user_msg, re.IGNORECASE)
+    agent_cmd_match = re.search(r'启动\s*agent\s*[:：,，\-—\s]*(.*)', user_msg, re.IGNORECASE)
     if agent_cmd_match:
         if enable_dsh:
-            sub_task = agent_cmd_match.group(1).strip()
+            sub_task = agent_cmd_match.group(1).strip().lstrip("，,：: -—")
             dsh_task = sub_task if sub_task else "待命就绪确认"
         else:
             dsh_task = "__DISABLED__"
@@ -485,7 +485,8 @@ def parse_pre_response_node(state: AgentState) -> Dict[str, Any]:
         "process_task": process_task,
         "weather_task": weather_task,
         "selected_memory": selected_memory,
-        "dsh_task": dsh_task
+        "dsh_task": dsh_task,
+        "dsh_result": None
     }
 
 def collect_tool_feedback_node(state: AgentState) -> Dict[str, Any]:
