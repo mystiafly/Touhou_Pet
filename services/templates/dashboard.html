@@ -1545,16 +1545,47 @@
         <section id="reactions-view" class="content-section">
             <div class="section-header">
                 <h2>💬 互动应付词与离线语音 (Reactions)</h2>
-                <p>管理桌宠在不同情绪下，被点击时说出的随机短句。如果词库太空，系统会在后台自动用大模型补全。</p>
+                <p>管理桌宠在不同情绪下被点击时说出的随机短句与预录离线语音。点击短句旁边的语音按钮可试听/录制，离线语音响应零延迟！</p>
             </div>
             
             <div class="card" style="display: flex; flex-direction: column; min-height: calc(100vh - 190px);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-                    <h3 class="card-title" style="margin:0;"><i class="fas fa-comments"></i> 应付词列表与离线语音</h3>
-                    <div style="display: flex; gap: 10px;">
-                        <button class="action-btn outline" id="btn-refresh-reactions" style="padding: 5px 12px; font-size: 12px;"><i class="fas fa-sync-alt"></i> 刷新</button>
+                <!-- 顶部快捷语音工具栏 -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <h3 class="card-title" style="margin:0;"><i class="fas fa-microphone-alt" style="color: var(--accent);"></i> 离线语音工坊</h3>
+                        <span id="reactions-voice-stat-badge" class="badge" style="background: rgba(139, 233, 253, 0.15); color: #8be9fd; font-size: 12px; padding: 3px 8px; border-radius: 12px;">统计中...</span>
+                    </div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button class="action-btn" id="btn-batch-record-unrecorded" style="padding: 6px 14px; font-size: 13px; background: linear-gradient(135deg, #bd93f9, #ff79c6); border: none; color: #fff;">
+                            <i class="fas fa-wave-square"></i> 一键录制未录语音
+                        </button>
+                        <button class="action-btn outline" id="btn-batch-record-all" style="padding: 6px 14px; font-size: 13px;" title="使用当前活跃角色的最新 TTS 音色全量重录覆盖">
+                            <i class="fas fa-redo"></i> 强制全量重录
+                        </button>
+                        <button class="action-btn danger" id="btn-stop-batch-record" style="padding: 6px 14px; font-size: 13px; display: none;">
+                            <i class="fas fa-stop"></i> 停止批量录制
+                        </button>
+                        <button class="action-btn outline" id="btn-regenerate-reactions" style="padding: 6px 14px; font-size: 13px;" title="清空并让大模型重新生成此角色的 5x5 应付词">
+                            <i class="fas fa-magic"></i> 重建词库
+                        </button>
+                        <button class="action-btn outline" id="btn-refresh-reactions" style="padding: 6px 14px; font-size: 13px;" title="刷新列表">
+                            <i class="fas fa-sync-alt"></i> 刷新
+                        </button>
                     </div>
                 </div>
+
+                <!-- 批量录制进度卡片 (动态显隐) -->
+                <div id="reactions-batch-progress-card" style="display: none; background: rgba(40, 42, 54, 0.6); border: 1px solid var(--accent); border-radius: 8px; padding: 12px 16px; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 13px; font-weight: 600; color: #f8f8f2;" id="reactions-progress-status-text"><i class="fas fa-spinner fa-spin" style="color: var(--accent);"></i> 正在后台录制应付词语音...</span>
+                        <span style="font-size: 13px; font-family: monospace; color: var(--accent);" id="reactions-progress-percent-text">0%</span>
+                    </div>
+                    <div style="background: rgba(255, 255, 255, 0.1); height: 8px; border-radius: 4px; overflow: hidden; position: relative;">
+                        <div id="reactions-progress-bar-fill" style="width: 0%; height: 100%; background: linear-gradient(90deg, #8be9fd, #50fa7b); transition: width 0.3s ease;"></div>
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="reactions-progress-current-item"></div>
+                </div>
+
                 <div id="reactions-list-container" style="display: flex; flex-direction: column; gap: 20px; overflow-y: auto; flex: 1; padding-right: 10px;">
                     <div class="loading-state" id="reactions-loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>
                     <div id="reactions-content" style="display: none; flex-direction: column; gap: 15px;">
@@ -2239,16 +2270,16 @@
 </div>
 
 <!-- 大贤者控制台 11 大领域子模块架构 (5570行全量无损解耦与全局桥接) -->
-<script src="/static/js/dashboard/modules/core_nav.js?v=1.43.8"></script>
-<script src="/static/js/dashboard/modules/engine_settings.js?v=1.43.8"></script>
-<script src="/static/js/dashboard/modules/character_management.js?v=1.43.8"></script>
-<script src="/static/js/dashboard/modules/diary_logs.js?v=1.43.8"></script>
-<script src="/static/js/dashboard/modules/character_reactions.js?v=1.43.8"></script>
-<script src="/static/js/dashboard/modules/memory_graph.js?v=1.43.8"></script>
-<script src="/static/js/dashboard/modules/presets_manager.js?v=1.43.8"></script>
-<script src="/static/js/dashboard/modules/databank_editor.js?v=1.43.8"></script>
-<script src="/static/js/dashboard/modules/tools_preview.js?v=1.43.8"></script>
-<script src="/static/js/dashboard/modules/live2d_debug.js?v=1.43.8"></script>
-<script src="/static/js/dashboard/modules/dashboard_stats.js?v=1.43.8"></script>
+<script src="/static/js/dashboard/modules/core_nav.js?v=1.43.9"></script>
+<script src="/static/js/dashboard/modules/engine_settings.js?v=1.43.9"></script>
+<script src="/static/js/dashboard/modules/character_management.js?v=1.43.9"></script>
+<script src="/static/js/dashboard/modules/diary_logs.js?v=1.43.9"></script>
+<script src="/static/js/dashboard/modules/character_reactions.js?v=1.43.9"></script>
+<script src="/static/js/dashboard/modules/memory_graph.js?v=1.43.9"></script>
+<script src="/static/js/dashboard/modules/presets_manager.js?v=1.43.9"></script>
+<script src="/static/js/dashboard/modules/databank_editor.js?v=1.43.9"></script>
+<script src="/static/js/dashboard/modules/tools_preview.js?v=1.43.9"></script>
+<script src="/static/js/dashboard/modules/live2d_debug.js?v=1.43.9"></script>
+<script src="/static/js/dashboard/modules/dashboard_stats.js?v=1.43.9"></script>
 </body>
 </html>
