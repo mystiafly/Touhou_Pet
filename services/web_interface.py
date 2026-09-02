@@ -135,6 +135,25 @@ app.mount("/char_assets", StaticFiles(directory=os.path.join(USER_DATA_DIR, "cha
 # 挂载路由
 app.include_router(router)
 
+import atexit
+
+@app.on_event("startup")
+async def on_startup():
+    from core.config_manager import get_config
+    from core.dsh_manager import start_daemon
+    cfg = get_config()
+    if cfg.get("enable_dsh_agent") and cfg.get("dsh_run_mode") == "daemon":
+        start_daemon()
+
+@app.on_event("shutdown")
+def on_shutdown():
+    from core.dsh_manager import stop_daemon, stop_dsh_web_ui
+    stop_daemon()
+    stop_dsh_web_ui()
+
+# 确保 Python 进程退出时安全释放 DSH 子进程 (同生共死保障)
+atexit.register(on_shutdown)
+
 if __name__ == '__main__':
     # 启动后台每日记忆主动整理守护线程
     t = threading.Thread(target=daily_distillation_worker, daemon=True)

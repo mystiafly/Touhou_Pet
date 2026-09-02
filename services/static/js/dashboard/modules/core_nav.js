@@ -409,6 +409,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (targetId === 'databank-view') {
                 if (window.loadDataBank) window.loadDataBank();
             }
+            if (targetId === 'agent-settings-view') {
+                if (window.loadConfig) window.loadConfig();
+                if (window.refreshDshStatus) window.refreshDshStatus();
+            }
             if (targetId === 'tools-view' && !window.toolsLoaded) {
                 if (window.loadToolsList) window.loadToolsList();
                 window.toolsLoaded = true;

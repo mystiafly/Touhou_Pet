@@ -96,8 +96,9 @@ def build_pre_messages(state: AgentState) -> list:
         "5. 视觉识图: 如果用户要求你看看屏幕上有什么，或者让你识图，输出 `[ANALYZE_SCREEN]`。\n"
         "6. 进程探测: 如果用户问你在忙什么、玩什么游戏，或者让你看看他电脑里开着什么软件，输出 `[READ_PROCESS]`。\n"
         "7. 长期记忆检索: 如果检测到下面的【相关记忆检索结果】中的内容与当前用户的话题有实质性关联（例如提及了过去的某件事、某个约定或情感），你必须输出对应的 `[SELECT_MEMORY: ID]` 来在后续环节调取完整日记。\n"
-        "8. 实时天气查询: 如果用户询问天气、气温、下雨、冷热、穿衣防雨建议，或者询问某地天气（如‘今天上海天气怎么样’、‘出门要带伞吗’），你必须输出 `[WEATHER: 城市名]`（若未指定城市输出 `[WEATHER: auto]`）。\n\n"
-        "【规则】\n"
+        "8. 实时天气查询: 如果用户询问天气、气温、下雨、冷热、穿衣防雨建议，或者询问某地天气（如‘今天上海天气怎么样’、‘出门要带伞吗’），你必须输出 `[WEATHER: 城市名]`（若未指定城市输出 `[WEATHER: auto]`）。\n"
+        + ("9. DSH 智能体执行器: 用户要求调用深度智能体执行复杂代码重构、全盘工程分析或系统级脚本任务，且包含‘启动agent’时，你必须输出 `[DSH_TASK: 具体任务]`。\n" if config_data.get("enable_dsh_agent") else "")
+        + "\n【规则】\n"
         "1. 如果检测到工具意图，请仅输出上述的一个或多个标签，不需要任何多余解释！绝对禁止进行角色扮演！\n"
         "2. 如果未检测到任何需要工具协助的意图（且不需要调取长记忆），请仅输出 `[NO_TOOLS_NEEDED]`。\n"
     )
@@ -457,6 +458,24 @@ def parse_pre_response_node(state: AgentState) -> Dict[str, Any]:
         except Exception as e:
             print(f"[MEMORY SELECT] failed to read full diary for {memory_task}: {e}")
 
+    # 9. DSH 智能体执行任务判定 (精确检测输入“启动agent”或前置模型意图)
+    dsh_task = None
+    user_msg = state.get("user_message", "")
+    config_data = get_config()
+    enable_dsh = config_data.get("enable_dsh_agent", False)
+    
+    agent_cmd_match = re.search(r'启动\s*agent\s*(.*)', user_msg, re.IGNORECASE)
+    if agent_cmd_match:
+        if enable_dsh:
+            sub_task = agent_cmd_match.group(1).strip()
+            dsh_task = sub_task if sub_task else "待命就绪确认"
+        else:
+            dsh_task = "__DISABLED__"
+    else:
+        dsh_match = re.search(r'\[DSH_TASK:\s*(.*?)\]', raw_reply, re.IGNORECASE)
+        if dsh_match and enable_dsh:
+            dsh_task = dsh_match.group(1).strip()
+
     return {
         "browser_task": browser_task,
         "search_task": search_task,
@@ -465,7 +484,8 @@ def parse_pre_response_node(state: AgentState) -> Dict[str, Any]:
         "clean_memory_task": clean_memory_task,
         "process_task": process_task,
         "weather_task": weather_task,
-        "selected_memory": selected_memory
+        "selected_memory": selected_memory,
+        "dsh_task": dsh_task
     }
 
 def collect_tool_feedback_node(state: AgentState) -> Dict[str, Any]:
@@ -494,6 +514,9 @@ def collect_tool_feedback_node(state: AgentState) -> Dict[str, Any]:
 
     if state.get("weather_result"):
         tool_feedback.append(f"【系统反馈-实时天气】\n{state.get('weather_result')}")
+
+    if state.get("dsh_result"):
+        tool_feedback.append(f"【系统反馈-DSH 智能体执行产物】\n{state.get('dsh_result')}\n提示：请你以当前桌宠专属的性格和对白风格，向用户总结汇报上述智能体执行的结果。")
 
     feedback_str = "\n".join(tool_feedback)
     return {"tool_feedback_context": feedback_str}
@@ -622,6 +645,8 @@ def should_execute_tools(state: AgentState) -> str:
         return "execute_clean_memory_task"
     if state.get("weather_task") and state.get("weather_result") is None:
         return "execute_weather_task"
+    if state.get("dsh_task") and state.get("dsh_result") is None:
+        return "execute_dsh_task"
     return "collect_tool_feedback"
 
 def prepare_retry_node(state: AgentState) -> Dict[str, Any]:

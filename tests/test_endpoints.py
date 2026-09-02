@@ -65,4 +65,18 @@ def test_backup_router(client):
     assert "has_backup" in data["data"]
     assert "is_valid_within_3_days" in data["data"]
 
+def test_dsh_router(client):
+    """
+    测试 DSH 智能体执行器接口 (GET /api/system/dsh/status, POST /api/system/dsh/stop_web)
+    """
+    res_status = client.get("/api/system/dsh/status")
+    assert res_status.status_code == 200
+    data = res_status.json()
+    assert data["status"] == "success"
+    assert "data" in data
+    assert "is_installed" in data["data"]
+    assert "has_api_key" in data["data"]
+    assert "settings" in data["data"]
+    assert data["data"]["settings"]["dsh_preset"] in ["standard", "ptc", "minimal", "creator"]
+
 

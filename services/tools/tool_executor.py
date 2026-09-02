@@ -428,3 +428,31 @@ def execute_vision_task_node(state: AgentState) -> Dict[str, Any]:
         err_msg = f"执行屏幕截取或初始化 API 时出错: {str(e)}。由于识图失败，你什么都没看到。"
         print(f"[MONITOR] {err_msg}")
         return {"vision_result": err_msg}
+
+
+def execute_dsh_task_node(state: AgentState) -> Dict[str, Any]:
+    """工具节点：静默执行 DeepSeek Harness (DSH) 智能体工程任务 (标准模式 Standard Mode)"""
+    dsh_task = state.get("dsh_task")
+    if not dsh_task:
+        return {"dsh_result": None}
+
+    if dsh_task == "__DISABLED__":
+        return {
+            "dsh_result": "用户在对话中尝试输入了【启动agent】，但系统大贤者控制台中尚未启用【DSH 智能体执行器】。请以你的专属角色对白语气，轻声提醒用户：“如果你想让我启动高级智能体帮你分析代码或执行复杂任务，请先在控制台左侧的【Agent 设置】中开启该工具哦～”"
+        }
+
+    if dsh_task == "待命就绪确认":
+        return {
+            "dsh_result": "DSH 智能体执行中枢（标准模式 Standard Mode）目前处于正常待命状态。请以你的桌宠人设风格，向用户确认：“（眨眨眼）DSH 智能体执行器已待命就绪！主人您想让我执行什么具体的分析、编写或工程指令呀？”"
+        }
+
+    try:
+        from core.dsh_manager import execute_task
+        print(f"\n[DSH TOOL MONITOR] 正在调度 DSH 智能体无头执行任务: {dsh_task}")
+        res = execute_task(dsh_task)
+        output = res.get("output", "DSH 执行完毕，无额外输出。")
+        return {"dsh_result": output}
+    except Exception as e:
+        err_msg = f"DSH 智能体工具执行调度异常: {str(e)}"
+        print(f"[DSH TOOL MONITOR] {err_msg}")
+        return {"dsh_result": err_msg}

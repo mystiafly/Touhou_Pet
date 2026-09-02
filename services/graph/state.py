@@ -35,5 +35,7 @@ class AgentState(TypedDict):
     clean_memory_result: Optional[Dict[str, Any]]
     weather_task: Optional[str]
     weather_result: Optional[str]
+    dsh_task: Optional[str]
+    dsh_result: Optional[str]
     request_type: Optional[str]
     retry_count: Optional[int]

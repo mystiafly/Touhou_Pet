@@ -277,6 +277,19 @@ def post_config_api(payload: dict = Body(...)):
             config_data["user_prompt"] = payload["user_prompt"].strip()
         if "preset_max_depth" in payload:
             config_data["preset_max_depth"] = int(payload["preset_max_depth"])
+        if "enable_dsh_agent" in payload:
+            config_data["enable_dsh_agent"] = bool(payload["enable_dsh_agent"])
+        if "dsh_run_mode" in payload:
+            config_data["dsh_run_mode"] = str(payload["dsh_run_mode"]).strip()
+        if "dsh_preset" in payload:
+            config_data["dsh_preset"] = str(payload["dsh_preset"]).strip()
+        if "dsh_api_provider" in payload:
+            config_data["dsh_api_provider"] = str(payload["dsh_api_provider"]).strip()
+        if "dsh_timeout" in payload:
+            try:
+                config_data["dsh_timeout"] = max(10, int(payload["dsh_timeout"]))
+            except:
+                pass
         if "preset_block_english" in payload:
             config_data["preset_block_english"] = bool(payload["preset_block_english"])
         if "app_launcher" in payload:
@@ -349,9 +362,48 @@ def post_config_api(payload: dict = Body(...)):
                 require_restart = True
 
         save_config(config_data)
+
+        # 联动 DSH 守护进程生命周期 (常态启动 / 释放)
+        try:
+            from core.dsh_manager import start_daemon, stop_daemon
+            if config_data.get("enable_dsh_agent") and config_data.get("dsh_run_mode") == "daemon":
+                start_daemon()
+            else:
+                stop_daemon()
+        except Exception as de:
+            print(f"[DSH DAEMON SYNC WARN] {de}")
+
         return {"success": True, "status": "success", "message": "配置已成功保存", "require_restart": require_restart}
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
+
+
+# ==========================================
+# 🤖 DSH 智能体执行器接口
+# ==========================================
+
+@router.get("/api/system/dsh/status")
+def get_dsh_status_api():
+    """获取 DSH 运行环境就绪度与进程状态"""
+    from core.dsh_manager import check_dsh_environment
+    return JSONResponse({"status": "success", "data": check_dsh_environment()})
+
+
+@router.post("/api/system/dsh/launch_web")
+def launch_dsh_web_api(payload: dict = Body(default={})):
+    """手动在浏览器拉起 DSH 官方 Web 工作台 (改插件/高级配置)"""
+    from core.dsh_manager import launch_dsh_web_ui
+    port = int(payload.get("port", 54321))
+    res = launch_dsh_web_ui(port=port)
+    return JSONResponse(res)
+
+
+@router.post("/api/system/dsh/stop_web")
+def stop_dsh_web_api():
+    """手动停止 DSH 官方 Web 工作台"""
+    from core.dsh_manager import stop_dsh_web_ui
+    res = stop_dsh_web_ui()
+    return JSONResponse(res)
 
 @router.post("/api/settings/test_vision")
 def post_test_vision(payload: dict = Body(...)):

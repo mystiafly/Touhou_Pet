@@ -24,7 +24,8 @@ function renderCustomEnginesDropdown() {
         document.getElementById('api-provider-select'),
         document.getElementById('pre-api-provider-select'),
         document.getElementById('post-api-provider-select'),
-        document.getElementById('vision-engine-select')
+        document.getElementById('vision-engine-select'),
+        document.getElementById('dsh-api-provider-select')
     ];
     
     selects.forEach(select => {
@@ -386,6 +387,37 @@ window.deleteCustomEngine = async function(id) {
                 if (postApiSelect && configData.post_api_provider) {
                     postApiSelect.value = configData.post_api_provider;
                 }
+
+                // DSH Agent 智能体设置读取
+                const dshToggle = document.getElementById('dsh-enable-toggle');
+                const dshLabel = document.getElementById('dsh-enable-label');
+                if (dshToggle) {
+                    dshToggle.checked = !!configData.enable_dsh_agent;
+                    if (dshLabel) {
+                        dshLabel.textContent = dshToggle.checked ? "已启用" : "未启用";
+                        dshLabel.style.color = dshToggle.checked ? "#50fa7b" : "#f8f8f2";
+                    }
+                }
+                const dshModeDaemon = document.getElementById('dsh-mode-daemon');
+                const dshModeOnDemand = document.getElementById('dsh-mode-on-demand');
+                if (configData.dsh_run_mode === 'daemon') {
+                    if (dshModeDaemon) dshModeDaemon.checked = true;
+                } else {
+                    if (dshModeOnDemand) dshModeOnDemand.checked = true;
+                }
+                const dshPresetSelect = document.getElementById('dsh-preset-select');
+                if (dshPresetSelect && configData.dsh_preset) {
+                    dshPresetSelect.value = configData.dsh_preset;
+                }
+                const dshApiSelect = document.getElementById('dsh-api-provider-select');
+                if (dshApiSelect && configData.dsh_api_provider) {
+                    dshApiSelect.value = configData.dsh_api_provider;
+                }
+                const dshTimeoutInput = document.getElementById('dsh-timeout-input');
+                if (dshTimeoutInput && configData.dsh_timeout) {
+                    dshTimeoutInput.value = configData.dsh_timeout;
+                }
+                if (window.refreshDshStatus) window.refreshDshStatus();
                 
                 const flowModeToggle = document.getElementById('flow-mode-toggle');
                 if (flowModeToggle) {
@@ -1715,6 +1747,155 @@ window.deleteCustomEngine = async function(id) {
         });
     }
 
+
+    // ----------------------------------------------------
+    // 🤖 DSH Agent 智能体设置逻辑与生命周期交互
+    // ----------------------------------------------------
+    async function refreshDshStatus() {
+        const badge = document.getElementById('dsh-status-badge');
+        const launchBtn = document.getElementById('btn-launch-dsh-web');
+        const stopBtn = document.getElementById('btn-stop-dsh-web');
+        if (!badge) return;
+
+        try {
+            const res = await fetch('/api/system/dsh/status');
+            const resData = await res.json();
+            if (resData.status === 'success' && resData.data) {
+                const d = resData.data;
+                if (!d.is_installed) {
+                    badge.textContent = "🔴 未检测到 dsh CLI";
+                    badge.style.backgroundColor = "#ff5555";
+                    badge.title = "请在终端执行 npm install -g @deepseek-ai/dsh 完成全局安装";
+                } else if (!d.has_api_key) {
+                    badge.textContent = `🟡 缺少 API 凭据 (${d.dsh_version || '已安装'})`;
+                    badge.style.backgroundColor = "#ffb86c";
+                    badge.title = "请在大脑引擎或 Agent 设置中分配有效 API Key";
+                } else if (d.daemon_running) {
+                    badge.textContent = `⚡ 守护待命中 (${d.dsh_version || '就绪'})`;
+                    badge.style.backgroundColor = "#8be9fd";
+                    badge.style.color = "#282a36";
+                } else {
+                    badge.textContent = `🟢 已就绪 (${d.dsh_version || '就绪'})`;
+                    badge.style.backgroundColor = "#50fa7b";
+                    badge.style.color = "#282a36";
+                }
+
+                if (launchBtn && stopBtn) {
+                    if (d.web_running) {
+                        launchBtn.innerHTML = '<i class="fas fa-external-link-alt"></i> 网页端运行中 (点击重新打开)';
+                        stopBtn.style.display = 'inline-flex';
+                    } else {
+                        launchBtn.innerHTML = '<i class="fas fa-play"></i> 启动并在浏览器打开网页端';
+                        stopBtn.style.display = 'none';
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn("[DSH STATUS] 探测状态失败:", e);
+        }
+    }
+    window.refreshDshStatus = refreshDshStatus;
+
+    function initDshSettings() {
+        const dshToggle = document.getElementById('dsh-enable-toggle');
+        const dshLabel = document.getElementById('dsh-enable-label');
+        if (dshToggle && dshLabel) {
+            dshToggle.addEventListener('change', () => {
+                dshLabel.textContent = dshToggle.checked ? "已启用" : "未启用";
+                dshLabel.style.color = dshToggle.checked ? "#50fa7b" : "#f8f8f2";
+            });
+        }
+
+        const saveDshBtn = document.getElementById('save-dsh-settings-btn');
+        if (saveDshBtn) {
+            saveDshBtn.addEventListener('click', async () => {
+                const isEnabled = dshToggle ? dshToggle.checked : false;
+                const dshModeDaemon = document.getElementById('dsh-mode-daemon');
+                const runMode = dshModeDaemon && dshModeDaemon.checked ? 'daemon' : 'on_demand';
+                const preset = (document.getElementById('dsh-preset-select')?.value) || 'standard';
+                const apiProvider = (document.getElementById('dsh-api-provider-select')?.value) || 'inherit';
+                const timeout = parseInt(document.getElementById('dsh-timeout-input')?.value) || 90;
+
+                saveDshBtn.disabled = true;
+                saveDshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在保存...';
+
+                try {
+                    const res = await fetch('/api/settings/config', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            enable_dsh_agent: isEnabled,
+                            dsh_run_mode: runMode,
+                            dsh_preset: preset,
+                            dsh_api_provider: apiProvider,
+                            dsh_timeout: timeout
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.status === 'success' || data.success) {
+                        alert("✅ Agent 智能体设置已成功保存！");
+                        await refreshDshStatus();
+                    } else {
+                        alert("❌ 保存失败: " + (data.message || data.error));
+                    }
+                } catch (e) {
+                    alert("保存发生异常: " + e.toString());
+                } finally {
+                    saveDshBtn.disabled = false;
+                    saveDshBtn.innerHTML = '<i class="fas fa-save"></i> 保存 Agent 设置';
+                }
+            });
+        }
+
+        const launchWebBtn = document.getElementById('btn-launch-dsh-web');
+        if (launchWebBtn) {
+            launchWebBtn.addEventListener('click', async () => {
+                launchWebBtn.disabled = true;
+                launchWebBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在拉起工作台...';
+                try {
+                    const res = await fetch('/api/system/dsh/launch_web', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ port: 54321 })
+                    });
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        await refreshDshStatus();
+                    } else {
+                        alert("拉起 DSH 网页端失败: " + (data.message || '未知原因'));
+                    }
+                } catch (e) {
+                    alert("请求发生异常: " + e.toString());
+                } finally {
+                    launchWebBtn.disabled = false;
+                    await refreshDshStatus();
+                }
+            });
+        }
+
+        const stopWebBtn = document.getElementById('btn-stop-dsh-web');
+        if (stopWebBtn) {
+            stopWebBtn.addEventListener('click', async () => {
+                stopWebBtn.disabled = true;
+                stopWebBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在停止...';
+                try {
+                    const res = await fetch('/api/system/dsh/stop_web', { method: 'POST' });
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        await refreshDshStatus();
+                    } else {
+                        alert("停止 DSH 网页端失败: " + (data.message || '未知原因'));
+                    }
+                } catch (e) {
+                    alert("停止请求异常: " + e.toString());
+                } finally {
+                    stopWebBtn.disabled = false;
+                    await refreshDshStatus();
+                }
+            });
+        }
+    }
+    initDshSettings();
 
     window.loadCustomEngines = typeof loadCustomEngines !== 'undefined' ? loadCustomEngines : null;
     window.loadConfig = typeof loadConfig !== 'undefined' ? loadConfig : null;
