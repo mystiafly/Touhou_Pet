@@ -336,6 +336,89 @@ async function initAboutVersionView() {
     if (btnExportLogsCard) {
         btnExportLogsCard.addEventListener('click', handleExportLogs);
     }
+
+    // 🛡️ Fail-Safe Character Backup Engine Management
+    const backupStatusPill = document.getElementById('backup-status-pill');
+    const backupLastTimeText = document.getElementById('backup-last-time-text');
+    const backupCharsCountText = document.getElementById('backup-chars-count-text');
+    const btnForceBackup = document.getElementById('btn-force-backup-characters');
+    const btnOpenBackupFolder = document.getElementById('btn-open-backup-folder');
+
+    async function refreshBackupStatus() {
+        if (!backupStatusPill) return;
+        try {
+            const res = await fetch('/api/system/backup_status');
+            const data = await res.json();
+            if (data.status === 'success' && data.data) {
+                const info = data.data;
+                if (info.has_backup) {
+                    if (info.is_valid_within_3_days) {
+                        const remainHours = Math.max(0, Math.round(72 - (info.elapsed_hours || 0)));
+                        backupStatusPill.textContent = `✅ 3日内已备份保护中 (剩余约 ${remainHours} 小时)`;
+                        backupStatusPill.style.background = 'rgba(80, 250, 123, 0.2)';
+                        backupStatusPill.style.color = '#50fa7b';
+                    } else {
+                        backupStatusPill.textContent = '⚠️ 备份已超3日 (待更新备份)';
+                        backupStatusPill.style.background = 'rgba(255, 184, 108, 0.2)';
+                        backupStatusPill.style.color = '#ffb86c';
+                    }
+                    if (backupLastTimeText) backupLastTimeText.textContent = `${info.last_backup_time} (共 ${info.total_size_mb || 0} MB)`;
+                    if (backupCharsCountText) backupCharsCountText.textContent = `${info.backup_count} 个角色包完整就绪`;
+                } else {
+                    backupStatusPill.textContent = '未生成备份';
+                    backupStatusPill.style.background = 'rgba(255, 85, 85, 0.2)';
+                    backupStatusPill.style.color = '#ff5555';
+                    if (backupLastTimeText) backupLastTimeText.textContent = '尚未备份';
+                    if (backupCharsCountText) backupCharsCountText.textContent = '0 个';
+                }
+            }
+        } catch (e) {
+            console.error('获取备份状态失败:', e);
+        }
+    }
+
+    if (btnForceBackup) {
+        btnForceBackup.addEventListener('click', async () => {
+            btnForceBackup.disabled = true;
+            const originalHtml = btnForceBackup.innerHTML;
+            btnForceBackup.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 6px;"></i> 正在全量导出打包角色中...';
+            try {
+                const res = await fetch('/api/system/backup_characters', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ force: true })
+                });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    alert(result.message || '全量角色包备份成功！');
+                    await refreshBackupStatus();
+                } else {
+                    alert('备份失败: ' + (result.message || '未知错误'));
+                }
+            } catch (e) {
+                alert('请求备份异常: ' + e);
+            } finally {
+                btnForceBackup.disabled = false;
+                btnForceBackup.innerHTML = originalHtml;
+            }
+        });
+    }
+
+    if (btnOpenBackupFolder) {
+        btnOpenBackupFolder.addEventListener('click', async () => {
+            try {
+                const res = await fetch('/api/system/open_backup_folder', { method: 'POST' });
+                const result = await res.json();
+                if (result.status !== 'success') {
+                    alert('打开文件夹失败: ' + (result.message || '未知错误'));
+                }
+            } catch (e) {
+                alert('请求打开文件夹异常: ' + e);
+            }
+        });
+    }
+
+    refreshBackupStatus();
 }
 
 // Hook into nav logic
@@ -346,6 +429,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const target = item.getAttribute('data-target');
             if (target === 'dashboard-stats-view') {
                 loadDashboardStats();
+            } else if (target === 'about-view') {
+                initAboutVersionView();
             }
         });
     });

@@ -52,4 +52,7 @@ services/characters/*/favorability.json
 services/characters/*/databank_state.json
 services/characters/*/daily_history/
 services/characters/*/qdrant_db/
+data/backups/
+data/characters/
 legacy_backup/*
+

@@ -618,6 +618,32 @@ def check_system_update_api():
         return JSONResponse({"status": "error", "message": f"检测更新异常: {str(e)}"}, status_code=500)
 
 
+@router.get("/api/system/backup_status")
+def get_backup_status_api():
+    """获取角色全量备份状态与 3 日时效清单"""
+    from core.backup_manager import get_backup_manifest
+    return JSONResponse({"status": "success", "data": get_backup_manifest()})
+
+
+@router.post("/api/system/backup_characters")
+def backup_characters_api(payload: dict = Body(default={})):
+    """手动执行全量角色防死备份 (支持 force=True 强制覆盖)"""
+    from core.backup_manager import run_all_characters_backup
+    force = payload.get("force", False)
+    result = run_all_characters_backup(force=force)
+    return JSONResponse(result)
+
+
+@router.post("/api/system/open_backup_folder")
+def open_backup_folder_api():
+    """在文件资源管理器中打开角色备份文件夹"""
+    from core.backup_manager import open_backup_folder
+    ok, msg = open_backup_folder()
+    if ok:
+        return JSONResponse({"status": "success", "message": msg})
+    return JSONResponse({"status": "error", "message": msg}, status_code=500)
+
+
 @router.post("/api/system/perform_update")
 def perform_system_update_api():
     """执行一键更新 (优先 Git 拉取与智能镜像，若无 Git 或 Git 失败则自动流式下载源码包增量覆盖)"""
@@ -626,6 +652,14 @@ def perform_system_update_api():
     import requests
     import shutil
     try:
+        # 0. 执行防死角色全量备份检查 (3日内免重复打包)
+        try:
+            from core.backup_manager import run_all_characters_backup
+            b_res = run_all_characters_backup(force=False)
+            print(f"[SYSTEM UPDATE] 角色防死备份状态: {b_res.get('message')}")
+        except Exception as be:
+            print(f"[SYSTEM UPDATE] 角色防死备份异常: {be}")
+
         root_dir = ROOT_DIR
         is_git_repo = os.path.exists(os.path.join(root_dir, ".git"))
         
@@ -783,6 +817,14 @@ async def import_system_update_zip_api(file: UploadFile = File(...)):
         temp_dir = os.path.join(root_dir, "data", "temp_update")
         os.makedirs(temp_dir, exist_ok=True)
         uploaded_zip_path = os.path.join(temp_dir, "user_uploaded_update.zip")
+
+        # 0. 导入覆盖前执行防死角色全量备份检查 (3日内免重复打包)
+        try:
+            from core.backup_manager import run_all_characters_backup
+            b_res = run_all_characters_backup(force=False)
+            print(f"[SYSTEM UPDATE] 离线更新前角色防死备份状态: {b_res.get('message')}")
+        except Exception as be:
+            print(f"[SYSTEM UPDATE] 离线更新前角色防死备份异常: {be}")
 
         # 写入临时文件
         with open(uploaded_zip_path, "wb") as f_out:

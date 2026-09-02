@@ -53,3 +53,16 @@ def test_audio_router(client):
     res_tts = client.get("/api/tts/gpt_sovits/status")
     assert res_tts.status_code == 200
 
+def test_backup_router(client):
+    """
+    测试更新防死全量角色备份路由 (GET /api/system/backup_status, POST /api/system/backup_characters)
+    """
+    res_status = client.get("/api/system/backup_status")
+    assert res_status.status_code == 200
+    data = res_status.json()
+    assert data["status"] == "success"
+    assert "data" in data
+    assert "has_backup" in data["data"]
+    assert "is_valid_within_3_days" in data["data"]
+
+

@@ -1376,6 +1376,34 @@
                     </p>
                 </div>
 
+                <div class="settings-card" style="grid-column: 1 / -1; border-left: 4px solid #50fa7b;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <h3 style="margin: 0;"><i class="fas fa-shield-alt" style="color: #50fa7b;"></i> 更新防死全量角色备份 (Fail-Safe Backup)</h3>
+                        <span id="backup-status-pill" class="badge" style="background: rgba(80, 250, 123, 0.15); color: #50fa7b; font-size: 12px; padding: 4px 10px; border-radius: 12px;">加载中...</span>
+                    </div>
+                    
+                    <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                        <div style="flex: 1; min-width: 280px;">
+                            <p class="help-text" style="margin: 0; line-height: 1.6; color: #f8f8f2; font-size: 13px;">
+                                在执行系统更新前，防死装置会自动将所有可用角色全量导出并打包为独立 <code>.zip</code> 备份（完整包含人设、记忆、动态数据库、离线语音、Live2D 与静态立绘全集）。
+                            </p>
+                            <div id="backup-meta-info" style="margin-top: 8px; font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
+                                <div>🕒 <strong>上次备份时间：</strong><span id="backup-last-time-text" style="color: #ffb86c;">检测中...</span></div>
+                                <div>📦 <strong>备份角色总数：</strong><span id="backup-chars-count-text" style="color: #8be9fd;">检测中...</span></div>
+                                <div style="margin-top: 4px; color: #6272a4;">💡 <strong>3日智能频控：</strong>系统更新时若检测到 3 日内已有完整备份将智能跳过，超过 3 日或无备份时会自动全量覆盖更新。</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button id="btn-force-backup-characters" class="action-btn" style="display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #50fa7b, #8be9fd); color: #0f172a; font-weight: 700; padding: 10px 18px; border-radius: 8px; white-space: nowrap; box-shadow: 0 4px 14px rgba(80, 250, 123, 0.25);">
+                                <i class="fas fa-sync-alt" style="margin-right: 6px;"></i> 强制更新备份角色包
+                            </button>
+                            <button id="btn-open-backup-folder" class="action-btn outline" style="display: inline-flex; align-items: center; justify-content: center; border-color: #bd93f9; color: #bd93f9; padding: 10px 18px; border-radius: 8px; white-space: nowrap;">
+                                <i class="fas fa-folder-open" style="margin-right: 6px;"></i> 打开备份文件夹
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="settings-card" style="grid-column: 1 / -1; border-left: 4px solid #ff79c6;">
                     <h3><i class="fas fa-file-import" style="color: #ff79c6;"></i> 离线源码包强制导入更新 (ZIP)</h3>
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-top: 10px;">
@@ -2270,16 +2298,16 @@
 </div>
 
 <!-- 大贤者控制台 11 大领域子模块架构 (5570行全量无损解耦与全局桥接) -->
-<script src="/static/js/dashboard/modules/core_nav.js?v=1.43.9"></script>
-<script src="/static/js/dashboard/modules/engine_settings.js?v=1.43.9"></script>
-<script src="/static/js/dashboard/modules/character_management.js?v=1.43.9"></script>
-<script src="/static/js/dashboard/modules/diary_logs.js?v=1.43.9"></script>
-<script src="/static/js/dashboard/modules/character_reactions.js?v=1.43.9"></script>
-<script src="/static/js/dashboard/modules/memory_graph.js?v=1.43.9"></script>
-<script src="/static/js/dashboard/modules/presets_manager.js?v=1.43.9"></script>
-<script src="/static/js/dashboard/modules/databank_editor.js?v=1.43.9"></script>
-<script src="/static/js/dashboard/modules/tools_preview.js?v=1.43.9"></script>
-<script src="/static/js/dashboard/modules/live2d_debug.js?v=1.43.9"></script>
-<script src="/static/js/dashboard/modules/dashboard_stats.js?v=1.43.9"></script>
+<script src="/static/js/dashboard/modules/core_nav.js?v=1.44.0"></script>
+<script src="/static/js/dashboard/modules/engine_settings.js?v=1.44.0"></script>
+<script src="/static/js/dashboard/modules/character_management.js?v=1.44.0"></script>
+<script src="/static/js/dashboard/modules/diary_logs.js?v=1.44.0"></script>
+<script src="/static/js/dashboard/modules/character_reactions.js?v=1.44.0"></script>
+<script src="/static/js/dashboard/modules/memory_graph.js?v=1.44.0"></script>
+<script src="/static/js/dashboard/modules/presets_manager.js?v=1.44.0"></script>
+<script src="/static/js/dashboard/modules/databank_editor.js?v=1.44.0"></script>
+<script src="/static/js/dashboard/modules/tools_preview.js?v=1.44.0"></script>
+<script src="/static/js/dashboard/modules/live2d_debug.js?v=1.44.0"></script>
+<script src="/static/js/dashboard/modules/dashboard_stats.js?v=1.44.0"></script>
 </body>
 </html>
