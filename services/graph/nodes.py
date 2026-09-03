@@ -364,6 +364,25 @@ def call_model_with_fallback(active_messages, provider_override, node_name="LLM"
             except Exception as retry_e:
                 print(f"[{node_name}] temperature=1.0 重试失败: {retry_e}")
 
+        # 检查是否由于本地系统代理死锁 (如 Clash 关闭但系统代理未关引发 WinError 10061 积极拒绝)
+        if any(k in err_str for k in ["10061", "积极拒绝", "connection error", "connecterror", "proxy"]):
+            try:
+                print(f"[{node_name}] 检测到代理连接异常 (WinError 10061)，正在尝试【绕过系统代理直接连接目标 API】...")
+                import httpx
+                direct_client = httpx.Client(trust_env=False, timeout=60.0)
+                direct_model = ChatOpenAI(
+                    api_key=getattr(model, "openai_api_key", None) or getattr(model, "api_key", None),
+                    base_url=getattr(model, "openai_api_base", None) or getattr(model, "base_url", None),
+                    model=getattr(model, "model_name", None) or getattr(model, "model", None),
+                    temperature=getattr(model, "temperature", 0.7),
+                    http_client=direct_client
+                )
+                response = direct_model.invoke(active_messages)
+                print(f"\n[{node_name}] (Direct-Bypass-Proxy) 大模型直连调用成功:\n{response.content}\n" + "="*60)
+                return response
+            except Exception as direct_e:
+                print(f"[{node_name}] 绕过代理直连重试失败: {direct_e}")
+
         config_data = get_config()
         current_provider = config_data.get("api_provider", os.getenv("API_PROVIDER", "gemini")).lower()
         fallback_provider = "gemini" if "deepseek" in current_provider else "deepseek-v4-pro"

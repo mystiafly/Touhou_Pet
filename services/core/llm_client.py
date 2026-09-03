@@ -226,6 +226,14 @@ def format_llm_error(error: Exception | str, char_name: str = "桌宠") -> dict:
         thought = f"【大贤者警报 - 模型不存在】\n目标大模型不存在 (404 Not Found)。请检查模型名称是否输入正确。"
         error_type = "model_not_found"
 
+    # 4.1 本地系统代理死锁 / 积极拒绝连接 (10061, WSAECONNREFUSED)
+    elif any(k in err_lower for k in [
+        "10061", "积极拒绝", "proxyerror", "proxy_error"
+    ]):
+        reply = f"呜呜...大模型的网络连接被拒绝了 (WinError 10061)！\n这通常是因为本地代理软件（如 Clash/VPN）关闭了但系统代理开关还没关，或者是代理端口对不上哦~"
+        thought = f"【大贤者警报 - 本地代理连接拒绝 10061】\n检测到目标计算机积极拒绝连接。通常是 Windows 设置中开启了系统代理 (如 127.0.0.1:7890)，但代理程序未运行或端口不匹配。解决办法：① 重新开启 Clash/代理软件；② 或在 Windows 网络设置中关闭「使用代理服务器」；③ 系统已自动尝试直连备援。"
+        error_type = "proxy_connection_refused"
+
     # 5. 网络超时 / 无法连接 (Timeout, ConnectionRefused, 10060)
     elif any(k in err_lower for k in [
         "timeout", "timed out", "connection error", "connection refused", "connectionrefused", "10060", "connecterror"
