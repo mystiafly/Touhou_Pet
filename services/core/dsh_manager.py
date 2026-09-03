@@ -5,7 +5,7 @@ import time
 import shutil
 import webbrowser
 import subprocess
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 from core.config_manager import get_config, get_custom_engines, SERVICES_DIR
 
@@ -28,6 +28,20 @@ def get_dsh_executable() -> Optional[str]:
             if cmd_ext:
                 return cmd_ext
     return None
+
+def get_dsh_launch_cmd() -> List[str]:
+    """获取启动 DSH 的安全命令行前缀 (在 Windows 下优先使用 node + bin.js 以完美支持多行富文本参数且绕过 cmd.exe 截断)"""
+    dsh_exe = get_dsh_executable()
+    if not dsh_exe:
+        return []
+    if os.name == "nt":
+        node_exe = shutil.which("node")
+        if node_exe:
+            dsh_dir = os.path.dirname(dsh_exe)
+            possible_bin = os.path.join(dsh_dir, "node_modules", "@deepseek-ai", "dsh", "lib", "bin.js")
+            if os.path.exists(possible_bin):
+                return [node_exe, possible_bin]
+    return [dsh_exe]
 
 def strip_ansi_codes(text: str) -> str:
     """去除终端 ANSI 颜色转义字符"""
@@ -136,8 +150,8 @@ def start_daemon() -> bool:
     if _daemon_process is not None and _daemon_process.poll() is None:
         return True
         
-    dsh_exe = get_dsh_executable()
-    if not dsh_exe:
+    launch_cmd = get_dsh_launch_cmd()
+    if not launch_cmd:
         print("[DSH DAEMON] 启动守护进程失败: 未找到 dsh 可执行文件")
         return False
         
@@ -149,13 +163,13 @@ def start_daemon() -> bool:
     try:
         # 常态守护进程：静默就绪待命
         _daemon_process = subprocess.Popen(
-            [dsh_exe, "--profile", "headless"],
+            [*launch_cmd, "--profile", "headless"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             cwd=ROOT_DIR,
             env=env,
-            shell=True,
+            shell=False if launch_cmd[0].lower().endswith(".exe") else (os.name == "nt"),
             creationflags=flags
         )
         print(f"[DSH DAEMON] 常态待命守护进程已就绪 (PID: {_daemon_process.pid})，与桌宠服务同生共死")
@@ -236,8 +250,8 @@ def execute_task(task_text: str, timeout: int = None) -> Dict[str, Any]:
     静默无头执行 DSH 任务 (支持标准模式 Standard Mode)
     在后台完全静默执行，无任何窗口或网页弹窗
     """
-    dsh_exe = get_dsh_executable()
-    if not dsh_exe:
+    launch_cmd = get_dsh_launch_cmd()
+    if not launch_cmd:
         return {
             "success": False,
             "output": "【DSH 执行器调用失败】系统中未检测到 dsh CLI，请在终端执行 `npm install -g @deepseek-ai/dsh` 完成初始化。"
@@ -265,10 +279,12 @@ def execute_task(task_text: str, timeout: int = None) -> Dict[str, Any]:
             "output": "（眨眨眼）DSH 智能体执行器已待命就绪！请告诉我您想让我分析、审查或执行的具体工程指令。"
         }
 
-    print(f"\n[DSH AGENT MONITOR] 收到智能体执行任务: '{clean_task}' (超时限额: {timeout}s)")
+    task_summary = clean_task[:120].replace('\n', ' ') + ("..." if len(clean_task) > 120 else "")
+    print(f"\n[DSH AGENT MONITOR] 收到智能体执行任务: '{task_summary}' (超时限额: {timeout}s)")
     
-    cmd = [dsh_exe, "--profile", "headless", clean_task]
+    cmd = [*launch_cmd, "--profile", "headless", clean_task]
     start_t = time.time()
+    use_shell = False if launch_cmd[0].lower().endswith(".exe") else (os.name == "nt")
     
     try:
         res = subprocess.run(
@@ -278,7 +294,7 @@ def execute_task(task_text: str, timeout: int = None) -> Dict[str, Any]:
             text=True,
             encoding="utf-8",
             errors="replace",
-            shell=True,
+            shell=use_shell,
             timeout=timeout,
             env=env,
             creationflags=flags

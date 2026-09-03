@@ -448,8 +448,47 @@ def execute_dsh_task_node(state: AgentState) -> Dict[str, Any]:
 
     try:
         from core.dsh_manager import execute_task
-        print(f"\n[DSH TOOL MONITOR] 正在调度 DSH 智能体无头执行任务: {dsh_task}")
-        res = execute_task(dsh_task)
+        from core.config_manager import get_config
+        import re
+
+        char_config = get_config()
+        char_name = char_config.get("character_name", "桌宠")
+        persona_prompt = char_config.get("persona_prompt", "").strip()
+        user_prompt = char_config.get("user_prompt", "").strip()
+
+        # 提取最近对话上下文 (最近 6 条消息，过滤标签与内部思考)
+        history_items = (state.get("history", []) or [])[-6:]
+        recent_dialogue = []
+        for msg in history_items:
+            role = msg.get("role", "")
+            content = msg.get("content", "").strip()
+            clean_c = re.sub(r'<character_thought>[\s\S]*?</character_thought>', '', content).strip()
+            clean_c = re.sub(r'\[[a-zA-Z]+\]\[\d+\]', '', clean_c).strip()
+            if clean_c:
+                sender = "用户" if role == "user" else char_name
+                recent_dialogue.append(f"{sender}: {clean_c}")
+
+        dialogue_str = "\n".join(recent_dialogue) if recent_dialogue else "暂无历史对话"
+
+        # 组装携带人设、用户称谓与近期语境的完整指令信封
+        context_task = (
+            f"【桌宠伴侣角色背景设定】\n"
+            f"- 伴侣角色姓名: {char_name}\n"
+            f"- 角色人设背景: {persona_prompt}\n"
+            f"- 用户/主人设定: {user_prompt}\n\n"
+            f"【最近上下文对话】\n"
+            f"{dialogue_str}\n\n"
+            f"【用户交代的实际任务】\n"
+            f"{dsh_task}\n\n"
+            f"【重要行为准则】\n"
+            f"你是桌宠【{char_name}】背后具备全能操作能力的智能体替身。\n"
+            f"1. 角色深度代入：如果任务涉及以角色身份写信、留言、表达心愿、代拟文本或带有角色主观视角的行动（例如“写你想对XX说的话”或第一人称创作），你必须完全代入【{char_name}】的角色人设、性格特征、第一人称视角与人际关系来完成！信件/留言的落款必须是【{char_name}】，绝对禁止自称“普通人类”、“AI助手”或局外人！\n"
+            f"2. 技术与系统任务：如果任务是纯计算机编程、Shell 命令、系统诊断或代码审查，请直接专注精准高效地完成技术目标。\n"
+            f"3. 真实落地：若涉及在本地磁盘创建或修改文件，请切实完成文件生成与落地。"
+        )
+
+        print(f"\n[DSH TOOL MONITOR] 正在调度 DSH 智能体无头执行任务 (已同步角色人设与对话语境): {dsh_task}")
+        res = execute_task(context_task)
         output = res.get("output", "DSH 执行完毕，无额外输出。")
         return {"dsh_result": output}
     except Exception as e:

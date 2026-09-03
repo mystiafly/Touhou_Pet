@@ -80,3 +80,10 @@ def test_execute_dsh_task_node_standby():
     res = execute_dsh_task_node(fake_state)
     assert "dsh_result" in res
     assert "待命" in res["dsh_result"]
+
+def test_get_dsh_launch_cmd():
+    from core.dsh_manager import get_dsh_launch_cmd
+    cmd = get_dsh_launch_cmd()
+    assert isinstance(cmd, list)
+    if cmd:
+        assert len(cmd) >= 1
