@@ -305,13 +305,128 @@ body, html {
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* 气泡自动回话建议候选项抽屉 */
+.bubble-replies-box {
+    margin-top: 10px;
+    padding: 8px 10px;
+    background: rgba(18, 20, 32, 0.95);
+    border: 1px solid rgba(80, 250, 123, 0.45);
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #f8f8f2;
+    max-height: 220px;
+    overflow-y: auto;
+    pointer-events: auto;
+    animation: fadeInThought 0.25s ease-out;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.bubble-replies-box.hidden {
+    display: none !important;
+}
+
+.bubble-replies-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 5px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    font-size: 11px;
+    font-weight: bold;
+    color: #50fa7b;
+}
+
+.bubble-replies-header .close-replies-btn {
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    color: #aaa;
+    transition: color 0.2s;
+}
+
+.bubble-replies-header .close-replies-btn:hover {
+    color: #fff;
+}
+
+.bubble-replies-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.bubble-reply-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 11.5px;
+    color: #e2e8f0;
+}
+
+.bubble-reply-item:hover {
+    background: rgba(80, 250, 123, 0.18);
+    border-color: #50fa7b;
+    transform: translateX(2px);
+    color: #fff;
+}
+
+.bubble-reply-emotion-badge {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.bubble-reply-emotion-badge.badge-pink {
+    background: rgba(255, 121, 198, 0.25);
+    color: #ff79c6;
+    border: 1px solid rgba(255, 121, 198, 0.4);
+}
+
+.bubble-reply-emotion-badge.badge-orange {
+    background: rgba(255, 184, 108, 0.25);
+    color: #ffb86c;
+    border: 1px solid rgba(255, 184, 108, 0.4);
+}
+
+.bubble-reply-emotion-badge.badge-cyan {
+    background: rgba(139, 233, 253, 0.25);
+    color: #8be9fd;
+    border: 1px solid rgba(139, 233, 253, 0.4);
+}
+
+.bubble-reply-emotion-badge.badge-green {
+    background: rgba(80, 250, 123, 0.25);
+    color: #50fa7b;
+    border: 1px solid rgba(80, 250, 123, 0.4);
+}
+
+.bubble-reply-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+}
+
 /* 气泡精致暗粉色滚动条样式移至内层文本 */
 #bubble-content::-webkit-scrollbar,
-.bubble-thought-box::-webkit-scrollbar {
+.bubble-thought-box::-webkit-scrollbar,
+.bubble-replies-box::-webkit-scrollbar {
     width: 5px;
 }
 #bubble-content::-webkit-scrollbar-track,
-.bubble-thought-box::-webkit-scrollbar-track {
+.bubble-thought-box::-webkit-scrollbar-track,
+.bubble-replies-box::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.2);
     border-radius: 10px;
 }

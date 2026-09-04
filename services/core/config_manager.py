@@ -124,8 +124,21 @@ GLOBAL_KEYS = {
     "tts_base_url", "tts_api_key", "tts_model_name",
     "fish_audio_base_url", "fish_audio_api_key",
     "weather_provider", "weather_api_key", "weather_city", "weather_lat", "weather_lon",
-    "enable_dsh_agent", "dsh_run_mode", "dsh_preset", "dsh_api_provider", "dsh_timeout", "dsh_permission_mode"
+    "enable_dsh_agent", "dsh_run_mode", "dsh_preset", "dsh_api_provider", "dsh_timeout", "dsh_permission_mode",
+    "enable_auto_replies", "auto_replies_prompt"
 }
+
+DEFAULT_AUTO_REPLIES_PROMPT = """【自动回话建议生成】
+在生成完你给用户的角色台词后，请站在用户（“我”）的视角，根据你刚才说的内容，生成3句“我”可能接下来对你说的话。
+要求：
+1. 3个选项的情绪/态度必须截然不同（例如：① 温柔关切/宠溺；② 调侃戏谑/吐槽；③ 好奇反问/深入追问）。
+2. 选项必须自然、符合当前情境的人类真实反应，简短精炼（建议15字以内）。
+3. 必须严格输出在回答的最末尾，使用如下格式包裹：
+<suggested_replies>
+[情绪A] 选项内容1
+[情绪B] 选项内容2
+[情绪C] 选项内容3
+</suggested_replies>"""
 
 CHARACTER_CONFIG_WHITELIST = {
     "character_id", "character_name", "persona_prompt", "user_prompt",
@@ -191,6 +204,10 @@ def get_config():
         merged["fish_audio_base_url"] = merged["tts_base_url"]
     if "fish_audio_api_key" not in merged:
         merged["fish_audio_api_key"] = merged["tts_api_key"]
+    if "enable_auto_replies" not in merged:
+        merged["enable_auto_replies"] = False
+    if "auto_replies_prompt" not in merged or not merged["auto_replies_prompt"]:
+        merged["auto_replies_prompt"] = DEFAULT_AUTO_REPLIES_PROMPT
     return merged
 
 def save_config(config_data):

@@ -453,6 +453,16 @@ window.deleteCustomEngine = async function(id) {
                     userPromptArea.value = configData.user_prompt;
                 }
 
+                // 自动回话建议设置
+                const autoReplyToggle = document.getElementById('auto-reply-toggle');
+                if (autoReplyToggle) {
+                    autoReplyToggle.checked = !!configData.enable_auto_replies;
+                }
+                const autoReplyPrompt = document.getElementById('auto-reply-prompt');
+                if (autoReplyPrompt && configData.auto_replies_prompt !== undefined) {
+                    autoReplyPrompt.value = configData.auto_replies_prompt;
+                }
+
                 const immersiveWallpaperInput = document.getElementById('immersive-wallpaper-input');
                 const wallpaperFitSelect = document.getElementById('wallpaper-fit-select');
                 if (wallpaperFitSelect && configData.wallpaper_fit !== undefined) {
@@ -1547,6 +1557,76 @@ window.deleteCustomEngine = async function(id) {
                     })
                 });
             } catch (e) { console.error(e); }
+        });
+    }
+
+    // --- 自动回话 (建议选项) 事件监听 ---
+    const autoReplyToggle = document.getElementById('auto-reply-toggle');
+    const autoReplyPrompt = document.getElementById('auto-reply-prompt');
+    const saveAutoReplyBtn = document.getElementById('save-auto-reply-btn');
+    const resetAutoReplyPromptBtn = document.getElementById('reset-auto-reply-prompt-btn');
+
+    if (autoReplyToggle) {
+        autoReplyToggle.addEventListener('change', async () => {
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ enable_auto_replies: autoReplyToggle.checked })
+                });
+                alert(autoReplyToggle.checked ? "已开启自动回话候选项！" : "已关闭自动回话候选项。");
+            } catch (e) {
+                console.error(e);
+            }
+        });
+    }
+
+    const DEFAULT_AUTO_REPLIES_PROMPT_TEMPLATE = `【自动回话建议生成】
+在生成完你给用户的角色台词后，请站在用户（“我”）的视角，根据你刚才说的内容，生成3句“我”可能接下来对你说的话。
+要求：
+1. 3个选项的情绪/态度必须截然不同（例如：① 温柔关切/宠溺；② 调侃戏谑/吐槽；③ 好奇反问/深入追问）。
+2. 选项必须自然、符合当前情境的人类真实反应，简短精炼（建议15字以内）。
+3. 必须严格输出在回答的最末尾，使用如下格式包裹：
+<suggested_replies>
+[情绪A] 选项内容1
+[情绪B] 选项内容2
+[情绪C] 选项内容3
+</suggested_replies>`;
+
+    if (resetAutoReplyPromptBtn && autoReplyPrompt) {
+        resetAutoReplyPromptBtn.addEventListener('click', async () => {
+            const ok = await window.asyncConfirm("确定要将自动回话提示词重置为系统默认模板吗？");
+            if (ok) {
+                autoReplyPrompt.value = DEFAULT_AUTO_REPLIES_PROMPT_TEMPLATE;
+            }
+        });
+    }
+
+    if (saveAutoReplyBtn && autoReplyPrompt) {
+        saveAutoReplyBtn.addEventListener('click', async () => {
+            try {
+                saveAutoReplyBtn.disabled = true;
+                saveAutoReplyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在保存...';
+                const resp = await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        enable_auto_replies: autoReplyToggle ? autoReplyToggle.checked : false,
+                        auto_replies_prompt: autoReplyPrompt.value
+                    })
+                });
+                const resData = await resp.json();
+                if (resData.success) {
+                    alert("自动回话设置已成功保存！");
+                } else {
+                    alert("保存失败: " + (resData.error || "未知错误"));
+                }
+            } catch (e) {
+                alert("保存失败，网络或服务异常！");
+            } finally {
+                saveAutoReplyBtn.disabled = false;
+                saveAutoReplyBtn.innerHTML = '<i class="fas fa-save"></i> 保存自动回话设定';
+            }
         });
     }
 

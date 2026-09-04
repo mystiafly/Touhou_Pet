@@ -57,6 +57,10 @@ def parse_reply(text):
     # c. 剥除所有剩余的孤立 XML 思维链标签残留
     text = re.sub(r'</?(?:think|character_thought|thought|tucao)[^>]*>', '', text, flags=re.IGNORECASE)
 
+    # 剥除自动回话建议标签块及其内容
+    text = re.sub(r'<(?:suggested_replies|suggest_replies|auto_replies)[^>]*>.*?</?\\?(?:suggested_replies|suggest_replies|auto_replies)>', '', text, flags=re.IGNORECASE | re.DOTALL)
+    text = re.sub(r'</?(?:suggested_replies|suggest_replies|auto_replies)[^>]*>', '', text, flags=re.IGNORECASE)
+
     # 3. 清理除了系统级别工具任务标签以外的所有方括号标签，保障对白内容绝对不泄露格式标签
     # 采用负向先行断言正则，智能跳过各类工具和指令标签的清洗
     clean_content = re.sub(r'\[(?!BROWSER_TASK|LAUNCH_APP|SEARCH_ENGINE|SLEEP_NOW|CLEAN_MEMORY|ANALYZE_SCREEN|READ_PROCESS)[^\]]+\]', '', text).strip()
@@ -93,6 +97,30 @@ def extract_character_thought(text: str) -> str:
             return remaining[:split_match.start()].strip()
 
     return ""
+
+def extract_suggested_replies(text: str) -> list:
+    """提取大模型生成的自动回话候选项 (3个不同情绪的选项)"""
+    if not text or not isinstance(text, str):
+        return []
+    
+    match = re.search(r'<(?:suggested_replies|suggest_replies|auto_replies)[^>]*>([\s\S]*?)</?\\?(?:suggested_replies|suggest_replies|auto_replies)>', text, flags=re.IGNORECASE)
+    if not match:
+        return []
+        
+    block = match.group(1).strip()
+    results = []
+    for line in block.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        m = re.match(r'^(?:[-*•]|\d+[.、:：])?\s*(?:\[(.*?)\]|【(.*?)】)?\s*(.*)$', line)
+        if m:
+            emotion = (m.group(1) or m.group(2) or "回应").strip()
+            content = m.group(3).strip()
+            if content:
+                results.append({"emotion": emotion, "text": content})
+                
+    return results[:3]
 
 def execute_browser_task_node(state: AgentState) -> Dict[str, Any]:
     """工具节点：在大脑内部管理浏览器自动化任务的触发"""

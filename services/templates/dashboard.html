@@ -48,6 +48,9 @@
             <a href="#" class="nav-item" data-target="basic-settings-view">
                 <i class="fas fa-sliders-h"></i> 基础设置
             </a>
+            <a href="#" class="nav-item" data-target="auto-reply-view">
+                <i class="fas fa-reply-all"></i> 自动回话
+            </a>
             <a href="#" class="nav-item" data-target="create-soul-view">
                 <i class="fas fa-magic"></i> 孕育新灵魂
             </a>
@@ -843,6 +846,59 @@
                             <input type="checkbox" id="auto-start-toggle">
                             <span class="slider round"></span>
                         </label>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 自动回话视图 (大贤者全局设定) -->
+        <section id="auto-reply-view" class="content-section">
+            <header class="section-header">
+                <h1>自动回话设置</h1>
+                <p>配置大模型在生成台词后，自动站在用户视角生成多情绪候选项，并在对话框右上角一键填入输入框</p>
+            </header>
+            
+            <div class="card-container">
+                <div class="settings-card" style="border-left: 4px solid #50fa7b;">
+                    <h3><i class="fas fa-reply-all" style="color: #50fa7b;"></i> 功能总开关</h3>
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <label style="font-weight: 500; font-size: 14px;">启用自动回话候选项</label>
+                            <p class="help-text" style="margin-top: 5px;">开启后，大模型在生成角色台词时会自动在末尾生成 3 句不同情绪的回复建议。桌宠对话框右上角将点亮快捷回话按钮，点击展开候选项面板，选择后自动填入输入框并聚焦。</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="auto-reply-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-card" style="border-left: 4px solid #ff79c6; grid-column: 1 / -1;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h3 style="margin: 0;"><i class="fas fa-magic" style="color: #ff79c6;"></i> 自动回话提示词定制 (Prompt)</h3>
+                        <button id="reset-auto-reply-prompt-btn" class="btn secondary-btn" style="padding: 4px 12px; font-size: 12px;">
+                            <i class="fas fa-undo"></i> 恢复默认提示词
+                        </button>
+                    </div>
+                    <p class="help-text" style="margin-bottom: 10px;">定义大模型生成候选项时遵循的规则与格式约束。提示词必须保留 <code>&lt;suggested_replies&gt;</code> 标签约束，以便系统精准提取情绪与候选项并从正文剥离。</p>
+                    
+                    <div class="form-group">
+                        <textarea id="auto-reply-prompt" class="modern-textarea" rows="8" style="width: 100%; font-family: monospace; font-size: 13px; line-height: 1.6; resize: vertical;"></textarea>
+                    </div>
+
+                    <div style="margin-top: 15px; display: flex; justify-content: flex-end;">
+                        <button id="save-auto-reply-btn" class="btn primary-btn" style="padding: 8px 24px;">
+                            <i class="fas fa-save"></i> 保存自动回话设定
+                        </button>
+                    </div>
+                </div>
+
+                <div class="settings-card" style="border-left: 4px solid #8be9fd; grid-column: 1 / -1;">
+                    <h3><i class="fas fa-info-circle" style="color: #8be9fd;"></i> 交互与情绪效果说明</h3>
+                    <div style="color: #ccc; font-size: 13px; line-height: 1.8;">
+                        <div>• <b>多重情绪反差</b>：默认规则强制要求 3 个选项情绪截然不同（如 <span style="color:#ff79c6;">[温柔]</span> 依顺、<span style="color:#ffb86c;">[吐槽]</span> 调侃、<span style="color:#8be9fd;">[好奇]</span> 深入追问），无论你想宠溺、打趣还是转移话题都能一秒选中。</div>
+                        <div>• <b>零网络延迟融合</b>：候选项与桌宠单次回复一同生成，不会发出额外的二次大模型请求，保证极致顺滑。</div>
+                        <div>• <b>气泡右上角一键填入</b>：收到回复后气泡右上角会出现 <i class="fas fa-reply-all"></i> 图标，点击展开面板，点击任意句子即可自动填入底部输入框并聚焦，可直接回车发送或自由润色。</div>
                     </div>
                 </div>
             </div>
@@ -2419,16 +2475,16 @@
 </div>
 
 <!-- 大贤者控制台 11 大领域子模块架构 (5570行全量无损解耦与全局桥接) -->
-<script src="/static/js/dashboard/modules/core_nav.js?v=1.46.1"></script>
-<script src="/static/js/dashboard/modules/engine_settings.js?v=1.46.1"></script>
-<script src="/static/js/dashboard/modules/character_management.js?v=1.46.1"></script>
-<script src="/static/js/dashboard/modules/diary_logs.js?v=1.46.1"></script>
-<script src="/static/js/dashboard/modules/character_reactions.js?v=1.46.1"></script>
-<script src="/static/js/dashboard/modules/memory_graph.js?v=1.46.1"></script>
-<script src="/static/js/dashboard/modules/presets_manager.js?v=1.46.1"></script>
-<script src="/static/js/dashboard/modules/databank_editor.js?v=1.46.1"></script>
-<script src="/static/js/dashboard/modules/tools_preview.js?v=1.46.1"></script>
-<script src="/static/js/dashboard/modules/live2d_debug.js?v=1.46.1"></script>
-<script src="/static/js/dashboard/modules/dashboard_stats.js?v=1.46.1"></script>
+<script src="/static/js/dashboard/modules/core_nav.js?v=1.47.0"></script>
+<script src="/static/js/dashboard/modules/engine_settings.js?v=1.47.0"></script>
+<script src="/static/js/dashboard/modules/character_management.js?v=1.47.0"></script>
+<script src="/static/js/dashboard/modules/diary_logs.js?v=1.47.0"></script>
+<script src="/static/js/dashboard/modules/character_reactions.js?v=1.47.0"></script>
+<script src="/static/js/dashboard/modules/memory_graph.js?v=1.47.0"></script>
+<script src="/static/js/dashboard/modules/presets_manager.js?v=1.47.0"></script>
+<script src="/static/js/dashboard/modules/databank_editor.js?v=1.47.0"></script>
+<script src="/static/js/dashboard/modules/tools_preview.js?v=1.47.0"></script>
+<script src="/static/js/dashboard/modules/live2d_debug.js?v=1.47.0"></script>
+<script src="/static/js/dashboard/modules/dashboard_stats.js?v=1.47.0"></script>
 </body>
 </html>

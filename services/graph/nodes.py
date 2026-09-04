@@ -9,7 +9,7 @@ from core.config_manager import get_config, get_active_character_id
 from core.llm_client import get_langchain_model
 from tools.presets_manager import load_and_trigger_presets
 from core.databank_manager import get_active_tables, get_databank_rules_for_llm, parse_and_execute_databank_commands
-from tools.tool_executor import parse_reply, extract_character_thought, execute_launcher_task_node
+from tools.tool_executor import parse_reply, extract_character_thought, execute_launcher_task_node, extract_suggested_replies
 
 from time_system import get_time_greeting_prompt
 from real_world_system import get_meta_context_for_chat
@@ -269,6 +269,12 @@ def build_main_messages(state: AgentState) -> list:
         "</character_thought>\n"
         "[心情][评分](极简的动作短语) 极其简短、口语化的一两句话，绝不自导自演。"
     )
+
+    cfg = get_config()
+    if cfg.get("enable_auto_replies", False):
+        from core.config_manager import DEFAULT_AUTO_REPLIES_PROMPT
+        auto_prompt = cfg.get("auto_replies_prompt") or DEFAULT_AUTO_REPLIES_PROMPT
+        final_instruction += f"\n\n{auto_prompt}\n"
 
     if is_self:
         content = "[SELF TALK TRIGGER: 此刻你正在自言自语，请主动寻找话题发散。]\n\n"
@@ -571,6 +577,7 @@ def main_llm_node(state: AgentState) -> Dict[str, Any]:
 
     emotion, score, clean_content = parse_reply(raw_reply)
     thought = extract_character_thought(raw_reply)
+    suggested_replies = extract_suggested_replies(raw_reply)
     
     return {
         "main_llm_reply": raw_reply,
@@ -578,7 +585,8 @@ def main_llm_node(state: AgentState) -> Dict[str, Any]:
         "emotion": emotion,
         "score": score,
         "clean_content": clean_content,
-        "thought": thought
+        "thought": thought,
+        "suggested_replies": suggested_replies
     }
 
 def execute_clean_memory_task_node(state: AgentState) -> Dict[str, Any]:

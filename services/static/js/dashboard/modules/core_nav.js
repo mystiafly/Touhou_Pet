@@ -409,7 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (targetId === 'databank-view') {
                 if (window.loadDataBank) window.loadDataBank();
             }
-            if (targetId === 'agent-settings-view') {
+            if (targetId === 'agent-settings-view' || targetId === 'auto-reply-view') {
                 if (window.loadConfig) window.loadConfig();
                 if (window.refreshDshStatus) window.refreshDshStatus();
             }

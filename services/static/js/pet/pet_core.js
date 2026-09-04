@@ -12,6 +12,11 @@ class DesktopPetCore {
         this.thoughtBox = document.getElementById('bubble-thought-box');
         this.thoughtContent = document.getElementById('bubble-thought-content');
         this.closeThoughtBtn = document.getElementById('close-thought-btn');
+        this.repliesBtn = document.getElementById('bubble-replies-btn');
+        this.repliesBox = document.getElementById('bubble-replies-box');
+        this.repliesList = document.getElementById('bubble-replies-list');
+        this.closeRepliesBtn = document.getElementById('close-replies-btn');
+        this.currentSuggestedReplies = [];
         this.currentThought = '';
         this.showThoughtButton = true;
         this.currentSpeechText = '';
@@ -201,6 +206,18 @@ class DesktopPetCore {
             this.closeThoughtBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.closeThoughtBox();
+            });
+        }
+        if (this.repliesBtn) {
+            this.repliesBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleRepliesBox();
+            });
+        }
+        if (this.closeRepliesBtn) {
+            this.closeRepliesBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.closeRepliesBox();
             });
         }
 
@@ -526,6 +543,11 @@ class DesktopPetCore {
         this.bubble.style.opacity = '1';
         this.bubble.style.pointerEvents = 'auto';
 
+        if (!text || text === '...' || text.startsWith('hmm...') || text.startsWith('（正在') || text.startsWith('（系统')) {
+            this.closeRepliesBox();
+            if (this.repliesBtn) this.repliesBtn.classList.add('hidden');
+        }
+
         if (this.spriteType === 'live2d' && window.SoullinkLive2D && window.SoullinkLive2D.isLoaded) {
             window.SoullinkLive2D.triggerRandomMotion();
         }
@@ -638,6 +660,7 @@ class DesktopPetCore {
         this.thoughtContent.innerHTML = formatted;
         this.thoughtBox.classList.remove('hidden');
         if (this.thoughtBtn) this.thoughtBtn.classList.add('active');
+        this.closeRepliesBox();
 
         if (this.bubbleTimer) clearTimeout(this.bubbleTimer);
         this.bubble.style.opacity = '1';
@@ -652,6 +675,81 @@ class DesktopPetCore {
         if (!this.thoughtBox) return;
         this.thoughtBox.classList.add('hidden');
         if (this.thoughtBtn) this.thoughtBtn.classList.remove('active');
+    }
+
+    toggleRepliesBox() {
+        if (!this.repliesBox) return;
+        const isHidden = this.repliesBox.classList.contains('hidden');
+        if (isHidden) this.openRepliesBox();
+        else this.closeRepliesBox();
+    }
+
+    openRepliesBox() {
+        if (!this.repliesBox || !this.currentSuggestedReplies || this.currentSuggestedReplies.length === 0) return;
+        this.closeThoughtBox();
+        this.repliesBox.classList.remove('hidden');
+        if (this.repliesBtn) this.repliesBtn.classList.add('active');
+
+        if (this.bubbleTimer) clearTimeout(this.bubbleTimer);
+        this.bubble.style.opacity = '1';
+        this.bubble.style.pointerEvents = 'auto';
+        this.bubbleTimer = setTimeout(() => {
+            this.bubble.style.opacity = '0';
+            this.bubble.style.pointerEvents = 'none';
+        }, 60000);
+    }
+
+    closeRepliesBox() {
+        if (!this.repliesBox) return;
+        this.repliesBox.classList.add('hidden');
+        if (this.repliesBtn) this.repliesBtn.classList.remove('active');
+    }
+
+    renderSuggestedReplies(replies) {
+        this.currentSuggestedReplies = Array.isArray(replies) ? replies : [];
+        if (!this.repliesBtn || !this.repliesBox || !this.repliesList) return;
+
+        if (this.currentSuggestedReplies.length === 0) {
+            this.repliesBtn.classList.add('hidden');
+            this.closeRepliesBox();
+            this.repliesList.innerHTML = '';
+            return;
+        }
+
+        this.repliesBtn.classList.remove('hidden');
+        this.repliesList.innerHTML = '';
+
+        const badgeColors = ['badge-pink', 'badge-orange', 'badge-cyan', 'badge-green'];
+
+        this.currentSuggestedReplies.forEach((item, index) => {
+            const row = document.createElement('div');
+            row.className = 'bubble-reply-item';
+            row.setAttribute('title', '点击自动填入输入框: ' + item.text);
+
+            const badgeColor = badgeColors[index % badgeColors.length];
+            const emoBadge = document.createElement('span');
+            emoBadge.className = `bubble-reply-emotion-badge ${badgeColor}`;
+            emoBadge.textContent = item.emotion || '建议';
+
+            const textSpan = document.createElement('span');
+            textSpan.className = 'bubble-reply-text';
+            textSpan.textContent = item.text;
+
+            row.appendChild(emoBadge);
+            row.appendChild(textSpan);
+
+            row.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (this.input) {
+                    this.input.value = item.text;
+                    this.input.focus();
+                    this.input.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+                this.closeRepliesBox();
+            });
+
+            this.repliesList.appendChild(row);
+        });
     }
 
     async sendMessage() {
@@ -686,6 +784,7 @@ class DesktopPetCore {
 
                 this.showBubble(data.reply, null, false, data.thought);
                 this.setEmotion(data.emotion);
+                this.renderSuggestedReplies(data.suggested_replies);
                 if (this.immersive?.isImmersiveMode) {
                     this.immersive.appendLocalChatMessage(this.charName || "桌宠", data.reply);
                 }
@@ -792,6 +891,7 @@ class DesktopPetCore {
                 }
                 this.showBubble(data.reply, -1, false, data.thought);
                 this.setEmotion(data.emotion);
+                this.renderSuggestedReplies(data.suggested_replies);
                 if (data.favorability !== undefined) {
                     this.favScore.innerText = data.favorability;
                 }
@@ -907,6 +1007,7 @@ class DesktopPetCore {
                 }
                 this.showBubble(data.reply, -1, false, data.thought);
                 this.setEmotion(data.emotion);
+                this.renderSuggestedReplies(data.suggested_replies);
                 if (this.immersive?.isImmersiveMode) {
                     this.immersive.appendLocalChatMessage(this.charName || "桌宠", data.reply);
                 }

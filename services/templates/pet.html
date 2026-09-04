@@ -66,6 +66,9 @@
         <!-- 头顶气泡 -->
         <div id="speech-bubble" class="bubble" style="opacity: 0;">
             <div class="bubble-actions">
+                <button id="bubble-replies-btn" class="bubble-action-btn hidden" title="快捷回话建议 (点击展开)">
+                    <i class="fas fa-reply-all"></i>
+                </button>
                 <button id="bubble-tts-btn" class="bubble-action-btn" title="朗读当前对话 (TTS)">
                     <i class="fas fa-volume-up"></i>
                 </button>
@@ -80,6 +83,13 @@
                     <span id="close-thought-btn" class="close-thought-btn" title="收起">&times;</span>
                 </div>
                 <div id="bubble-thought-content" class="bubble-thought-content"></div>
+            </div>
+            <div id="bubble-replies-box" class="bubble-replies-box hidden">
+                <div class="bubble-replies-header">
+                    <span class="replies-title"><i class="fas fa-reply-all"></i> 快捷回话建议 (点击填入)</span>
+                    <span id="close-replies-btn" class="close-replies-btn" title="收起">&times;</span>
+                </div>
+                <div id="bubble-replies-list" class="bubble-replies-list"></div>
             </div>
         </div>
 
@@ -171,9 +181,9 @@
     </div>
 </div>
 
-<script src="/static/js/pet/pet_audio.js?v=1.42.0"></script>
-<script src="/static/js/pet/pet_immersive.js?v=1.42.0"></script>
-<script src="/static/js/pet/pet_core.js?v=1.42.0"></script>
-<script src="/static/js/pet_script.js?v=1.42.0"></script>
+<script src="/static/js/pet/pet_audio.js?v=1.47.0"></script>
+<script src="/static/js/pet/pet_immersive.js?v=1.47.0"></script>
+<script src="/static/js/pet/pet_core.js?v=1.47.0"></script>
+<script src="/static/js/pet_script.js?v=1.47.0"></script>
 </body>
 </html>

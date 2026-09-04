@@ -152,7 +152,8 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
             "dsh_result": None,
             "selected_memory": "",
             "request_type": "chat",
-            "retry_count": 0
+            "retry_count": 0,
+            "suggested_replies": []
         }
 
         # 调用 LangGraph 对话工作流 (ReAct 闭环)，附带持久化 thread_id
@@ -240,7 +241,8 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
             "launcher_task": final_state.get("launcher_task"),
             "launcher_result": final_state.get("launcher_result"),
             "browser_task": final_state.get("browser_task"),
-            "browser_result": final_state.get("browser_result")
+            "browser_result": final_state.get("browser_result"),
+            "suggested_replies": final_state.get("suggested_replies", [])
         }
 
     except Exception as e:
@@ -391,7 +393,8 @@ def pet_speak(payload: dict = Body(...), background_tasks: BackgroundTasks = Bac
             "dsh_result": None,
             "selected_memory": "",
             "request_type": request_type,
-            "retry_count": 0
+            "retry_count": 0,
+            "suggested_replies": []
         }
 
         config = {"configurable": {"thread_id": f"{char_id}_self_talk_thread"}}
@@ -457,7 +460,8 @@ def pet_speak(payload: dict = Body(...), background_tasks: BackgroundTasks = Bac
             "launcher_task": final_state.get("launcher_task"),
             "launcher_result": final_state.get("launcher_result"),
             "browser_task": final_state.get("browser_task"),
-            "browser_result": final_state.get("browser_result")
+            "browser_result": final_state.get("browser_result"),
+            "suggested_replies": final_state.get("suggested_replies", [])
         }
 
     except Exception as e:

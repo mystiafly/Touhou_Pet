@@ -39,3 +39,4 @@ class AgentState(TypedDict):
     dsh_result: Optional[str]
     request_type: Optional[str]
     retry_count: Optional[int]
+    suggested_replies: Optional[List[Dict[str, str]]]
