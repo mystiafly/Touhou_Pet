@@ -608,6 +608,7 @@ class DesktopPetCore {
         if (this.thoughtBox) {
             this.thoughtBox.classList.add('hidden');
         }
+        this.updateBubbleActionsVisibility();
 
         if (this.bubbleTimer) clearTimeout(this.bubbleTimer);
 
@@ -745,6 +746,19 @@ class DesktopPetCore {
             } else {
                 this.repliesBtn.classList.remove('has-replies');
             }
+        }
+        this.updateBubbleActionsVisibility();
+    }
+
+    updateBubbleActionsVisibility() {
+        const actionsBar = document.querySelector('.bubble-actions');
+        if (!actionsBar) return;
+        const hasVisible = Array.from(actionsBar.querySelectorAll('.bubble-action-btn, .bubble-thought-btn'))
+            .some(btn => !btn.classList.contains('hidden'));
+        if (hasVisible) {
+            actionsBar.classList.remove('hidden');
+        } else {
+            actionsBar.classList.add('hidden');
         }
     }
 

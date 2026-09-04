@@ -144,11 +144,11 @@ body, html {
 .bubble {
     background: rgba(0, 0, 0, 0.7);
     color: #fff;
-    padding: 15px;
+    padding: 10px 14px 12px 14px;
     border-radius: 15px;
     margin-bottom: 10px;
     max-width: 360px; /* 拓宽对话框，减少文字换行引起的垂直伸展 */
-    min-width: 100px;
+    min-width: 140px; /* 保证操作栏3个按钮在短文本时也能从容排开不换行 */
     width: max-content;
     position: relative;
     transition: opacity 0.3s ease;
@@ -178,16 +178,21 @@ body, html {
     font-size: 0.95em;
 }
 
-/* 气泡右上角微按钮操作栏 */
+/* 气泡顶部微按钮操作栏 (独立占据一行，保证对白文本完全不被遮挡) */
 .bubble-actions {
-    position: absolute;
-    top: 6px;
-    right: 8px;
     display: flex;
     align-items: center;
-    gap: 5px;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-bottom: 6px;
+    flex-wrap: nowrap;
     z-index: 5;
     pointer-events: auto;
+}
+
+.bubble-actions.hidden,
+.bubble-actions:not(:has(.bubble-action-btn:not(.hidden))) {
+    display: none !important;
 }
 
 .bubble-action-btn,
