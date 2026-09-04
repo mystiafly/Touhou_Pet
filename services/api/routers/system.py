@@ -173,6 +173,9 @@ def get_config_api():
     config["weather_city"] = config.get("weather_city", "")
     config["weather_lat"] = config.get("weather_lat", 39.9042)
     config["weather_lon"] = config.get("weather_lon", 116.4074)
+    config["enable_auto_replies"] = config.get("enable_auto_replies", False)
+    config["auto_replies_mode"] = config.get("auto_replies_mode", "click")
+    config["auto_replies_history_rounds"] = config.get("auto_replies_history_rounds", 3)
     config["success"] = True
     return config
 
@@ -279,6 +282,13 @@ def post_config_api(payload: dict = Body(...)):
             config_data["preset_max_depth"] = int(payload["preset_max_depth"])
         if "enable_auto_replies" in payload:
             config_data["enable_auto_replies"] = bool(payload["enable_auto_replies"])
+        if "auto_replies_mode" in payload:
+            config_data["auto_replies_mode"] = str(payload["auto_replies_mode"]).strip()
+        if "auto_replies_history_rounds" in payload:
+            try:
+                config_data["auto_replies_history_rounds"] = max(1, min(8, int(payload["auto_replies_history_rounds"])))
+            except:
+                pass
         if "auto_replies_prompt" in payload:
             config_data["auto_replies_prompt"] = str(payload["auto_replies_prompt"]).strip()
         if "enable_dsh_agent" in payload:

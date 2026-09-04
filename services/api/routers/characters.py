@@ -676,6 +676,8 @@ async def api_character_info():
         "auto_speak_multiplier": config.get("auto_speak_multiplier", 1.0),
         "bubble_duration_multiplier": config.get("bubble_duration_multiplier", 1.0),
         "enable_auto_replies": config.get("enable_auto_replies", False),
+        "auto_replies_mode": config.get("auto_replies_mode", "click"),
+        "auto_replies_history_rounds": config.get("auto_replies_history_rounds", 3),
         "needs_onboarding": needs_onboarding
     })
 

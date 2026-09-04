@@ -19,6 +19,10 @@ class DesktopPetCore {
         this.currentSuggestedReplies = [];
         this.isFetchingReplies = false;
         this.enableAutoReplies = false;
+        this.autoRepliesMode = 'click';
+        this.autoRepliesHistoryRounds = 3;
+        this.repliesGeneratedForCurrentSpeech = false;
+        this.lastUserMessage = '';
         this.currentThought = '';
         this.showThoughtButton = true;
         this.currentSpeechText = '';
@@ -126,6 +130,8 @@ class DesktopPetCore {
             this.enableTtsClick = data.enable_tts_click !== false;
             this.enableTtsAuto = data.enable_tts_auto === true || data.tts_speak_mode === "auto";
             this.enableAutoReplies = data.enable_auto_replies === true;
+            this.autoRepliesMode = data.auto_replies_mode || 'click';
+            this.autoRepliesHistoryRounds = data.auto_replies_history_rounds || 3;
             this.updateRepliesButtonVisibility();
             this.autoSpeakMultiplier = data.auto_speak_multiplier || 1.0;
             this.bubbleDurationMultiplier = data.bubble_duration_multiplier || 1.0;
@@ -547,12 +553,11 @@ class DesktopPetCore {
         this.bubble.style.opacity = '1';
         this.bubble.style.pointerEvents = 'auto';
 
-        if (!text || text === '...' || text.startsWith('hmm...') || text.startsWith('（正在') || text.startsWith('（系统')) {
-            this.closeRepliesBox();
-            this.currentSuggestedReplies = [];
-            if (this.repliesList) this.repliesList.innerHTML = '';
-            if (this.repliesBtn) this.repliesBtn.classList.remove('has-replies');
-        }
+        this.repliesGeneratedForCurrentSpeech = false;
+        this.closeRepliesBox();
+        this.currentSuggestedReplies = [];
+        if (this.repliesList) this.repliesList.innerHTML = '';
+        if (this.repliesBtn) this.repliesBtn.classList.remove('has-replies');
         this.updateRepliesButtonVisibility();
 
         if (this.spriteType === 'live2d' && window.SoullinkLive2D && window.SoullinkLive2D.isLoaded) {
@@ -704,16 +709,35 @@ class DesktopPetCore {
                 this.repliesList.innerHTML = `
                     <div class="bubble-reply-empty-tip" style="padding: 12px 8px; text-align: center; color: #50fa7b; font-size: 11px; line-height: 1.6;">
                         <i class="fas fa-spinner fa-spin" style="margin-right: 6px;"></i> 正在构思回话建议...<br>
-                        <span style="font-size: 10px; color: #888;">后置模型正在站在你的视角推演~</span>
+                        <span style="font-size: 10px; color: #888;">结合近几轮对话推演中~</span>
                     </div>
                 `;
             }
         } else if (!this.currentSuggestedReplies || this.currentSuggestedReplies.length === 0) {
-            if (this.repliesList) {
+            // 点击后按需即时生成 (中庸省流模式)
+            const canGenerate = !this.repliesGeneratedForCurrentSpeech &&
+                this.currentSpeechText &&
+                this.currentSpeechText !== '...' &&
+                !this.currentSpeechText.startsWith('hmm...') &&
+                !this.currentSpeechText.startsWith('（正在') &&
+                !this.currentSpeechText.startsWith('（系统');
+
+            if (canGenerate) {
+                this.repliesGeneratedForCurrentSpeech = true;
+                if (this.repliesList) {
+                    this.repliesList.innerHTML = `
+                        <div class="bubble-reply-empty-tip" style="padding: 12px 8px; text-align: center; color: #50fa7b; font-size: 11px; line-height: 1.6;">
+                            <i class="fas fa-spinner fa-spin" style="margin-right: 6px;"></i> 正在构思回话建议...<br>
+                            <span style="font-size: 10px; color: #888;">结合近几轮对话推演中~</span>
+                        </div>
+                    `;
+                }
+                this.fetchSuggestedReplies(this.lastUserMessage || '', this.currentSpeechText);
+            } else if (this.repliesList) {
                 this.repliesList.innerHTML = `
                     <div class="bubble-reply-empty-tip" style="padding: 10px 8px; text-align: center; color: #a0a0b0; font-size: 11px; line-height: 1.6;">
                         <i class="fas fa-magic" style="color: #50fa7b; margin-right: 4px;"></i> 暂无回话建议<br>
-                        <span style="font-size: 10px; color: #888;">发送新消息后将自动生成~</span>
+                        <span style="font-size: 10px; color: #888;">发送新消息后点击即可生成~</span>
                     </div>
                 `;
             }
@@ -812,6 +836,7 @@ class DesktopPetCore {
     async fetchSuggestedReplies(userMessage = '', charReply = '') {
         if (!this.enableAutoReplies || !charReply) return;
         this.isFetchingReplies = true;
+        this.repliesGeneratedForCurrentSpeech = true;
         this.currentSuggestedReplies = [];
         this.updateRepliesButtonVisibility();
 
@@ -820,7 +845,7 @@ class DesktopPetCore {
             this.repliesList.innerHTML = `
                 <div class="bubble-reply-empty-tip" style="padding: 12px 8px; text-align: center; color: #50fa7b; font-size: 11px; line-height: 1.6;">
                     <i class="fas fa-spinner fa-spin" style="margin-right: 6px;"></i> 正在构思回话建议...<br>
-                    <span style="font-size: 10px; color: #888;">后置模型正在站在你的视角推演~</span>
+                    <span style="font-size: 10px; color: #888;">结合近几轮对话推演中~</span>
                 </div>
             `;
         }
@@ -832,18 +857,37 @@ class DesktopPetCore {
                 body: JSON.stringify({
                     user_message: userMessage,
                     char_reply: charReply,
-                    char_name: this.charName || ''
+                    char_name: this.charName || '',
+                    history_rounds: this.autoRepliesHistoryRounds || 3
                 })
             });
             const data = await res.json();
             if (data.success && Array.isArray(data.suggested_replies) && data.suggested_replies.length > 0) {
                 this.renderSuggestedReplies(data.suggested_replies);
             } else {
-                this.renderSuggestedReplies([]);
+                this.currentSuggestedReplies = [];
+                this.updateRepliesButtonVisibility();
+                if (this.repliesBox && !this.repliesBox.classList.contains('hidden') && this.repliesList) {
+                    this.repliesList.innerHTML = `
+                        <div class="bubble-reply-empty-tip" style="padding: 10px 8px; text-align: center; color: #ffb86c; font-size: 11px; line-height: 1.6;">
+                            <i class="fas fa-info-circle" style="margin-right: 4px;"></i> 未能生成候选项<br>
+                            <span style="font-size: 10px; color: #888;">可直接在下方输入框打字~</span>
+                        </div>
+                    `;
+                }
             }
         } catch (e) {
             console.error('[PET] 获取回话建议异常:', e);
-            this.renderSuggestedReplies([]);
+            this.currentSuggestedReplies = [];
+            this.updateRepliesButtonVisibility();
+            if (this.repliesBox && !this.repliesBox.classList.contains('hidden') && this.repliesList) {
+                this.repliesList.innerHTML = `
+                    <div class="bubble-reply-empty-tip" style="padding: 10px 8px; text-align: center; color: #ff5555; font-size: 11px; line-height: 1.6;">
+                        <i class="fas fa-exclamation-triangle" style="margin-right: 4px;"></i> 构思建议异常<br>
+                        <span style="font-size: 10px; color: #888;">网络或模型服务连接超时</span>
+                    </div>
+                `;
+            }
         } finally {
             this.isFetchingReplies = false;
         }
@@ -854,6 +898,7 @@ class DesktopPetCore {
         if (!text) return;
 
         this.input.value = '';
+        this.lastUserMessage = text;
         this.autoSpeakCount = 0;
         this.isChatting = true;
         this.resetAutoSpeakTimer();
@@ -883,7 +928,7 @@ class DesktopPetCore {
                 this.setEmotion(data.emotion);
                 if (data.suggested_replies && data.suggested_replies.length > 0) {
                     this.renderSuggestedReplies(data.suggested_replies);
-                } else if (this.enableAutoReplies) {
+                } else if (this.enableAutoReplies && this.autoRepliesMode === 'auto') {
                     this.fetchSuggestedReplies(text, data.reply);
                 }
                 if (this.immersive?.isImmersiveMode) {
@@ -976,6 +1021,7 @@ class DesktopPetCore {
 
     async greetUser() {
         if (this.isSleeping) return;
+        this.lastUserMessage = '';
         this.showBubble("...", -1);
 
         try {
@@ -994,7 +1040,7 @@ class DesktopPetCore {
                 this.setEmotion(data.emotion);
                 if (data.suggested_replies && data.suggested_replies.length > 0) {
                     this.renderSuggestedReplies(data.suggested_replies);
-                } else if (this.enableAutoReplies) {
+                } else if (this.enableAutoReplies && this.autoRepliesMode === 'auto') {
                     this.fetchSuggestedReplies('', data.reply);
                 }
                 if (data.favorability !== undefined) {
@@ -1098,6 +1144,7 @@ class DesktopPetCore {
         }
         
         this.autoSpeakCount++;
+        this.lastUserMessage = '';
         try {
             const response = await fetch('/api/pet_speak', {
                 method: 'POST',
@@ -1114,7 +1161,7 @@ class DesktopPetCore {
                 this.setEmotion(data.emotion);
                 if (data.suggested_replies && data.suggested_replies.length > 0) {
                     this.renderSuggestedReplies(data.suggested_replies);
-                } else if (this.enableAutoReplies) {
+                } else if (this.enableAutoReplies && this.autoRepliesMode === 'auto') {
                     this.fetchSuggestedReplies('', data.reply);
                 }
                 if (this.immersive?.isImmersiveMode) {

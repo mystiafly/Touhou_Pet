@@ -110,6 +110,83 @@ def test_suggested_replies_endpoint_validation(client):
     assert data["success"] is False
     assert data["suggested_replies"] == []
 
+def test_auto_replies_mode_and_history_rounds_config(client):
+    """测试自动回话模式与历史轮数配置持久化与角色信息读取"""
+    orig_res = client.get("/api/settings/config")
+    orig_data = orig_res.json() if orig_res.status_code == 200 else {}
+    orig_mode = orig_data.get("auto_replies_mode", "click")
+    orig_rounds = orig_data.get("auto_replies_history_rounds", 3)
+
+    try:
+        # 1. 保存模式为 auto, 历史轮数为 5
+        save_res = client.post("/api/settings/config", json={
+            "auto_replies_mode": "auto",
+            "auto_replies_history_rounds": 5
+        })
+        assert save_res.status_code == 200
+        assert save_res.json().get("success") is True
+
+        # 2. 从 settings/config 读取验证
+        cfg_res = client.get("/api/settings/config")
+        cfg_data = cfg_res.json()
+        assert cfg_data.get("auto_replies_mode") == "auto"
+        assert cfg_data.get("auto_replies_history_rounds") == 5
+
+        # 3. 从 character_info 读取验证
+        char_res = client.get("/api/character_info")
+        assert char_res.status_code == 200
+        char_data = char_res.json()
+        assert char_data.get("auto_replies_mode") == "auto"
+        assert char_data.get("auto_replies_history_rounds") == 5
+    finally:
+        # 恢复初始配置
+        client.post("/api/settings/config", json={
+            "auto_replies_mode": orig_mode,
+            "auto_replies_history_rounds": orig_rounds
+        })
+
+def test_suggested_replies_multi_turn_context(client, monkeypatch):
+    """测试 /api/suggested_replies 在携带历史轮数时，能正确装配近期对话脉络"""
+    from langchain_core.messages import AIMessage
+
+    recorded_messages = []
+    def mock_call_model(messages, *args, **kwargs):
+        recorded_messages.extend(messages)
+        return AIMessage(content="<suggested_replies>\n[温柔] 好的呢\n[调侃] 哈哈\n[好奇] 为什么呢\n</suggested_replies>")
+
+    monkeypatch.setattr("graph.nodes.call_model_with_fallback", mock_call_model)
+
+    # 模拟历史对话
+    mock_history = [
+        {"role": "user", "content": "今天天气真好"},
+        {"role": "assistant", "content": "[happy][10] 是呀，适合出去散步呢"},
+        {"role": "user", "content": "那你想去哪里玩？"},
+        {"role": "assistant", "content": "[smile][12] 我想去博丽神社抓蝴蝶！"}
+    ]
+    monkeypatch.setattr("core.memory_manager.load_history", lambda: mock_history)
+
+    res = client.post("/api/suggested_replies", json={
+        "user_message": "抓蝴蝶小心摔倒哦",
+        "char_reply": "才不会呢，我飞得可稳啦！",
+        "char_name": "露米娅",
+        "history_rounds": 2
+    })
+    assert res.status_code == 200
+    data = res.json()
+    assert data["success"] is True
+    assert len(data["suggested_replies"]) == 3
+
+    # 验证传递给模型的 human message 是否包含了前序情境和最新情境
+    human_msg = recorded_messages[1].content
+    assert "【近期对话脉络参考（前序情境）】" in human_msg
+    assert "用户: 今天天气真好" in human_msg
+    assert "露米娅: 是呀，适合出去散步呢" in human_msg
+    assert "用户: 那你想去哪里玩？" in human_msg
+    assert "露米娅: 我想去博丽神社抓蝴蝶！" in human_msg
+    assert "【最新对话情境】" in human_msg
+    assert "用户刚才说：抓蝴蝶小心摔倒哦" in human_msg
+    assert "露米娅刚才回复：才不会呢，我飞得可稳啦！" in human_msg
+
 def test_suggested_replies_endpoint_mock_success(client, monkeypatch):
     """测试 /api/suggested_replies 调用后置模型成功生成并解析回话建议"""
     from langchain_core.messages import AIMessage
@@ -140,4 +217,6 @@ def test_suggested_replies_endpoint_mock_success(client, monkeypatch):
     assert "好多了" in data["suggested_replies"][0]["text"]
     assert data["suggested_replies"][1]["emotion"] == "调侃"
     assert data["suggested_replies"][2]["emotion"] == "好奇"
+
+
 

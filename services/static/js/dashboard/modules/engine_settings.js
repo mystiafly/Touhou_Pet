@@ -458,6 +458,14 @@ window.deleteCustomEngine = async function(id) {
                 if (autoReplyToggle) {
                     autoReplyToggle.checked = !!configData.enable_auto_replies;
                 }
+                const autoReplyModeSelect = document.getElementById('auto-reply-mode-select');
+                if (autoReplyModeSelect && configData.auto_replies_mode !== undefined) {
+                    autoReplyModeSelect.value = configData.auto_replies_mode;
+                }
+                const autoReplyRoundsInput = document.getElementById('auto-reply-history-rounds');
+                if (autoReplyRoundsInput && configData.auto_replies_history_rounds !== undefined) {
+                    autoReplyRoundsInput.value = configData.auto_replies_history_rounds;
+                }
                 const autoReplyPrompt = document.getElementById('auto-reply-prompt');
                 if (autoReplyPrompt && configData.auto_replies_prompt !== undefined) {
                     autoReplyPrompt.value = configData.auto_replies_prompt;
@@ -1562,6 +1570,8 @@ window.deleteCustomEngine = async function(id) {
 
     // --- 自动回话 (建议选项) 事件监听 ---
     const autoReplyToggle = document.getElementById('auto-reply-toggle');
+    const autoReplyModeSelect = document.getElementById('auto-reply-mode-select');
+    const autoReplyRoundsInput = document.getElementById('auto-reply-history-rounds');
     const autoReplyPrompt = document.getElementById('auto-reply-prompt');
     const saveAutoReplyBtn = document.getElementById('save-auto-reply-btn');
     const resetAutoReplyPromptBtn = document.getElementById('reset-auto-reply-prompt-btn');
@@ -1574,7 +1584,21 @@ window.deleteCustomEngine = async function(id) {
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ enable_auto_replies: autoReplyToggle.checked })
                 });
-                alert(autoReplyToggle.checked ? "已开启自动回话候选项！" : "已关闭自动回话候选项。");
+                alert(autoReplyToggle.checked ? "已开启自动回话建议！" : "已关闭自动回话建议。");
+            } catch (e) {
+                console.error(e);
+            }
+        });
+    }
+
+    if (autoReplyModeSelect) {
+        autoReplyModeSelect.addEventListener('change', async () => {
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ auto_replies_mode: autoReplyModeSelect.value })
+                });
             } catch (e) {
                 console.error(e);
             }
@@ -1607,11 +1631,17 @@ window.deleteCustomEngine = async function(id) {
             try {
                 saveAutoReplyBtn.disabled = true;
                 saveAutoReplyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在保存...';
+                const autoReplyMode = autoReplyModeSelect ? autoReplyModeSelect.value : 'click';
+                const parsedRounds = autoReplyRoundsInput ? parseInt(autoReplyRoundsInput.value, 10) : 3;
+                const autoReplyRounds = isNaN(parsedRounds) ? 3 : Math.max(1, Math.min(8, parsedRounds));
+
                 const resp = await fetch('/api/settings/config', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         enable_auto_replies: autoReplyToggle ? autoReplyToggle.checked : false,
+                        auto_replies_mode: autoReplyMode,
+                        auto_replies_history_rounds: autoReplyRounds,
                         auto_replies_prompt: autoReplyPrompt.value
                     })
                 });

@@ -542,6 +542,7 @@ class SuggestedRepliesRequest(BaseModel):
     user_message: Optional[str] = ""
     char_reply: Optional[str] = ""
     char_name: Optional[str] = ""
+    history_rounds: Optional[int] = None
 
 @router.post("/api/suggested_replies")
 async def api_suggested_replies(payload: SuggestedRepliesRequest):
@@ -558,26 +559,53 @@ async def api_suggested_replies(payload: SuggestedRepliesRequest):
     auto_prompt = config.get("auto_replies_prompt") or DEFAULT_AUTO_REPLIES_PROMPT
     char_name = payload.char_name or config.get("character_name", "桌宠")
     user_message = (payload.user_message or "").strip()
+    history_rounds = payload.history_rounds if payload.history_rounds is not None else int(config.get("auto_replies_history_rounds", 3))
 
     from graph.nodes import call_model_with_fallback
-    from tools.tool_executor import extract_suggested_replies
+    from tools.tool_executor import extract_suggested_replies, parse_reply
     from langchain_core.messages import SystemMessage, HumanMessage
 
     sys_msg = SystemMessage(content=(
         "[TASK: USER SUGGESTED REPLIES GENERATOR]\n"
         "你负责在后台为桌面宠物系统生成用户的候选快捷回复建议。\n"
         f"桌宠角色当前名称为【{char_name}】。\n"
-        "请站在玩家/用户（“我”）的视角，根据桌宠刚才对用户说的话，生成 3 句玩家接下来可能回复的话。\n"
+        "请站在玩家/用户（“我”）的视角，根据上下文及桌宠刚才对用户说的话，生成 3 句玩家接下来可能回复的话。\n"
         "绝对禁止扮演桌宠或输出桌宠动作！你必须严格从用户的视角输出！"
     ))
 
-    context_lines = []
-    if user_message:
-        context_lines.append(f"用户刚才说：{user_message}")
-    context_lines.append(f"{char_name}刚才回复：{char_reply}")
-    dialogue_context = "\n".join(context_lines)
+    recent_lines = []
+    if history_rounds > 0:
+        try:
+            from core.memory_manager import load_history
+            hist = load_history()
+            dialogues = [m for m in hist if m.get("role") in ("user", "assistant")]
+            if dialogues and char_reply and dialogues[-1].get("content", "").strip() == char_reply.strip():
+                dialogues = dialogues[:-1]
+                if dialogues and user_message and dialogues[-1].get("content", "").strip() == user_message.strip():
+                    dialogues = dialogues[:-1]
+            limit = history_rounds * 2
+            selected = dialogues[-limit:]
+            for m in selected:
+                spk = "用户" if m.get("role") == "user" else char_name
+                cnt = m.get("content", "")
+                if m.get("role") == "assistant":
+                    _, _, clean_text = parse_reply(cnt)
+                    cnt = clean_text or cnt
+                recent_lines.append(f"{spk}: {cnt}")
+        except Exception as err:
+            print(f"[SUGGESTED REPLIES] 读取历史多轮上下文跳过: {err}")
 
-    user_msg = HumanMessage(content=f"【当前对话情境】\n{dialogue_context}\n\n{auto_prompt}")
+    context_parts = []
+    if recent_lines:
+        context_parts.append("【近期对话脉络参考（前序情境）】\n" + "\n".join(recent_lines))
+    current_turn = []
+    if user_message:
+        current_turn.append(f"用户刚才说：{user_message}")
+    current_turn.append(f"{char_name}刚才回复：{char_reply}")
+    context_parts.append("【最新对话情境】\n" + "\n".join(current_turn))
+    dialogue_context = "\n\n".join(context_parts)
+
+    user_msg = HumanMessage(content=f"{dialogue_context}\n\n{auto_prompt}")
 
     provider = config.get("post_api_provider", "inherit")
 

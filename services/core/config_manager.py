@@ -125,7 +125,7 @@ GLOBAL_KEYS = {
     "fish_audio_base_url", "fish_audio_api_key",
     "weather_provider", "weather_api_key", "weather_city", "weather_lat", "weather_lon",
     "enable_dsh_agent", "dsh_run_mode", "dsh_preset", "dsh_api_provider", "dsh_timeout", "dsh_permission_mode",
-    "enable_auto_replies", "auto_replies_prompt"
+    "enable_auto_replies", "auto_replies_prompt", "auto_replies_mode", "auto_replies_history_rounds"
 }
 
 DEFAULT_AUTO_REPLIES_PROMPT = """【自动回话建议生成】
@@ -206,6 +206,10 @@ def get_config():
         merged["fish_audio_api_key"] = merged["tts_api_key"]
     if "enable_auto_replies" not in merged:
         merged["enable_auto_replies"] = False
+    if "auto_replies_mode" not in merged:
+        merged["auto_replies_mode"] = "click"
+    if "auto_replies_history_rounds" not in merged:
+        merged["auto_replies_history_rounds"] = 3
     if "auto_replies_prompt" not in merged or not merged["auto_replies_prompt"]:
         merged["auto_replies_prompt"] = DEFAULT_AUTO_REPLIES_PROMPT
     return merged
