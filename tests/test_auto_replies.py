@@ -100,3 +100,44 @@ def test_auto_replies_api_save_and_load(client):
             "enable_auto_replies": orig_enabled,
             "auto_replies_prompt": orig_prompt
         })
+
+def test_suggested_replies_endpoint_validation(client):
+    """测试 /api/suggested_replies 在空参数或关闭状态下的边界与校验"""
+    # 1. 空回复内容
+    res = client.post("/api/suggested_replies", json={"user_message": "你好", "char_reply": ""})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["success"] is False
+    assert data["suggested_replies"] == []
+
+def test_suggested_replies_endpoint_mock_success(client, monkeypatch):
+    """测试 /api/suggested_replies 调用后置模型成功生成并解析回话建议"""
+    from langchain_core.messages import AIMessage
+
+    mock_content = (
+        "<suggested_replies>\n"
+        "[温柔] 乖，好多了。手怎么这么冰，要不要我给你暖暖？\n"
+        "[调侃] 认得出，这招牌动作除了你还有谁。\n"
+        "[好奇] 认得出呀，怎么突然这么温柔了？\n"
+        "</suggested_replies>"
+    )
+
+    def mock_call_model(*args, **kwargs):
+        return AIMessage(content=mock_content)
+
+    monkeypatch.setattr("graph.nodes.call_model_with_fallback", mock_call_model)
+
+    res = client.post("/api/suggested_replies", json={
+        "user_message": "你刚才摸我头了",
+        "char_reply": "乖哦。这样有没有好一点？还认得出我是谁吗？",
+        "char_name": "芙兰朵露"
+    })
+    assert res.status_code == 200
+    data = res.json()
+    assert data["success"] is True
+    assert len(data["suggested_replies"]) == 3
+    assert data["suggested_replies"][0]["emotion"] == "温柔"
+    assert "好多了" in data["suggested_replies"][0]["text"]
+    assert data["suggested_replies"][1]["emotion"] == "调侃"
+    assert data["suggested_replies"][2]["emotion"] == "好奇"
+

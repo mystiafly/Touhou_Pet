@@ -17,6 +17,7 @@ class DesktopPetCore {
         this.repliesList = document.getElementById('bubble-replies-list');
         this.closeRepliesBtn = document.getElementById('close-replies-btn');
         this.currentSuggestedReplies = [];
+        this.isFetchingReplies = false;
         this.enableAutoReplies = false;
         this.currentThought = '';
         this.showThoughtButton = true;
@@ -696,8 +697,17 @@ class DesktopPetCore {
         this.repliesBox.classList.remove('hidden');
         if (this.repliesBtn) this.repliesBtn.classList.add('active');
 
-        // 如果暂无回话建议，展示友好引导提示
-        if (!this.currentSuggestedReplies || this.currentSuggestedReplies.length === 0) {
+        // 如果正在请求中，展示优雅的构思动画
+        if (this.isFetchingReplies) {
+            if (this.repliesList) {
+                this.repliesList.innerHTML = `
+                    <div class="bubble-reply-empty-tip" style="padding: 12px 8px; text-align: center; color: #50fa7b; font-size: 11px; line-height: 1.6;">
+                        <i class="fas fa-spinner fa-spin" style="margin-right: 6px;"></i> 正在构思回话建议...<br>
+                        <span style="font-size: 10px; color: #888;">后置模型正在站在你的视角推演~</span>
+                    </div>
+                `;
+            }
+        } else if (!this.currentSuggestedReplies || this.currentSuggestedReplies.length === 0) {
             if (this.repliesList) {
                 this.repliesList.innerHTML = `
                     <div class="bubble-reply-empty-tip" style="padding: 10px 8px; text-align: center; color: #a0a0b0; font-size: 11px; line-height: 1.6;">
@@ -785,6 +795,46 @@ class DesktopPetCore {
         });
     }
 
+    async fetchSuggestedReplies(userMessage = '', charReply = '') {
+        if (!this.enableAutoReplies || !charReply) return;
+        this.isFetchingReplies = true;
+        this.currentSuggestedReplies = [];
+        this.updateRepliesButtonVisibility();
+
+        // 如果此时抽屉已展开，展示加载状态
+        if (this.repliesBox && !this.repliesBox.classList.contains('hidden') && this.repliesList) {
+            this.repliesList.innerHTML = `
+                <div class="bubble-reply-empty-tip" style="padding: 12px 8px; text-align: center; color: #50fa7b; font-size: 11px; line-height: 1.6;">
+                    <i class="fas fa-spinner fa-spin" style="margin-right: 6px;"></i> 正在构思回话建议...<br>
+                    <span style="font-size: 10px; color: #888;">后置模型正在站在你的视角推演~</span>
+                </div>
+            `;
+        }
+
+        try {
+            const res = await fetch('/api/suggested_replies', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_message: userMessage,
+                    char_reply: charReply,
+                    char_name: this.charName || ''
+                })
+            });
+            const data = await res.json();
+            if (data.success && Array.isArray(data.suggested_replies) && data.suggested_replies.length > 0) {
+                this.renderSuggestedReplies(data.suggested_replies);
+            } else {
+                this.renderSuggestedReplies([]);
+            }
+        } catch (e) {
+            console.error('[PET] 获取回话建议异常:', e);
+            this.renderSuggestedReplies([]);
+        } finally {
+            this.isFetchingReplies = false;
+        }
+    }
+
     async sendMessage() {
         const text = this.input.value.trim();
         if (!text) return;
@@ -817,7 +867,11 @@ class DesktopPetCore {
 
                 this.showBubble(data.reply, null, false, data.thought);
                 this.setEmotion(data.emotion);
-                this.renderSuggestedReplies(data.suggested_replies);
+                if (data.suggested_replies && data.suggested_replies.length > 0) {
+                    this.renderSuggestedReplies(data.suggested_replies);
+                } else if (this.enableAutoReplies) {
+                    this.fetchSuggestedReplies(text, data.reply);
+                }
                 if (this.immersive?.isImmersiveMode) {
                     this.immersive.appendLocalChatMessage(this.charName || "桌宠", data.reply);
                 }
@@ -924,7 +978,11 @@ class DesktopPetCore {
                 }
                 this.showBubble(data.reply, -1, false, data.thought);
                 this.setEmotion(data.emotion);
-                this.renderSuggestedReplies(data.suggested_replies);
+                if (data.suggested_replies && data.suggested_replies.length > 0) {
+                    this.renderSuggestedReplies(data.suggested_replies);
+                } else if (this.enableAutoReplies) {
+                    this.fetchSuggestedReplies('', data.reply);
+                }
                 if (data.favorability !== undefined) {
                     this.favScore.innerText = data.favorability;
                 }
@@ -1040,7 +1098,11 @@ class DesktopPetCore {
                 }
                 this.showBubble(data.reply, -1, false, data.thought);
                 this.setEmotion(data.emotion);
-                this.renderSuggestedReplies(data.suggested_replies);
+                if (data.suggested_replies && data.suggested_replies.length > 0) {
+                    this.renderSuggestedReplies(data.suggested_replies);
+                } else if (this.enableAutoReplies) {
+                    this.fetchSuggestedReplies('', data.reply);
+                }
                 if (this.immersive?.isImmersiveMode) {
                     this.immersive.appendLocalChatMessage(this.charName || "桌宠", data.reply);
                 }

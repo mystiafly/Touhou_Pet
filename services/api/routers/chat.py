@@ -538,4 +538,61 @@ def api_clean_memory():
     return JSONResponse(result)
 
 
+class SuggestedRepliesRequest(BaseModel):
+    user_message: Optional[str] = ""
+    char_reply: Optional[str] = ""
+    char_name: Optional[str] = ""
+
+@router.post("/api/suggested_replies")
+async def api_suggested_replies(payload: SuggestedRepliesRequest):
+    """后置模型专职生成回话建议接口（异步解耦，保证主回复零延迟）"""
+    config = get_config()
+    if not config.get("enable_auto_replies", False):
+        return {"success": False, "suggested_replies": [], "message": "auto replies disabled"}
+
+    char_reply = (payload.char_reply or "").strip()
+    if not char_reply:
+        return {"success": False, "suggested_replies": [], "message": "empty char_reply"}
+
+    from core.config_manager import DEFAULT_AUTO_REPLIES_PROMPT
+    auto_prompt = config.get("auto_replies_prompt") or DEFAULT_AUTO_REPLIES_PROMPT
+    char_name = payload.char_name or config.get("character_name", "桌宠")
+    user_message = (payload.user_message or "").strip()
+
+    from graph.nodes import call_model_with_fallback
+    from tools.tool_executor import extract_suggested_replies
+    from langchain_core.messages import SystemMessage, HumanMessage
+
+    sys_msg = SystemMessage(content=(
+        "[TASK: USER SUGGESTED REPLIES GENERATOR]\n"
+        "你负责在后台为桌面宠物系统生成用户的候选快捷回复建议。\n"
+        f"桌宠角色当前名称为【{char_name}】。\n"
+        "请站在玩家/用户（“我”）的视角，根据桌宠刚才对用户说的话，生成 3 句玩家接下来可能回复的话。\n"
+        "绝对禁止扮演桌宠或输出桌宠动作！你必须严格从用户的视角输出！"
+    ))
+
+    context_lines = []
+    if user_message:
+        context_lines.append(f"用户刚才说：{user_message}")
+    context_lines.append(f"{char_name}刚才回复：{char_reply}")
+    dialogue_context = "\n".join(context_lines)
+
+    user_msg = HumanMessage(content=f"【当前对话情境】\n{dialogue_context}\n\n{auto_prompt}")
+
+    provider = config.get("post_api_provider", "inherit")
+
+    try:
+        response = call_model_with_fallback(
+            [sys_msg, user_msg],
+            provider_override=provider,
+            node_name="POST-REPLIES"
+        )
+        replies = extract_suggested_replies(response.content)
+        return {"success": True, "suggested_replies": replies}
+    except Exception as e:
+        print(f"[SUGGESTED REPLIES ERROR] 后置模型生成建议异常: {e}")
+        return {"success": False, "suggested_replies": [], "error": str(e)}
+
+
+
 

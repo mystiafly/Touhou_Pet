@@ -270,12 +270,6 @@ def build_main_messages(state: AgentState) -> list:
         "[心情][评分](极简的动作短语) 极其简短、口语化的一两句话，绝不自导自演。"
     )
 
-    cfg = get_config()
-    if cfg.get("enable_auto_replies", False):
-        from core.config_manager import DEFAULT_AUTO_REPLIES_PROMPT
-        auto_prompt = cfg.get("auto_replies_prompt") or DEFAULT_AUTO_REPLIES_PROMPT
-        final_instruction += f"\n\n{auto_prompt}\n"
-
     if is_self:
         content = "[SELF TALK TRIGGER: 此刻你正在自言自语，请主动寻找话题发散。]\n\n"
         if user_message:
