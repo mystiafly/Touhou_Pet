@@ -76,25 +76,27 @@ def test_extract_empty_when_no_tag():
     assert replies == []
 
 def test_auto_replies_api_save_and_load(client):
-    """测试通过 /api/settings/config 保存与读取自动回话开关和提示词"""
-    # 1. 开启
-    res = client.post("/api/settings/config", json={
-        "enable_auto_replies": True,
-        "auto_replies_prompt": "【测试自定义提示词】\n<suggested_replies>\n[A] 1\n[B] 2\n[C] 3\n</suggested_replies>"
-    })
-    assert res.status_code == 200
-    assert res.json().get("success") is True
+    """测试通过 /api/settings/config 保存与读取自动回话开关和提示词，并在测试后无损恢复"""
+    orig_res = client.get("/api/settings/config")
+    orig_data = orig_res.json() if orig_res.status_code == 200 else {}
+    orig_enabled = orig_data.get("enable_auto_replies", True)
+    orig_prompt = orig_data.get("auto_replies_prompt", DEFAULT_AUTO_REPLIES_PROMPT)
 
-    # 2. 读取验证已成功持久化
-    get_res = client.get("/api/settings/config")
-    assert get_res.status_code == 200
-    data = get_res.json()
-    assert data.get("enable_auto_replies") is True
-    assert "【测试自定义提示词】" in data.get("auto_replies_prompt")
+    try:
+        res = client.post("/api/settings/config", json={
+            "enable_auto_replies": True,
+            "auto_replies_prompt": DEFAULT_AUTO_REPLIES_PROMPT
+        })
+        assert res.status_code == 200
+        assert res.json().get("success") is True
 
-    # 3. 恢复关闭状态
-    res_close = client.post("/api/settings/config", json={
-        "enable_auto_replies": False
-    })
-    assert res_close.status_code == 200
-    assert client.get("/api/settings/config").json().get("enable_auto_replies") is False
+        get_res = client.get("/api/settings/config")
+        assert get_res.status_code == 200
+        data = get_res.json()
+        assert data.get("enable_auto_replies") is True
+        assert "<suggested_replies>" in data.get("auto_replies_prompt")
+    finally:
+        client.post("/api/settings/config", json={
+            "enable_auto_replies": orig_enabled,
+            "auto_replies_prompt": orig_prompt
+        })

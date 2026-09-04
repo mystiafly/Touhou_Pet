@@ -17,6 +17,7 @@ class DesktopPetCore {
         this.repliesList = document.getElementById('bubble-replies-list');
         this.closeRepliesBtn = document.getElementById('close-replies-btn');
         this.currentSuggestedReplies = [];
+        this.enableAutoReplies = false;
         this.currentThought = '';
         this.showThoughtButton = true;
         this.currentSpeechText = '';
@@ -123,6 +124,8 @@ class DesktopPetCore {
             this.enableTts = data.enable_tts !== false;
             this.enableTtsClick = data.enable_tts_click !== false;
             this.enableTtsAuto = data.enable_tts_auto === true || data.tts_speak_mode === "auto";
+            this.enableAutoReplies = data.enable_auto_replies === true;
+            this.updateRepliesButtonVisibility();
             this.autoSpeakMultiplier = data.auto_speak_multiplier || 1.0;
             this.bubbleDurationMultiplier = data.bubble_duration_multiplier || 1.0;
             
@@ -545,8 +548,11 @@ class DesktopPetCore {
 
         if (!text || text === '...' || text.startsWith('hmm...') || text.startsWith('（正在') || text.startsWith('（系统')) {
             this.closeRepliesBox();
-            if (this.repliesBtn) this.repliesBtn.classList.add('hidden');
+            this.currentSuggestedReplies = [];
+            if (this.repliesList) this.repliesList.innerHTML = '';
+            if (this.repliesBtn) this.repliesBtn.classList.remove('has-replies');
         }
+        this.updateRepliesButtonVisibility();
 
         if (this.spriteType === 'live2d' && window.SoullinkLive2D && window.SoullinkLive2D.isLoaded) {
             window.SoullinkLive2D.triggerRandomMotion();
@@ -685,10 +691,22 @@ class DesktopPetCore {
     }
 
     openRepliesBox() {
-        if (!this.repliesBox || !this.currentSuggestedReplies || this.currentSuggestedReplies.length === 0) return;
+        if (!this.repliesBox) return;
         this.closeThoughtBox();
         this.repliesBox.classList.remove('hidden');
         if (this.repliesBtn) this.repliesBtn.classList.add('active');
+
+        // 如果暂无回话建议，展示友好引导提示
+        if (!this.currentSuggestedReplies || this.currentSuggestedReplies.length === 0) {
+            if (this.repliesList) {
+                this.repliesList.innerHTML = `
+                    <div class="bubble-reply-empty-tip" style="padding: 10px 8px; text-align: center; color: #a0a0b0; font-size: 11px; line-height: 1.6;">
+                        <i class="fas fa-magic" style="color: #50fa7b; margin-right: 4px;"></i> 暂无回话建议<br>
+                        <span style="font-size: 10px; color: #888;">发送新消息后将自动生成~</span>
+                    </div>
+                `;
+            }
+        }
 
         if (this.bubbleTimer) clearTimeout(this.bubbleTimer);
         this.bubble.style.opacity = '1';
@@ -705,18 +723,33 @@ class DesktopPetCore {
         if (this.repliesBtn) this.repliesBtn.classList.remove('active');
     }
 
+    updateRepliesButtonVisibility() {
+        if (!this.repliesBtn) return;
+        if (!this.enableAutoReplies) {
+            this.repliesBtn.classList.add('hidden');
+            this.closeRepliesBox();
+        } else {
+            this.repliesBtn.classList.remove('hidden');
+            if (this.currentSuggestedReplies && this.currentSuggestedReplies.length > 0) {
+                this.repliesBtn.classList.add('has-replies');
+            } else {
+                this.repliesBtn.classList.remove('has-replies');
+            }
+        }
+    }
+
     renderSuggestedReplies(replies) {
         this.currentSuggestedReplies = Array.isArray(replies) ? replies : [];
         if (!this.repliesBtn || !this.repliesBox || !this.repliesList) return;
 
+        this.updateRepliesButtonVisibility();
+
         if (this.currentSuggestedReplies.length === 0) {
-            this.repliesBtn.classList.add('hidden');
             this.closeRepliesBox();
             this.repliesList.innerHTML = '';
             return;
         }
 
-        this.repliesBtn.classList.remove('hidden');
         this.repliesList.innerHTML = '';
 
         const badgeColors = ['badge-pink', 'badge-orange', 'badge-cyan', 'badge-green'];

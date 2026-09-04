@@ -244,6 +244,23 @@ body, html {
     display: none !important;
 }
 
+.bubble-action-btn.has-replies {
+    color: #50fa7b !important;
+    border-color: #50fa7b !important;
+    animation: repliesGlow 2s infinite ease-in-out;
+}
+
+@keyframes repliesGlow {
+    0%, 100% {
+        box-shadow: 0 0 3px rgba(80, 250, 123, 0.4);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 10px rgba(80, 250, 123, 0.8), 0 0 16px rgba(80, 250, 123, 0.4);
+        transform: scale(1.1);
+    }
+}
+
 /* 气泡思维链展开抽屉 */
 .bubble-thought-box {
     margin-top: 10px;
