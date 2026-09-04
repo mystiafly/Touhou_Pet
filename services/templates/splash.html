@@ -131,6 +131,10 @@
             border: 1px solid rgba(189, 147, 249, 0.35);
         }
 
+        .version-badge:empty {
+            display: none;
+        }
+
         .sub-title {
             font-size: 12.5px;
             color: #a0a8c7;
@@ -253,7 +257,7 @@
             <div class="header-info">
                 <div class="title-row">
                     <span class="main-title" id="splash-title">SoulLink · 大贤者系统</span>
-                    <span class="version-badge" id="splash-version">v1.39.0</span>
+                    <span class="version-badge" id="splash-version">v1.49.1</span>
                 </div>
                 <span class="sub-title" id="splash-sub">正在与幻想乡建立神经连接...</span>
             </div>
@@ -291,7 +295,33 @@
         const statusPercent = document.getElementById('status-percent');
         const splashAvatar = document.getElementById('splash-avatar');
         const splashTitle = document.getElementById('splash-title');
+        const splashVersion = document.getElementById('splash-version');
         const splashCard = document.getElementById('splash-card');
+
+        // 动态同步 package.json 版本号，彻底杜绝硬编码滞后
+        (function syncAppVersion() {
+            try {
+                if (typeof require !== 'undefined') {
+                    const fs = require('fs');
+                    const path = require('path');
+                    const possiblePaths = [
+                        path.join(__dirname, '..', '..', 'package.json'),
+                        path.join(process.cwd(), 'package.json')
+                    ];
+                    for (const p of possiblePaths) {
+                        if (fs.existsSync(p)) {
+                            const pkg = JSON.parse(fs.readFileSync(p, 'utf8'));
+                            if (pkg && pkg.version && splashVersion) {
+                                splashVersion.textContent = `v${pkg.version}`;
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('[SPLASH] 动态读取版本号失败:', e);
+            }
+        })();
 
         const stepCore = document.getElementById('step-core');
         const stepMemory = document.getElementById('step-memory');
@@ -341,7 +371,13 @@
         if (typeof require !== 'undefined') {
             try {
                 const { ipcRenderer } = require('electron');
+                ipcRenderer.on('splash-version', (event, ver) => {
+                    if (splashVersion && ver) splashVersion.textContent = ver.startsWith('v') ? ver : `v${ver}`;
+                });
                 ipcRenderer.on('splash-progress', (event, data) => {
+                    if (splashVersion && data && data.version) {
+                        splashVersion.textContent = data.version.startsWith('v') ? data.version : `v${data.version}`;
+                    }
                     window.updateProgress(data.percent, data.message, data.step, data.character);
                 });
                 ipcRenderer.on('splash-close', () => {

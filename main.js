@@ -406,6 +406,12 @@ function createSplashWindow() {
         logDebug(`[SPLASH] Load splash failed: ${err.message}`);
     });
 
+    splashWindow.webContents.on('did-finish-load', () => {
+        try {
+            splashWindow.webContents.send('splash-version', `v${app.getVersion()}`);
+        } catch(e) {}
+    });
+
     splashWindow.on('closed', () => {
         splashWindow = null;
     });
@@ -627,7 +633,8 @@ function updateSplashLoading(count) {
         splashWindow.webContents.send('splash-progress', {
             percent: p,
             message: msg,
-            step: step
+            step: step,
+            version: `v${app.getVersion()}`
         });
     } catch(e) {}
 }
@@ -667,7 +674,8 @@ app.whenReady().then(() => {
                             percent: 88,
                             message: "正在初始化 Live2D 渲染视界...",
                             step: "render",
-                            character: activeChar ? { name: activeChar.character_name, avatar: activeChar.avatar_url } : null
+                            character: activeChar ? { name: activeChar.character_name, avatar: activeChar.avatar_url } : null,
+                            version: `v${app.getVersion()}`
                         });
                     }
 
