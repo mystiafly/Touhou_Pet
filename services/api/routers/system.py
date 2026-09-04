@@ -277,6 +277,10 @@ def post_config_api(payload: dict = Body(...)):
             config_data["user_prompt"] = payload["user_prompt"].strip()
         if "preset_max_depth" in payload:
             config_data["preset_max_depth"] = int(payload["preset_max_depth"])
+        if "enable_auto_replies" in payload:
+            config_data["enable_auto_replies"] = bool(payload["enable_auto_replies"])
+        if "auto_replies_prompt" in payload:
+            config_data["auto_replies_prompt"] = str(payload["auto_replies_prompt"]).strip()
         if "enable_dsh_agent" in payload:
             config_data["enable_dsh_agent"] = bool(payload["enable_dsh_agent"])
         if "dsh_run_mode" in payload:
