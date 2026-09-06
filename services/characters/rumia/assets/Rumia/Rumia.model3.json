@@ -1,202 +1,202 @@
 {
   "Version": 3,
   "FileReferences": {
-    "Moc": "Koishi.moc3",
+    "Moc": "Rumia.moc3",
     "Textures": [
       "textures/texture_00.png"
     ],
-    "Physics": "Koishi.physics3.json",
+    "Physics": "Rumia.physics3.json",
     "Motions": {
       "Idle": [
         {
-          "File": "motions/Koishi_10.motion3.json",
+          "File": "motions/Rumia_10.motion3.json",
           "FadeIn": 500,
           "FadeOut": 500
         }
       ],
       "Tap": [
         {
-          "File": "motions/Koishi_11.motion3.json",
+          "File": "motions/Rumia_11.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_12.motion3.json",
+          "File": "motions/Rumia_12.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_13.motion3.json",
+          "File": "motions/Rumia_13.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         }
       ],
       "Special": [
         {
-          "File": "motions/Koishi_14.motion3.json",
+          "File": "motions/Rumia_14.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_15.motion3.json",
+          "File": "motions/Rumia_15.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_20.motion3.json",
+          "File": "motions/Rumia_20.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_21.motion3.json",
+          "File": "motions/Rumia_21.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_22.motion3.json",
+          "File": "motions/Rumia_22.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_23.motion3.json",
+          "File": "motions/Rumia_23.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_24.motion3.json",
+          "File": "motions/Rumia_24.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_25.motion3.json",
+          "File": "motions/Rumia_25.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_30.motion3.json",
+          "File": "motions/Rumia_30.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_31.motion3.json",
+          "File": "motions/Rumia_31.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_32.motion3.json",
+          "File": "motions/Rumia_32.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_33.motion3.json",
+          "File": "motions/Rumia_33.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_34.motion3.json",
+          "File": "motions/Rumia_34.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_35.motion3.json",
+          "File": "motions/Rumia_35.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_40.motion3.json",
+          "File": "motions/Rumia_40.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_41.motion3.json",
+          "File": "motions/Rumia_41.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_42.motion3.json",
+          "File": "motions/Rumia_42.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_43.motion3.json",
+          "File": "motions/Rumia_43.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_44.motion3.json",
+          "File": "motions/Rumia_44.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_45.motion3.json",
+          "File": "motions/Rumia_45.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_50.motion3.json",
+          "File": "motions/Rumia_50.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_51.motion3.json",
+          "File": "motions/Rumia_51.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_52.motion3.json",
+          "File": "motions/Rumia_52.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_53.motion3.json",
+          "File": "motions/Rumia_53.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_54.motion3.json",
+          "File": "motions/Rumia_54.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_55.motion3.json",
+          "File": "motions/Rumia_55.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         }
       ]
     },
-    "Pose": "Koishi.pose3.json",
+    "Pose": "Rumia.pose3.json",
     "Expressions": [
       {
-        "Name": "Koishi_01e",
-        "File": "expressions/Koishi_01e.exp3.json"
+        "Name": "Rumia_01e",
+        "File": "expressions/Rumia_01e.exp3.json"
       },
       {
-        "Name": "Koishi_02e",
-        "File": "expressions/Koishi_02e.exp3.json"
+        "Name": "Rumia_02e",
+        "File": "expressions/Rumia_02e.exp3.json"
       },
       {
-        "Name": "Koishi_03e",
-        "File": "expressions/Koishi_03e.exp3.json"
+        "Name": "Rumia_03e",
+        "File": "expressions/Rumia_03e.exp3.json"
       },
       {
-        "Name": "Koishi_04e",
-        "File": "expressions/Koishi_04e.exp3.json"
+        "Name": "Rumia_04e",
+        "File": "expressions/Rumia_04e.exp3.json"
       },
       {
-        "Name": "Koishi_05e",
-        "File": "expressions/Koishi_05e.exp3.json"
+        "Name": "Rumia_05e",
+        "File": "expressions/Rumia_05e.exp3.json"
       },
       {
-        "Name": "Koishi_06e",
-        "File": "expressions/Koishi_06e.exp3.json"
+        "Name": "Rumia_06e",
+        "File": "expressions/Rumia_06e.exp3.json"
       },
       {
-        "Name": "Koishi_07e",
-        "File": "expressions/Koishi_07e.exp3.json"
+        "Name": "Rumia_07e",
+        "File": "expressions/Rumia_07e.exp3.json"
       },
       {
-        "Name": "Koishi_08e",
-        "File": "expressions/Koishi_08e.exp3.json"
+        "Name": "Rumia_08e",
+        "File": "expressions/Rumia_08e.exp3.json"
       }
     ]
   },
@@ -205,8 +205,8 @@
       "Target": "Parameter",
       "Name": "EyeBlink",
       "Ids": [
-        "ParamEyeLOpen",
-        "ParamEyeROpen"
+        "ParamEyeROpen",
+        "ParamEyeLOpen"
       ]
     },
     {

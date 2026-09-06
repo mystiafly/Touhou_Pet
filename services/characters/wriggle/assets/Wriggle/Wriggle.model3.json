@@ -1,202 +1,202 @@
 {
   "Version": 3,
   "FileReferences": {
-    "Moc": "Koishi.moc3",
+    "Moc": "Wriggle.moc3",
     "Textures": [
       "textures/texture_00.png"
     ],
-    "Physics": "Koishi.physics3.json",
+    "Physics": "Wriggle.physics3.json",
     "Motions": {
       "Idle": [
         {
-          "File": "motions/Koishi_10.motion3.json",
+          "File": "motions/Wriggle_10.motion3.json",
           "FadeIn": 500,
           "FadeOut": 500
         }
       ],
       "Tap": [
         {
-          "File": "motions/Koishi_11.motion3.json",
+          "File": "motions/Wriggle_11.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_12.motion3.json",
+          "File": "motions/Wriggle_12.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_13.motion3.json",
+          "File": "motions/Wriggle_13.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         }
       ],
       "Special": [
         {
-          "File": "motions/Koishi_14.motion3.json",
+          "File": "motions/Wriggle_14.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_15.motion3.json",
+          "File": "motions/Wriggle_15.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_20.motion3.json",
+          "File": "motions/Wriggle_20.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_21.motion3.json",
+          "File": "motions/Wriggle_21.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_22.motion3.json",
+          "File": "motions/Wriggle_22.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_23.motion3.json",
+          "File": "motions/Wriggle_23.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_24.motion3.json",
+          "File": "motions/Wriggle_24.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_25.motion3.json",
+          "File": "motions/Wriggle_25.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_30.motion3.json",
+          "File": "motions/Wriggle_30.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_31.motion3.json",
+          "File": "motions/Wriggle_31.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_32.motion3.json",
+          "File": "motions/Wriggle_32.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_33.motion3.json",
+          "File": "motions/Wriggle_33.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_34.motion3.json",
+          "File": "motions/Wriggle_34.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_35.motion3.json",
+          "File": "motions/Wriggle_35.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_40.motion3.json",
+          "File": "motions/Wriggle_40.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_41.motion3.json",
+          "File": "motions/Wriggle_41.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_42.motion3.json",
+          "File": "motions/Wriggle_42.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_43.motion3.json",
+          "File": "motions/Wriggle_43.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_44.motion3.json",
+          "File": "motions/Wriggle_44.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_45.motion3.json",
+          "File": "motions/Wriggle_45.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_50.motion3.json",
+          "File": "motions/Wriggle_50.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_51.motion3.json",
+          "File": "motions/Wriggle_51.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_52.motion3.json",
+          "File": "motions/Wriggle_52.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_53.motion3.json",
+          "File": "motions/Wriggle_53.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_54.motion3.json",
+          "File": "motions/Wriggle_54.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         },
         {
-          "File": "motions/Koishi_55.motion3.json",
+          "File": "motions/Wriggle_55.motion3.json",
           "FadeIn": 300,
           "FadeOut": 300
         }
       ]
     },
-    "Pose": "Koishi.pose3.json",
+    "Pose": "Wriggle.pose3.json",
     "Expressions": [
       {
-        "Name": "Koishi_01e",
-        "File": "expressions/Koishi_01e.exp3.json"
+        "Name": "Wriggle_01e",
+        "File": "expressions/Wriggle_01e.exp3.json"
       },
       {
-        "Name": "Koishi_02e",
-        "File": "expressions/Koishi_02e.exp3.json"
+        "Name": "Wriggle_02e",
+        "File": "expressions/Wriggle_02e.exp3.json"
       },
       {
-        "Name": "Koishi_03e",
-        "File": "expressions/Koishi_03e.exp3.json"
+        "Name": "Wriggle_03e",
+        "File": "expressions/Wriggle_03e.exp3.json"
       },
       {
-        "Name": "Koishi_04e",
-        "File": "expressions/Koishi_04e.exp3.json"
+        "Name": "Wriggle_04e",
+        "File": "expressions/Wriggle_04e.exp3.json"
       },
       {
-        "Name": "Koishi_05e",
-        "File": "expressions/Koishi_05e.exp3.json"
+        "Name": "Wriggle_05e",
+        "File": "expressions/Wriggle_05e.exp3.json"
       },
       {
-        "Name": "Koishi_06e",
-        "File": "expressions/Koishi_06e.exp3.json"
+        "Name": "Wriggle_06e",
+        "File": "expressions/Wriggle_06e.exp3.json"
       },
       {
-        "Name": "Koishi_07e",
-        "File": "expressions/Koishi_07e.exp3.json"
+        "Name": "Wriggle_07e",
+        "File": "expressions/Wriggle_07e.exp3.json"
       },
       {
-        "Name": "Koishi_08e",
-        "File": "expressions/Koishi_08e.exp3.json"
+        "Name": "Wriggle_08e",
+        "File": "expressions/Wriggle_08e.exp3.json"
       }
     ]
   },
@@ -205,8 +205,8 @@
       "Target": "Parameter",
       "Name": "EyeBlink",
       "Ids": [
-        "ParamEyeLOpen",
-        "ParamEyeROpen"
+        "ParamEyeROpen",
+        "ParamEyeLOpen1"
       ]
     },
     {

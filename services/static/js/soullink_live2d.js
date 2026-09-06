@@ -46,6 +46,7 @@ class SoullinkLive2DDriver {
         this.allMotionGroups = [];
         this.idleMotionTimer = null;
         this.lastMotionTriggerTime = 0;
+        this.lastSpeakingMotionTime = 0;
         this.currentExpression = null; // 缓存当前激活的表情，防止高频重复触发淡入导致疯狂眨眼
 
         // 方案一：程序化物理弹性微动与拖拽阻尼惯性引擎 (告别机械假人)
@@ -805,15 +806,17 @@ class SoullinkLive2DDriver {
                     this.audioCtx.resume();
                 }
                 this.isSpeaking = true;
-                this.triggerRandomMotion();
+                this.triggerSpeakingMotion();
             });
 
             audioElement.addEventListener('pause', () => {
                 this.isSpeaking = false;
+                this.triggerIdleMotion();
             });
 
             audioElement.addEventListener('ended', () => {
                 this.isSpeaking = false;
+                this.triggerIdleMotion();
             });
         } catch (e) {
             console.error("[SOULLINK LIPSYNC ERROR]", e);
@@ -947,7 +950,25 @@ class SoullinkLive2DDriver {
     }
 
     /**
-     * 随机触发可用的动作 Motion (通用保底)
+     * 触发【对话/说话】动作 (保持自然温和站姿与口型同步，偶尔触发温和点头或致意动作，严禁战斗/受击/倒地动作)
+     */
+    triggerSpeakingMotion() {
+        if (!this.model || !this.isLoaded || this.isSleeping) return;
+        const now = Date.now();
+        // 防抖：3.5 秒内不重复触发打断动作，避免文本说话和音频播放连续触发导致的动作抽搐
+        if (now - this.lastSpeakingMotionTime < 3500) return;
+        this.lastSpeakingMotionTime = now;
+
+        // 优先在温和的 Tap 组中抽取 (点头、问候、眨眼致意)，或保持平静待机
+        if (this.tapMotions.length > 0 && Math.random() < 0.5) {
+            this.playMotionFromCandidates(this.tapMotions);
+        } else {
+            this.triggerIdleMotion();
+        }
+    }
+
+    /**
+     * 随机触发可用的动作 Motion (通用保底，安全过滤，绝不自发打出战斗/倒地/重伤动作)
      */
     triggerRandomMotion(candidateGroups = []) {
         if (!this.model || !this.model.internalModel || this.isSleeping) return;
@@ -958,22 +979,28 @@ class SoullinkLive2DDriver {
         if (availableGroups.length === 0) return;
 
         // 如果指定了候选组，优先在候选组里找
-        for (const grp of candidateGroups) {
-            if (availableGroups.includes(grp)) {
-                try {
-                    this.model.motion(grp);
-                    this.lastMotionTriggerTime = Date.now();
-                    return;
-                } catch (e) {}
+        if (candidateGroups && candidateGroups.length > 0) {
+            for (const grp of candidateGroups) {
+                if (availableGroups.includes(grp)) {
+                    try {
+                        this.model.motion(grp);
+                        this.lastMotionTriggerTime = Date.now();
+                        return;
+                    } catch (e) {}
+                }
             }
         }
 
-        // 随机在所有动作组中播放
-        const randomGrp = availableGroups[Math.floor(Math.random() * availableGroups.length)];
-        try {
-            this.model.motion(randomGrp);
-            this.lastMotionTriggerTime = Date.now();
-        } catch (e) {}
+        // 未指定候选组时，安全过滤：严格排除 Special / Attack / Skill / Hurt / Death 等剧烈战斗动作
+        const safeGroups = availableGroups.filter(grp => !/special|attack|skill|hurt|damage|death|unique|magic/i.test(grp));
+        const pool = safeGroups.length > 0 ? safeGroups : this.idleMotions;
+        if (pool.length > 0) {
+            const randomGrp = pool[Math.floor(Math.random() * pool.length)];
+            try {
+                this.model.motion(randomGrp);
+                this.lastMotionTriggerTime = Date.now();
+            } catch (e) {}
+        }
     }
 
     destroy() {

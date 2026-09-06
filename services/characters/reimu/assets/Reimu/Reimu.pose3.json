@@ -1,0 +1,51 @@
+{
+  "Type": "Live2D Pose",
+  "Groups": [
+    [
+      {
+        "Id": "PARTS_LEFT_HAND_01"
+      },
+      {
+        "Id": "PARTS_LEFT_HAND_02"
+      },
+      {
+        "Id": "PARTS_LEFT_HAND_03"
+      },
+      {
+        "Id": "PARTS_LEFT_HAND_04"
+      },
+      {
+        "Id": "PARTS_LEFT_HAND_05"
+      },
+      {
+        "Id": "PARTS_LEFT_HAND_06"
+      },
+      {
+        "Id": "PARTS_LEFT_HAND_07"
+      }
+    ],
+    [
+      {
+        "Id": "PARTS_RIGHT_HAND_01"
+      },
+      {
+        "Id": "PARTS_RIGHT_HAND_02"
+      },
+      {
+        "Id": "PARTS_RIGHT_HAND_03"
+      },
+      {
+        "Id": "PARTS_RIGHT_HAND_04"
+      },
+      {
+        "Id": "PARTS_RIGHT_HAND_05"
+      },
+      {
+        "Id": "PARTS_RIGHT_HAND_06"
+      },
+      {
+        "Id": "PARTS_RIGHT_HAND_07"
+      }
+    ]
+  ]
+}

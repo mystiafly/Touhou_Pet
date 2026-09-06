@@ -37,14 +37,24 @@ def ensure_live2d_pose_configured(model_json_path: str):
     pass
 
 def find_live2d_model_file(directory: str) -> Optional[str]:
-    """递归查找目录下的 .model3.json 或 .model.json 相对路径"""
+    """递归查找目录下的 .model3.json 或 .model.json 相对路径，优先匹配标准官方格式（非 .asset.）"""
+    candidates = []
     for root, dirs, files in os.walk(directory):
         for f in files:
-            if f.lower().endswith('.model3.json') or f.lower().endswith('.model.json'):
+            f_lower = f.lower()
+            if f_lower.endswith('.model3.json') or f_lower.endswith('.model.json'):
                 abs_path = os.path.join(root, f)
-                rel_path = os.path.relpath(abs_path, directory)
-                return rel_path.replace('\\', '/')
+                rel_path = os.path.relpath(abs_path, directory).replace('\\', '/')
+                if not ('.asset.' in f_lower):
+                    prio = 0 if f_lower.endswith('.model3.json') else 1
+                else:
+                    prio = 2
+                candidates.append((prio, rel_path))
+    if candidates:
+        candidates.sort(key=lambda x: x[0])
+        return candidates[0][1]
     return None
+
 
 def clean_history_text(text: str) -> str:
     if not text:

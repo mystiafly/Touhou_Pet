@@ -598,7 +598,11 @@ class DesktopPetCore {
         this.updateRepliesButtonVisibility();
 
         if (this.spriteType === 'live2d' && window.SoullinkLive2D && window.SoullinkLive2D.isLoaded) {
-            window.SoullinkLive2D.triggerRandomMotion();
+            if (typeof window.SoullinkLive2D.triggerSpeakingMotion === 'function') {
+                window.SoullinkLive2D.triggerSpeakingMotion();
+            } else {
+                window.SoullinkLive2D.triggerRandomMotion();
+            }
         }
 
         this.currentSpeechText = text;
