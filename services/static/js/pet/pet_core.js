@@ -16,6 +16,10 @@ class DesktopPetCore {
         this.repliesBox = document.getElementById('bubble-replies-box');
         this.repliesList = document.getElementById('bubble-replies-list');
         this.closeRepliesBtn = document.getElementById('close-replies-btn');
+        this.galChoicesContainer = document.getElementById('gal-choices-container');
+        this.galCustomInput = document.getElementById('gal-custom-input');
+        this.galCustomSendBtn = document.getElementById('gal-custom-send-btn');
+        this.galSpeakerName = document.getElementById('gal-speaker-name');
         this.currentSuggestedReplies = [];
         this.isFetchingReplies = false;
         this.enableAutoReplies = false;
@@ -200,6 +204,27 @@ class DesktopPetCore {
             });
             this.input.addEventListener('focus', () => this.resetAutoSpeakTimer());
             this.input.addEventListener('input', () => this.resetAutoSpeakTimer());
+        }
+
+        if (this.galCustomInput) {
+            this.galCustomInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const text = this.galCustomInput.value.trim();
+                    if (text) {
+                        this.galCustomInput.value = '';
+                        this.sendMessage(text);
+                    }
+                }
+            });
+        }
+        if (this.galCustomSendBtn && this.galCustomInput) {
+            this.galCustomSendBtn.addEventListener('click', () => {
+                const text = this.galCustomInput.value.trim();
+                if (text) {
+                    this.galCustomInput.value = '';
+                    this.sendMessage(text);
+                }
+            });
         }
 
         this.initSettings();
@@ -553,6 +578,17 @@ class DesktopPetCore {
         this.bubble.style.opacity = '1';
         this.bubble.style.pointerEvents = 'auto';
 
+        if (this.immersive?.isImmersiveMode && this.immersive?.currentPackage === 'gal' && this.galSpeakerName) {
+            this.galSpeakerName.textContent = `【${this.charName || '角色'}】`;
+            this.galSpeakerName.classList.remove('hidden');
+        } else if (this.galSpeakerName) {
+            this.galSpeakerName.classList.add('hidden');
+        }
+
+        if (this.galChoicesContainer && (!text || text === '...' || text.startsWith('hmm...'))) {
+            this.galChoicesContainer.classList.add('hidden');
+        }
+
         this.repliesGeneratedForCurrentSpeech = false;
         this.closeRepliesBox();
         this.currentSuggestedReplies = [];
@@ -788,6 +824,34 @@ class DesktopPetCore {
 
     renderSuggestedReplies(replies) {
         this.currentSuggestedReplies = Array.isArray(replies) ? replies : [];
+
+        // Gal 模式 4选1 抉择分支渲染
+        const isGalMode = this.immersive?.isImmersiveMode && this.immersive?.currentPackage === 'gal';
+        if (isGalMode && this.galChoicesContainer) {
+            if (this.currentSuggestedReplies.length > 0) {
+                this.galChoicesContainer.classList.remove('hidden');
+                [0, 1, 2].forEach(i => {
+                    const choiceEl = document.getElementById(`gal-choice-${i}`);
+                    if (!choiceEl) return;
+                    const item = this.currentSuggestedReplies[i];
+                    if (item && item.text) {
+                        choiceEl.style.display = 'flex';
+                        const textSpan = choiceEl.querySelector('.gal-choice-text');
+                        if (textSpan) textSpan.textContent = item.text;
+                        choiceEl.onclick = (e) => {
+                            e.stopPropagation();
+                            if (this.galChoicesContainer) this.galChoicesContainer.classList.add('hidden');
+                            this.sendMessage(item.text);
+                        };
+                    } else {
+                        choiceEl.style.display = 'none';
+                    }
+                });
+            } else {
+                this.galChoicesContainer.classList.add('hidden');
+            }
+        }
+
         if (!this.repliesBtn || !this.repliesBox || !this.repliesList) return;
 
         this.updateRepliesButtonVisibility();
@@ -893,11 +957,16 @@ class DesktopPetCore {
         }
     }
 
-    async sendMessage() {
-        const text = this.input.value.trim();
+    async sendMessage(overrideText = null) {
+        const text = (overrideText !== null ? overrideText : (this.input ? this.input.value : '')).trim();
         if (!text) return;
 
-        this.input.value = '';
+        if (overrideText === null && this.input) {
+            this.input.value = '';
+        }
+        if (this.galChoicesContainer) {
+            this.galChoicesContainer.classList.add('hidden');
+        }
         this.lastUserMessage = text;
         this.autoSpeakCount = 0;
         this.isChatting = true;

@@ -471,6 +471,30 @@ window.deleteCustomEngine = async function(id) {
                     autoReplyPrompt.value = configData.auto_replies_prompt;
                 }
 
+                const immersivePackage = configData.immersive_package || 'companion';
+                const packageInput = document.getElementById('immersive-package-input');
+                if (packageInput) packageInput.value = immersivePackage;
+                document.querySelectorAll('.package-card').forEach(card => {
+                    const pkg = card.getAttribute('data-package');
+                    const hint = card.querySelector('.select-hint');
+                    const icon = card.querySelector('.check-icon');
+                    if (pkg === immersivePackage) {
+                        card.classList.add('active');
+                        card.style.borderColor = '#bd93f9';
+                        card.style.background = 'rgba(189, 147, 249, 0.18)';
+                        card.style.boxShadow = '0 0 15px rgba(189, 147, 249, 0.35)';
+                        if (hint) hint.textContent = '当前生效中';
+                        if (icon) icon.style.color = '#50fa7b';
+                    } else {
+                        card.classList.remove('active');
+                        card.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                        card.style.background = 'rgba(30, 31, 41, 0.6)';
+                        card.style.boxShadow = 'none';
+                        if (hint) hint.textContent = '点击启用此套餐';
+                        if (icon) icon.style.color = 'inherit';
+                    }
+                });
+
                 const immersiveWallpaperInput = document.getElementById('immersive-wallpaper-input');
                 const wallpaperFitSelect = document.getElementById('wallpaper-fit-select');
                 if (wallpaperFitSelect && configData.wallpaper_fit !== undefined) {
@@ -888,6 +912,45 @@ window.deleteCustomEngine = async function(id) {
             }
         }
     }
+
+    // 沉浸模式套餐卡片切换点击事件
+    const packageCards = document.querySelectorAll('.package-card');
+    const packageInput = document.getElementById('immersive-package-input');
+    packageCards.forEach(card => {
+        card.addEventListener('click', async () => {
+            const pkg = card.getAttribute('data-package');
+            if (packageInput) packageInput.value = pkg;
+            packageCards.forEach(c => {
+                const cPkg = c.getAttribute('data-package');
+                const hint = c.querySelector('.select-hint');
+                const icon = c.querySelector('.check-icon');
+                if (cPkg === pkg) {
+                    c.classList.add('active');
+                    c.style.borderColor = '#bd93f9';
+                    c.style.background = 'rgba(189, 147, 249, 0.18)';
+                    c.style.boxShadow = '0 0 15px rgba(189, 147, 249, 0.35)';
+                    if (hint) hint.textContent = '当前生效中';
+                    if (icon) icon.style.color = '#50fa7b';
+                } else {
+                    c.classList.remove('active');
+                    c.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    c.style.background = 'rgba(30, 31, 41, 0.6)';
+                    c.style.boxShadow = 'none';
+                    if (hint) hint.textContent = '点击启用此套餐';
+                    if (icon) icon.style.color = 'inherit';
+                }
+            });
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ immersive_package: pkg })
+                });
+            } catch (e) {
+                console.error("保存沉浸套餐失败:", e);
+            }
+        });
+    });
 
     const immersiveWallpaperInput = document.getElementById('immersive-wallpaper-input');
     const wallpaperFitSelect = document.getElementById('wallpaper-fit-select');

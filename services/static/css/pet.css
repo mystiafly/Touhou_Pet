@@ -1771,3 +1771,211 @@ body.peeking-mode .log-container {
     transform: translateX(-50%) translateY(-10px) scale(0.95);
     pointer-events: none;
 }
+
+/* ==========================================================================
+   沉浸模式套餐 - Gal 模式 (Visual Novel) 专属样式
+   ========================================================================== */
+
+/* 1. 角色立绘置中，放大 2.6x 营造 Galgame 视觉氛围 */
+.pet-container.immersive-mode.immersive-gal-mode .character-wrapper {
+    position: fixed !important;
+    left: 50% !important;
+    bottom: 80px !important;
+    transform: translateX(-50%) scale(2.6) !important;
+    transform-origin: bottom center !important;
+    z-index: 8 !important;
+    margin-bottom: 0 !important;
+}
+
+/* 2. 底部全宽 Gal 对话框 (覆写普通沉浸模式的头顶小气泡) */
+.pet-container.immersive-mode.immersive-gal-mode #speech-bubble {
+    position: fixed !important;
+    left: 50% !important;
+    bottom: 24px !important;
+    top: auto !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    width: min(1040px, 92vw) !important;
+    max-width: 1040px !important;
+    min-height: 140px !important;
+    margin: 0 !important;
+    border-radius: 20px !important;
+    padding: 18px 28px !important;
+    background: rgba(24, 25, 36, 0.92) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 121, 198, 0.4) !important;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7), 0 0 20px rgba(255, 121, 198, 0.2) !important;
+    z-index: 40 !important;
+}
+
+/* Gal 对话框隐藏下垂指示尾巴 */
+.pet-container.immersive-mode.immersive-gal-mode #speech-bubble::after {
+    display: none !important;
+}
+
+.pet-container.immersive-mode.immersive-gal-mode #bubble-content {
+    font-size: 17px !important;
+    line-height: 1.75 !important;
+    color: #f8f8f2 !important;
+    margin-top: 4px !important;
+}
+
+/* 隐藏 Gal 模式内非必要的历史面板与普通输入框 */
+.pet-container.immersive-mode.immersive-gal-mode .immersive-chat-panel,
+.pet-container.immersive-mode.immersive-gal-mode .immersive-chat-trigger,
+.pet-container.immersive-mode.immersive-gal-mode .input-bar,
+.pet-container.immersive-mode.immersive-gal-mode #bubble-replies-btn,
+.pet-container.immersive-mode.immersive-gal-mode #bubble-replies-box {
+    display: none !important;
+}
+
+/* 3. 角色名牌徽章 */
+.gal-speaker-name {
+    display: inline-block;
+    font-size: 15px;
+    font-weight: 700;
+    color: #ff79c6;
+    background: rgba(255, 121, 198, 0.15);
+    border: 1px solid rgba(255, 121, 198, 0.4);
+    border-radius: 8px;
+    padding: 3px 12px;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+    text-shadow: 0 0 8px rgba(255, 121, 198, 0.4);
+}
+
+.pet-container:not(.immersive-gal-mode) .gal-speaker-name {
+    display: none !important;
+}
+
+.pet-container.immersive-mode.immersive-gal-mode .gal-speaker-name {
+    display: inline-block !important;
+}
+
+/* 4. Gal 模式四选一分支选择卡片容器 */
+.gal-choices-container {
+    position: fixed !important;
+    bottom: 185px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: min(840px, 90vw) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    z-index: 50 !important;
+    pointer-events: auto !important;
+    transition: opacity 0.3s ease, transform 0.3s ease !important;
+}
+
+.gal-choices-container.hidden {
+    display: none !important;
+}
+
+.pet-container:not(.immersive-gal-mode) .gal-choices-container {
+    display: none !important;
+}
+
+.gal-choice-item {
+    display: flex;
+    align-items: center;
+    background: rgba(30, 31, 41, 0.88);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 14px;
+    padding: 10px 18px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    color: #f8f8f2;
+    font-size: 15px;
+}
+
+.gal-choice-item:hover {
+    background: rgba(189, 147, 249, 0.35);
+    border-color: #bd93f9;
+    transform: translateX(6px) scale(1.01);
+    box-shadow: 0 6px 20px rgba(189, 147, 249, 0.35);
+}
+
+.gal-choice-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #bd93f9, #ff79c6);
+    color: #fff;
+    font-weight: 700;
+    font-size: 13px;
+    margin-right: 14px;
+    flex-shrink: 0;
+    box-shadow: 0 0 8px rgba(189, 147, 249, 0.6);
+}
+
+.gal-choice-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 选项 4: 自定义输入项 */
+.gal-choice-custom {
+    cursor: default;
+    background: rgba(35, 37, 49, 0.92);
+}
+
+.gal-choice-custom:hover {
+    background: rgba(35, 37, 49, 0.95);
+    border-color: rgba(255, 255, 255, 0.35);
+    transform: none;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.gal-custom-input-wrapper {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    gap: 10px;
+}
+
+.gal-custom-input-wrapper input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 6px 12px;
+    outline: none;
+    color: #f8f8f2;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.gal-custom-input-wrapper input:focus {
+    border-color: #bd93f9;
+    box-shadow: 0 0 8px rgba(189, 147, 249, 0.4);
+}
+
+.gal-custom-input-wrapper input::placeholder {
+    color: rgba(248, 248, 242, 0.45);
+}
+
+.gal-custom-input-wrapper button {
+    background: linear-gradient(135deg, #bd93f9, #ff79c6);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    padding: 6px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.gal-custom-input-wrapper button:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+

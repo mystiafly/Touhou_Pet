@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Desktop Pet</title>
-    <link rel="stylesheet" href="/static/css/pet.css?v=1.49.1">
+    <link rel="stylesheet" href="/static/css/pet.css?v=1.50.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- Live2D Cubism Core & PixiJS & Soullink Driver -->
     <script src="https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js"></script>
@@ -24,6 +24,9 @@
         <div id="immersive-clock-time">00:00</div>
         <div id="immersive-clock-date">2026年08月08日 星期六</div>
         <div class="immersive-controls-row">
+            <button id="immersive-package-toggle-btn" class="immersive-bgm-btn" title="切换沉浸套餐 (陪伴模式 / Gal模式)">
+                <i class="fas fa-theater-masks"></i> <span id="immersive-package-status-text">陪伴模式</span>
+            </button>
             <button id="immersive-screenshot-btn" class="immersive-bgm-btn hidden" title="一键超高清截屏 (快捷键: P 或 F12)">
                 <i class="fas fa-camera"></i> <span>高清截图</span>
             </button>
@@ -63,8 +66,32 @@
 
     <!-- 桌面宠物核心舞台 (统一普通模式与沉浸模式的自适应垂直层级排版) -->
     <div class="pet-stage" id="pet-stage">
+        <!-- Gal 模式 4选1 抉择与自定义输入分支容器 -->
+        <div id="gal-choices-container" class="gal-choices-container hidden">
+            <div class="gal-choice-item" data-index="0" id="gal-choice-0">
+                <span class="gal-choice-tag">1</span>
+                <span class="gal-choice-text">...</span>
+            </div>
+            <div class="gal-choice-item" data-index="1" id="gal-choice-1">
+                <span class="gal-choice-tag">2</span>
+                <span class="gal-choice-text">...</span>
+            </div>
+            <div class="gal-choice-item" data-index="2" id="gal-choice-2">
+                <span class="gal-choice-tag">3</span>
+                <span class="gal-choice-text">...</span>
+            </div>
+            <div class="gal-choice-item gal-choice-custom" id="gal-choice-custom">
+                <span class="gal-choice-tag">4</span>
+                <div class="gal-custom-input-wrapper">
+                    <input type="text" id="gal-custom-input" placeholder="输入自定义回复，按回车发送..." autocomplete="off">
+                    <button id="gal-custom-send-btn" title="发送"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+
         <!-- 头顶气泡 -->
         <div id="speech-bubble" class="bubble" style="opacity: 0;">
+            <div id="gal-speaker-name" class="gal-speaker-name hidden">【角色名】</div>
             <div class="bubble-actions">
                 <button id="bubble-replies-btn" class="bubble-action-btn hidden" title="快捷回话建议 (点击展开)">
                     <i class="fas fa-reply-all"></i>
@@ -181,9 +208,9 @@
     </div>
 </div>
 
-<script src="/static/js/pet/pet_audio.js?v=1.49.1"></script>
-<script src="/static/js/pet/pet_immersive.js?v=1.49.1"></script>
-<script src="/static/js/pet/pet_core.js?v=1.49.1"></script>
-<script src="/static/js/pet_script.js?v=1.49.1"></script>
+<script src="/static/js/pet/pet_audio.js?v=1.50.0"></script>
+<script src="/static/js/pet/pet_immersive.js?v=1.50.0"></script>
+<script src="/static/js/pet/pet_core.js?v=1.50.0"></script>
+<script src="/static/js/pet_script.js?v=1.50.0"></script>
 </body>
 </html>

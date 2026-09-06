@@ -1024,6 +1024,39 @@
             </header>
             
             <div class="card-container">
+                <!-- 沉浸模式套餐偏好卡片 -->
+                <div class="settings-card" style="grid-column: 1 / -1;">
+                    <h3><i class="fas fa-theater-masks" style="color: #bd93f9;"></i> 沉浸模式套餐类型 (Immersive Package)</h3>
+                    <p class="help-text" style="margin-bottom: 15px;">选择您喜爱的沉浸交互套餐模式。无论选择哪种套餐，所有背景壁纸、小红车透明桌面、背景音乐及粒子特效均完全通用且共享。</p>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
+                        <!-- 套餐 1: 陪伴模式 -->
+                        <div class="package-card" id="package-card-companion" data-package="companion" style="background: rgba(30, 31, 41, 0.6); border: 2px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.3s ease; position: relative;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                <h4 style="margin: 0; color: #8be9fd; font-size: 16px;"><i class="fas fa-user-friends"></i> 套餐一：陪伴模式</h4>
+                                <span class="badge" style="background: rgba(139, 233, 253, 0.2); color: #8be9fd; padding: 2px 8px; border-radius: 6px; font-size: 11px;">经典常驻</span>
+                            </div>
+                            <p style="font-size: 13px; color: rgba(255, 255, 255, 0.7); line-height: 1.5; margin: 0 0 10px 0;">
+                                角色立绘放大常驻于屏幕左下角，头顶弹性对话气泡，右侧可折叠/展开的对话记录抽屉，右下角悬浮输入栏。适合日常挂机、边看边聊。
+                            </p>
+                            <div style="font-size: 12px; color: #bd93f9;"><i class="fas fa-check-circle check-icon"></i> <span class="select-hint">点击启用此套餐</span></div>
+                        </div>
+
+                        <!-- 套餐 2: Gal 模式 -->
+                        <div class="package-card" id="package-card-gal" data-package="gal" style="background: rgba(30, 31, 41, 0.6); border: 2px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.3s ease; position: relative;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                <h4 style="margin: 0; color: #ff79c6; font-size: 16px;"><i class="fas fa-book-open"></i> 套餐二：Gal 模式</h4>
+                                <span class="badge" style="background: rgba(255, 121, 198, 0.2); color: #ff79c6; padding: 2px 8px; border-radius: 6px; font-size: 11px;">视觉小说</span>
+                            </div>
+                            <p style="font-size: 13px; color: rgba(255, 255, 255, 0.7); line-height: 1.5; margin: 0 0 10px 0;">
+                                角色立绘置中放大呈现，底部宽屏 Gal 对话框与角色名牌。强制开启即时回话推荐，屏幕浮现 3 种情绪化分支选项与第 4 项自定义输入分支。沉浸式恋爱与剧情体验。
+                            </p>
+                            <div style="font-size: 12px; color: #bd93f9;"><i class="fas fa-check-circle check-icon"></i> <span class="select-hint">点击启用此套餐</span></div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="immersive-package-input" value="companion">
+                </div>
+
                 <div class="settings-card" style="grid-column: 1 / -1;">
                     <h3><i class="fas fa-image"></i> 专属沉浸背景壁纸</h3>
                     <div class="form-group">
@@ -1546,7 +1579,7 @@
                     <h2>大贤者系统 (Desktop Pet AI)</h2>
                     
                     <div style="display: flex; justify-content: center; align-items: center; gap: 12px; margin: 20px 0;">
-                        <span id="current-version-badge" style="font-size: 22px; color: #ffb86c; font-family: 'Consolas', 'Courier New', monospace; font-weight: bold; background: rgba(255, 184, 108, 0.1); padding: 6px 16px; border-radius: 20px; border: 1px solid rgba(255, 184, 108, 0.3);">当前版本: v1.49.1</span>
+                        <span id="current-version-badge" style="font-size: 22px; color: #ffb86c; font-family: 'Consolas', 'Courier New', monospace; font-weight: bold; background: rgba(255, 184, 108, 0.1); padding: 6px 16px; border-radius: 20px; border: 1px solid rgba(255, 184, 108, 0.3);">当前版本: v1.50.0</span>
                         <span id="commit-hash-badge" style="font-size: 13px; color: #bd93f9; font-family: monospace; background: rgba(189, 147, 249, 0.1); padding: 4px 10px; border-radius: 12px;"></span>
                     </div>
 
@@ -2499,16 +2532,16 @@
 </div>
 
 <!-- 大贤者控制台 11 大领域子模块架构 (5570行全量无损解耦与全局桥接) -->
-<script src="/static/js/dashboard/modules/core_nav.js?v=1.49.1"></script>
-<script src="/static/js/dashboard/modules/engine_settings.js?v=1.49.1"></script>
-<script src="/static/js/dashboard/modules/character_management.js?v=1.49.1"></script>
-<script src="/static/js/dashboard/modules/diary_logs.js?v=1.49.1"></script>
-<script src="/static/js/dashboard/modules/character_reactions.js?v=1.49.1"></script>
-<script src="/static/js/dashboard/modules/memory_graph.js?v=1.49.1"></script>
-<script src="/static/js/dashboard/modules/presets_manager.js?v=1.49.1"></script>
-<script src="/static/js/dashboard/modules/databank_editor.js?v=1.49.1"></script>
-<script src="/static/js/dashboard/modules/tools_preview.js?v=1.49.1"></script>
-<script src="/static/js/dashboard/modules/live2d_debug.js?v=1.49.1"></script>
-<script src="/static/js/dashboard/modules/dashboard_stats.js?v=1.49.1"></script>
+<script src="/static/js/dashboard/modules/core_nav.js?v=1.50.0"></script>
+<script src="/static/js/dashboard/modules/engine_settings.js?v=1.50.0"></script>
+<script src="/static/js/dashboard/modules/character_management.js?v=1.50.0"></script>
+<script src="/static/js/dashboard/modules/diary_logs.js?v=1.50.0"></script>
+<script src="/static/js/dashboard/modules/character_reactions.js?v=1.50.0"></script>
+<script src="/static/js/dashboard/modules/memory_graph.js?v=1.50.0"></script>
+<script src="/static/js/dashboard/modules/presets_manager.js?v=1.50.0"></script>
+<script src="/static/js/dashboard/modules/databank_editor.js?v=1.50.0"></script>
+<script src="/static/js/dashboard/modules/tools_preview.js?v=1.50.0"></script>
+<script src="/static/js/dashboard/modules/live2d_debug.js?v=1.50.0"></script>
+<script src="/static/js/dashboard/modules/dashboard_stats.js?v=1.50.0"></script>
 </body>
 </html>

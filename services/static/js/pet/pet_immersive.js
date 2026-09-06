@@ -26,10 +26,25 @@ class PetImmersiveEngine {
         this.parallaxMouseMoveHandler = null;
         this.activeParallaxBgElement = null;
 
+        // 沉浸模式套餐管理 (companion: 经典陪伴模式, gal: Galgame 视觉小说模式)
+        this.currentPackage = 'companion';
+        this.savedAutoRepliesMode = null;
+        this.savedEnableAutoReplies = null;
+        this.packageToggleBtn = document.getElementById('immersive-package-toggle-btn');
+        this.packageStatusText = document.getElementById('immersive-package-status-text');
+
         this.initEventListeners();
     }
 
     initEventListeners() {
+        // 沉浸模式套餐切换按钮
+        if (this.packageToggleBtn) {
+            this.packageToggleBtn.addEventListener('click', () => {
+                const nextPackage = this.currentPackage === 'gal' ? 'companion' : 'gal';
+                this.switchPackage(nextPackage, true);
+            });
+        }
+
         // 沉浸模式侧边栏折叠/展开按钮
         if (this.toggleChatBtn && this.immersiveChatPanel && this.chatTrigger) {
             this.toggleChatBtn.addEventListener('click', () => {
@@ -87,6 +102,7 @@ class PetImmersiveEngine {
         let enableStarlight = false;
         let enableMeteors = false;
         let enableParallax = false;
+        let immersivePackage = 'companion';
 
         try {
             const res = await fetch('/api/character_info');
@@ -100,6 +116,7 @@ class PetImmersiveEngine {
             if (data.enable_immersive_starlight !== undefined) enableStarlight = data.enable_immersive_starlight;
             if (data.enable_immersive_meteors !== undefined) enableMeteors = data.enable_immersive_meteors;
             if (data.enable_immersive_parallax !== undefined) enableParallax = data.enable_immersive_parallax;
+            if (data.immersive_package) immersivePackage = data.immersive_package;
             if (data.enable_immersive_screenshot_btn !== undefined) {
                 const screenshotBtn = document.getElementById('immersive-screenshot-btn');
                 if (screenshotBtn) {
@@ -192,7 +209,7 @@ class PetImmersiveEngine {
             else this.audio.updateBGMButtonState(false);
         }
 
-        if (this.immersiveChatPanel) {
+        if (this.immersiveChatPanel && immersivePackage !== 'gal') {
             this.immersiveChatPanel.classList.remove('hidden');
             this.fetchImmersiveChatHistory();
         }
@@ -204,6 +221,9 @@ class PetImmersiveEngine {
         if (container) {
             container.classList.remove('chat-collapsed');
         }
+
+        // 应用所选沉浸套餐（陪伴模式 / Gal 模式）
+        this.switchPackage(immersivePackage, false);
 
         if (this.immersiveClockContainer) {
             this.immersiveClockContainer.classList.remove('hidden');
@@ -230,16 +250,103 @@ class PetImmersiveEngine {
         }
     }
 
+    switchPackage(newPackage, persist = true) {
+        this.currentPackage = newPackage;
+        this.applyPackage(newPackage);
+        if (persist) {
+            fetch('/api/settings/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ immersive_package: newPackage })
+            }).catch(e => console.error('保存沉浸套餐配置失败:', e));
+        }
+    }
+
+    applyPackage(pkg) {
+        const container = document.querySelector('.pet-container');
+        if (pkg === 'gal') {
+            if (container) container.classList.add('immersive-gal-mode');
+            if (this.packageStatusText) this.packageStatusText.textContent = 'Gal模式';
+            if (this.packageToggleBtn) this.packageToggleBtn.title = '当前: Gal模式 (点击切换陪伴模式)';
+
+            // 强制启用即时回话模式
+            if (this.petCore) {
+                if (this.savedAutoRepliesMode === null) {
+                    this.savedAutoRepliesMode = this.petCore.autoRepliesMode;
+                }
+                if (this.savedEnableAutoReplies === null) {
+                    this.savedEnableAutoReplies = this.petCore.enableAutoReplies;
+                }
+                this.petCore.enableAutoReplies = true;
+                this.petCore.autoRepliesMode = 'auto';
+
+                if (this.petCore.galSpeakerName) {
+                    this.petCore.galSpeakerName.textContent = `【${this.petCore.charName || '角色'}】`;
+                    this.petCore.galSpeakerName.classList.remove('hidden');
+                }
+            }
+
+            if (this.immersiveChatPanel) this.immersiveChatPanel.classList.add('hidden');
+            if (this.chatTrigger) this.chatTrigger.classList.add('hidden');
+        } else {
+            if (container) container.classList.remove('immersive-gal-mode');
+            if (this.packageStatusText) this.packageStatusText.textContent = '陪伴模式';
+            if (this.packageToggleBtn) this.packageToggleBtn.title = '当前: 陪伴模式 (点击切换Gal模式)';
+
+            // 恢复原模式设置
+            if (this.petCore) {
+                if (this.savedAutoRepliesMode !== null) {
+                    this.petCore.autoRepliesMode = this.savedAutoRepliesMode;
+                    this.savedAutoRepliesMode = null;
+                }
+                if (this.savedEnableAutoReplies !== null) {
+                    this.petCore.enableAutoReplies = this.savedEnableAutoReplies;
+                    this.savedEnableAutoReplies = null;
+                }
+
+                if (this.petCore.galChoicesContainer) {
+                    this.petCore.galChoicesContainer.classList.add('hidden');
+                }
+                if (this.petCore.galSpeakerName) {
+                    this.petCore.galSpeakerName.classList.add('hidden');
+                }
+            }
+
+            if (this.isImmersiveMode && this.immersiveChatPanel) {
+                this.immersiveChatPanel.classList.remove('hidden');
+                this.fetchImmersiveChatHistory();
+            }
+        }
+    }
+
     exitImmersiveMode(notifyIPC = true) {
         if (!this.isImmersiveMode) return;
         this.isImmersiveMode = false;
 
         const container = document.querySelector('.pet-container');
         if (container) {
-            container.classList.remove('immersive-mode', 'chat-collapsed');
+            container.classList.remove('immersive-mode', 'immersive-gal-mode', 'chat-collapsed');
         }
 
         this.stopImmersiveEffects();
+
+        // 恢复被 Gal 模式暂存的全局自动回话设置与 Gal UI
+        if (this.petCore) {
+            if (this.savedAutoRepliesMode !== null) {
+                this.petCore.autoRepliesMode = this.savedAutoRepliesMode;
+                this.savedAutoRepliesMode = null;
+            }
+            if (this.savedEnableAutoReplies !== null) {
+                this.petCore.enableAutoReplies = this.savedEnableAutoReplies;
+                this.savedEnableAutoReplies = null;
+            }
+            if (this.petCore.galChoicesContainer) {
+                this.petCore.galChoicesContainer.classList.add('hidden');
+            }
+            if (this.petCore.galSpeakerName) {
+                this.petCore.galSpeakerName.classList.add('hidden');
+            }
+        }
 
         if (this.immersiveWallpaper) this.immersiveWallpaper.classList.add('hidden');
         if (this.immersiveVideo) {

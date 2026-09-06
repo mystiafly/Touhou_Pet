@@ -176,6 +176,7 @@ def get_config_api():
     config["enable_auto_replies"] = config.get("enable_auto_replies", False)
     config["auto_replies_mode"] = config.get("auto_replies_mode", "click")
     config["auto_replies_history_rounds"] = config.get("auto_replies_history_rounds", 3)
+    config["immersive_package"] = config.get("immersive_package", "companion")
     config["success"] = True
     return config
 
@@ -291,6 +292,10 @@ def post_config_api(payload: dict = Body(...)):
                 pass
         if "auto_replies_prompt" in payload:
             config_data["auto_replies_prompt"] = str(payload["auto_replies_prompt"]).strip()
+        if "immersive_package" in payload:
+            pkg = str(payload["immersive_package"]).strip().lower()
+            if pkg in ("companion", "gal"):
+                config_data["immersive_package"] = pkg
         if "enable_dsh_agent" in payload:
             config_data["enable_dsh_agent"] = bool(payload["enable_dsh_agent"])
         if "dsh_run_mode" in payload:

@@ -678,6 +678,7 @@ async def api_character_info():
         "enable_auto_replies": config.get("enable_auto_replies", False),
         "auto_replies_mode": config.get("auto_replies_mode", "click"),
         "auto_replies_history_rounds": config.get("auto_replies_history_rounds", 3),
+        "immersive_package": config.get("immersive_package", "companion"),
         "needs_onboarding": needs_onboarding
     })
 
