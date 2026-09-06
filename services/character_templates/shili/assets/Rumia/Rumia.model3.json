@@ -9,17 +9,17 @@
     "Motions": {
       "Idle": [
         {
-          "File": "motions/Rumia_11.motion3.json",
-          "FadeInTime": 0.5,
-          "FadeOutTime": 0.5
-        },
-        {
           "File": "motions/Rumia_10.motion3.json",
           "FadeInTime": 0.5,
           "FadeOutTime": 0.5
         }
       ],
       "Tap": [
+        {
+          "File": "motions/Rumia_11.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        },
         {
           "File": "motions/Rumia_12.motion3.json",
           "FadeInTime": 0.5,
@@ -47,6 +47,11 @@
         }
       ],
       "Tap_Head": [
+        {
+          "File": "motions/Rumia_11.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        },
         {
           "File": "motions/Rumia_14.motion3.json",
           "FadeInTime": 0.5,

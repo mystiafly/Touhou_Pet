@@ -495,17 +495,17 @@ class SoullinkLive2DDriver {
                 this.setCoreParam(coreModel, paramId, mouthOpen);
             }
 
-            // 2. 视线与头部追踪参数注入
-            this.setCoreParam(coreModel, 'ParamAngleX', fx * 30);
-            this.setCoreParam(coreModel, 'ParamAngleY', -fy * 30);
-            this.setCoreParam(coreModel, 'ParamAngleZ', fx * -10);
-            this.setCoreParam(coreModel, 'ParamEyeBallX', fx);
-            this.setCoreParam(coreModel, 'ParamEyeBallY', -fy);
-            this.setCoreParam(coreModel, 'ParamBodyAngleX', fx * 10);
-            this.setCoreParam(coreModel, 'PARAM_ANGLE_X', fx * 30);
-            this.setCoreParam(coreModel, 'PARAM_ANGLE_Y', -fy * 30);
-            this.setCoreParam(coreModel, 'PARAM_EYE_BALL_X', fx);
-            this.setCoreParam(coreModel, 'PARAM_EYE_BALL_Y', -fy);
+            // 2. 视线与眼球追踪微调 (若存在原生 focusController 则由官方平滑控制器主导，避免强行置零干扰角色固有自然偏头倾角)
+            if (this.isMouseHovering && (Math.abs(fx) > 0.01 || Math.abs(fy) > 0.01)) {
+                this.setCoreParam(coreModel, 'ParamEyeBallX', fx);
+                this.setCoreParam(coreModel, 'ParamEyeBallY', -fy);
+                this.setCoreParam(coreModel, 'PARAM_EYE_BALL_X', fx);
+                this.setCoreParam(coreModel, 'PARAM_EYE_BALL_Y', -fy);
+                if (!this.model.internalModel?.focusController) {
+                    this.setCoreParam(coreModel, 'ParamAngleX', fx * 20);
+                    this.setCoreParam(coreModel, 'ParamAngleY', -fy * 20);
+                }
+            }
 
             // 3. FACS 肌肉单元与微表情注入
             const targetMouthForm = Math.max(-1, Math.min(1, v * 1.2));
@@ -993,11 +993,15 @@ class SoullinkLive2DDriver {
             try {
                 const res = this.model.motion(chosen);
                 this.lastMotionTriggerTime = Date.now();
-                // 动作播放完毕后平滑重置回自然端庄待机姿态与呼吸
+                // 仅当非待机互动动作 (Tap, Special 等) 播放完毕后，才平滑重置回自然端庄待机姿态与呼吸
+                // 绝不能在 Idle 动作播放完毕后再次调用 triggerIdleMotion()，否则会引发高频死循环重置与抽搐
                 if (res && typeof res.then === 'function') {
                     res.then((success) => {
                         if (success && !this.isDragging && !this.isSpeaking) {
-                            this.triggerIdleMotion();
+                            const isIdle = this.idleMotions.some(g => g.toLowerCase() === chosen.toLowerCase()) || chosen.toLowerCase() === 'idle';
+                            if (!isIdle) {
+                                this.triggerIdleMotion();
+                            }
                         }
                     }).catch(() => {});
                 }
