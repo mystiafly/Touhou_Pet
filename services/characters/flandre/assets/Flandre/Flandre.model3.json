@@ -167,35 +167,35 @@
     "Pose": "Flandre.pose3.json",
     "Expressions": [
       {
-        "Name": "Flandre_01e",
+        "Name": "01_平常_Normal",
         "File": "expressions/Flandre_01e.exp3.json"
       },
       {
-        "Name": "Flandre_02e",
+        "Name": "02_微笑_Happy",
         "File": "expressions/Flandre_02e.exp3.json"
       },
       {
-        "Name": "Flandre_03e",
+        "Name": "03_愤怒_Angry",
         "File": "expressions/Flandre_03e.exp3.json"
       },
       {
-        "Name": "Flandre_04e",
+        "Name": "04_害羞_Shy",
         "File": "expressions/Flandre_04e.exp3.json"
       },
       {
-        "Name": "Flandre_05e",
+        "Name": "05_哭泣_Sad",
         "File": "expressions/Flandre_05e.exp3.json"
       },
       {
-        "Name": "Flandre_06e",
+        "Name": "06_狂气_Surprised",
         "File": "expressions/Flandre_06e.exp3.json"
       },
       {
-        "Name": "Flandre_07e",
+        "Name": "07_坏笑_Smug",
         "File": "expressions/Flandre_07e.exp3.json"
       },
       {
-        "Name": "Flandre_08e",
+        "Name": "08_闭目_Sleep",
         "File": "expressions/Flandre_08e.exp3.json"
       }
     ],

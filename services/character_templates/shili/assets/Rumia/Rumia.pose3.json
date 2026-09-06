@@ -47,5 +47,6 @@
         "Id": "PartRightHand07"
       }
     ]
-  ]
+  ],
+  "FadeInTime": 0.5
 }

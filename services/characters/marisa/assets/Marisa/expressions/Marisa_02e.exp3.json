@@ -4,87 +4,89 @@
     {
       "Id": "ParamEyeLSmile",
       "Value": 1,
-      "Blend": "Override"
+      "Blend": "Overwrite"
     },
     {
       "Id": "ParamEyeRSmile",
       "Value": 1,
-      "Blend": "Override"
+      "Blend": "Overwrite"
     },
     {
       "Id": "ParamEyeScale",
       "Value": 1,
-      "Blend": "Override"
+      "Blend": "Overwrite"
     },
     {
       "Id": "ParamEyeOpen",
       "Value": 0.25,
-      "Blend": "Override"
+      "Blend": "Overwrite"
     },
     {
       "Id": "ParamEyeHiLight",
       "Value": 1,
-      "Blend": "Override"
+      "Blend": "Overwrite"
     },
     {
       "Id": "ParamBrowLY",
       "Value": 0.29,
-      "Blend": "Override"
+      "Blend": "Overwrite"
     },
     {
       "Id": "ParamBrowRY",
       "Value": 0.29,
-      "Blend": "Override"
+      "Blend": "Overwrite"
     },
     {
       "Id": "ParamBrowLX",
       "Value": -0.2,
-      "Blend": "Override"
+      "Blend": "Overwrite"
     },
     {
       "Id": "ParamBrowRX",
       "Value": -0.2,
-      "Blend": "Override"
+      "Blend": "Overwrite"
     },
     {
       "Id": "ParamBrowLAngle",
       "Value": 0.2,
-      "Blend": "Override"
+      "Blend": "Overwrite"
     },
     {
       "Id": "ParamBrowRAngle",
       "Value": 0.2,
-      "Blend": "Override"
+      "Blend": "Overwrite"
     },
     {
       "Id": "ParamBrowLForm",
       "Value": 0.1,
-      "Blend": "Override"
+      "Blend": "Overwrite"
     },
     {
       "Id": "ParamBrowRForm",
       "Value": 0.1,
-      "Blend": "Override"
+      "Blend": "Overwrite"
     },
     {
       "Id": "ParamMouthForm",
       "Value": 0.7,
-      "Blend": "Override"
+      "Blend": "Overwrite"
     },
     {
       "Id": "ParamMouthFormScale",
       "Value": 0.7,
-      "Blend": "Override"
+      "Blend": "Overwrite"
     },
     {
       "Id": "ParamMouthTooth",
       "Value": 0,
-      "Blend": "Override"
+      "Blend": "Overwrite"
     },
     {
       "Id": "ParamCheek",
       "Value": 1,
-      "Blend": "Override"
+      "Blend": "Overwrite"
     }
-  ]
+  ],
+  "FadeInTime": 0.5,
+  "FadeOutTime": 0.5
 }

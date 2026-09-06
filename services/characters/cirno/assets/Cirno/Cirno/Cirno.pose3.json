@@ -47,5 +47,6 @@
         "Id": "Hand_R7"
       }
     ]
-  ]
+  ],
+  "FadeInTime": 0.5
 }

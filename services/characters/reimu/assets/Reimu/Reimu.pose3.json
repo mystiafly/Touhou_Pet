@@ -47,5 +47,6 @@
         "Id": "PARTS_RIGHT_HAND_07"
       }
     ]
-  ]
+  ],
+  "FadeInTime": 0.5
 }

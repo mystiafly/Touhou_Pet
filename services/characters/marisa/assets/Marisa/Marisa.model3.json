@@ -3,202 +3,203 @@
   "FileReferences": {
     "Moc": "Marisa.moc3",
     "Textures": [
-      "textures/texture_00.png"
+      "Marisa.1024/texture_00.png"
     ],
     "Physics": "Marisa.physics3.json",
     "Motions": {
       "Idle": [
         {
           "File": "motions/Marisa_10.motion3.json",
-          "FadeIn": 500,
-          "FadeOut": 500
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         }
       ],
       "Tap": [
         {
           "File": "motions/Marisa_11.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_12.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_13.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         }
       ],
       "Special": [
         {
           "File": "motions/Marisa_14.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_15.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_20.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_21.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_22.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_23.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_24.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_25.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_30.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_31.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_32.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_33.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_34.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_35.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_40.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_41.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_42.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_43.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_44.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_45.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_50.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_51.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_52.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_53.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_54.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Marisa_55.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         }
       ]
     },
     "Pose": "Marisa.pose3.json",
     "Expressions": [
       {
-        "Name": "Marisa_01e",
+        "Name": "01_平常_Normal",
         "File": "expressions/Marisa_01e.exp3.json"
       },
       {
-        "Name": "Marisa_02e",
+        "Name": "02_微笑_Happy",
         "File": "expressions/Marisa_02e.exp3.json"
       },
       {
-        "Name": "Marisa_03e",
+        "Name": "03_愤怒_Angry",
         "File": "expressions/Marisa_03e.exp3.json"
       },
       {
-        "Name": "Marisa_04e",
+        "Name": "04_害羞_Shy",
         "File": "expressions/Marisa_04e.exp3.json"
       },
       {
-        "Name": "Marisa_05e",
+        "Name": "05_哭泣_Sad",
         "File": "expressions/Marisa_05e.exp3.json"
       },
       {
-        "Name": "Marisa_06e",
+        "Name": "06_狂气_Surprised",
         "File": "expressions/Marisa_06e.exp3.json"
       },
       {
-        "Name": "Marisa_07e",
+        "Name": "07_坏笑_Smug",
         "File": "expressions/Marisa_07e.exp3.json"
       },
       {
-        "Name": "Marisa_08e",
+        "Name": "08_闭目_Sleep",
         "File": "expressions/Marisa_08e.exp3.json"
       }
-    ]
+    ],
+    "DisplayInfo": "Marisa.cdi3.json"
   },
   "Groups": [
     {
@@ -215,6 +216,16 @@
       "Ids": [
         "ParamMouthOpenY"
       ]
+    }
+  ],
+  "HitAreas": [
+    {
+      "Id": "PartFace",
+      "Name": "Head"
+    },
+    {
+      "Id": "PartBody",
+      "Name": "Body"
     }
   ]
 }

@@ -3,242 +3,243 @@
   "FileReferences": {
     "Moc": "Aya.moc3",
     "Textures": [
-      "textures/texture_00.png"
+      "Aya.1024/texture_00.png"
     ],
     "Physics": "Aya.physics3.json",
     "Motions": {
       "Idle": [
         {
           "File": "motions/Aya_10.motion3.json",
-          "FadeIn": 500,
-          "FadeOut": 500
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         }
       ],
       "Tap": [
         {
           "File": "motions/Aya_11.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_12.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_13.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         }
       ],
       "Special": [
         {
           "File": "motions/Aya_01.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_02.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_03.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_04.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_05.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_06.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_07.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_08.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_14.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_15.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_20.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_21.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_22.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_23.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_24.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_25.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_30.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_31.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_32.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_33.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_34.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_35.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_40.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_41.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_42.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_43.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_44.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_45.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_50.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_51.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_52.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_53.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_54.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Aya_55.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         }
       ]
     },
     "Pose": "Aya.pose3.json",
     "Expressions": [
       {
-        "Name": "Aya_01e",
+        "Name": "01_平常_Normal",
         "File": "expressions/Aya_01e.exp3.json"
       },
       {
-        "Name": "Aya_02e",
+        "Name": "02_微笑_Happy",
         "File": "expressions/Aya_02e.exp3.json"
       },
       {
-        "Name": "Aya_03e",
+        "Name": "03_愤怒_Angry",
         "File": "expressions/Aya_03e.exp3.json"
       },
       {
-        "Name": "Aya_04e",
+        "Name": "04_害羞_Shy",
         "File": "expressions/Aya_04e.exp3.json"
       },
       {
-        "Name": "Aya_05e",
+        "Name": "05_哭泣_Sad",
         "File": "expressions/Aya_05e.exp3.json"
       },
       {
-        "Name": "Aya_06e",
+        "Name": "06_狂气_Surprised",
         "File": "expressions/Aya_06e.exp3.json"
       },
       {
-        "Name": "Aya_07e",
+        "Name": "07_坏笑_Smug",
         "File": "expressions/Aya_07e.exp3.json"
       },
       {
-        "Name": "Aya_08e",
+        "Name": "08_闭目_Sleep",
         "File": "expressions/Aya_08e.exp3.json"
       }
-    ]
+    ],
+    "DisplayInfo": "Aya.cdi3.json"
   },
   "Groups": [
     {
@@ -255,6 +256,16 @@
       "Ids": [
         "ParamMouthOpenY"
       ]
+    }
+  ],
+  "HitAreas": [
+    {
+      "Id": "PartFace",
+      "Name": "Head"
+    },
+    {
+      "Id": "PartBody",
+      "Name": "Body"
     }
   ]
 }

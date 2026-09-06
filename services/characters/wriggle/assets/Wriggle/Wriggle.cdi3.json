@@ -1,0 +1,209 @@
+{
+  "Version": 3,
+  "Parameters": [
+    {
+      "Id": "ParamAllX",
+      "GroupId": "",
+      "Name": "整体位移 X"
+    },
+    {
+      "Id": "ParamAngleX",
+      "GroupId": "",
+      "Name": "角度 X"
+    },
+    {
+      "Id": "ParamAngleY",
+      "GroupId": "",
+      "Name": "角度 Y"
+    },
+    {
+      "Id": "ParamAngleZ",
+      "GroupId": "",
+      "Name": "角度 Z"
+    },
+    {
+      "Id": "ParamBodyAngleX",
+      "GroupId": "",
+      "Name": "身体 旋转 X"
+    },
+    {
+      "Id": "ParamBodyAngleY",
+      "GroupId": "",
+      "Name": "身体 旋转 Y"
+    },
+    {
+      "Id": "ParamBodyAngleZ",
+      "GroupId": "",
+      "Name": "身体 旋转 Z"
+    },
+    {
+      "Id": "ParamBodyFrontAndBack",
+      "GroupId": "",
+      "Name": "身体 前后"
+    },
+    {
+      "Id": "ParamBodyWeight",
+      "GroupId": "",
+      "Name": "身体 重心摇摆"
+    },
+    {
+      "Id": "ParamBrowRY",
+      "GroupId": "",
+      "Name": "右眉 上下"
+    },
+    {
+      "Id": "ParamCheek",
+      "GroupId": "",
+      "Name": "脸颊 红晕"
+    },
+    {
+      "Id": "ParamEyeBallX",
+      "GroupId": "",
+      "Name": "眼珠 X"
+    },
+    {
+      "Id": "ParamEyeBallY",
+      "GroupId": "",
+      "Name": "眼珠 Y"
+    },
+    {
+      "Id": "ParamLeftArmFrontRotation",
+      "GroupId": "",
+      "Name": "左臂 前旋"
+    },
+    {
+      "Id": "ParamLeftArmOrder",
+      "GroupId": "",
+      "Name": "左手 图层顺序"
+    },
+    {
+      "Id": "ParamLeftArmRotation",
+      "GroupId": "",
+      "Name": "左臂 旋转"
+    },
+    {
+      "Id": "ParamLeftArmShoulderFrontAndBack",
+      "GroupId": "",
+      "Name": "LeftArmShoulderFrontAndBack"
+    },
+    {
+      "Id": "ParamLeftHandGrip",
+      "GroupId": "",
+      "Name": "左手 握拳"
+    },
+    {
+      "Id": "ParamLeftShoulderUp",
+      "GroupId": "",
+      "Name": "左肩 抬起"
+    },
+    {
+      "Id": "ParamLeftShoulderUpDown",
+      "GroupId": "",
+      "Name": "左肩 上下"
+    },
+    {
+      "Id": "ParamLeftWristRotation",
+      "GroupId": "",
+      "Name": "左手腕 旋转"
+    },
+    {
+      "Id": "ParamRightArmFrontRotation",
+      "GroupId": "",
+      "Name": "右臂 前旋"
+    },
+    {
+      "Id": "ParamRightArmOrder",
+      "GroupId": "",
+      "Name": "右手 图层顺序"
+    },
+    {
+      "Id": "ParamRightArmRotation",
+      "GroupId": "",
+      "Name": "右臂 旋转"
+    },
+    {
+      "Id": "ParamRightArmShoulderFrontAndBack",
+      "GroupId": "",
+      "Name": "RightArmShoulderFrontAndBack"
+    },
+    {
+      "Id": "ParamRightHandGrip",
+      "GroupId": "",
+      "Name": "右手 握拳"
+    },
+    {
+      "Id": "ParamRightShoulderUp",
+      "GroupId": "",
+      "Name": "右肩 抬起"
+    },
+    {
+      "Id": "ParamRightShoulderUpDown",
+      "GroupId": "",
+      "Name": "右肩 上下"
+    },
+    {
+      "Id": "ParamRightWristRotation",
+      "GroupId": "",
+      "Name": "右手腕 旋转"
+    }
+  ],
+  "ParameterGroups": [],
+  "Parts": [
+    {
+      "Id": "PartLeftHand01",
+      "Name": "左手01"
+    },
+    {
+      "Id": "PartLeftHand02",
+      "Name": "左手02"
+    },
+    {
+      "Id": "PartLeftHand03",
+      "Name": "左手03"
+    },
+    {
+      "Id": "PartLeftHand04",
+      "Name": "左手04"
+    },
+    {
+      "Id": "PartLeftHand05",
+      "Name": "左手05"
+    },
+    {
+      "Id": "PartLeftHand06",
+      "Name": "左手06"
+    },
+    {
+      "Id": "PartLeftHand07",
+      "Name": "左手07"
+    },
+    {
+      "Id": "PartRightHand01",
+      "Name": "右手01"
+    },
+    {
+      "Id": "PartRightHand02",
+      "Name": "右手02"
+    },
+    {
+      "Id": "PartRightHand03",
+      "Name": "右手03"
+    },
+    {
+      "Id": "PartRightHand04",
+      "Name": "右手04"
+    },
+    {
+      "Id": "PartRightHand05",
+      "Name": "右手05"
+    },
+    {
+      "Id": "PartRightHand06",
+      "Name": "右手06"
+    },
+    {
+      "Id": "PartRightHand07",
+      "Name": "右手07"
+    }
+  ]
+}

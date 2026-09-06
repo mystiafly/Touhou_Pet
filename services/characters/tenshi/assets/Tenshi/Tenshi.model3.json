@@ -3,202 +3,203 @@
   "FileReferences": {
     "Moc": "Tenshi.moc3",
     "Textures": [
-      "textures/texture_00.png"
+      "Tenshi.1024/texture_00.png"
     ],
     "Physics": "Tenshi.physics3.json",
     "Motions": {
       "Idle": [
         {
           "File": "motions/Tenshi_10.motion3.json",
-          "FadeIn": 500,
-          "FadeOut": 500
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         }
       ],
       "Tap": [
         {
           "File": "motions/Tenshi_11.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_12.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_13.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         }
       ],
       "Special": [
         {
           "File": "motions/Tenshi_14.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_15.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_20.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_21.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_22.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_23.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_24.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_25.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_30.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_31.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_32.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_33.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_34.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_35.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_40.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_41.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_42.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_43.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_44.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_45.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_50.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_51.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_52.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_53.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_54.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         },
         {
           "File": "motions/Tenshi_55.motion3.json",
-          "FadeIn": 300,
-          "FadeOut": 300
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
         }
       ]
     },
     "Pose": "Tenshi.pose3.json",
     "Expressions": [
       {
-        "Name": "Tenshi_01e",
+        "Name": "01_平常_Normal",
         "File": "expressions/Tenshi_01e.exp3.json"
       },
       {
-        "Name": "Tenshi_02e",
+        "Name": "02_微笑_Happy",
         "File": "expressions/Tenshi_02e.exp3.json"
       },
       {
-        "Name": "Tenshi_03e",
+        "Name": "03_愤怒_Angry",
         "File": "expressions/Tenshi_03e.exp3.json"
       },
       {
-        "Name": "Tenshi_04e",
+        "Name": "04_害羞_Shy",
         "File": "expressions/Tenshi_04e.exp3.json"
       },
       {
-        "Name": "Tenshi_05e",
+        "Name": "05_哭泣_Sad",
         "File": "expressions/Tenshi_05e.exp3.json"
       },
       {
-        "Name": "Tenshi_06e",
+        "Name": "06_狂气_Surprised",
         "File": "expressions/Tenshi_06e.exp3.json"
       },
       {
-        "Name": "Tenshi_07e",
+        "Name": "07_坏笑_Smug",
         "File": "expressions/Tenshi_07e.exp3.json"
       },
       {
-        "Name": "Tenshi_08e",
+        "Name": "08_闭目_Sleep",
         "File": "expressions/Tenshi_08e.exp3.json"
       }
-    ]
+    ],
+    "DisplayInfo": "Tenshi.cdi3.json"
   },
   "Groups": [
     {
@@ -215,6 +216,16 @@
       "Ids": [
         "ParamMouthOpenY"
       ]
+    }
+  ],
+  "HitAreas": [
+    {
+      "Id": "PartFace",
+      "Name": "Head"
+    },
+    {
+      "Id": "PartBody",
+      "Name": "Body"
     }
   ]
 }

@@ -56,7 +56,8 @@
         "Id": "PhysicsSetting10",
         "Name": "Dummy10"
       }
-    ]
+    ],
+    "Fps": 30.0
   },
   "PhysicsSettings": [
     {
