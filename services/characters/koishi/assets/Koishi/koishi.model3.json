@@ -9,17 +9,17 @@
     "Motions": {
       "Idle": [
         {
+          "File": "motions/Koishi_11.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        },
+        {
           "File": "motions/Koishi_10.motion3.json",
           "FadeInTime": 0.5,
           "FadeOutTime": 0.5
         }
       ],
       "Tap": [
-        {
-          "File": "motions/Koishi_11.motion3.json",
-          "FadeInTime": 0.5,
-          "FadeOutTime": 0.5
-        },
         {
           "File": "motions/Koishi_12.motion3.json",
           "FadeInTime": 0.5,
@@ -29,76 +29,55 @@
           "File": "motions/Koishi_13.motion3.json",
           "FadeInTime": 0.5,
           "FadeOutTime": 0.5
-        }
-      ],
-      "Special": [
+        },
         {
           "File": "motions/Koishi_14.motion3.json",
           "FadeInTime": 0.5,
           "FadeOutTime": 0.5
         },
         {
-          "File": "motions/Koishi_15.motion3.json",
+          "File": "motions/Koishi_41.motion3.json",
           "FadeInTime": 0.5,
           "FadeOutTime": 0.5
         },
         {
-          "File": "motions/Koishi_20.motion3.json",
+          "File": "motions/Koishi_42.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        }
+      ],
+      "Tap_Head": [
+        {
+          "File": "motions/Koishi_14.motion3.json",
           "FadeInTime": 0.5,
           "FadeOutTime": 0.5
         },
         {
-          "File": "motions/Koishi_21.motion3.json",
+          "File": "motions/Koishi_41.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        }
+      ],
+      "Tap_Body": [
+        {
+          "File": "motions/Koishi_12.motion3.json",
           "FadeInTime": 0.5,
           "FadeOutTime": 0.5
         },
         {
-          "File": "motions/Koishi_22.motion3.json",
+          "File": "motions/Koishi_13.motion3.json",
           "FadeInTime": 0.5,
           "FadeOutTime": 0.5
         },
         {
-          "File": "motions/Koishi_23.motion3.json",
+          "File": "motions/Koishi_42.motion3.json",
           "FadeInTime": 0.5,
           "FadeOutTime": 0.5
-        },
+        }
+      ],
+      "Special": [
         {
-          "File": "motions/Koishi_24.motion3.json",
-          "FadeInTime": 0.5,
-          "FadeOutTime": 0.5
-        },
-        {
-          "File": "motions/Koishi_25.motion3.json",
-          "FadeInTime": 0.5,
-          "FadeOutTime": 0.5
-        },
-        {
-          "File": "motions/Koishi_30.motion3.json",
-          "FadeInTime": 0.5,
-          "FadeOutTime": 0.5
-        },
-        {
-          "File": "motions/Koishi_31.motion3.json",
-          "FadeInTime": 0.5,
-          "FadeOutTime": 0.5
-        },
-        {
-          "File": "motions/Koishi_32.motion3.json",
-          "FadeInTime": 0.5,
-          "FadeOutTime": 0.5
-        },
-        {
-          "File": "motions/Koishi_33.motion3.json",
-          "FadeInTime": 0.5,
-          "FadeOutTime": 0.5
-        },
-        {
-          "File": "motions/Koishi_34.motion3.json",
-          "FadeInTime": 0.5,
-          "FadeOutTime": 0.5
-        },
-        {
-          "File": "motions/Koishi_35.motion3.json",
+          "File": "motions/Koishi_14.motion3.json",
           "FadeInTime": 0.5,
           "FadeOutTime": 0.5
         },
@@ -126,12 +105,63 @@
           "File": "motions/Koishi_44.motion3.json",
           "FadeInTime": 0.5,
           "FadeOutTime": 0.5
-        },
+        }
+      ],
+      "Battle_Skill": [
         {
-          "File": "motions/Koishi_45.motion3.json",
+          "File": "motions/Koishi_20.motion3.json",
           "FadeInTime": 0.5,
           "FadeOutTime": 0.5
         },
+        {
+          "File": "motions/Koishi_21.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        },
+        {
+          "File": "motions/Koishi_22.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        },
+        {
+          "File": "motions/Koishi_23.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        },
+        {
+          "File": "motions/Koishi_24.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        }
+      ],
+      "Battle_Attack": [
+        {
+          "File": "motions/Koishi_30.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        },
+        {
+          "File": "motions/Koishi_31.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        },
+        {
+          "File": "motions/Koishi_32.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        },
+        {
+          "File": "motions/Koishi_33.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        },
+        {
+          "File": "motions/Koishi_34.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        }
+      ],
+      "Battle_Damage": [
         {
           "File": "motions/Koishi_50.motion3.json",
           "FadeInTime": 0.5,

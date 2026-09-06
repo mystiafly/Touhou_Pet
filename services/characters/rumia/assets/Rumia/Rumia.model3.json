@@ -9,17 +9,17 @@
     "Motions": {
       "Idle": [
         {
+          "File": "motions/Rumia_11.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        },
+        {
           "File": "motions/Rumia_10.motion3.json",
           "FadeInTime": 0.5,
           "FadeOutTime": 0.5
         }
       ],
       "Tap": [
-        {
-          "File": "motions/Rumia_11.motion3.json",
-          "FadeInTime": 0.5,
-          "FadeOutTime": 0.5
-        },
         {
           "File": "motions/Rumia_12.motion3.json",
           "FadeInTime": 0.5,
@@ -29,76 +29,55 @@
           "File": "motions/Rumia_13.motion3.json",
           "FadeInTime": 0.5,
           "FadeOutTime": 0.5
-        }
-      ],
-      "Special": [
+        },
         {
           "File": "motions/Rumia_14.motion3.json",
           "FadeInTime": 0.5,
           "FadeOutTime": 0.5
         },
         {
-          "File": "motions/Rumia_15.motion3.json",
+          "File": "motions/Rumia_41.motion3.json",
           "FadeInTime": 0.5,
           "FadeOutTime": 0.5
         },
         {
-          "File": "motions/Rumia_20.motion3.json",
+          "File": "motions/Rumia_42.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        }
+      ],
+      "Tap_Head": [
+        {
+          "File": "motions/Rumia_14.motion3.json",
           "FadeInTime": 0.5,
           "FadeOutTime": 0.5
         },
         {
-          "File": "motions/Rumia_21.motion3.json",
+          "File": "motions/Rumia_41.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        }
+      ],
+      "Tap_Body": [
+        {
+          "File": "motions/Rumia_12.motion3.json",
           "FadeInTime": 0.5,
           "FadeOutTime": 0.5
         },
         {
-          "File": "motions/Rumia_22.motion3.json",
+          "File": "motions/Rumia_13.motion3.json",
           "FadeInTime": 0.5,
           "FadeOutTime": 0.5
         },
         {
-          "File": "motions/Rumia_23.motion3.json",
+          "File": "motions/Rumia_42.motion3.json",
           "FadeInTime": 0.5,
           "FadeOutTime": 0.5
-        },
+        }
+      ],
+      "Special": [
         {
-          "File": "motions/Rumia_24.motion3.json",
-          "FadeInTime": 0.5,
-          "FadeOutTime": 0.5
-        },
-        {
-          "File": "motions/Rumia_25.motion3.json",
-          "FadeInTime": 0.5,
-          "FadeOutTime": 0.5
-        },
-        {
-          "File": "motions/Rumia_30.motion3.json",
-          "FadeInTime": 0.5,
-          "FadeOutTime": 0.5
-        },
-        {
-          "File": "motions/Rumia_31.motion3.json",
-          "FadeInTime": 0.5,
-          "FadeOutTime": 0.5
-        },
-        {
-          "File": "motions/Rumia_32.motion3.json",
-          "FadeInTime": 0.5,
-          "FadeOutTime": 0.5
-        },
-        {
-          "File": "motions/Rumia_33.motion3.json",
-          "FadeInTime": 0.5,
-          "FadeOutTime": 0.5
-        },
-        {
-          "File": "motions/Rumia_34.motion3.json",
-          "FadeInTime": 0.5,
-          "FadeOutTime": 0.5
-        },
-        {
-          "File": "motions/Rumia_35.motion3.json",
+          "File": "motions/Rumia_14.motion3.json",
           "FadeInTime": 0.5,
           "FadeOutTime": 0.5
         },
@@ -126,12 +105,63 @@
           "File": "motions/Rumia_44.motion3.json",
           "FadeInTime": 0.5,
           "FadeOutTime": 0.5
-        },
+        }
+      ],
+      "Battle_Skill": [
         {
-          "File": "motions/Rumia_45.motion3.json",
+          "File": "motions/Rumia_20.motion3.json",
           "FadeInTime": 0.5,
           "FadeOutTime": 0.5
         },
+        {
+          "File": "motions/Rumia_21.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        },
+        {
+          "File": "motions/Rumia_22.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        },
+        {
+          "File": "motions/Rumia_23.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        },
+        {
+          "File": "motions/Rumia_24.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        }
+      ],
+      "Battle_Attack": [
+        {
+          "File": "motions/Rumia_30.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        },
+        {
+          "File": "motions/Rumia_31.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        },
+        {
+          "File": "motions/Rumia_32.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        },
+        {
+          "File": "motions/Rumia_33.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        },
+        {
+          "File": "motions/Rumia_34.motion3.json",
+          "FadeInTime": 0.5,
+          "FadeOutTime": 0.5
+        }
+      ],
+      "Battle_Damage": [
         {
           "File": "motions/Rumia_50.motion3.json",
           "FadeInTime": 0.5,

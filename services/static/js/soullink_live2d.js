@@ -196,7 +196,8 @@ class SoullinkLive2DDriver {
             this.isLoaded = true;
             console.log(`[SOULLINK LIVE2D] 模型加载成功: ${modelUrl}`);
 
-            // 播放初始动作与表情，并启动日常待机自发动作调度器
+            // 重置手臂与手腕为自然端庄站姿，播放初始动作与表情，并启动日常待机自发动作调度器
+            this.resetArmPoseToNatural();
             this.triggerIdleMotion();
             this.setEmotion('normal');
             this.startIdleMotionScheduler();
@@ -243,24 +244,31 @@ class SoullinkLive2DDriver {
             for (const grp of this.allMotionGroups) {
                 const lower = grp.toLowerCase().trim();
                 
+                // 严格过滤：战斗施法、攻击、重伤、倒地等极端骨折动作不进入日常待机或点击互动池
+                const isBattleOrHurt = /battle|hurt|damage|defeat|stun|dead|death|down/i.test(lower);
+
                 // ① 待机组 (Idle)
                 if (lower === '' || /idle|standby|normal|wait|loop/i.test(lower)) {
                     this.idleMotions.push(grp);
                 }
-                // ② 点击组 (Tap / Touch / Click / Hit)
+                // ② 排除战斗与受击动作
+                else if (isBattleOrHurt) {
+                    // 保留在 allMotionGroups 供外部工具调试，绝不自发或在日常池中触发
+                }
+                // ③ 点击组 (Tap / Touch / Click / Hit)
                 else if (/tap|touch|click|hit|interact|poke|head|body/i.test(lower)) {
                     this.tapMotions.push(grp);
                 }
-                // ③ 拖拽组 (Flick / Shake / Drag / Move / Drop)
+                // ④ 拖拽组 (Flick / Shake / Drag / Move / Drop)
                 else if (/flick|shake|drag|move|drop|pan|lift/i.test(lower)) {
                     this.dragMotions.push(grp);
                 }
-                // ④ 特殊组 (Special / Extra / Dance / Sing / Pose / Action)
-                else if (/special|extra|dance|sing|magic|pose|action|attack|unique|skill|show/i.test(lower)) {
+                // ⑤ 特殊组 (Special / Extra / Dance / Sing / Pose / Action)
+                else if (/special|extra|dance|sing|magic|pose|show|cheer|win/i.test(lower)) {
                     this.specialMotions.push(grp);
                 }
-                // 其它未明确命名的非待机动作归入特殊组
-                else {
+                // 其它未明确命名的温和动作归入特殊组
+                else if (!/attack|skill/i.test(lower)) {
                     this.specialMotions.push(grp);
                 }
             }
@@ -566,9 +574,64 @@ class SoullinkLive2DDriver {
                     this.setCoreParam(coreModel, orderKey, Math.round(curVal));
                 }
             }
+
+            // 8. 手腕防反人类倒折保护 (严格限制手腕角度在人体生理合理区间 [-65, 15]，彻底杜绝反向折腕 +71° 等骨折异状)
+            const rWrist = this.getCoreParam(coreModel, 'ParamRightWristRotation');
+            if (rWrist !== null && rWrist !== undefined) {
+                if (rWrist > 15.0) {
+                    this.setCoreParam(coreModel, 'ParamRightWristRotation', 15.0);
+                    this.setCoreParam(coreModel, 'PARAM_RIGHT_WRIST_ROTATION', 15.0);
+                } else if (rWrist < -65.0) {
+                    this.setCoreParam(coreModel, 'ParamRightWristRotation', -65.0);
+                    this.setCoreParam(coreModel, 'PARAM_RIGHT_WRIST_ROTATION', -65.0);
+                }
+            }
+            const lWrist = this.getCoreParam(coreModel, 'ParamLeftWristRotation');
+            if (lWrist !== null && lWrist !== undefined) {
+                if (lWrist > 15.0) {
+                    this.setCoreParam(coreModel, 'ParamLeftWristRotation', 15.0);
+                    this.setCoreParam(coreModel, 'PARAM_LEFT_WRIST_ROTATION', 15.0);
+                } else if (lWrist < -65.0) {
+                    this.setCoreParam(coreModel, 'ParamLeftWristRotation', -65.0);
+                    this.setCoreParam(coreModel, 'PARAM_LEFT_WRIST_ROTATION', -65.0);
+                }
+            }
         } catch (e) {
             // 忽略个别模型没有的参数
         }
+    }
+
+    /**
+     * 重置肢体与手腕参数为端庄自然的默认待机姿态 (彻底消除反人类手腕骨折、脱臼与扭曲旋转)
+     */
+    resetArmPoseToNatural() {
+        if (!this.model || !this.model.internalModel || !this.model.internalModel.coreModel) return;
+        const coreModel = this.model.internalModel.coreModel;
+
+        try {
+            // 自然手腕角度 (微内扣，绝不反向扭曲)
+            this.setCoreParam(coreModel, 'ParamRightWristRotation', -6.0);
+            this.setCoreParam(coreModel, 'ParamLeftWristRotation', -8.0);
+            this.setCoreParam(coreModel, 'PARAM_RIGHT_WRIST_ROTATION', -6.0);
+            this.setCoreParam(coreModel, 'PARAM_LEFT_WRIST_ROTATION', -8.0);
+
+            // 自然手臂下垂与微屈
+            this.setCoreParam(coreModel, 'ParamRightArmRotation', -4.0);
+            this.setCoreParam(coreModel, 'ParamLeftArmRotation', -4.0);
+            this.setCoreParam(coreModel, 'PARAM_RIGHT_ARM_ROTATION', -4.0);
+            this.setCoreParam(coreModel, 'PARAM_LEFT_ARM_ROTATION', -4.0);
+
+            this.setCoreParam(coreModel, 'ParamRArmShoulderRoll', 0.0);
+            this.setCoreParam(coreModel, 'ParamLArmShoulderRoll', 0.0);
+            this.setCoreParam(coreModel, 'ParamRightArmFrontRotation', 0.0);
+            this.setCoreParam(coreModel, 'ParamLeftArmFrontRotation', 0.0);
+
+            // 手掌握持与层级
+            this.setCoreParam(coreModel, 'ParamRightHandGrip', 1.0);
+            this.setCoreParam(coreModel, 'ParamLeftHandGrip', 1.0);
+            this.setCoreParam(coreModel, 'ParamRightArmOrder', 1.0);
+            this.setCoreParam(coreModel, 'ParamLeftArmOrder', 0.0);
+        } catch (e) {}
     }
 
     /**
@@ -692,6 +755,9 @@ class SoullinkLive2DDriver {
      */
     applyVirtualPoseOpacities() {
         if (!this.model || !this.model.internalModel || !this.model.internalModel.coreModel) return;
+        // 若底层已拥有原生 CubismPose 管理器且已正常运作，优先由官方姿态引擎管理，避免图层冲突
+        if (this.model.internalModel.pose) return;
+
         const coreModel = this.model.internalModel.coreModel;
 
         try {
@@ -880,8 +946,8 @@ class SoullinkLive2DDriver {
             if (played) return;
         }
 
-        // 若无特殊动作，尝试任意非 Idle 动作
-        const nonIdle = this.allMotionGroups.filter(g => !this.idleMotions.includes(g));
+        // 若无特殊动作，尝试任意温和的非 Idle 动作 (严格排除战斗与受击)
+        const nonIdle = this.allMotionGroups.filter(g => !this.idleMotions.includes(g) && !/battle|attack|skill|hurt|damage|defeat|stun|dead|death|down/i.test(g));
         if (nonIdle.length > 0) {
             this.playMotionFromCandidates(nonIdle);
         }
@@ -893,6 +959,7 @@ class SoullinkLive2DDriver {
     triggerIdleMotion() {
         if (!this.model || !this.isLoaded) return;
         this.isDragging = false;
+        this.resetArmPoseToNatural();
 
         if (this.idleMotions.length > 0) {
             this.playMotionFromCandidates(this.idleMotions);
@@ -912,13 +979,28 @@ class SoullinkLive2DDriver {
         if (!motionManager || !motionManager.definitions) return false;
 
         const available = Object.keys(motionManager.definitions);
-        const matched = candidateList.filter(grp => available.includes(grp));
+        // 大小写不敏感匹配候选动作组
+        const matched = [];
+        for (const candidate of candidateList) {
+            const found = available.find(a => a.toLowerCase() === candidate.toLowerCase());
+            if (found && !matched.includes(found)) {
+                matched.push(found);
+            }
+        }
 
         if (matched.length > 0) {
             const chosen = matched[Math.floor(Math.random() * matched.length)];
             try {
-                this.model.motion(chosen);
+                const res = this.model.motion(chosen);
                 this.lastMotionTriggerTime = Date.now();
+                // 动作播放完毕后平滑重置回自然端庄待机姿态与呼吸
+                if (res && typeof res.then === 'function') {
+                    res.then((success) => {
+                        if (success && !this.isDragging && !this.isSpeaking) {
+                            this.triggerIdleMotion();
+                        }
+                    }).catch(() => {});
+                }
                 return true;
             } catch (e) {
                 console.warn(`[SOULLINK LIVE2D] 播放动作 ${chosen} 失败:`, e);
