@@ -365,6 +365,7 @@ ipcMain.on('open-settings-window', (event) => {
         const dashboardUrl = 'http://127.0.0.1:5000/dashboard?t=' + Date.now();
         settingsWin.loadURL(dashboardUrl).catch(err => {
             logDebug(`[SETTINGS] Dashboard load failed, retrying in 1.5s: ${err.message}`);
+            startBackendService(true);
             setTimeout(() => {
                 if (settingsWin && !settingsWin.isDestroyed()) {
                     loadDashboardPage();
@@ -564,8 +565,27 @@ function createWindow(showImmediately = false) {
 }
 
 let backendProcess = null;
+let backendSpawning = false;
 
-function startBackendService() {
+function resolvePythonPath() {
+    const candidates = [
+        path.join(__dirname, '.venv', 'Scripts', 'python.exe'),
+        path.join(__dirname, '..', '.venv', 'Scripts', 'python.exe'),
+        path.join(__dirname, '.venv', 'bin', 'python'),
+        path.join(__dirname, '..', '.venv', 'bin', 'python')
+    ];
+    if (process.env.PYTHON_PATH) {
+        candidates.unshift(process.env.PYTHON_PATH);
+    }
+    for (const c of candidates) {
+        if (fs.existsSync(c)) {
+            return c;
+        }
+    }
+    return 'python';
+}
+
+function startBackendService(force = false) {
     if (app.isPackaged) {
         const { execSync, spawn } = require('child_process');
         try {
@@ -601,22 +621,38 @@ function startBackendService() {
             logDebug(`[PACKAGED ERROR] Backend EXE not found in paths: ${JSON.stringify(exePaths)}`);
         }
     } else {
-        if (process.env.RUMIA_BACKEND_SPAWNED === "1") {
-            // 后端已由 run.py 并行拉起，无需重复拉起
-            return;
-        }
-        const { spawn } = require('child_process');
+        if (backendSpawning) return;
         const req = http.get('http://127.0.0.1:5000/api/characters/list', (res) => {
-            // Already running
+            if (res.statusCode === 200) {
+                // 后端已正常运行中
+                return;
+            }
         });
         req.on('error', () => {
-            console.log('[DEV AUTO-START] Python 后端服务未运行，正在自动拉起 services/web_interface.py...');
-            backendProcess = spawn('python', ['services/web_interface.py'], {
+            if (backendSpawning) return;
+            backendSpawning = true;
+            const pyExe = resolvePythonPath();
+            logDebug(`[DEV AUTO-START] Python 后端服务未运行，正在使用 [${pyExe}] 自动拉起 services/web_interface.py...`);
+            const { spawn } = require('child_process');
+            backendProcess = spawn(pyExe, ['services/web_interface.py'], {
                 cwd: __dirname,
                 stdio: 'inherit'
             });
+            backendProcess.on('exit', (code) => {
+                logDebug(`[DEV BACKEND] 后端进程已退出，退出码: ${code}`);
+                backendProcess = null;
+                backendSpawning = false;
+            });
+            backendProcess.on('error', (err) => {
+                logDebug(`[DEV BACKEND ERROR] 启动后端进程失败: ${err.message}`);
+                backendProcess = null;
+                backendSpawning = false;
+            });
+            setTimeout(() => {
+                backendSpawning = false;
+            }, 3000);
         });
-        req.setTimeout(600, () => req.destroy());
+        req.setTimeout(800, () => req.destroy());
     }
 }
 

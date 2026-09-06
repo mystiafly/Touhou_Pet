@@ -130,6 +130,7 @@ def auto_locate_api():
     except Exception as e:
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
+@router.get("/api/settings/get_global_config")
 @router.get("/api/settings/config")
 def get_config_api():
     """获取本地大模型提供商配置"""
@@ -1018,6 +1019,28 @@ def exit_game():
     """安全退出节点，交由前端稍后关闭 Electron 窗口，run.py 会自动清理后端进程"""
     print("[SYSTEM EXIT] 准备安全闭眼去睡觉 (由前端控制退出)...")
     return JSONResponse({"status": "success"})
+
+@router.post("/api/restart")
+def api_restart():
+    """重启桌宠大贤者服务"""
+    import subprocess
+    import threading
+    import time
+    root_dir = os.path.dirname(SERVICES_DIR)
+    restart_vbs = os.path.join(root_dir, "restart.vbs")
+    start_bat = os.path.join(root_dir, "start.bat")
+    def _do_restart():
+        time.sleep(1.0)
+        try:
+            if os.name == 'nt' and os.path.exists(restart_vbs):
+                subprocess.Popen(['wscript', restart_vbs], cwd=root_dir)
+            elif os.name == 'nt' and os.path.exists(start_bat):
+                subprocess.Popen(['cmd.exe', '/c', start_bat], cwd=root_dir)
+        except Exception as e:
+            print(f"[RESTART ERROR] {e}")
+        sys.exit(0)
+    threading.Thread(target=_do_restart, daemon=True).start()
+    return JSONResponse({"status": "success", "message": "重启指令已下发，系统即将重启..."})
 
 
 @router.get("/api/engines")
