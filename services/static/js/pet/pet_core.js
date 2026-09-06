@@ -216,6 +216,8 @@ class DesktopPetCore {
                     }
                 }
             });
+            this.galCustomInput.addEventListener('focus', () => this.resetAutoSpeakTimer());
+            this.galCustomInput.addEventListener('input', () => this.resetAutoSpeakTimer());
         }
         if (this.galCustomSendBtn && this.galCustomInput) {
             this.galCustomSendBtn.addEventListener('click', () => {
@@ -578,15 +580,14 @@ class DesktopPetCore {
         this.bubble.style.opacity = '1';
         this.bubble.style.pointerEvents = 'auto';
 
-        if (this.immersive?.isImmersiveMode && this.immersive?.currentPackage === 'gal' && this.galSpeakerName) {
-            this.galSpeakerName.textContent = `【${this.charName || '角色'}】`;
-            this.galSpeakerName.classList.remove('hidden');
+        if (this.immersive?.isImmersiveMode && this.immersive?.currentPackage === 'gal') {
+            if (this.galSpeakerName) {
+                this.galSpeakerName.textContent = `【${this.charName || '角色'}】`;
+                this.galSpeakerName.classList.remove('hidden');
+            }
+            this.updateGalChoicesVisibility();
         } else if (this.galSpeakerName) {
             this.galSpeakerName.classList.add('hidden');
-        }
-
-        if (this.galChoicesContainer && (!text || text === '...' || text.startsWith('hmm...'))) {
-            this.galChoicesContainer.classList.add('hidden');
         }
 
         this.repliesGeneratedForCurrentSpeech = false;
@@ -822,35 +823,67 @@ class DesktopPetCore {
         }
     }
 
+    updateGalChoicesVisibility() {
+        const isGalMode = this.immersive?.isImmersiveMode && this.immersive?.currentPackage === 'gal';
+        if (!this.galChoicesContainer) return;
+
+        if (!isGalMode) {
+            this.galChoicesContainer.classList.add('hidden');
+            return;
+        }
+
+        // Gal 模式下始终展示选择/输入分支容器 (平时常驻提供打字输入能力)
+        this.galChoicesContainer.classList.remove('hidden');
+
+        const hasSuggestions = Array.isArray(this.currentSuggestedReplies) && this.currentSuggestedReplies.length > 0;
+        const customTag = document.getElementById('gal-custom-tag');
+        const targetName = this.charName || '桌宠';
+
+        if (hasSuggestions) {
+            [0, 1, 2].forEach(i => {
+                const choiceEl = document.getElementById(`gal-choice-${i}`);
+                if (!choiceEl) return;
+                const item = this.currentSuggestedReplies[i];
+                if (item && item.text) {
+                    choiceEl.style.display = 'flex';
+                    const textSpan = choiceEl.querySelector('.gal-choice-text');
+                    if (textSpan) textSpan.textContent = item.text;
+                    choiceEl.onclick = (e) => {
+                        e.stopPropagation();
+                        this.currentSuggestedReplies = [];
+                        this.updateGalChoicesVisibility();
+                        this.sendMessage(item.text);
+                    };
+                } else {
+                    choiceEl.style.display = 'none';
+                }
+            });
+            if (customTag) customTag.textContent = '4';
+            if (this.galCustomInput) {
+                this.galCustomInput.placeholder = '输入自定义回复，按回车发送...';
+            }
+        } else {
+            // 平时未触发自动回话推荐时：隐藏前三项预设，仅展示第四项作为常驻输入框
+            [0, 1, 2].forEach(i => {
+                const choiceEl = document.getElementById(`gal-choice-${i}`);
+                if (choiceEl) choiceEl.style.display = 'none';
+            });
+            if (customTag) customTag.innerHTML = '<i class="fas fa-feather-alt"></i>';
+            if (this.galCustomInput) {
+                if (this.isChatting || this.currentSpeechText === 'hmm...' || this.currentSpeechText === '...') {
+                    this.galCustomInput.placeholder = '正在思考回复中...';
+                } else {
+                    this.galCustomInput.placeholder = `和${targetName}说点什么吧... (按回车发送)`;
+                }
+            }
+        }
+    }
+
     renderSuggestedReplies(replies) {
         this.currentSuggestedReplies = Array.isArray(replies) ? replies : [];
 
-        // Gal 模式 4选1 抉择分支渲染
-        const isGalMode = this.immersive?.isImmersiveMode && this.immersive?.currentPackage === 'gal';
-        if (isGalMode && this.galChoicesContainer) {
-            if (this.currentSuggestedReplies.length > 0) {
-                this.galChoicesContainer.classList.remove('hidden');
-                [0, 1, 2].forEach(i => {
-                    const choiceEl = document.getElementById(`gal-choice-${i}`);
-                    if (!choiceEl) return;
-                    const item = this.currentSuggestedReplies[i];
-                    if (item && item.text) {
-                        choiceEl.style.display = 'flex';
-                        const textSpan = choiceEl.querySelector('.gal-choice-text');
-                        if (textSpan) textSpan.textContent = item.text;
-                        choiceEl.onclick = (e) => {
-                            e.stopPropagation();
-                            if (this.galChoicesContainer) this.galChoicesContainer.classList.add('hidden');
-                            this.sendMessage(item.text);
-                        };
-                    } else {
-                        choiceEl.style.display = 'none';
-                    }
-                });
-            } else {
-                this.galChoicesContainer.classList.add('hidden');
-            }
-        }
+        // Gal 模式 4选1 抉择与平时常驻输入分支同步更新
+        this.updateGalChoicesVisibility();
 
         if (!this.repliesBtn || !this.repliesBox || !this.repliesList) return;
 
@@ -961,12 +994,12 @@ class DesktopPetCore {
         const text = (overrideText !== null ? overrideText : (this.input ? this.input.value : '')).trim();
         if (!text) return;
 
-        if (overrideText === null && this.input) {
-            this.input.value = '';
+        if (overrideText === null) {
+            if (this.input) this.input.value = '';
+            if (this.galCustomInput) this.galCustomInput.value = '';
         }
-        if (this.galChoicesContainer) {
-            this.galChoicesContainer.classList.add('hidden');
-        }
+        this.currentSuggestedReplies = [];
+        this.updateGalChoicesVisibility();
         this.lastUserMessage = text;
         this.autoSpeakCount = 0;
         this.isChatting = true;
@@ -1035,6 +1068,7 @@ class DesktopPetCore {
         } finally {
             this.isChatting = false;
             this.resetAutoSpeakTimer();
+            this.updateGalChoicesVisibility();
         }
     }
 

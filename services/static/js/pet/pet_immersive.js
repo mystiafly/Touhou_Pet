@@ -68,12 +68,14 @@ class PetImmersiveEngine {
             screenshotBtn.addEventListener('click', () => this.takeImmersiveScreenshot());
         }
 
-        // 快捷键监听：ESC 退出，P / F12 / PrintScreen 截图
+        // 快捷键监听：ESC 退出，P / F12 / PrintScreen 截图 (在打字输入时忽略 P 键避免截胡)
         window.addEventListener('keydown', (e) => {
             if (this.isImmersiveMode) {
+                const targetTag = e.target?.tagName?.toLowerCase();
+                const isInputActive = targetTag === 'input' || targetTag === 'textarea';
                 if (e.key === 'Escape') {
                     this.exitImmersiveMode();
-                } else if (e.key === 'p' || e.key === 'P' || e.key === 'F12' || e.key === 'PrintScreen') {
+                } else if (!isInputActive && (e.key === 'p' || e.key === 'P' || e.key === 'F12' || e.key === 'PrintScreen')) {
                     e.preventDefault();
                     this.takeImmersiveScreenshot();
                 }
@@ -284,6 +286,15 @@ class PetImmersiveEngine {
                     this.petCore.galSpeakerName.textContent = `【${this.petCore.charName || '角色'}】`;
                     this.petCore.galSpeakerName.classList.remove('hidden');
                 }
+
+                // 激活 Gal 模式常驻对话框与输入栏
+                if (!this.petCore.currentSpeechText || this.petCore.currentSpeechText === '...') {
+                    const defaultHint = `（${this.petCore.charName || '桌宠'}正静静地注视着你……）`;
+                    this.petCore.showBubble(defaultHint, -1);
+                } else {
+                    this.petCore.showBubble(this.petCore.currentSpeechText, -1);
+                }
+                this.petCore.updateGalChoicesVisibility();
             }
 
             if (this.immersiveChatPanel) this.immersiveChatPanel.classList.add('hidden');
@@ -304,9 +315,7 @@ class PetImmersiveEngine {
                     this.savedEnableAutoReplies = null;
                 }
 
-                if (this.petCore.galChoicesContainer) {
-                    this.petCore.galChoicesContainer.classList.add('hidden');
-                }
+                this.petCore.updateGalChoicesVisibility();
                 if (this.petCore.galSpeakerName) {
                     this.petCore.galSpeakerName.classList.add('hidden');
                 }
@@ -340,9 +349,7 @@ class PetImmersiveEngine {
                 this.petCore.enableAutoReplies = this.savedEnableAutoReplies;
                 this.savedEnableAutoReplies = null;
             }
-            if (this.petCore.galChoicesContainer) {
-                this.petCore.galChoicesContainer.classList.add('hidden');
-            }
+            this.petCore.updateGalChoicesVisibility();
             if (this.petCore.galSpeakerName) {
                 this.petCore.galSpeakerName.classList.add('hidden');
             }
