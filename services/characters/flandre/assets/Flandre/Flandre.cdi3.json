@@ -1,0 +1,466 @@
+{
+  "Version": 3,
+  "Parameters": [
+    {
+      "Id": "ParamAngleX",
+      "GroupId": "",
+      "Name": "角度 X"
+    },
+    {
+      "Id": "ParamAngleY",
+      "GroupId": "",
+      "Name": "角度 Y"
+    },
+    {
+      "Id": "ParamAngleZ",
+      "GroupId": "",
+      "Name": "角度 Z"
+    },
+    {
+      "Id": "ParamEyeLOpen",
+      "GroupId": "",
+      "Name": "左眼 开闭"
+    },
+    {
+      "Id": "ParamEyeLSmile",
+      "GroupId": "",
+      "Name": "左眼 微笑"
+    },
+    {
+      "Id": "ParamEyeROpen",
+      "GroupId": "",
+      "Name": "右眼 开闭"
+    },
+    {
+      "Id": "ParamEyeRSmile",
+      "GroupId": "",
+      "Name": "右眼 微笑"
+    },
+    {
+      "Id": "ParamEyeBallX",
+      "GroupId": "",
+      "Name": "眼珠 X"
+    },
+    {
+      "Id": "ParamEyeBallY",
+      "GroupId": "",
+      "Name": "眼珠 Y"
+    },
+    {
+      "Id": "ParamEyeHiLightShake",
+      "GroupId": "",
+      "Name": "眼高光 晃动"
+    },
+    {
+      "Id": "ParamEyeScale",
+      "GroupId": "",
+      "Name": "眼睛 缩放"
+    },
+    {
+      "Id": "ParamEyeOpen",
+      "GroupId": "",
+      "Name": "双眼 开闭"
+    },
+    {
+      "Id": "ParamEyeHiLight",
+      "GroupId": "",
+      "Name": "眼高光 显示"
+    },
+    {
+      "Id": "ParamBrowLY",
+      "GroupId": "",
+      "Name": "左眉 上下"
+    },
+    {
+      "Id": "ParamBrowRY",
+      "GroupId": "",
+      "Name": "右眉 上下"
+    },
+    {
+      "Id": "ParamBrowLX",
+      "GroupId": "",
+      "Name": "左眉 左右"
+    },
+    {
+      "Id": "ParamBrowRX",
+      "GroupId": "",
+      "Name": "右眉 左右"
+    },
+    {
+      "Id": "ParamBrowLAngle",
+      "GroupId": "",
+      "Name": "左眉 角度"
+    },
+    {
+      "Id": "ParamBrowRAngle",
+      "GroupId": "",
+      "Name": "右眉 角度"
+    },
+    {
+      "Id": "ParamBrowLForm",
+      "GroupId": "",
+      "Name": "左眉 变形"
+    },
+    {
+      "Id": "ParamBrowRForm",
+      "GroupId": "",
+      "Name": "右眉 变形"
+    },
+    {
+      "Id": "ParamMouthForm",
+      "GroupId": "",
+      "Name": "嘴形 变形"
+    },
+    {
+      "Id": "ParamMouthOpenY",
+      "GroupId": "",
+      "Name": "嘴巴 开闭"
+    },
+    {
+      "Id": "ParamMouthFormScale",
+      "GroupId": "",
+      "Name": "嘴形 缩放"
+    },
+    {
+      "Id": "ParamMouthTooth",
+      "GroupId": "",
+      "Name": "牙齿 显示"
+    },
+    {
+      "Id": "ParamCheek",
+      "GroupId": "",
+      "Name": "脸颊 红晕"
+    },
+    {
+      "Id": "ParamBodyAngleX",
+      "GroupId": "",
+      "Name": "身体 旋转 X"
+    },
+    {
+      "Id": "ParamBodyAngleY",
+      "GroupId": "",
+      "Name": "身体 旋转 Y"
+    },
+    {
+      "Id": "ParamBodyAngleZ",
+      "GroupId": "",
+      "Name": "身体 旋转 Z"
+    },
+    {
+      "Id": "ParamBreath",
+      "GroupId": "",
+      "Name": "呼吸"
+    },
+    {
+      "Id": "ParamBodyWeight",
+      "GroupId": "",
+      "Name": "身体 摇摆"
+    },
+    {
+      "Id": "ParamBodyFrontAndBack",
+      "GroupId": "",
+      "Name": "身体 前后"
+    },
+    {
+      "Id": "ParamAllX",
+      "GroupId": "",
+      "Name": "整体移动 X"
+    },
+    {
+      "Id": "ParamAllY",
+      "GroupId": "",
+      "Name": "整体移动 Y"
+    },
+    {
+      "Id": "ParamShoulderLUpDown",
+      "GroupId": "",
+      "Name": "左肩 上下"
+    },
+    {
+      "Id": "ParamLeftShoulderUp",
+      "GroupId": "",
+      "Name": "左肩 抬起"
+    },
+    {
+      "Id": "ParamLArmShoulderRoll",
+      "GroupId": "",
+      "Name": "左肩 滚动"
+    },
+    {
+      "Id": "ParamLeftArmRotation",
+      "GroupId": "",
+      "Name": "左臂 旋转"
+    },
+    {
+      "Id": "ParamLeftArmFrontRotation",
+      "GroupId": "",
+      "Name": "左臂 前旋"
+    },
+    {
+      "Id": "ParamLeftWristRotation",
+      "GroupId": "",
+      "Name": "左手腕 旋转"
+    },
+    {
+      "Id": "ParamLeftArmOrder",
+      "GroupId": "",
+      "Name": "左手 图层顺序"
+    },
+    {
+      "Id": "ParamLeftHandGrip",
+      "GroupId": "",
+      "Name": "左手 握拳"
+    },
+    {
+      "Id": "ParamShoulderRUpDown",
+      "GroupId": "",
+      "Name": "右肩 上下"
+    },
+    {
+      "Id": "ParamRightShoulderUp",
+      "GroupId": "",
+      "Name": "右肩 抬起"
+    },
+    {
+      "Id": "ParamRArmShoulderRoll",
+      "GroupId": "",
+      "Name": "右肩 滚动"
+    },
+    {
+      "Id": "ParamRightArmRotation",
+      "GroupId": "",
+      "Name": "右臂 旋转"
+    },
+    {
+      "Id": "ParamRightArmFrontRotation",
+      "GroupId": "",
+      "Name": "右臂 前旋"
+    },
+    {
+      "Id": "ParamRightWristRotation",
+      "GroupId": "",
+      "Name": "右手腕 旋转"
+    },
+    {
+      "Id": "ParamRightArmOrder",
+      "GroupId": "",
+      "Name": "右手 图层顺序"
+    },
+    {
+      "Id": "ParamRightHandGrip",
+      "GroupId": "",
+      "Name": "右手 握拳"
+    },
+    {
+      "Id": "ParamHairFront1",
+      "GroupId": "",
+      "Name": "前发 物理1"
+    },
+    {
+      "Id": "ParamHairFront2",
+      "GroupId": "",
+      "Name": "前发 物理2"
+    },
+    {
+      "Id": "ParamHairFront3",
+      "GroupId": "",
+      "Name": "前发 物理3"
+    },
+    {
+      "Id": "ParamHairFront4",
+      "GroupId": "",
+      "Name": "前发 物理4"
+    },
+    {
+      "Id": "ParamHairSideLeft1",
+      "GroupId": "",
+      "Name": "左侧发 物理"
+    },
+    {
+      "Id": "ParamHairSideRight1",
+      "GroupId": "",
+      "Name": "右侧发 物理1"
+    },
+    {
+      "Id": "ParamHairSideRight2",
+      "GroupId": "",
+      "Name": "右侧发 物理2"
+    },
+    {
+      "Id": "ParamHairBack1",
+      "GroupId": "",
+      "Name": "后发 物理1"
+    },
+    {
+      "Id": "ParamHairBack2",
+      "GroupId": "",
+      "Name": "后发 物理2"
+    },
+    {
+      "Id": "ParamHairBack3",
+      "GroupId": "",
+      "Name": "后发 物理3"
+    },
+    {
+      "Id": "ParamHairBack4",
+      "GroupId": "",
+      "Name": "后发 物理4"
+    },
+    {
+      "Id": "ParamHairShadow",
+      "GroupId": "",
+      "Name": "头发阴影"
+    },
+    {
+      "Id": "ParamSkirt1",
+      "GroupId": "",
+      "Name": "裙子 摆动"
+    },
+    {
+      "Id": "ParamHatRibbon",
+      "GroupId": "",
+      "Name": "帽子丝带 摆动"
+    },
+    {
+      "Id": "ParamTie",
+      "GroupId": "",
+      "Name": "领带 摆动"
+    },
+    {
+      "Id": "ParamCrystalL",
+      "GroupId": "",
+      "Name": "左翅膀水晶 摆动"
+    },
+    {
+      "Id": "ParamCrystalR",
+      "GroupId": "",
+      "Name": "右翅膀水晶 摆动"
+    },
+    {
+      "Id": "ParamWingR",
+      "GroupId": "",
+      "Name": "右翅膀 摆动"
+    },
+    {
+      "Id": "ParamWingL",
+      "GroupId": "",
+      "Name": "左翅膀 摆动"
+    },
+    {
+      "Id": "ParamBackRibbon",
+      "GroupId": "",
+      "Name": "背部蝴蝶结 摆动"
+    }
+  ],
+  "ParameterGroups": [],
+  "Parts": [
+    {
+      "Id": "__RootPart____0",
+      "Name": "根图层"
+    },
+    {
+      "Id": "PartHat",
+      "Name": "帽子"
+    },
+    {
+      "Id": "PartFrontHair",
+      "Name": "前发"
+    },
+    {
+      "Id": "PartLeftEye",
+      "Name": "左眼"
+    },
+    {
+      "Id": "PartRightEye",
+      "Name": "右眼"
+    },
+    {
+      "Id": "PartFace",
+      "Name": "脸部"
+    },
+    {
+      "Id": "PartBody",
+      "Name": "身体"
+    },
+    {
+      "Id": "PartUnder",
+      "Name": "下半身"
+    },
+    {
+      "Id": "PartLeftHand01",
+      "Name": "左手01"
+    },
+    {
+      "Id": "PartLeftHand02",
+      "Name": "左手02"
+    },
+    {
+      "Id": "PartLeftHand03",
+      "Name": "左手03"
+    },
+    {
+      "Id": "PartLeftHand04",
+      "Name": "左手04"
+    },
+    {
+      "Id": "PartLeftHand05",
+      "Name": "左手05"
+    },
+    {
+      "Id": "PartLeftHand06",
+      "Name": "左手06"
+    },
+    {
+      "Id": "PartLeftHand07",
+      "Name": "左手07"
+    },
+    {
+      "Id": "PartLeftArm",
+      "Name": "左臂"
+    },
+    {
+      "Id": "PartRightHand01",
+      "Name": "右手01"
+    },
+    {
+      "Id": "PartRightHand02",
+      "Name": "右手02"
+    },
+    {
+      "Id": "PartRightHand03",
+      "Name": "右手03"
+    },
+    {
+      "Id": "PartRightHand04",
+      "Name": "右手04"
+    },
+    {
+      "Id": "PartRightHand05",
+      "Name": "右手05"
+    },
+    {
+      "Id": "PartRightHand06",
+      "Name": "右手06"
+    },
+    {
+      "Id": "PartRightHand07",
+      "Name": "右手07"
+    },
+    {
+      "Id": "PartRightArm",
+      "Name": "右臂"
+    },
+    {
+      "Id": "PartBackHair",
+      "Name": "后发"
+    },
+    {
+      "Id": "PartHatBack",
+      "Name": "后帽"
+    },
+    {
+      "Id": "PartBackWing",
+      "Name": "翅膀"
+    }
+  ]
+}
