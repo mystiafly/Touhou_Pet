@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-v1.50.8-blue.svg?style=flat-square)
+![Version](https://img.shields.io/badge/version-v1.50.10-blue.svg?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blueviolet.svg?style=flat-square)
 ![Electron](https://img.shields.io/badge/electron-28.3.3-47848F.svg?style=flat-square)
@@ -18,13 +18,9 @@
 
 ---
 
-<!-- ================================================================= -->
-<!-- 🖼️ 【图片展示位 1：项目主海报 / 桌面运行整体效果动图 (Hero Showcase)】 -->
-<!-- 提示：您可以截取一张桌宠在桌面上灵动运行的 GIF 动图或高清海报，替换下方路径 -->
-<!-- ================================================================= -->
 <div align="center">
-  <img src="assets/showcase_hero.png" alt="Touhou Pet Hero Showcase" width="85%" style="border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.2);" />
-  <p><i>（📸 主效果图展示位：请将桌面运行截图或动图保存为 assets/showcase_hero.png）</i></p>
+  <img src="assets/showcase_hero.png" alt="Touhou Pet Hero Showcase" width="88%" style="border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.2);" />
+  <p align="center"><i>🌸 全屏 GAL 沉浸视界 · 智能生成四重情境回复选项与生动对白 🌸</i></p>
 </div>
 
 ---
@@ -46,10 +42,9 @@
 * **东方 Project 全明星灵魂**：内置了 **芙兰朵露 (Flandre)**、**古明地恋 (Koishi)**、**比那名居天子 (Tenshi)**、**射命丸文 (Aya)**、**博丽灵梦 (Reimu)**、**雾雨魔理沙 (Marisa)**、**露米娅 (Rumia)**、**莉莉白 (Lily)**、**米斯蒂娅 (Mystia)**、**莉格露 (Wriggle)**、**琪露诺 (Cirno)** 等 10+ 位经典东方角色！
 * **物理隔离的独立灵魂**：每个角色的 Live2D 模型、立绘偏移缩放、好感度档案、AI 人格提示词、专属日记与向量记忆库完全物理隔离，切换角色即切换整个灵魂容器。
 
-<!-- 🖼️ 【图片展示位 2：Live2D 动态交互效果与动作展示】 -->
 <div align="center">
-  <img src="assets/showcase_live2d.png" alt="Live2D Showcase" width="80%" style="border-radius: 8px;" />
-  <p><i>（📸 Live2D 展示位：请将 Live2D 动作交互动图/对比图保存为 assets/showcase_live2d.png）</i></p>
+  <img src="assets/showcase_live2d.png" alt="Live2D Showcase" width="85%" style="border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.15);" />
+  <p align="center"><i>✨ Live2D 视界动态陪伴 · 融合大贤者控制台与实时状态感知 ✨</i></p>
 </div>
 
 ---
@@ -59,10 +54,9 @@
 * **GAL 模式 (Gal Mode)**：瞬间将桌面化为高沉浸二次元视觉小说！支持经典美少女文本框、历史剧情回溯、常驻输入框、对话立绘差分与气泡动态转场。
 * **全格式动态视界联动**：全面兼容本地 MP4 视频无限循环渲染，并支持直接读取 Wallpaper Engine 创意工坊动态壁纸！
 
-<!-- 🖼️ 【图片展示位 3：全屏沉浸伴侣与 GAL 游戏模式截图】 -->
 <div align="center">
-  <img src="assets/showcase_immersive.png" alt="Immersive GAL Mode Showcase" width="80%" style="border-radius: 8px;" />
-  <p><i>（📸 沉浸模式展示位：请将全屏沉浸/GAL模式截图保存为 assets/showcase_immersive.png）</i></p>
+  <img src="assets/showcase_immersive.png" alt="Immersive GAL Mode Showcase" width="85%" style="border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.15);" />
+  <p align="center"><i>🌌 双模全屏沉浸视界 · 侧边栏历史溯源与视差动态壁纸联动 🌌</i></p>
 </div>
 
 ---
@@ -74,10 +68,9 @@
   * **GPT-SoVITS 深度克隆直连**：无缝对接本地部署的 GPT-SoVITS 声音克隆服务，享受专属角色的原声还原。
 * **离线语音工坊 (Reactions 机制)**：支持对每个角色的 5 种情绪短句进行离线全量预录。日常戳碰角色时，**毫秒级零网络延迟**播放本地缓存语音，体验极度丝滑！
 
-<!-- 🖼️ 【图片展示位 4：离线语音工坊 / 大贤者控制台界面】 -->
 <div align="center">
-  <img src="assets/showcase_tts.png" alt="TTS Workshop Showcase" width="80%" style="border-radius: 8px;" />
-  <p><i>（📸 语音工坊展示位：请将语音工坊/控制台音频设置截图保存为 assets/showcase_tts.png）</i></p>
+  <img src="assets/showcase_tts.png" alt="TTS Workshop Showcase" width="85%" style="border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.15);" />
+  <p align="center"><i>🎙️ 多引擎拟真音声调度 · 微软 Edge-TTS / Fish Audio S2 / GPT-SoVITS 深度克隆 🎙️</i></p>
 </div>
 
 ---
@@ -93,10 +86,9 @@
 * **从聊天玩具到全能桌面管家**：桌宠不仅会撒娇，更能为你干活！
 * **深度权限与系统控制**：支持常驻守护进程与按需响应。桌宠可安全执行 PowerShell 系统命令、实时探查 Windows 正在运行的任务进程、检索本地文件、调起常用应用、执行静默内存释放并向你邀功汇报。
 
-<!-- 🖼️ 【图片展示位 5：智能体 Agent 任务执行与工具调用效果】 -->
 <div align="center">
-  <img src="assets/showcase_agent.png" alt="DSH Agent Showcase" width="80%" style="border-radius: 8px;" />
-  <p><i>（📸 Agent 展示位：请将桌宠执行系统任务/工具调用的气泡截图保存为 assets/showcase_agent.png）</i></p>
+  <img src="assets/showcase_agent.png" alt="DSH Agent Showcase" width="85%" style="border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.15);" />
+  <p align="center"><i>🤖 DSH 操作系统级智能体 · 进程监控、网页搜索与静默内存加速工具 🤖</i></p>
 </div>
 
 ---

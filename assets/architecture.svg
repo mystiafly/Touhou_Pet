@@ -1,0 +1,159 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="1000" viewBox="0 0 1280 1000" font-family="'Segoe UI','Microsoft YaHei','PingFang SC',sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#495057"/>
+    </marker>
+    <marker id="arrowPurple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#845ef7"/>
+    </marker>
+    <marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#f59f00"/>
+    </marker>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8f9fa"/>
+      <stop offset="1" stop-color="#e9ecef"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="1000" fill="url(#bg)"/>
+
+  <!-- ═══ 标题 ═══ -->
+  <text x="640" y="34" text-anchor="middle" font-size="26" font-weight="bold" fill="#212529">Rumia Desktop Pet · 系统架构总览</text>
+  <text x="640" y="56" text-anchor="middle" font-size="13" fill="#868e96">双进程 AI 桌宠：Electron 前端（身体/UI） ⇄ FastAPI 后端（大脑/引擎） · v1.40.3 · LangGraph + Qdrant + Mem0</text>
+
+  <!-- ═══ 用户层 ═══ -->
+  <rect x="440" y="74" width="400" height="62" rx="10" fill="#fff4e6" stroke="#fd7e14" stroke-width="1.5"/>
+  <text x="640" y="100" text-anchor="middle" font-size="16" font-weight="bold" fill="#e8590c">👤 用户（你）</text>
+  <text x="640" y="122" text-anchor="middle" font-size="12" fill="#495057">文字聊天 · 触摸/敲打 · 拖拽移动 · 右键菜单 · 语音</text>
+  <line x1="640" y1="136" x2="640" y2="170" stroke="#495057" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- ═══ 前端层 ═══ -->
+  <rect x="40" y="176" width="1200" height="234" rx="12" fill="#e7f5ff" stroke="#339af0" stroke-width="2"/>
+  <text x="60" y="200" font-size="15" font-weight="bold" fill="#1864ab">🖥️ Electron 前端 — 身体 &amp; UI（HTML5 Canvas + 原生 JS，无重型框架）</text>
+
+  <rect x="60" y="214" width="440" height="180" rx="8" fill="#ffffff" stroke="#4dabf7"/>
+  <text x="280" y="236" text-anchor="middle" font-size="13" font-weight="bold" fill="#1971c2">桌宠主窗口（透明置顶 · 60fps）</text>
+  <text x="80" y="260" font-size="11.5" fill="#343a40">· pet_core.js：Live2D(Pixi.js) + 精灵双引擎渲染</text>
+  <text x="80" y="280" font-size="11.5" fill="#343a40">· 表情状态机 normal/angry/shy/crying/sleeping</text>
+  <text x="80" y="300" font-size="11.5" fill="#343a40">· 气泡对话 + 思维链（&lt;character_thought&gt;）展示</text>
+  <text x="80" y="320" font-size="11.5" fill="#343a40">· 物理动作反馈（触摸/敲打/睡觉）· 主动搭话</text>
+  <text x="80" y="340" font-size="11.5" fill="#343a40">· pet_audio.js：TTS 语音播放</text>
+  <text x="80" y="360" font-size="11.5" fill="#343a40">· main.js：托盘 / 窗口穿透 / 拖拽 / 全屏游戏隐藏</text>
+  <text x="80" y="380" font-size="11" fill="#868e96">· preload.js 安全桥接 · 沉浸模式 pet_immersive.js</text>
+
+  <rect x="520" y="214" width="230" height="180" rx="8" fill="#ffffff" stroke="#4dabf7"/>
+  <text x="635" y="236" text-anchor="middle" font-size="13" font-weight="bold" fill="#1971c2">沉浸模式</text>
+  <text x="535" y="262" font-size="11.5" fill="#343a40">· 星空动态壁纸</text>
+  <text x="535" y="282" font-size="11.5" fill="#343a40">· 屏幕视觉快照</text>
+  <text x="535" y="302" font-size="11.5" fill="#343a40">· Wallpaper Engine</text>
+  <text x="535" y="322" font-size="11.5" fill="#343a40">  扫描 / 解包 / 应用</text>
+  <text x="535" y="342" font-size="11.5" fill="#343a40">· 窗口全屏沉浸</text>
+  <text x="535" y="362" font-size="11.5" fill="#868e96">· 壁纸 / BGM 上传</text>
+
+  <rect x="770" y="214" width="450" height="180" rx="8" fill="#ffffff" stroke="#4dabf7"/>
+  <text x="995" y="236" text-anchor="middle" font-size="13" font-weight="bold" fill="#1971c2">Dashboard 控制中心（Vue3 + 原生模块）</text>
+  <text x="790" y="262" font-size="11.5" fill="#343a40">· 大脑引擎：DeepSeek/Gemini/自定义端点，一键拉取模型列表</text>
+  <text x="790" y="282" font-size="11.5" fill="#343a40">· 角色管理：切换 / 新建 / 导入导出 zip / 批量删除（记忆隔离）</text>
+  <text x="790" y="302" font-size="11.5" fill="#343a40">· 记忆图谱：Mem0 记忆可视化 / 手动蒸馏 / 日记管理</text>
+  <text x="790" y="322" font-size="11.5" fill="#343a40">· 预设 &amp; 世界书：SillyTavern 兼容 JSON 导入，递归链式触发</text>
+  <text x="790" y="342" font-size="11.5" fill="#343a40">· 反应音频 / 精灵管理 / TTS 测试 / 统计日志 / 在线更新</text>
+
+  <!-- ═══ IPC 总线 ═══ -->
+  <line x1="640" y1="410" x2="640" y2="424" stroke="#495057" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="40" y="430" width="1200" height="50" rx="10" fill="#f1f3f5" stroke="#adb5bd" stroke-width="1.5"/>
+  <text x="640" y="452" text-anchor="middle" font-size="14" font-weight="bold" fill="#343a40">⚡ 本地 IPC 总线 — HTTP（REST + 事件轮询 /api/poll_events）@ 127.0.0.1:5000</text>
+  <text x="640" y="470" text-anchor="middle" font-size="11" fill="#868e96">聊天 / 历史 / 动作同步 / 角色数据 / TTS 音频 / 事件推送</text>
+  <line x1="640" y1="480" x2="640" y2="496" stroke="#495057" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- ═══ 后端层 ═══ -->
+  <rect x="40" y="502" width="1200" height="328" rx="12" fill="#f3f0ff" stroke="#845ef7" stroke-width="2"/>
+  <text x="60" y="526" font-size="15" font-weight="bold" fill="#5f3dc4">🧠 FastAPI 后端 — 大脑 &amp; 引擎（Python 3.10+ · Uvicorn）</text>
+
+  <!-- 列A：API -->
+  <rect x="60" y="540" width="260" height="274" rx="8" fill="#ffffff" stroke="#9775fa"/>
+  <text x="190" y="562" text-anchor="middle" font-size="13" font-weight="bold" fill="#6741d9">API 入口 &amp; 路由</text>
+  <text x="78" y="586" font-size="11.5" fill="#343a40">· web_interface.py（uvicorn 入口）</text>
+  <text x="78" y="606" font-size="11.5" fill="#343a40">· api/routes.py ≈ 100 个 REST 端点</text>
+  <text x="78" y="630" font-size="11.5" fill="#868e96">聊天 / 历史 / 好感度</text>
+  <text x="78" y="648" font-size="11.5" fill="#868e96">角色 CRUD / 生成 / 导入导出</text>
+  <text x="78" y="666" font-size="11.5" fill="#868e96">设置 / 预设 / 世界书</text>
+  <text x="78" y="684" font-size="11.5" fill="#868e96">自定义引擎 / 模型探测</text>
+  <text x="78" y="702" font-size="11.5" fill="#868e96">反应 / 精灵 / 沉浸 / 统计</text>
+  <text x="78" y="720" font-size="11.5" fill="#868e96">TTS / 更新 / 日志</text>
+  <text x="78" y="744" font-size="11.5" fill="#343a40">· 后台任务：post_llm / 日记对账</text>
+  <text x="78" y="764" font-size="11.5" fill="#343a40">· 事件轮询 /api/poll_events</text>
+  <text x="78" y="790" font-size="11" fill="#868e96">· LangGraph 检查点 SQLite 持久化</text>
+
+  <!-- 列B：LangGraph 工作流 -->
+  <rect x="340" y="540" width="470" height="274" rx="8" fill="#ffffff" stroke="#f59f00"/>
+  <text x="575" y="562" text-anchor="middle" font-size="13" font-weight="bold" fill="#e67700">LangGraph 分层大脑工作流（StateGraph）</text>
+
+  <rect x="360" y="576" width="180" height="24" rx="5" fill="#fff3bf" stroke="#f59f00"/>
+  <text x="450" y="592" text-anchor="middle" font-size="11" font-weight="bold" fill="#e67700">① recall_memories 记忆召回</text>
+  <line x1="450" y1="600" x2="450" y2="608" stroke="#f59f00" stroke-width="1.5" marker-end="url(#arrowOrange)"/>
+
+  <rect x="360" y="610" width="180" height="24" rx="5" fill="#fff3bf" stroke="#f59f00"/>
+  <text x="450" y="626" text-anchor="middle" font-size="11" font-weight="bold" fill="#e67700">② pre_llm 意图解析拦截</text>
+  <line x1="450" y1="634" x2="450" y2="642" stroke="#f59f00" stroke-width="1.5" marker-end="url(#arrowOrange)"/>
+
+  <rect x="360" y="644" width="180" height="24" rx="5" fill="#fff3bf" stroke="#f59f00"/>
+  <text x="450" y="660" text-anchor="middle" font-size="11" font-weight="bold" fill="#e67700">③ parse_pre_response 工具路由</text>
+
+  <!-- 工具盒 -->
+  <rect x="560" y="576" width="230" height="120" rx="8" fill="#fff9db" stroke="#f59f00" stroke-dasharray="4 3"/>
+  <text x="675" y="596" text-anchor="middle" font-size="12" font-weight="bold" fill="#e67700">④ 工具节点（7 类）</text>
+  <text x="575" y="616" font-size="11" fill="#495057">· 启动应用 (LAUNCH_APP)</text>
+  <text x="575" y="634" font-size="11" fill="#495057">· 网页浏览 / 网络搜索</text>
+  <text x="575" y="652" font-size="11" fill="#495057">· 视觉识屏（4 级降采样重试 1024→512→256）</text>
+  <text x="575" y="670" font-size="11" fill="#495057">· 进程探测 / 天气查询</text>
+  <text x="575" y="688" font-size="11" fill="#495057">· 内存静默清理</text>
+  <line x1="540" y1="656" x2="560" y2="648" stroke="#f59f00" stroke-width="1.5" marker-end="url(#arrowOrange)"/>
+  <line x1="675" y1="696" x2="675" y2="712" stroke="#f59f00" stroke-width="1.5"/>
+  <line x1="540" y1="712" x2="675" y2="712" stroke="#f59f00" stroke-width="1.5" marker-end="url(#arrowOrange)"/>
+
+  <line x1="450" y1="668" x2="450" y2="676" stroke="#f59f00" stroke-width="1.5" marker-end="url(#arrowOrange)"/>
+  <rect x="360" y="678" width="180" height="24" rx="5" fill="#fff3bf" stroke="#f59f00"/>
+  <text x="450" y="694" text-anchor="middle" font-size="11" font-weight="bold" fill="#e67700">⑤ collect_tool_feedback</text>
+  <line x1="450" y1="702" x2="450" y2="710" stroke="#f59f00" stroke-width="1.5" marker-end="url(#arrowOrange)"/>
+
+  <rect x="360" y="712" width="180" height="24" rx="5" fill="#ffe066" stroke="#f59f00"/>
+  <text x="450" y="728" text-anchor="middle" font-size="11" font-weight="bold" fill="#d9480f">⑥ main_llm 对话核心（思维链+心情+评分）</text>
+  <line x1="540" y1="724" x2="556" y2="724" stroke="#f59f00" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#arrowOrange)"/>
+  <text x="549" y="716" font-size="9.5" fill="#e67700">思维链缺失→重试 ≤5</text>
+  <line x1="450" y1="736" x2="450" y2="744" stroke="#f59f00" stroke-width="1.5" marker-end="url(#arrowOrange)"/>
+
+  <rect x="360" y="746" width="180" height="24" rx="5" fill="#fff3bf" stroke="#f59f00"/>
+  <text x="450" y="762" text-anchor="middle" font-size="11" font-weight="bold" fill="#e67700">⑦ post_llm + 写入历史（后台）</text>
+
+  <text x="575" y="798" font-size="10.5" fill="#868e96">双轨制：Pre-LLM 只做意图拦截，Main-LLM 专注角色扮演，Post-LLM 收尾 → 各自分工、Prompt 缓存友好</text>
+
+  <!-- 列C：核心服务 -->
+  <rect x="830" y="540" width="390" height="274" rx="8" fill="#ffffff" stroke="#51cf66"/>
+  <text x="1025" y="562" text-anchor="middle" font-size="13" font-weight="bold" fill="#2b8a3e">核心服务（services/core + tools）</text>
+  <text x="848" y="586" font-size="11.5" fill="#343a40">· llm_client：多提供商大脑（DeepSeek / Gemini /</text>
+  <text x="860" y="602" font-size="11.5" fill="#343a40">  本地 Ollama / 自定义 OpenAI 兼容端点）</text>
+  <text x="848" y="622" font-size="11.5" fill="#343a40">· memory_manager：Mem0 + Qdrant 向量库</text>
+  <text x="860" y="638" font-size="11.5" fill="#343a40">  （100% 离线本地嵌入 all-MiniLM-L6-v2）</text>
+  <text x="848" y="658" font-size="11.5" fill="#343a40">· databank_manager：结构化动态记忆 DataBank</text>
+  <text x="848" y="678" font-size="11.5" fill="#343a40">· diary 蒸馏：夜间日记批处理（workers/distillation）</text>
+  <text x="848" y="698" font-size="11.5" fill="#343a40">· reaction_manager：触摸/点击反应音频</text>
+  <text x="848" y="718" font-size="11.5" fill="#343a40">· tts_client：edge-tts 多语言 / GPT-SoVITS 音色</text>
+  <text x="848" y="738" font-size="11.5" fill="#343a40">· presets_manager：递归链式预设（世界书兼容）</text>
+  <text x="848" y="758" font-size="11.5" fill="#343a40">· weather / profile(好感度) / stats / event / 系统探测</text>
+  <text x="848" y="782" font-size="11" fill="#868e96">· 11 角色 + 1 模板：config / presets / databank / 日记全隔离</text>
+  <text x="848" y="798" font-size="10.5" fill="#adb5bd">  琪露诺·露米娅·莉格露·米斯蒂娅·文·灵梦·魔理沙·天子·恋·芙兰·莉莉白</text>
+
+  <!-- ═══ 数据层 ═══ -->
+  <line x1="640" y1="830" x2="640" y2="842" stroke="#495057" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="40" y="848" width="1200" height="130" rx="12" fill="#fff0f6" stroke="#f06595" stroke-width="2"/>
+  <text x="60" y="872" font-size="15" font-weight="bold" fill="#a61e4d">💾 数据层 &amp; 外部服务</text>
+
+  <rect x="60" y="884" width="640" height="80" rx="8" fill="#ffffff" stroke="#f06595"/>
+  <text x="78" y="906" font-size="12" font-weight="bold" fill="#c2255c">本地持久化（源码模式 / 打包后 %APPDATA%\RumiaDesktopPet）</text>
+  <text x="78" y="926" font-size="11" fill="#495057">Qdrant 向量库（每角色隔离集合）· SQLite（LangGraph 检查点 / 使用统计）· JSON（config / databank / 好感度 / 预设）</text>
+  <text x="78" y="946" font-size="11" fill="#495057">Live2D .moc3 / 精灵 PNG / TTS 缓存 / 每日聊天与日记归档 / 反应音频</text>
+
+  <rect x="720" y="884" width="500" height="80" rx="8" fill="#ffffff" stroke="#f06595"/>
+  <text x="738" y="906" font-size="12" font-weight="bold" fill="#c2255c">外部服务</text>
+  <text x="738" y="926" font-size="11" fill="#495057">LLM API：DeepSeek / Gemini / 火山方舟 / 智谱 / 本地 Ollama·vLLM（OpenAI 兼容）</text>
+  <text x="738" y="946" font-size="11" fill="#495057">edge-tts 语音合成 · 天气 / DuckDuckGo 搜索 · HF 镜像模型下载</text>
+</svg>
