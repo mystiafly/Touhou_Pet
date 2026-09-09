@@ -80,6 +80,9 @@
             <a href="#" class="nav-item" data-target="custom-presets-view">
                 <i class="fas fa-user-tag"></i> 专属预设
             </a>
+            <a href="#" class="nav-item" data-target="scenario-settings-view">
+                <i class="fas fa-scroll"></i> 剧本设定
+            </a>
             <a href="#" class="nav-item" data-target="reactions-view">
                 <i class="fas fa-comments"></i> 互动应付词
             </a>
@@ -1803,6 +1806,51 @@
             </div>
         </section>
 
+        <!-- 6.55 剧本设定视图 (Galgame Scenario Mode) -->
+        <section id="scenario-settings-view" class="content-section">
+            <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <h2><i class="fas fa-scroll" style="color: #ff79c6;"></i> 剧本设定 (Scenario Engine)</h2>
+                    <p>为当前角色配置 Galgame 式的情感剧情里程碑节点。好感度达成时触发剧情、自动冻结，经由 4~8 轮对话后由大模型裁决分支，解锁结局与好感加成！</p>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button class="action-btn outline" id="btn-reset-all-scenarios" style="border-color: #f77272; color: #f77272; padding: 6px 14px;">
+                        <i class="fas fa-history"></i> 重置全剧情进度
+                    </button>
+                    <button class="action-btn" id="btn-add-scenario-node" style="padding: 6px 16px; background: linear-gradient(135deg, #ff79c6, #bd93f9); border: none; color: #fff;">
+                        <i class="fas fa-plus"></i> 新增剧情节点
+                    </button>
+                </div>
+            </div>
+
+            <!-- 顶部状态栏：角色好感度与当前剧本状态 -->
+            <div class="card" style="margin-bottom: 20px; background: linear-gradient(145deg, rgba(40,42,54,0.6), rgba(30,31,41,0.8)); border: 1px solid rgba(255, 121, 198, 0.25);">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(255, 121, 198, 0.15); display: flex; align-items: center; justify-content: center; font-size: 24px; color: #ff79c6;">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 13px; color: var(--text-muted);">当前互动好感度 / 保底下限</div>
+                            <div style="font-size: 20px; font-weight: bold; color: #50fa7b;">
+                                <span id="scenario-current-fav">--</span> <span style="font-size: 14px; color: var(--text-muted); font-weight: normal;">/ 保底下限: </span><span id="scenario-fav-floor" style="color: #ffb86c;">--</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span id="scenario-active-status-badge" class="badge" style="padding: 6px 14px; font-size: 13px; background: rgba(80, 250, 123, 0.15); color: #50fa7b; border-radius: 8px;">
+                            自由交流中
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 剧情节点卡片列表 -->
+            <div id="scenario-nodes-container" style="display: flex; flex-direction: column; gap: 15px;">
+                <div class="loading-state"><i class="fas fa-spinner fa-spin"></i> 正在加载剧本节点...</div>
+            </div>
+        </section>
+
         <!-- 6.6 互动应付词视图 -->
         <section id="reactions-view" class="content-section">
             <div class="section-header">
@@ -2287,6 +2335,71 @@
     </div>
 </div>
 
+<!-- 剧本节点编辑 Modal -->
+<div id="scenario-node-modal" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 780px; max-height: 88vh; display: flex; flex-direction: column;">
+        <div class="modal-header">
+            <h2 id="scenario-node-modal-title"><i class="fas fa-edit"></i> 编辑剧情节点</h2>
+            <button id="close-scenario-modal-btn" class="close-modal-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body" style="overflow-y: auto; padding-right: 15px; flex: 1;">
+            <form id="scenario-node-form" onsubmit="return false;">
+                <input type="hidden" id="scenario-node-original-id" value="">
+                
+                <div class="grid-2col" style="gap: 15px;">
+                    <div class="form-group">
+                        <label for="scenario-node-title">节点标题 (Title) <span style="color:red">*</span></label>
+                        <input type="text" id="scenario-node-title" class="modern-input" required placeholder="例如: 夏日黄昏的秘密邀约">
+                    </div>
+                    <div class="form-group">
+                        <label for="scenario-node-id">节点唯一标识 (ID) <span style="color:red">*</span></label>
+                        <input type="text" id="scenario-node-id" class="modern-input" required placeholder="例如: fav_60_confession (英文字母/下划线)">
+                    </div>
+                </div>
+
+                <div class="grid-2col" style="gap: 15px; margin-top: 15px;">
+                    <div class="form-group">
+                        <label for="scenario-trigger-fav">触发好感度阈值 (Trigger Favorability) <span style="color:red">*</span></label>
+                        <input type="number" id="scenario-trigger-fav" class="modern-input" required min="0" max="100" placeholder="达到多少好感度触发，例如: 60">
+                        <p class="help-text">好感度达到此阈值时，自动冻结好感度并开始本剧情引导。</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="scenario-check-interval">判定对话轮数 (Check Interval)</label>
+                        <input type="number" id="scenario-check-interval" class="modern-input" min="4" max="8" value="5" placeholder="推荐 4~8 轮">
+                        <p class="help-text">对话进行多少轮后，打包对话给大模型裁决是否做出抉择。</p>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="scenario-briefing">告知项 (Briefing - 剧情背景与对白指示) <span style="color:red">*</span></label>
+                    <textarea id="scenario-briefing" class="modern-textarea" rows="4" required placeholder="详细描述当前发生的事情、桌宠的心事与想问用户的事。例如：你最近想邀请用户周末一起去森林野餐，请在对话中找时机自然提起，探探口风，切勿机械死板读题..."></textarea>
+                    <p class="help-text">系统会将此告知项注入桌宠的思考链与对白指导中，使其在日常交谈中自然展开试探。</p>
+                </div>
+
+                <!-- 分支项列表编辑区 -->
+                <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h4 style="margin: 0; color: #8be9fd;"><i class="fas fa-code-branch"></i> 剧情分支列表 (Branches)</h4>
+                        <button type="button" class="action-btn outline" id="btn-add-branch-item" style="padding: 4px 10px; font-size: 12px;">
+                            <i class="fas fa-plus"></i> 添加分支
+                        </button>
+                    </div>
+                    <div id="scenario-branches-list" style="display: flex; flex-direction: column; gap: 12px;">
+                        <!-- 动态分支项行 -->
+                    </div>
+                </div>
+
+                <div class="form-actions" style="margin-top: 25px; display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="action-btn outline" id="btn-cancel-scenario-modal">取消</button>
+                    <button type="button" class="action-btn" id="btn-save-scenario-node" style="background: linear-gradient(135deg, #ff79c6, #bd93f9); border: none; color: #fff;">
+                        <i class="fas fa-save"></i> 保存剧情节点
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- 预设编辑 Modal -->
 <div id="preset-modal" class="modal-overlay hidden">
     <div class="modal-content">
@@ -2314,17 +2427,6 @@
                     <label for="preset-secondary-keywords">副触发词 (Secondary Keywords)</label>
                     <input type="text" id="preset-secondary-keywords" class="modern-input" placeholder="逗号分隔，例如: 身材,体型">
                     <p class="help-text">必须同时命中主词与副词才触发（AND 逻辑）。</p>
-                </div>
-                
-                <div class="grid-2col" style="gap: 15px; margin-top: 15px;">
-                    <div class="form-group">
-                        <label for="preset-min-fav">好感下限 (Min Fav)</label>
-                        <input type="number" id="preset-min-fav" class="modern-input" placeholder="例如: 0">
-                    </div>
-                    <div class="form-group">
-                        <label for="preset-max-fav">好感上限 (Max Fav)</label>
-                        <input type="number" id="preset-max-fav" class="modern-input" placeholder="例如: 100">
-                    </div>
                 </div>
 
                 <div class="grid-2col" style="gap: 15px; margin-top: 15px;">
@@ -2538,10 +2640,11 @@
 <script src="/static/js/dashboard/modules/diary_logs.js?v=1.50.1"></script>
 <script src="/static/js/dashboard/modules/character_reactions.js?v=1.50.1"></script>
 <script src="/static/js/dashboard/modules/memory_graph.js?v=1.50.1"></script>
-<script src="/static/js/dashboard/modules/presets_manager.js?v=1.50.1"></script>
-<script src="/static/js/dashboard/modules/databank_editor.js?v=1.50.1"></script>
-<script src="/static/js/dashboard/modules/tools_preview.js?v=1.50.1"></script>
-<script src="/static/js/dashboard/modules/live2d_debug.js?v=1.50.1"></script>
-<script src="/static/js/dashboard/modules/dashboard_stats.js?v=1.50.1"></script>
+<script src="/static/js/dashboard/modules/presets_manager.js?v=1.51.0"></script>
+<script src="/static/js/dashboard/modules/scenario_manager.js?v=1.51.0"></script>
+<script src="/static/js/dashboard/modules/databank_editor.js?v=1.51.0"></script>
+<script src="/static/js/dashboard/modules/tools_preview.js?v=1.51.0"></script>
+<script src="/static/js/dashboard/modules/live2d_debug.js?v=1.51.0"></script>
+<script src="/static/js/dashboard/modules/dashboard_stats.js?v=1.51.0"></script>
 </body>
 </html>

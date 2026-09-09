@@ -36,8 +36,6 @@ function renderPresetsList(type, data, containerId) {
         // Badges
         let badgesHtml = '';
         if (preset.always_active) badgesHtml += '<span class="preset-badge active">Always Active</span>';
-        if (preset.min_favorability !== undefined && preset.min_favorability !== null) badgesHtml += `<span class="preset-badge">Fav ≥ ${preset.min_favorability}</span>`;
-        if (preset.max_favorability !== undefined && preset.max_favorability !== null) badgesHtml += `<span class="preset-badge">Fav ≤ ${preset.max_favorability}</span>`;
         if (preset.disable) badgesHtml += '<span class="preset-badge disabled">Disabled</span>';
         
         let kwStr = (preset.trigger_keywords && preset.trigger_keywords.length) ? preset.trigger_keywords.join(', ') : '';
@@ -70,8 +68,6 @@ function showPresetModal(type, preset = null) {
         document.getElementById('preset-name').value = preset.name;
         document.getElementById('preset-keywords').value = (preset.trigger_keywords || preset.key || []).join(', ');
         document.getElementById('preset-secondary-keywords').value = (preset.secondary_keywords || preset.keysecondary || []).join(', ');
-        document.getElementById('preset-min-fav').value = preset.min_favorability !== undefined ? preset.min_favorability : '';
-        document.getElementById('preset-max-fav').value = preset.max_favorability !== undefined ? preset.max_favorability : '';
         document.getElementById('preset-position').value = preset.position !== undefined ? preset.position : '1';
         document.getElementById('preset-order').value = preset.order !== undefined ? preset.order : '100';
         document.getElementById('preset-always-active').checked = !!(preset.always_active || preset.constant);
@@ -85,8 +81,6 @@ function showPresetModal(type, preset = null) {
         document.getElementById('preset-name').value = '';
         document.getElementById('preset-keywords').value = '';
         document.getElementById('preset-secondary-keywords').value = '';
-        document.getElementById('preset-min-fav').value = '';
-        document.getElementById('preset-max-fav').value = '';
         document.getElementById('preset-position').value = '1';
         document.getElementById('preset-order').value = '100';
         document.getElementById('preset-always-active').checked = false;
@@ -164,8 +158,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const name = document.getElementById('preset-name').value.trim();
             const keywordsStr = document.getElementById('preset-keywords').value.trim();
             const secKeywordsStr = document.getElementById('preset-secondary-keywords').value.trim();
-            const minFav = document.getElementById('preset-min-fav').value;
-            const maxFav = document.getElementById('preset-max-fav').value;
             const position = document.getElementById('preset-position').value;
             const order = document.getElementById('preset-order').value;
             const alwaysActive = document.getElementById('preset-always-active').checked;
@@ -203,8 +195,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (keywordsStr) presetObj.trigger_keywords = keywordsStr.split(',').map(s => s.trim()).filter(s => s);
             if (secKeywordsStr) presetObj.secondary_keywords = secKeywordsStr.split(',').map(s => s.trim()).filter(s => s);
-            if (minFav !== '') presetObj.min_favorability = parseInt(minFav, 10);
-            if (maxFav !== '') presetObj.max_favorability = parseInt(maxFav, 10);
             
             btnSavePreset.disabled = true;
             btnSavePreset.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';

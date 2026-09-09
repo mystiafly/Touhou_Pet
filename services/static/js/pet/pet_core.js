@@ -1047,7 +1047,9 @@ class DesktopPetCore {
 
                 if (data.favorability !== undefined) {
                     this.favScore.innerText = data.favorability;
-                    if (data.fav_change > 0) {
+                    if (data.scenario_paused) {
+                        this.favScore.innerHTML = `${data.favorability} <span style="color: #ff79c6; font-size: 13px; margin-left:4px;" title="剧本进行中，好感度已冻结">🔒</span>`;
+                    } else if (data.fav_change > 0) {
                         this.favScore.innerHTML = `${data.favorability} <span style="color: #ff3366; font-size: 14px; margin-left:5px;">(+1)</span>`;
                         setTimeout(() => this.favScore.innerText = data.favorability, 2000);
                     } else if (data.fav_change < 0) {

@@ -13,11 +13,24 @@ def get_favorability():
             pass
     return 60
 
-def update_favorability(change):
-    """更新好感度"""
+def update_favorability(change, char_id=None, force=False):
+    """更新好感度，严格受好感度下限保底与剧情暂停机制保护"""
     current = get_favorability()
+    
+    try:
+        from core.scenario_manager import get_favorability_floor, load_scenario_state
+        # 检查当前剧情节点是否处于好感度冻结期
+        if not force:
+            s_state = load_scenario_state(char_id)
+            if s_state.get("is_paused", False) and s_state.get("active_node_id"):
+                return current
+        
+        floor = get_favorability_floor(char_id)
+    except Exception as se:
+        floor = 0
+
     new_score = current + change
-    new_score = max(0, min(100, new_score))
+    new_score = max(floor, min(100, new_score))
     try:
         with open(get_file_path("favorability.json"), 'w', encoding='utf-8') as f:
             json.dump({"score": new_score}, f)

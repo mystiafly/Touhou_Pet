@@ -175,12 +175,15 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
         # 将费时的副模型节点和数据库写入放入后台执行，立刻向前端返回 JSON 响应
         background_tasks.add_task(run_post_and_history, final_state)
 
-        # 好感度增减评定
+        # 好感度增减评定与剧情模式冻结检测
         change = 0
-        if score > 15:
-            change = 1
-        elif score < 5:
-            change = -1
+        from core.scenario_manager import load_scenario_state
+        s_state = load_scenario_state(char_id)
+        if not s_state.get("is_paused"):
+            if score > 15:
+                change = 1
+            elif score < 5:
+                change = -1
 
         # 打印原始大模型输出用于调试
         print("\n\n======== RAW REPLY FROM CHAT API ========\n")
@@ -235,6 +238,8 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
             "emotion": emotion,
             "favorability": current_fav,
             "fav_change": change,
+            "scenario_paused": s_state.get("is_paused", False),
+            "scenario_node": s_state.get("active_node_id"),
             "history_count": len(updated_history) - 1,
             "force_sleep": force_sleep,
             "audio_url": audio_url,

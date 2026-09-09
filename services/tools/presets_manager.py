@@ -155,26 +155,6 @@ def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
         if preset.get("disable", False):
             continue
             
-        # 检查好感度范围限制
-        min_fav = preset.get("min_favorability")
-        max_fav = preset.get("max_favorability")
-        fav_ok = True
-        if min_fav is not None:
-            try:
-                if favorability < int(min_fav):
-                    fav_ok = False
-            except:
-                pass
-        if max_fav is not None:
-            try:
-                if favorability > int(max_fav):
-                    fav_ok = False
-            except:
-                pass
-                
-        if not fav_ok:
-            continue  # 好感度不符，直接不考虑
-            
         # 检查常驻状态 (always_active 或 constant)
         is_constant = preset.get("always_active", False) or preset.get("constant", False)
         if is_constant:
@@ -263,26 +243,6 @@ def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
                 
             # 检查是否被禁用，以及是否被标记为“禁止递归触发”
             if preset.get("disable", False) or preset.get("prevent_recursion", False):
-                continue
-                
-            # 同样需要校验好感度范围限制
-            min_fav = preset.get("min_favorability")
-            max_fav = preset.get("max_favorability")
-            fav_ok = True
-            if min_fav is not None:
-                try:
-                    if favorability < int(min_fav):
-                        fav_ok = False
-                except:
-                    pass
-            if max_fav is not None:
-                try:
-                    if favorability > int(max_fav):
-                        fav_ok = False
-                except:
-                    pass
-            
-            if not fav_ok:
                 continue
                 
             # 检查关键词是否匹配当前已触发的提示词文本池 (严格遵守复合逻辑 AND)

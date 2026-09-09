@@ -79,6 +79,24 @@ def run_post_and_history(state: dict):
         update_history_node(state)
         with open(log_path, "a", encoding="utf-8") as f:
             f.write(f"BG Task Success. Post Delta: {post_delta}\n")
+            
+        # 剧情模式 (Galgame Scenario) 轮次推进与裁决
+        user_msg = state.get("user_message", "")
+        reply = state.get("clean_content", "") or state.get("main_llm_reply", "")
+        is_self = state.get("is_self_talk", False)
+        if not is_self and user_msg:
+            try:
+                from core.config_manager import get_active_character_id
+                from core.scenario_manager import record_scenario_turn, evaluate_scenario_decision
+                char_id = get_active_character_id()
+                should_eval = record_scenario_turn(char_id, user_msg, reply)
+                if should_eval:
+                    print(f"[SCENARIO] 剧情对话达到判定轮次，正在唤醒大模型裁决器...")
+                    eval_res = evaluate_scenario_decision(char_id)
+                    with open(log_path, "a", encoding="utf-8") as f:
+                        f.write(f"Scenario Evaluation: {eval_res}\n")
+            except Exception as s_err:
+                print(f"[SCENARIO WARN] 剧情模式推进异常: {s_err}")
     except Exception as e:
         import traceback
         err_str = traceback.format_exc()

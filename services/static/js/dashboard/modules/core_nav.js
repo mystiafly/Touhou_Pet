@@ -400,6 +400,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (targetId === 'global-presets-view' || targetId === 'custom-presets-view') {
                 if (window.loadPresets) window.loadPresets();
             }
+            if (targetId === 'scenario-settings-view') {
+                if (window.loadScenarioSettings) window.loadScenarioSettings();
+            }
             if (targetId === 'graph-view') {
                 if (window.loadMemoryGraph) window.loadMemoryGraph();
             }

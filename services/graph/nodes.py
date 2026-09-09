@@ -154,6 +154,16 @@ def build_main_messages(state: AgentState) -> list:
     if user_prompt:
         cat1_parts.append(f"[USER PROMPT (用户/玩家自身设定与偏好)]\n{user_prompt}")
         
+    # 剧情模式 (Galgame Scenario) 触发检测与告知项注入
+    try:
+        from core.scenario_manager import check_and_trigger_scenario, get_scenario_prompt_injection
+        check_and_trigger_scenario(char_id, current_fav)
+        scenario_injection = get_scenario_prompt_injection(char_id)
+        if scenario_injection:
+            cat1_parts.append(scenario_injection)
+    except Exception as se:
+        print(f"[SCENARIO INJECTION WARN] {se}")
+        
     base_rules = (
         "[SYSTEM REMINDER - P0 HIGHEST PRIORITY]\n"
         "【最高优先级提醒与行为约束（基础静态规则）】\n"
@@ -626,7 +636,8 @@ def update_history_node(state: AgentState) -> Dict[str, Any]:
     if score > 15: change = 1
     elif score < 5: change = -1
         
-    new_fav = update_favorability(change)
+    char_id = get_active_character_id()
+    new_fav = update_favorability(change, char_id=char_id)
     new_history = [msg.copy() for msg in history_msgs]
     
     if not is_self and user_message:
