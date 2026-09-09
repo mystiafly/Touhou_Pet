@@ -126,8 +126,21 @@ GLOBAL_KEYS = {
     "weather_provider", "weather_api_key", "weather_city", "weather_lat", "weather_lon",
     "enable_dsh_agent", "dsh_run_mode", "dsh_preset", "dsh_api_provider", "dsh_timeout", "dsh_permission_mode",
     "enable_auto_replies", "auto_replies_prompt", "auto_replies_mode", "auto_replies_history_rounds",
-    "immersive_package"
+    "immersive_package", "hide_console"
 }
+
+def set_console_visible(visible: bool):
+    """在 Windows 环境下动态显示或隐藏当前终端控制台窗口"""
+    if os.name == 'nt':
+        try:
+            import ctypes
+            hwnd = ctypes.windll.kernel32.GetConsoleWindow()
+            if hwnd:
+                # 0: SW_HIDE, 5: SW_SHOW
+                ctypes.windll.user32.ShowWindow(hwnd, 5 if visible else 0)
+        except Exception as e:
+            print(f"[CONSOLE] 切换控制台窗口可见性异常: {e}")
+
 
 DEFAULT_AUTO_REPLIES_PROMPT = """【自动回话建议生成】
 在生成完你给用户的角色台词后，请站在用户（“我”）的视角，根据你刚才说的内容，生成3句“我”可能接下来对你说的话。

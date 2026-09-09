@@ -577,6 +577,11 @@ window.deleteCustomEngine = async function(id) {
                     autoStartToggle.checked = configData.auto_start_on_boot === true;
                 }
 
+                const hideConsoleToggle = document.getElementById('hide-console-toggle');
+                if (hideConsoleToggle) {
+                    hideConsoleToggle.checked = configData.hide_console === true;
+                }
+
                 const ttsClickToggle = document.getElementById('tts-mode-click-toggle');
                 const ttsAutoToggle = document.getElementById('tts-mode-auto-toggle');
                 if (ttsClickToggle) {
@@ -711,6 +716,25 @@ window.deleteCustomEngine = async function(id) {
                 }
                 if (window.refreshAvatarPreview) {
                     window.refreshAvatarPreview(charData.character_id);
+                }
+            }
+
+            // 好感度手动调节卡片：历史对话超过 24 轮自动隐藏
+            const favCard = document.getElementById('char-favorability-card');
+            const favInput = document.getElementById('char-favorability-input');
+            const favBadge = document.getElementById('char-fav-rounds-badge');
+            if (favCard) {
+                const dialogCount = typeof charData.dialog_count === 'number' ? charData.dialog_count : 0;
+                if (dialogCount > 24) {
+                    favCard.style.display = 'none';
+                } else {
+                    favCard.style.display = 'block';
+                    if (favInput && charData.favorability !== undefined) {
+                        favInput.value = charData.favorability;
+                    }
+                    if (favBadge) {
+                        favBadge.textContent = `历史对话: ${dialogCount}/24 轮 (可调整)`;
+                    }
                 }
             }
         } catch (e) {
@@ -1552,6 +1576,22 @@ window.deleteCustomEngine = async function(id) {
         });
     }
 
+    const hideConsoleToggle = document.getElementById('hide-console-toggle');
+    if (hideConsoleToggle) {
+        hideConsoleToggle.addEventListener('change', async () => {
+            try {
+                const hide = hideConsoleToggle.checked;
+                await fetch('/api/settings/toggle_hide_console', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ hide_console: hide })
+                });
+            } catch (e) {
+                console.error("切换隐藏控制台异常:", e);
+            }
+        });
+    }
+
     const presetMaxDepth = document.getElementById('preset-max-depth');
     if (presetMaxDepth) {
         presetMaxDepth.addEventListener('change', async () => {
@@ -1893,6 +1933,49 @@ window.deleteCustomEngine = async function(id) {
             } finally {
                 saveCharIdentityBtn.disabled = false;
                 saveCharIdentityBtn.innerHTML = '<i class="fas fa-save"></i> 保存角色名称与英文标识';
+            }
+        });
+    }
+
+    // 角色好感度手动调节保存
+    const saveFavBtn = document.getElementById('save-char-favorability-btn');
+    const favInput = document.getElementById('char-favorability-input');
+    const favStatus = document.getElementById('char-fav-save-status');
+    if (saveFavBtn && favInput) {
+        saveFavBtn.addEventListener('click', async () => {
+            const val = parseInt(favInput.value, 10);
+            if (isNaN(val) || val < 0 || val > 100) {
+                alert("请输入 0 到 100 之间的整数好感度！");
+                return;
+            }
+            try {
+                saveFavBtn.disabled = true;
+                saveFavBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+                const res = await fetch('/api/character/set_favorability', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ score: val })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    favInput.value = data.favorability;
+                    if (favStatus) {
+                        favStatus.style.display = 'inline';
+                        favStatus.style.color = '#50fa7b';
+                        favStatus.textContent = `已成功设定好感度为 ${data.favorability}`;
+                        setTimeout(() => {
+                            favStatus.style.display = 'none';
+                        }, 3000);
+                    }
+                } else {
+                    alert("设定好感度失败: " + (data.error || "未知错误"));
+                }
+            } catch (err) {
+                console.error("设定好感度失败:", err);
+                alert("网络或系统异常，保存好感度失败！");
+            } finally {
+                saveFavBtn.disabled = false;
+                saveFavBtn.innerHTML = '<i class="fas fa-check"></i> 应用好感度';
             }
         });
     }

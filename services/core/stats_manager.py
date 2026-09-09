@@ -78,6 +78,30 @@ class StatsManager:
             ''', (character, now))
             conn.commit()
 
+    def get_character_dialog_count(self, character: str) -> int:
+        """获取指定角色的历史累计对话次数（结合数据库记录与会话历史）"""
+        count = 0
+        try:
+            with sqlite3.connect(DB_PATH) as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT COUNT(*) FROM dialogs WHERE character = ?', (character,))
+                row = cursor.fetchone()
+                if row and row[0] is not None:
+                    count = row[0]
+        except Exception:
+            pass
+
+        try:
+            from core.memory_manager import load_history
+            hist = load_history()
+            user_msgs = len([m for m in hist if m.get("role") == "user"])
+            if user_msgs > count:
+                count = user_msgs
+        except Exception:
+            pass
+
+        return count
+
     def get_dashboard_stats(self):
         """Retrieve aggregated statistics for the dashboard."""
         stats = {

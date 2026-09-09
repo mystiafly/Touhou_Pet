@@ -149,6 +149,7 @@ def get_config_api():
     config["show_thought_button"] = config.get("show_thought_button", True)
     config["show_tool_calls"] = config.get("show_tool_calls", True)
     config["auto_start_on_boot"] = config.get("auto_start_on_boot", False)
+    config["hide_console"] = config.get("hide_console", False)
     config["enable_tts"] = config.get("enable_tts", True)
     config["enable_tts_click"] = config.get("enable_tts_click", True)
     config["enable_tts_auto"] = config.get("enable_tts_auto", False)
@@ -240,6 +241,14 @@ def post_config_api(payload: dict = Body(...)):
         if "auto_start_on_boot" in payload:
             config_data["auto_start_on_boot"] = bool(payload["auto_start_on_boot"])
             sync_windows_autostart_registry(config_data["auto_start_on_boot"])
+        if "hide_console" in payload:
+            val = bool(payload["hide_console"])
+            config_data["hide_console"] = val
+            try:
+                from core.config_manager import set_console_visible
+                set_console_visible(not val)
+            except Exception:
+                pass
         if "enable_tts" in payload:
             config_data["enable_tts"] = bool(payload["enable_tts"])
         if "enable_tts_click" in payload:
@@ -396,6 +405,19 @@ def post_config_api(payload: dict = Body(...)):
         return {"success": True, "status": "success", "message": "配置已成功保存", "require_restart": require_restart}
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
+
+@router.post("/api/settings/toggle_hide_console")
+def toggle_hide_console(payload: dict = Body(...)):
+    val = bool(payload.get("hide_console", False))
+    config_data = get_config()
+    config_data["hide_console"] = val
+    save_config(config_data)
+    try:
+        from core.config_manager import set_console_visible
+        set_console_visible(not val)
+    except Exception:
+        pass
+    return JSONResponse({"success": True, "hide_console": val})
 
 
 # ==========================================

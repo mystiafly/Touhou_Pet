@@ -14,6 +14,8 @@ from core.config_manager import get_config, save_config, get_active_character_id
 from core.databank_manager import load_databank, save_databank_state_sheet, save_databank_template_raw, get_databank_paths
 from tools.presets_manager import get_self_talk_presets_file
 from api.routers.common import safe_recycle_delete, find_live2d_model_file, ensure_live2d_pose_configured
+from core.profile_manager import get_favorability, update_favorability
+from core.stats_manager import stats_manager
 
 router = APIRouter()
 SERVICES_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -677,10 +679,29 @@ async def api_character_info():
         "bubble_duration_multiplier": config.get("bubble_duration_multiplier", 1.0),
         "enable_auto_replies": config.get("enable_auto_replies", False),
         "auto_replies_mode": config.get("auto_replies_mode", "click"),
-        "auto_replies_history_rounds": config.get("auto_replies_history_rounds", 3),
         "immersive_package": config.get("immersive_package", "companion"),
-        "needs_onboarding": needs_onboarding
+        "needs_onboarding": needs_onboarding,
+        "favorability": get_favorability(),
+        "dialog_count": stats_manager.get_character_dialog_count(char_id)
     })
+
+@router.post("/api/character/set_favorability")
+async def set_character_favorability(payload: dict = Body(...)):
+    score = payload.get("score")
+    if score is None:
+        return JSONResponse({"success": False, "error": "缺少 score 参数"}, status_code=400)
+    try:
+        target = int(score)
+        target = max(0, min(100, target))
+    except ValueError:
+        return JSONResponse({"success": False, "error": "好感度数值非法"}, status_code=400)
+
+    from core.profile_manager import get_favorability, update_favorability
+    char_id = get_active_character_id()
+    current = get_favorability()
+    delta = target - current
+    new_fav = update_favorability(delta, char_id=char_id, force=True)
+    return JSONResponse({"success": True, "favorability": new_fav})
 
 @router.post("/api/switch_character")
 async def api_switch_character(request: Request):

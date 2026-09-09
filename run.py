@@ -177,6 +177,22 @@ def main():
     print("\n>>> 桌宠已召唤成功！ <<<")
     print("提示：关闭桌宠窗口，或者关闭此黑框，都会结束程序。")
 
+    # 检查是否开启了隐藏控制台窗口 (Console)
+    if os.name == 'nt':
+        try:
+            import json
+            cfg_path = os.path.join(services_dir, 'global_config.json')
+            if os.path.exists(cfg_path):
+                with open(cfg_path, 'r', encoding='utf-8') as gf:
+                    cfg_json = json.load(gf)
+                if cfg_json.get("hide_console"):
+                    import ctypes
+                    hwnd = ctypes.windll.kernel32.GetConsoleWindow()
+                    if hwnd:
+                        ctypes.windll.user32.ShowWindow(hwnd, 0)
+        except Exception:
+            pass
+
     # ==========================================
     # 3. 守护进程 (等待关闭)
     # ==========================================
