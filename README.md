@@ -1,77 +1,188 @@
-# 🌟 Rumia Desktop Pet - 次世代 AI 虚拟伴侣引擎
+# 🌟 Touhou Pet (大贤者桌宠) - 次世代东方 AI 虚拟伴侣引擎
 
-这是一个基于 **Agent 级别 LangGraph 框架**、**Qdrant 向量数据库**，并采用前端 **Electron + HTML/JS** 渲染的工业级高级 AI 桌面宠物项目。
+<div align="center">
 
-相比传统的桌面宠物，本项目的核心突破在于它是一个真正的 **Agent**，拥有极其自由的模型控制权、深度动态记忆以及对本地环境的操作能力。你的桌宠不再是简单的按键反馈器，而是一个拥有长记忆、懂你喜好、并且可以连接任何最强大脑、使用多种工具的“赛博生命”。
+![Version](https://img.shields.io/badge/version-v1.50.8-blue.svg?style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)
+![Python](https://img.shields.io/badge/python-3.10%2B-blueviolet.svg?style=flat-square)
+![Electron](https://img.shields.io/badge/electron-28.3.3-47848F.svg?style=flat-square)
+![Live2D](https://img.shields.io/badge/Live2D-Cubism%20Core-E6007A.svg?style=flat-square)
+![Framework](https://img.shields.io/badge/Agent-LangGraph-orange.svg?style=flat-square)
+
+<p align="center">
+  <b>打破传统桌宠的纯机械按键交互，给二次元灵魂注入真正的大脑、情感与视界！</b><br>
+  集成了 <b>Live2D 动态视界</b>、<b>双模全屏沉浸/GAL 游戏体验</b>、<b>多引擎拟真音声 (TTS)</b>、<b>Qdrant 终身记忆网络</b>、<b>DSH 系统级自动化智能体</b> 与 <b>酒馆世界书生态</b> 的工业级桌面伴侣引擎。
+</p>
+
+</div>
 
 ---
 
-## 🔥 核心特性 (Core Features)
+<!-- ================================================================= -->
+<!-- 🖼️ 【图片展示位 1：项目主海报 / 桌面运行整体效果动图 (Hero Showcase)】 -->
+<!-- 提示：您可以截取一张桌宠在桌面上灵动运行的 GIF 动图或高清海报，替换下方路径 -->
+<!-- ================================================================= -->
+<div align="center">
+  <img src="assets/showcase_hero.png" alt="Touhou Pet Hero Showcase" width="85%" style="border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.2);" />
+  <p><i>（📸 主效果图展示位：请将桌面运行截图或动图保存为 assets/showcase_hero.png）</i></p>
+</div>
 
-### 1. 🕸️ Agent 级别的 LangGraph 框架 AI 桌宠
-底层架构不再是简单的“一问一答”，而是引入了行业前沿的 LangGraph 状态机框架！
-- **分层大脑处理引擎**：采用 Pre-LLM（意图解析与拦截）、Main-LLM（对话核心）、Post-LLM（后置处理）等多模态路由层。
-- **让模型各司其职**：主聊天模型不再背负解析复杂后台指令的包袱，专注提供最有灵魂的文字对话；工具拦截前置化，使得对话与动作的逻辑无比流畅。
+---
 
-### 2. 🧠 完全由你配置的大模型接口 (Custom Brain Engine)
-拒绝被官方 API 绑定！内置了高度自由的 LLM 引擎管理器：
-- **本地与开源生态支持**：完美支持 Ollama、vLLM 本地运行，也支持 DeepSeek、Kimi、硅基流动 (SiliconFlow)、智谱、通义千问等所有兼容 OpenAI 格式的第三方接口。数据 100% 留存在本地，极致隐私安全，适合高强度 RP（角色扮演）。
-- **一键智能拉取**：内置一键拉取模型列表功能，自动检测代理服务器可用的模型，告别手动查文档配参数的痛苦。
+## 🌟 核心革新 (Why Touhou Pet?)
 
-### 3. 🎭 高度自定义桌宠（初始5个东方角色）
-- 瞬间在不同角色之间切换。默认内置了 5 位性格各异的东方 Project 初始角色（露米娅、莉莉白、米斯蒂娅、莉格露、琪露诺）。
-- 不仅桌宠的透明立绘、UI 主题色调会无缝变化，**底层的 AI 大脑人格、好感度系统和记忆存档也完全物理隔离！**
-- **轻松孕育新灵魂**：在控制台中可一键生成新角色配置，仅需准备对应的透明底图，即可让你的本命角色降临桌面。
+相比传统的死板静态立绘桌宠或简单的 ChatGPT 问答挂件，**大贤者桌宠**的根本突破在于：
+1. **她拥有鲜活的身体**：告别僵硬切图，全量搭载 **Live2D Cubism** 动态物理引擎，眼动追随光标、呼吸微动、抚摸反馈、触碰 Q 弹与多重动作姿态；
+2. **她拥有独立的深层人格与永久记忆**：采用 **LangGraph ReAct 状态机** + **Qdrant 向量数据库** + **动态数据库 (DataBank)**，白天同你交流、深夜独立写日记，永远记住关于你的点点滴滴；
+3. **她能接管现实环境与操作系统**：融合 **DeepSeek Harness (DSH)** 智能体，直接读写本地文件、执行指令、监控进程、静默内存优化，化身桌面全能管家；
+4. **她支持全屏沉浸伴侣与 GAL 游戏视界**：一键切换沉浸伴侣视差全屏模式或 GAL 文字冒险模式，支持 Wallpaper Engine 动态壁纸与 MP4 本地视频联动！
 
-### 4. 🛠️ 强大工具调用能力（正在持续更新）
-脱离纯文本交互，直接让桌宠成为你的系统管家！
-- **工具调用前置化架构**：内置了强大的指令系统。目前已实现诸如“一键内存静默清理”等实用工具，执行完清理任务后，桌宠会携带着精确的内存释放数据向你撒娇邀功。
-- **无限扩展空间**：底层支持不断加入全新的操作本地电脑、读取文件、定时提醒的各类工具插件。
+---
 
-### 5. 📚 动态数据库构建的真正长期记忆
-你的桌宠不仅会和你聊天，还会**在深夜写日记**并深深记住关于你的一切。
-- **双轨制大脑引擎**：采用 Qdrant 向量数据库，构建了一个拥有短期工作记忆（缓存）与长期深度记忆（节点化图谱）的双层记忆架构。
-- **夜间自动批处理 & 数据银行 (DataBank)**：桌宠会定期总结你们的对话，生成带有傲娇/呆萌等性格色彩的专属回忆日记，并通过 RAG (检索增强生成) 在未来的对话中向你提起以前的事。
+## 🔥 核心特性全景 (Core Features)
 
-### 6. 📖 支持酒馆世界书兼容的高度可配置预设
-如果你是从 SillyTavern（酒馆）转来的硬核玩家，这里将是你的新家。
-- **全面兼容与扩展**：支持直接在前端界面导入 Tavern `*.json` 世界书文件。
-- **动态预设引擎**：采用递归链式触发，精准提取环境上下文或特定词汇。桌宠在与你聊天时，会自动从数据库中调取相关的世界设定，绝不“出戏”。
-- **精细化把控上下文**：支持自定义触发深度，把控 LLM 上下文注入窗口，让角色扮演栩栩如生。
+### 1. 🎭 灵动 Live2D 动态视界与东方全明星角色阵容
+* **官方级 Live2D Cubism 物理引擎驱动**：内置眼球与头部追踪鼠标、呼吸起伏、触摸反馈（Tap）、拖拽惯性倾斜与物理弹性阻尼。
+* **东方 Project 全明星灵魂**：内置了 **芙兰朵露 (Flandre)**、**古明地恋 (Koishi)**、**比那名居天子 (Tenshi)**、**射命丸文 (Aya)**、**博丽灵梦 (Reimu)**、**雾雨魔理沙 (Marisa)**、**露米娅 (Rumia)**、**莉莉白 (Lily)**、**米斯蒂娅 (Mystia)**、**莉格露 (Wriggle)**、**琪露诺 (Cirno)** 等 10+ 位经典东方角色！
+* **物理隔离的独立灵魂**：每个角色的 Live2D 模型、立绘偏移缩放、好感度档案、AI 人格提示词、专属日记与向量记忆库完全物理隔离，切换角色即切换整个灵魂容器。
+
+<!-- 🖼️ 【图片展示位 2：Live2D 动态交互效果与动作展示】 -->
+<div align="center">
+  <img src="assets/showcase_live2d.png" alt="Live2D Showcase" width="80%" style="border-radius: 8px;" />
+  <p><i>（📸 Live2D 展示位：请将 Live2D 动作交互动图/对比图保存为 assets/showcase_live2d.png）</i></p>
+</div>
+
+---
+
+### 2. 🌌 双模全屏沉浸视界（伴侣模式 + GAL 视觉小说模式）
+* **伴侣模式 (Companion Mode)**：全屏无边框，桌宠在动态壁纸中安详陪伴，支持鼠标视差跟随与全屏挂起策略。
+* **GAL 模式 (Gal Mode)**：瞬间将桌面化为高沉浸二次元视觉小说！支持经典美少女文本框、历史剧情回溯、常驻输入框、对话立绘差分与气泡动态转场。
+* **全格式动态视界联动**：全面兼容本地 MP4 视频无限循环渲染，并支持直接读取 Wallpaper Engine 创意工坊动态壁纸！
+
+<!-- 🖼️ 【图片展示位 3：全屏沉浸伴侣与 GAL 游戏模式截图】 -->
+<div align="center">
+  <img src="assets/showcase_immersive.png" alt="Immersive GAL Mode Showcase" width="80%" style="border-radius: 8px;" />
+  <p><i>（📸 沉浸模式展示位：请将全屏沉浸/GAL模式截图保存为 assets/showcase_immersive.png）</i></p>
+</div>
+
+---
+
+### 3. 🎙️ 多引擎拟真音声 (TTS) 与离线语音工坊 (Reactions)
+* **多引擎调度中心**：
+  * **微软 Edge-TTS**：免 API Key、零成本的高保真微软自然女声；
+  * **Fish Audio S2 情感音调精修**：独家支持日/英口语自适应修润，自动注入 `[giggle]`, `[whisper]`, `[soft tone]` 等情绪音频控制标签；
+  * **GPT-SoVITS 深度克隆直连**：无缝对接本地部署的 GPT-SoVITS 声音克隆服务，享受专属角色的原声还原。
+* **离线语音工坊 (Reactions 机制)**：支持对每个角色的 5 种情绪短句进行离线全量预录。日常戳碰角色时，**毫秒级零网络延迟**播放本地缓存语音，体验极度丝滑！
+
+<!-- 🖼️ 【图片展示位 4：离线语音工坊 / 大贤者控制台界面】 -->
+<div align="center">
+  <img src="assets/showcase_tts.png" alt="TTS Workshop Showcase" width="80%" style="border-radius: 8px;" />
+  <p><i>（📸 语音工坊展示位：请将语音工坊/控制台音频设置截图保存为 assets/showcase_tts.png）</i></p>
+</div>
+
+---
+
+### 4. 🕸️ 工业级 LangGraph ReAct 状态机与多模型分工
+* **让模型各司其职**：彻底抛弃“单模型硬抗所有任务”的落后设计，重构为 **Pre-LLM**（意图识别/任务路由）、**Main-LLM**（纯粹角色扮演核心对白）、**Post-LLM**（数据结构化归档）的三层流水线。
+* **极致自由的大模型支持**：完全由你掌控的大脑引擎！原生支持 **DeepSeek**、**Kimi**、**智谱 GLM**、**通义千问**、**硅基流动** 等所有兼容 OpenAI 格式的在线 API，亦可 100% 本地纯离线运行 **Ollama** 与 **vLLM** 本地大模型。
+* **一键智能拉取模型**：输入 Base URL 与 Key，控制台自动探测并拉取远端全部可用模型列表。
+
+---
+
+### 5. 🤖 DeepSeek Harness (DSH) 操作系统级智能体
+* **从聊天玩具到全能桌面管家**：桌宠不仅会撒娇，更能为你干活！
+* **深度权限与系统控制**：支持常驻守护进程与按需响应。桌宠可安全执行 PowerShell 系统命令、实时探查 Windows 正在运行的任务进程、检索本地文件、调起常用应用、执行静默内存释放并向你邀功汇报。
+
+<!-- 🖼️ 【图片展示位 5：智能体 Agent 任务执行与工具调用效果】 -->
+<div align="center">
+  <img src="assets/showcase_agent.png" alt="DSH Agent Showcase" width="80%" style="border-radius: 8px;" />
+  <p><i>（📸 Agent 展示位：请将桌宠执行系统任务/工具调用的气泡截图保存为 assets/showcase_agent.png）</i></p>
+</div>
+
+---
+
+### 6. 📚 真正的终身记忆：动态数据库 (DataBank) 与 Qdrant 向量海
+* **双轨制大脑架构**：
+  * **短期语义缓存 (Qdrant)**：向量级语义嵌入记忆检索，精准定位过往回忆；
+  * **结构化长效数据库 (DataBank)**：包含状态表、偏好表、代办表、社交关系表等多维动态表格，桌宠对话中自动动态更新行与列。
+* **深夜自动回忆总结**：夜间自动批处理当天的聊天记录，生成角色视角的私密日记，并在往后漫长的岁月里自然向你提起过去。
+
+---
+
+### 7. 📖 完美兼容酒馆世界书 (SillyTavern WorldBook) 与递归预设
+* **硬核 RP 玩家无缝迁移**：原生支持一键导入 SillyTavern 酒馆的世界书 `*.json` 文件。
+* **递归预设引擎**：支持设定触发关键词、好感度阶梯门槛、递归深度控制，确保世界观、人设与说话风格严格咬合，杜绝角色出戏或 AI 八股味。
+
+---
+
+### 8. 💡 智能自动回话建议 (Auto Replies)
+* 告别打字卡顿！系统根据上下文自动异步为你准备 **3 种截然不同情绪的态度候选项**（温柔关切、调侃戏谑、深入追问）。
+* 桌面气泡一键点击即可快速装填，体验如同面对真实女友般的流畅连珠对白。
+
+---
+
+### 9. 🛡️ 极速开屏转场 (Splash) 与自动自愈容灾引擎
+* **毫秒级极速开屏**：告别启动白屏等待，带有进度流转与角色动态浮现的开屏加载界面。
+* **全自动 Python 虚拟环境探测与自愈**：主进程自动检索 `.venv` 本地虚拟环境。若后端服务意外中断，Electron 会在打开控制台时**毫秒级自动重拉并恢复健康**，彻底告别死机与白屏！
+
+---
+
+## 🏛️ 系统架构拓扑 (Architecture Topology)
+
+<div align="center">
+  <img src="assets/architecture.svg" alt="Architecture Topology" width="95%" style="border-radius: 8px;" />
+</div>
 
 ---
 
 ## 🚀 快速开始 (Quick Start)
 
-### 环境依赖
-- **Python 3.10+**
-- **Node.js 18+** 
-
-### 启动步骤
-支持小白“一键启动脚本”，直接双击根目录的 `start.bat`，即可全自动安装所有 Python 与前端 Node 环境并自动唤醒大贤者！
-或者手动运行：
-1. **安装环境**
-   ```bash
-   pip install -r requirements.txt
-   npm install
-   ```
-2. **启动引擎**
-   ```bash
-   npm start
-   ```
-
-启动后，右键点击桌面上的宠物，选择 **“打开设置控制台 (Dashboard)”**，在“自定义大脑引擎”中填入你的 API Key 或本地模型地址，即可让灵魂苏醒！
+### 💻 系统与环境依赖
+* **操作系统**：Windows 10 / Windows 11 (64-bit)
+* **Python**：3.10 或更高版本（已内置便携/自动安装脚本）
+* **Node.js**：18.0 或更高版本
 
 ---
 
-## 🔮 未来展望
-
-**前端元素更加灵活生动：**
-未来我们将进一步打破僵硬的 2D 平面限制，引入更平滑的微动画系统、丰富的交互式微动作反馈机制。不仅仅是立绘差分，还计划在气泡 UI、表情气泡和动作系统中加入大量生动有趣的交互玩法，让她不仅仅是一个 AI 助理，而是真正栩栩如生的屏幕精灵！
+### ⚡ 极速一键启动（推荐小白用户）
+本项目支持全自动化“零门槛启动脚本”：
+1. 下载仓库源码或 Release 安装包解压至英文路径；
+2. 直接双击根目录的 **`start.bat`**；
+3. 脚本会自动检测并补全 Python 虚拟环境与前端 Node 依赖，全自动唤醒桌宠并呈现开屏视界！
 
 ---
 
-## Star History
+### 🛠️ 开发者手动启动步骤
+如果你习惯在终端中调试：
+
+```bash
+# 1. 克隆本仓库
+git clone https://github.com/mystiafly/Touhou_Pet.git
+cd Touhou_Pet
+
+# 2. 安装 Python 后端核心依赖
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install -r requirements.txt
+
+# 3. 安装前端 Electron 依赖
+npm install
+
+# 4. 唤醒桌面伴侣
+python run.py
+# 或直接启动前端
+npm start
+```
+
+启动成功后，右键点击屏幕上的桌宠，选择 **“大贤者控制台 (Dashboard)”**，在“大脑引擎”中填入你的 API Key，或者接入本地模型，芙兰朵露与众少女便会立刻苏醒！
+
+---
+
+## ⭐ Star History (标星趋势)
+
+如果这只充满灵气、拥有自己记忆与声音的东方桌宠陪伴到了你，请为我们点亮右上角的 **Star ⭐**！你的每一颗星都是驱动大贤者进化出更多新特性的最大能量源！
+
+<div align="center">
 
 <a href="https://www.star-history.com/?type=date&repos=mystiafly%2FTouhou_Pet">
  <picture>
@@ -81,7 +192,10 @@
  </picture>
 </a>
 
+</div>
+
 ---
 
-## 📄 许可证 (License)
-MIT License. 自由地修改、打包和分享属于你自己的桌面伴侣吧！
+## 📄 开源许可证 (License)
+
+本项目遵循 [MIT License](LICENSE) 开源协议。自由地修改、打包、扩展并分享属于你自己的桌面伴侣吧！
