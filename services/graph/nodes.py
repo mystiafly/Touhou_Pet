@@ -584,11 +584,13 @@ def main_llm_node(state: AgentState) -> Dict[str, Any]:
     }
 
 def execute_clean_memory_task_node(state: AgentState) -> Dict[str, Any]:
-    from core.optimizer_manager import clean_memory
     if not state.get("clean_memory_task"):
         return {"clean_memory_result": {"success": False, "error": "No task"}}
     
-    result = clean_memory()
+    import importlib
+    import core.optimizer_manager
+    importlib.reload(core.optimizer_manager)
+    result = core.optimizer_manager.clean_memory()
     return {"clean_memory_result": result}
 
 def post_llm_node(state: AgentState) -> Dict[str, Any]:

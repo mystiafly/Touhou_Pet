@@ -533,8 +533,10 @@ import shutil
 @router.post("/api/clean_memory")
 def api_clean_memory():
     """纯粹的内存清理接口，由前端快捷工具直接调用并返回清理统计"""
-    from core.optimizer_manager import clean_memory
-    result = clean_memory()
+    import importlib
+    import core.optimizer_manager
+    importlib.reload(core.optimizer_manager)
+    result = core.optimizer_manager.clean_memory()
     return JSONResponse(result)
 
 
