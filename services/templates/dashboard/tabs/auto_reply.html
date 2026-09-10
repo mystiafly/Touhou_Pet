@@ -1,0 +1,75 @@
+<section id="auto-reply-view" class="content-section">
+            <header class="section-header">
+                <h1>自动回话设置</h1>
+                <p>配置大模型在生成台词后，自动站在用户视角生成多情绪候选项，并在对话框右上角一键填入输入框</p>
+            </header>
+            
+            <div class="card-container">
+                <div class="settings-card" style="border-left: 4px solid #50fa7b; grid-column: 1 / -1;">
+                    <h3><i class="fas fa-reply-all" style="color: #50fa7b;"></i> 功能开关与模式配置</h3>
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <label style="font-weight: 500; font-size: 14px;">启用自动回话建议</label>
+                            <p class="help-text" style="margin-top: 5px;">开启后，桌宠气泡右上角将提供快捷回话按钮 <i class="fas fa-reply-all"></i>。点击可展开 3 句不同情绪的回话建议候选项，点击任意句子即可自动填入输入框并聚焦。</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="auto-reply-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
+                    <div style="margin-top: 15px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08); display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
+                        <div>
+                            <label style="font-weight: 500; font-size: 13px; color: #f8f8f2; display: flex; align-items: center; gap: 6px;">
+                                <i class="fas fa-bolt" style="color: #f1fa8c;"></i> 生成触发模式
+                            </label>
+                            <p class="help-text" style="margin-top: 3px; margin-bottom: 8px;">选择是桌宠发言后立即自动生成，还是点击气泡按钮时才按需生成。</p>
+                            <select id="auto-reply-mode-select" class="theme-select" style="width: 100%; padding: 8px 12px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: #fff; font-size: 13px;">
+                                <option value="click">⚡ 点击后才生成 (中庸省流推荐，平时零Token消耗)</option>
+                                <option value="auto">🟢 对话后自动生成 (后台预先就绪，呼吸灯提示)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-weight: 500; font-size: 13px; color: #f8f8f2; display: flex; align-items: center; gap: 6px;">
+                                <i class="fas fa-history" style="color: #8be9fd;"></i> 上下文携带历史轮数
+                            </label>
+                            <p class="help-text" style="margin-top: 3px; margin-bottom: 8px;">推演候选项时参考的最近对话轮数（1轮=双方各说一句）。</p>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="number" id="auto-reply-history-rounds" min="1" max="8" value="3" class="modern-input" style="width: 100px; padding: 8px 12px;">
+                                <span style="font-size: 12px; color: #888;">轮 (推荐 3 轮)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-card" style="border-left: 4px solid #ff79c6; grid-column: 1 / -1;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h3 style="margin: 0;"><i class="fas fa-magic" style="color: #ff79c6;"></i> 自动回话提示词定制 (Prompt)</h3>
+                        <button id="reset-auto-reply-prompt-btn" class="btn secondary-btn" style="padding: 4px 12px; font-size: 12px;">
+                            <i class="fas fa-undo"></i> 恢复默认提示词
+                        </button>
+                    </div>
+                    <p class="help-text" style="margin-bottom: 10px;">定义后置模型生成候选项时遵循的规则与格式约束。提示词必须保留 <code>&lt;suggested_replies&gt;</code> 标签约束，以便系统精准提取情绪与候选项并从正文剥离。</p>
+                    
+                    <div class="form-group">
+                        <textarea id="auto-reply-prompt" class="modern-textarea" rows="8" style="width: 100%; font-family: monospace; font-size: 13px; line-height: 1.6; resize: vertical;"></textarea>
+                    </div>
+
+                    <div style="margin-top: 15px; display: flex; justify-content: flex-end;">
+                        <button id="save-auto-reply-btn" class="btn primary-btn" style="padding: 8px 24px;">
+                            <i class="fas fa-save"></i> 保存自动回话设定
+                        </button>
+                    </div>
+                </div>
+
+                <div class="settings-card" style="border-left: 4px solid #8be9fd; grid-column: 1 / -1;">
+                    <h3><i class="fas fa-info-circle" style="color: #8be9fd;"></i> 交互与情绪效果说明</h3>
+                    <div style="color: #ccc; font-size: 13px; line-height: 1.8;">
+                        <div>• <b>多重情绪反差</b>：默认规则强制要求 3 个选项情绪截然不同（如 <span style="color:#ff79c6;">[温柔]</span> 依顺、<span style="color:#ffb86c;">[吐槽]</span> 调侃、<span style="color:#8be9fd;">[好奇]</span> 深入追问），无论你想宠溺、打趣还是转移话题都能一秒选中。</div>
+                        <div>• <b>点击按需生成 vs 自动预生成</b>：推荐选择“点击后才生成”模式，仅在你想使用建议时才向后置模型发起推演，平时完全不产生额外 Token 开销。</div>
+                        <div>• <b>多轮上下文连贯性</b>：后置模型会自动携带近几轮的对话脉络（可设 1~8 轮），生成的候选项自然承上启下，不再突兀。</div>
+                        <div>• <b>气泡右上角一键填入</b>：气泡右上角 <i class="fas fa-reply-all"></i> 图标点击展开面板，点击任意句子即可自动填入底部输入框并聚焦，可直接回车发送或自由润色。</div>
+                    </div>
+                </div>
+            </div>
+        </section>

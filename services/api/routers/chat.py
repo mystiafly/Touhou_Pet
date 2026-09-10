@@ -47,12 +47,30 @@ def index():
         html = f.read()
     return HTMLResponse(content=html, headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"})
 
+def render_dashboard_html() -> str:
+    """热装配大贤者控制台 Tab 片段与 Modals，实现无损零侵入模板切片"""
+    import re
+    tpl_dir = os.path.join(SERVICES_DIR, "templates")
+    host_path = os.path.join(tpl_dir, "dashboard.html")
+    with open(host_path, "r", encoding="utf-8") as f:
+        host_html = f.read()
+
+    def replacer(match):
+        rel_path = (match.group(1) or match.group(2) or "").strip()
+        frag_path = os.path.join(tpl_dir, "dashboard", rel_path)
+        if os.path.exists(frag_path):
+            with open(frag_path, "r", encoding="utf-8") as pf:
+                return pf.read()
+        return f"<!-- Missing partial: {rel_path} -->"
+
+    # 兼容 <!-- INCLUDE: xxx --> 与 {% include 'xxx' %}
+    pattern = r'(?:<!--\s*INCLUDE:\s*(.*?)\s*-->|\{%\s*include\s+[\'"](.*?)[\'"]\s*%\})'
+    return re.sub(pattern, replacer, host_html)
+
 @router.get("/dashboard", response_class=HTMLResponse)
 def dashboard():
-    """渲染独立大窗体设置面板 (Dashboard)"""
-    path = os.path.join(SERVICES_DIR, "templates", "dashboard.html")
-    with open(path, "r", encoding="utf-8") as f:
-        html = f.read()
+    """渲染独立大窗体设置面板 (Dashboard - 支持模块化 Tab 切片热装配)"""
+    html = render_dashboard_html()
     return HTMLResponse(content=html, headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"})
 
 # 2. 对话历史与好感度接口

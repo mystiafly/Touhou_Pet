@@ -1,0 +1,43 @@
+<section id="scenario-settings-view" class="content-section">
+            <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <h2><i class="fas fa-scroll" style="color: #ff79c6;"></i> 剧本设定 (Scenario Engine)</h2>
+                    <p>为当前角色配置 Galgame 式的情感剧情里程碑节点。好感度达成时触发剧情、自动冻结，经由 4~8 轮对话后由大模型裁决分支，解锁结局与好感加成！</p>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button class="action-btn outline" id="btn-reset-all-scenarios" style="border-color: #f77272; color: #f77272; padding: 6px 14px;">
+                        <i class="fas fa-history"></i> 重置全剧情进度
+                    </button>
+                    <button class="action-btn" id="btn-add-scenario-node" style="padding: 6px 16px; background: linear-gradient(135deg, #ff79c6, #bd93f9); border: none; color: #fff;">
+                        <i class="fas fa-plus"></i> 新增剧情节点
+                    </button>
+                </div>
+            </div>
+
+            <!-- 顶部状态栏：角色好感度与当前剧本状态 -->
+            <div class="card" style="margin-bottom: 20px; background: linear-gradient(145deg, rgba(40,42,54,0.6), rgba(30,31,41,0.8)); border: 1px solid rgba(255, 121, 198, 0.25);">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(255, 121, 198, 0.15); display: flex; align-items: center; justify-content: center; font-size: 24px; color: #ff79c6;">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 13px; color: var(--text-muted);">当前互动好感度 / 保底下限</div>
+                            <div style="font-size: 20px; font-weight: bold; color: #50fa7b;">
+                                <span id="scenario-current-fav">--</span> <span style="font-size: 14px; color: var(--text-muted); font-weight: normal;">/ 保底下限: </span><span id="scenario-fav-floor" style="color: #ffb86c;">--</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span id="scenario-active-status-badge" class="badge" style="padding: 6px 14px; font-size: 13px; background: rgba(80, 250, 123, 0.15); color: #50fa7b; border-radius: 8px;">
+                            自由交流中
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 剧情节点卡片列表 -->
+            <div id="scenario-nodes-container" style="display: flex; flex-direction: column; gap: 15px;">
+                <div class="loading-state"><i class="fas fa-spinner fa-spin"></i> 正在加载剧本节点...</div>
+            </div>
+        </section>

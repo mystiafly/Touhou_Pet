@@ -1,0 +1,116 @@
+<section id="agent-settings-view" class="content-section">
+            <header class="section-header">
+                <h1>🤖 Agent 智能体设置</h1>
+                <p>将 DeepSeek Harness (DSH) 旗舰智能体融入桌宠系统：静默后台执行高难度工程与代码重构任务</p>
+            </header>
+
+            <div class="card-container">
+                <!-- 1. DSH 智能体执行器主控卡片 -->
+                <div class="settings-card" style="grid-column: 1 / -1; border-left: 4px solid #50fa7b; background: linear-gradient(135deg, rgba(80,250,123,0.08), rgba(98,114,164,0.05));">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                        <div>
+                            <h3 style="margin-bottom: 5px; color: #50fa7b; display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-terminal"></i> DeepSeek Harness 智能体执行器
+                                <span id="dsh-status-badge" class="badge" style="background-color: #6272a4; color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 12px;">检测中...</span>
+                            </h3>
+                            <p class="help-text" style="margin: 0;">平时完全静默无感（不弹窗、不打开网页），仅在接收到指令时自主分析代码与规划任务</p>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <label class="switch">
+                                <input type="checkbox" id="dsh-enable-toggle">
+                                <span class="slider round"></span>
+                            </label>
+                            <span id="dsh-enable-label" style="font-size: 14px; font-weight: bold; color: #f8f8f2;">未启用</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. 运行模式与触发规范卡片 -->
+                <div class="settings-card">
+                    <h3><i class="fas fa-microchip"></i> 运行模式与生命周期</h3>
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label>启动运行模式：</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px;">
+                            <label style="display: flex; align-items: flex-start; gap: 8px; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer;">
+                                <input type="radio" name="dsh-run-mode" value="daemon" id="dsh-mode-daemon" style="margin-top: 3px;">
+                                <div>
+                                    <div style="font-weight: bold; color: #8be9fd; font-size: 13px;">⚡ 常态启动 (同生共死)</div>
+                                    <div class="help-text" style="font-size: 11px; margin-top: 3px;">桌宠启动时即在后台静默待命，执行秒级即刻响应；桌宠关闭时随之优雅退出。</div>
+                                </div>
+                            </label>
+                            <label style="display: flex; align-items: flex-start; gap: 8px; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer;">
+                                <input type="radio" name="dsh-run-mode" value="on_demand" id="dsh-mode-on-demand" checked style="margin-top: 3px;">
+                                <div>
+                                    <div style="font-weight: bold; color: #50fa7b; font-size: 13px;">🍃 触发启动 (按需拉起)</div>
+                                    <div class="help-text" style="font-size: 11px; margin-top: 3px;">平时 0 进程、0 内存常驻占用；仅在触发任务时临时唤起执行，完事即退。</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label for="dsh-preset-select">工作范式预设 (Preset)：</label>
+                        <select id="dsh-preset-select" class="modern-select">
+                            <option value="standard" selected>🌟 标准模式 (Standard Mode) [默认推荐] - 全功能旗舰工程师</option>
+                            <option value="ptc">⚡ PTC 模式 (Program-Triggered Call) - 脚本打包极速省流</option>
+                            <option value="minimal">🍃 极简模式 (Minimal Mode) - 仅终端与代码单点编辑</option>
+                            <option value="creator">🛠️ 创作者模式 (Creator Mode) - Harness 扩展与插件研发</option>
+                        </select>
+                        <p class="help-text" style="margin-top: 5px;">默认采用「标准模式」，具备全功能文件改写、命令行执行与子 Agent 协同派生能力。</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>触发交互规范：</label>
+                        <div style="padding: 10px; background: rgba(0,0,0,0.25); border-radius: 6px; font-size: 12px; color: #f1fa8c; border-left: 3px solid #f1fa8c;">
+                            <i class="fas fa-info-circle"></i> 在日常与桌宠聊天时，直接输入 <code style="color: #ff79c6; font-weight: bold;">启动agent &lt;具体任务&gt;</code> 即可唤醒智能体执行！例如：<br>
+                            • <code>启动agent 分析当前项目代码结构并找出潜在性能问题</code><br>
+                            • <code>启动agent 帮我写一个一键压缩立绘图片的 Python 脚本</code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. API 引擎分配与执行配置卡片 -->
+                <div class="settings-card">
+                    <h3><i class="fas fa-network-wired"></i> API 引擎绑定与环境</h3>
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label for="dsh-api-provider-select">DSH 驱动 API 引擎：<span class="help-text" style="display:inline; margin-left:8px;">从大脑引擎中选择模型与凭据</span></label>
+                        <select id="dsh-api-provider-select" class="modern-select">
+                            <option value="inherit">=== 继承主对话模型 ===</option>
+                            <option value="deepseek">DeepSeek 官方 API</option>
+                            <option value="openai">OpenAI 兼容接口</option>
+                        </select>
+                        <p class="help-text" style="margin-top: 5px;">系统会自动将选定引擎的 API Key、Base URL 与 Model 同步注入给 DSH 执行器。</p>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label for="dsh-timeout-input">单次任务超时熔断限制 (秒)：</label>
+                        <input type="number" id="dsh-timeout-input" class="modern-input" min="10" max="600" value="90" style="max-width: 150px;">
+                        <span class="help-text" style="display:inline; margin-left: 10px;">建议 60 ~ 180 秒，防止复杂多步任务无限期卡住对话。</span>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                        <button id="save-dsh-settings-btn" class="action-btn primary" style="width: 100%;">
+                            <i class="fas fa-save"></i> 保存 Agent 设置
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 4. 官方工作台按需管理卡片 (仅供手动改插件) -->
+                <div class="settings-card" style="grid-column: 1 / -1; border-top: 2px dashed #6272a4;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                        <div>
+                            <h3 style="margin-bottom: 5px; color: #bd93f9;"><i class="fas fa-external-link-alt"></i> DSH 官方 Web 调试工作台</h3>
+                            <p class="help-text" style="margin: 0;">平时无需打开。仅当您需要安装第三方 Harness 插件、配置 Cordis 补丁或深度查看会话树时，可在此临时启动网页端。</p>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button id="btn-launch-dsh-web" class="action-btn outline">
+                                <i class="fas fa-play"></i> 启动并在浏览器打开网页端
+                            </button>
+                            <button id="btn-stop-dsh-web" class="action-btn" style="background-color: rgba(255,85,85,0.2); color: #ff5555; border: 1px solid #ff5555; display: none;">
+                                <i class="fas fa-stop"></i> 停止网页端
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
