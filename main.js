@@ -215,6 +215,29 @@ function syncInitialAutoStart() {
     }
 }
 
+function shouldHideConsole() {
+    // run.py passes this explicitly so the Electron process can make the
+    // decision before any development tools are opened.
+    if (process.env.RUMIA_HIDE_CONSOLE === '1') return true;
+    if (process.env.RUMIA_HIDE_CONSOLE === '0') return false;
+
+    try {
+        let globalConfigPath;
+        if (app.isPackaged) {
+            const appData = process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming');
+            globalConfigPath = path.join(appData, 'RumiaDesktopPet', 'global_config.json');
+        } else {
+            globalConfigPath = path.join(__dirname, 'services', 'global_config.json');
+        }
+        if (!fs.existsSync(globalConfigPath)) return false;
+        const cfg = JSON.parse(fs.readFileSync(globalConfigPath, 'utf-8'));
+        return cfg.hide_console === true;
+    } catch (e) {
+        logDebug(`[CONSOLE VISIBILITY WARN] ${e.message}`);
+        return false;
+    }
+}
+
 ipcMain.handle('set-autostart', (event, enable) => {
     return applyAutoStartSetting(enable);
 });
@@ -559,7 +582,7 @@ function createWindow(showImmediately = false) {
         mainWindow = null;
     });
 
-    if (!app.isPackaged) {
+    if (!app.isPackaged && !shouldHideConsole()) {
         win.webContents.openDevTools({ mode: 'detach' });
     }
 }

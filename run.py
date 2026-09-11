@@ -171,6 +171,7 @@ def main():
     electron_bin = os.path.join(root_dir, 'node_modules', 'electron', 'dist', 'electron.exe')
     electron_env = os.environ.copy()
     electron_env["RUMIA_BACKEND_SPAWNED"] = "1"
+    electron_env["RUMIA_HIDE_CONSOLE"] = "1" if hide_console else "0"
 
     electron_process = None
 
