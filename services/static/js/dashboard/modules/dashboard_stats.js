@@ -174,7 +174,8 @@ async function initAboutVersionView() {
             const data = await res.json();
 
             if (res.ok && data.status === 'success') {
-                if (data.has_update) {
+                const updateState = data.update_state || (data.has_update ? 'remote_ahead' : 'up_to_date');
+                if (updateState === 'remote_ahead') {
                     statusHeader.style.color = '#50fa7b';
                     statusHeader.innerHTML = `<i class="fas fa-arrow-circle-up"></i> 发现新版本！远程最新版本为: v${data.latest_version} (HEAD: ${data.local_commit} -> Remote: ${data.remote_commit})`;
                     if (data.commit_logs && data.commit_logs.length > 0) {
@@ -183,6 +184,18 @@ async function initAboutVersionView() {
                         changelogList.textContent = '暂无详细更新日志描述。';
                     }
                     btnPerformUpdate.classList.remove('hidden');
+                } else if (updateState === 'local_ahead') {
+                    statusHeader.style.color = '#8be9fd';
+                    statusHeader.innerHTML = `<i class="fas fa-code-branch"></i> 本地代码较新，当前没有可用更新 (本地: v${data.current_version}，远程: v${data.latest_version})`;
+                    changelogList.textContent = '本地提交领先远程仓库，已保留本地代码。';
+                } else if (updateState === 'diverged') {
+                    statusHeader.style.color = '#ffb86c';
+                    statusHeader.innerHTML = '<i class="fas fa-code-branch"></i> 本地与远程代码已分叉，无法自动更新';
+                    changelogList.textContent = '请先手动处理分支差异，再进行更新。';
+                } else if (updateState === 'unknown') {
+                    statusHeader.style.color = '#ff5555';
+                    statusHeader.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 无法判断远程更新状态';
+                    changelogList.textContent = data.commit_logs?.join('\n') || '请检查 Git 仓库状态后重试。';
                 } else {
                     statusHeader.style.color = '#8be9fd';
                     statusHeader.innerHTML = `<i class="fas fa-check-circle"></i> 当前已是最新版本 (v${data.current_version})！代码处于主分支最新状态。`;
@@ -208,7 +221,7 @@ async function initAboutVersionView() {
         btnPerformUpdate.disabled = true;
         btnPerformUpdate.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在安全更新代码...';
         statusHeader.style.color = '#ffb86c';
-        statusHeader.innerHTML = '<i class="fas fa-download fa-spin"></i> 正在拉取远程最新增量代码 (git pull)...';
+        statusHeader.innerHTML = '<i class="fas fa-download fa-spin"></i> 正在以安全方式同步远程代码...';
 
         try {
             const res = await fetch('/api/system/perform_update', { method: 'POST' });

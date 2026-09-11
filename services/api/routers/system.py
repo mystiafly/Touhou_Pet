@@ -1,12 +1,13 @@
 import struct
 import os
 import json
+import re
 import time
 import shutil
 import zipfile
 import requests
 import subprocess
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Tuple
 from fastapi import APIRouter, Request, Body, HTTPException, UploadFile, File, Form, BackgroundTasks
 from pydantic import BaseModel
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
@@ -16,6 +17,61 @@ from core.stats_manager import stats_manager
 router = APIRouter()
 SERVICES_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ROOT_DIR = os.path.dirname(SERVICES_DIR)
+
+
+def _classify_git_update(local_only: int, remote_only: int) -> str:
+    """根据双方独有提交数判断更新方向。"""
+    if local_only == 0 and remote_only == 0:
+        return "up_to_date"
+    if remote_only > 0 and local_only == 0:
+        return "remote_ahead"
+    if local_only > 0 and remote_only == 0:
+        return "local_ahead"
+    return "diverged"
+
+
+def _get_git_update_state(root_dir: str) -> str:
+    """比较 HEAD 与 FETCH_HEAD 的提交拓扑，不把哈希不同误判为可更新。"""
+    result = subprocess.run(
+        ["git", "rev-list", "--left-right", "--count", "HEAD...FETCH_HEAD"],
+        cwd=root_dir,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=5,
+    )
+    if result.returncode != 0:
+        return "unknown"
+
+    try:
+        local_only, remote_only = (int(value) for value in result.stdout.split())
+    except (TypeError, ValueError):
+        return "unknown"
+    return _classify_git_update(local_only, remote_only)
+
+
+def _parse_version(version: str) -> Optional[Tuple[int, int, int]]:
+    """解析基础 SemVer，忽略 prerelease/build 元数据。"""
+    if not isinstance(version, str):
+        return None
+    match = re.match(r"^v?(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$", version.strip(), re.IGNORECASE)
+    if not match:
+        return None
+    return tuple(int(part) for part in match.groups())
+
+
+def _compare_versions(current: str, latest: str) -> str:
+    """返回 remote 版本相对本地版本的关系。"""
+    current_parsed = _parse_version(current)
+    latest_parsed = _parse_version(latest)
+    if current_parsed is None or latest_parsed is None:
+        return "unknown"
+    if latest_parsed > current_parsed:
+        return "remote_ahead"
+    if latest_parsed < current_parsed:
+        return "local_ahead"
+    return "up_to_date"
 
 @router.get("/api/tools")
 async def api_tools():
@@ -648,7 +704,8 @@ def check_system_update_api():
             if fetch_success:
                 local_hash = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=root_dir, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=5).stdout.strip()
                 remote_hash = subprocess.run(["git", "rev-parse", "--short", "FETCH_HEAD"], cwd=root_dir, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=5).stdout.strip()
-                has_update = (local_hash != remote_hash)
+                update_state = _get_git_update_state(root_dir)
+                has_update = update_state == "remote_ahead"
 
                 latest_version = current_version
                 try:
@@ -659,17 +716,24 @@ def check_system_update_api():
                     pass
 
                 commit_logs = []
-                if has_update:
+                if update_state == "remote_ahead":
                     log_res = subprocess.run(
                         ["git", "log", "HEAD..FETCH_HEAD", "-n", "10", "--pretty=format:%h - %s (%cr)"],
                         cwd=root_dir, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=5
                     )
                     if log_res.returncode == 0 and log_res.stdout.strip():
                         commit_logs = log_res.stdout.strip().split("\n")
+                elif update_state == "local_ahead":
+                    commit_logs = ["本地代码领先远程仓库，当前没有可用更新。"]
+                elif update_state == "diverged":
+                    commit_logs = ["本地分支与远程分支已分叉，无法自动更新。"]
+                elif update_state == "unknown":
+                    commit_logs = ["无法可靠判断本地与远程分支的提交关系。"]
 
                 return {
                     "status": "success",
                     "has_update": has_update,
+                    "update_state": update_state,
                     "current_version": current_version,
                     "latest_version": latest_version,
                     "local_commit": local_hash,
@@ -695,12 +759,21 @@ def check_system_update_api():
             except Exception:
                 continue
 
-        has_update = (current_version != latest_version)
-        commit_logs = [f"发现新版本 v{latest_version}（本地当前为 v{current_version}）"] if has_update else ["当前已是最新版本"]
+        update_state = _compare_versions(current_version, latest_version)
+        has_update = update_state == "remote_ahead"
+        if update_state == "remote_ahead":
+            commit_logs = [f"发现新版本 v{latest_version}（本地当前为 v{current_version}）"]
+        elif update_state == "local_ahead":
+            commit_logs = [f"本地版本 v{current_version} 高于远程版本 v{latest_version}，当前没有可用更新。"]
+        elif update_state == "unknown":
+            commit_logs = ["无法可靠比较本地与远程版本号。"]
+        else:
+            commit_logs = ["当前已是最新版本"]
 
         return {
             "status": "success",
             "has_update": has_update,
+            "update_state": update_state,
             "current_version": current_version,
             "latest_version": latest_version,
             "local_commit": "zip-package",
@@ -765,11 +838,30 @@ def perform_system_update_api():
         except Exception:
             git_installed = False
 
-        if git_installed:
-            if not is_git_repo:
-                print("[SYSTEM UPDATE] 当前目录缺少 .git，正在自动初始化 Git 仓库...")
-                subprocess.run(["git", "init"], cwd=root_dir, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10)
-                subprocess.run(["git", "remote", "add", "origin", "https://github.com/mystiafly/Touhou_Pet.git"], cwd=root_dir, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10)
+        if git_installed and is_git_repo:
+            dirty_result = subprocess.run(
+                ["git", "status", "--porcelain", "--untracked-files=all"],
+                cwd=root_dir,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=5,
+            )
+            if dirty_result.returncode != 0:
+                return JSONResponse(
+                    {"status": "error", "message": "无法确认工作区状态，已取消更新。"},
+                    status_code=409,
+                )
+            if dirty_result.stdout.strip():
+                return JSONResponse(
+                    {
+                        "status": "error",
+                        "message": "工作区存在未提交或未跟踪文件，已取消更新以避免覆盖本地改动。请先备份并整理工作区。",
+                        "update_state": "dirty_worktree",
+                    },
+                    status_code=409,
+                )
 
             # 尝试通过多个镜像源执行 fetch
             fetch_remotes = [
@@ -788,18 +880,49 @@ def perform_system_update_api():
                     continue
 
             if git_fetch_ok:
-                try:
-                    # 先暂存或重置已跟踪文件的冲突，安全保留用户数据目录
-                    subprocess.run(["git", "reset", "--hard", "FETCH_HEAD"], cwd=root_dir, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=15)
-                    # 恢复主远程仓库 URL
+                update_state = _get_git_update_state(root_dir)
+                if update_state != "remote_ahead":
+                    state_messages = {
+                        "up_to_date": "当前代码已经是最新版本，无需更新。",
+                        "local_ahead": "本地代码领先远程仓库，已取消更新以避免覆盖本地提交。",
+                        "diverged": "本地分支与远程分支已分叉，无法安全自动更新。",
+                        "unknown": "无法可靠判断本地与远程分支的提交关系，已取消更新。",
+                    }
+                    return JSONResponse(
+                        {
+                            "status": "error",
+                            "message": state_messages.get(update_state, "无法安全判断更新方向，已取消更新。"),
+                            "update_state": update_state,
+                        },
+                        status_code=409,
+                    )
+
+                merge_result = subprocess.run(
+                    ["git", "merge", "--ff-only", "FETCH_HEAD"],
+                    cwd=root_dir,
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                    timeout=30,
+                )
+                if merge_result.returncode == 0:
+                    # 恢复主远程仓库 URL，避免镜像源被写入 origin
                     subprocess.run(["git", "remote", "set-url", "origin", "https://github.com/mystiafly/Touhou_Pet.git"], cwd=root_dir, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=5)
                     return {
                         "status": "success",
                         "message": "更新成功！已通过 Git 极速同步至最新版本。建议重启桌宠生效。",
                         "output": "Git 增量更新完成"
                     }
-                except Exception as e:
-                    print(f"[SYSTEM UPDATE] Git reset 遇到问题: {e}，将降级到 ZIP 覆盖更新...")
+                return JSONResponse(
+                    {
+                        "status": "error",
+                        "message": "远程提交无法以快进方式合并，已取消更新以保护本地代码。",
+                        "output": merge_result.stderr.strip() or merge_result.stdout.strip(),
+                        "update_state": "merge_failed",
+                    },
+                    status_code=409,
+                )
 
         # 2. 如果无 Git 或 Git 网络受阻，通过高可用镜像源流式下载 ZIP 归档包进行增量覆盖更新
         print("[SYSTEM UPDATE] 正在通过 GitHub 镜像源流式下载增量更新包...")
