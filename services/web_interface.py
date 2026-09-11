@@ -18,7 +18,7 @@ import io
 SERVICES_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(SERVICES_DIR)
 
-from core.config_manager import USER_DATA_DIR, SERVICES_DIR
+from core.config_manager import USER_DATA_DIR, SERVICES_DIR, get_config, set_console_visible
 
 LOGS_DIR = os.path.join(USER_DATA_DIR, "logs")
 try:
@@ -154,7 +154,19 @@ def on_shutdown():
 # 确保 Python 进程退出时安全释放 DSH 子进程 (同生共死保障)
 atexit.register(on_shutdown)
 
+
+def apply_startup_console_visibility():
+    """根据持久化配置应用启动时的控制台可见性。"""
+    if os.name != "nt":
+        return
+    try:
+        hide_console = get_config().get("hide_console", False)
+        set_console_visible(not hide_console)
+    except Exception as e:
+        print(f"[CONSOLE] 应用启动时控制台可见性失败: {e}")
+
 if __name__ == '__main__':
+    apply_startup_console_visibility()
     # 启动后台每日记忆主动整理守护线程
     t = threading.Thread(target=daily_distillation_worker, daemon=True)
     t.start()
