@@ -38,3 +38,28 @@ def test_hidden_process_uses_no_console_flag():
 
 def test_configure_headless_output_is_noop_with_normal_stdout(tmp_path):
     assert configure_headless_output(str(tmp_path), True) is None
+
+
+def test_tee_logger_reconfigures_terminal_stream(tmp_path):
+    class ReconfigurableStream:
+        def __init__(self):
+            self.calls = []
+
+        def reconfigure(self, **kwargs):
+            self.calls.append(kwargs)
+
+        def write(self, _message):
+            pass
+
+        def flush(self):
+            pass
+
+        def isatty(self):
+            return True
+
+    stream = ReconfigurableStream()
+    logger = web_interface.TeeLogger(stream, str(tmp_path / "backend.log"))
+
+    logger.reconfigure(encoding="utf-8", errors="replace")
+
+    assert stream.calls == [{"encoding": "utf-8", "errors": "replace"}]

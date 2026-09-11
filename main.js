@@ -609,6 +609,11 @@ function resolvePythonPath() {
 }
 
 function startBackendService(force = false) {
+    if (!app.isPackaged && process.env.RUMIA_BACKEND_SPAWNED === '1') {
+        logDebug('[DEV AUTO-START] 后端由 run.py 托管，跳过 Electron 重复启动。');
+        return;
+    }
+
     if (app.isPackaged) {
         const { execSync, spawn } = require('child_process');
         try {

@@ -69,7 +69,16 @@ class TeeLogger:
         return getattr(self.terminal, 'isatty', lambda: False)()
 
     def reconfigure(self, **kwargs):
-        pass
+        """将编码等配置转发给真实终端流。"""
+        if not self.terminal:
+            return
+        reconfigure = getattr(self.terminal, "reconfigure", None)
+        if callable(reconfigure):
+            try:
+                reconfigure(**kwargs)
+            except (AttributeError, OSError, ValueError):
+                # 某些宿主终端不支持动态重配置，仍保留日志文件输出。
+                pass
 
 import logging
 
