@@ -34,4 +34,4 @@ Whenever you need to delete user files or directories, you MUST use a method tha
 ## Git Commit Signature
 Always append the following lines to your commit messages to use the Git Co-authored-by feature:
 
-Co-authored-by: Antigravity <antigravity-bot@users.noreply.github.com>
+Co-authored-by: ChatGPT <chatgpt@users.noreply.github.com>
