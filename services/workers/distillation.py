@@ -3,7 +3,7 @@ import re
 import time
 from datetime import datetime
 from core.config_manager import get_config, save_config
-from core.memory_manager import get_memory_agent, DAILY_HISTORY_DIR
+from core.memory_manager import get_memory_agent, get_daily_history_dir
 from core.profile_manager import get_favorability
 from core.llm_client import get_llm_client_and_model
 
@@ -140,11 +140,12 @@ def daily_distillation_worker():
         char_name = config_data.get("character_name", "桌宠")
         today_str = datetime.now().strftime("%Y-%m-%d")
         
-        if not os.path.exists(DAILY_HISTORY_DIR):
+        daily_history_dir = get_daily_history_dir()
+        if not os.path.exists(daily_history_dir):
             print("[MEMORY DISTILLER] daily_history directory does not exist yet.")
             return
             
-        log_files = os.listdir(DAILY_HISTORY_DIR)
+        log_files = os.listdir(daily_history_dir)
         target_dates = []
         for f in log_files:
             if f.startswith("chat_log_") and f.endswith(".txt"):
@@ -161,7 +162,7 @@ def daily_distillation_worker():
         print(f"[MEMORY DISTILLER] Found {len(target_dates)} days to distill: {target_dates}")
         
         for date_str in target_dates:
-            log_file_path = os.path.join(DAILY_HISTORY_DIR, f"chat_log_{date_str}.txt")
+            log_file_path = os.path.join(daily_history_dir, f"chat_log_{date_str}.txt")
             if not os.path.exists(log_file_path):
                 continue
                 
@@ -185,7 +186,7 @@ def daily_distillation_worker():
                         infer=False
                     )
                     
-                    diary_file_path = os.path.join(DAILY_HISTORY_DIR, f"{char_id}_diary_{date_str}.txt")
+                    diary_file_path = os.path.join(daily_history_dir, f"{char_id}_diary_{date_str}.txt")
                     try:
                         with open(diary_file_path, 'w', encoding='utf-8') as df:
                             # 按照用户要求，将压缩日记放在原日记正文的下面

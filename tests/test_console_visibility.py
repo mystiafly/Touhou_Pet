@@ -63,3 +63,18 @@ def test_tee_logger_reconfigures_terminal_stream(tmp_path):
     logger.reconfigure(encoding="utf-8", errors="replace")
 
     assert stream.calls == [{"encoding": "utf-8", "errors": "replace"}]
+
+
+def test_daily_history_dir_follows_active_character(monkeypatch):
+    current_character = ["flandre"]
+
+    def fake_get_file_path(filename):
+        return f"characters/{current_character[0]}/{filename}"
+
+    from core import memory_manager
+    monkeypatch.setattr(memory_manager, "get_file_path", fake_get_file_path)
+
+    current_character[0] = "flandre"
+    assert memory_manager.get_daily_history_dir() == "characters/flandre/daily_history"
+    current_character[0] = "koishi"
+    assert memory_manager.get_daily_history_dir() == "characters/koishi/daily_history"

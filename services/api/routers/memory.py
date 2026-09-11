@@ -7,9 +7,8 @@ from typing import Dict, Any, Optional, List
 from fastapi import BackgroundTasks, APIRouter, Request, Body, HTTPException
 from fastapi.responses import JSONResponse
 from core.config_manager import get_config, save_config, get_active_character_id
-from core.memory_manager import load_history, DAILY_HISTORY_DIR, get_memory_agent
+from core.memory_manager import load_history, get_daily_history_dir, get_memory_agent
 from core.profile_manager import get_favorability
-from core.memory_manager import DAILY_HISTORY_DIR, get_memory_agent
 from workers.distillation import generate_pet_diary
 
 router = APIRouter()
@@ -19,10 +18,11 @@ SERVICES_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 def list_logs():
     """获取所有已保存对话和日记的日期列表"""
     try:
-        if not os.path.exists(DAILY_HISTORY_DIR):
+        daily_history_dir = get_daily_history_dir()
+        if not os.path.exists(daily_history_dir):
             return {"success": True, "dates": []}
             
-        files = os.listdir(DAILY_HISTORY_DIR)
+        files = os.listdir(daily_history_dir)
         dates = []
         for f in files:
             if f.startswith("chat_log_") and f.endswith(".txt"):
@@ -42,10 +42,11 @@ def get_log_content(date: str):
         if not re.match(r'^\d{4}-\d{2}-\d{2}$', date):
             return JSONResponse({"success": False, "error": "无效的日期格式"}, status_code=400)
             
-        log_file = os.path.join(DAILY_HISTORY_DIR, f"chat_log_{date}.txt")
+        daily_history_dir = get_daily_history_dir()
+        log_file = os.path.join(daily_history_dir, f"chat_log_{date}.txt")
         config = get_config()
         char_id = config.get("character_id", "rumia")
-        diary_file = os.path.join(DAILY_HISTORY_DIR, f"{char_id}_diary_{date}.txt")
+        diary_file = os.path.join(daily_history_dir, f"{char_id}_diary_{date}.txt")
         
         if not os.path.exists(log_file):
             return JSONResponse({"success": False, "error": "聊天记录文件不存在"}, status_code=404)
@@ -85,10 +86,11 @@ def rewrite_log_diary(date: str):
         if not re.match(r'^\d{4}-\d{2}-\d{2}$', date):
             return JSONResponse({"success": False, "error": "无效的日期格式"}, status_code=400)
             
-        log_file = os.path.join(DAILY_HISTORY_DIR, f"chat_log_{date}.txt")
+        daily_history_dir = get_daily_history_dir()
+        log_file = os.path.join(daily_history_dir, f"chat_log_{date}.txt")
         config = get_config()
         char_id = config.get("character_id", "rumia")
-        diary_file = os.path.join(DAILY_HISTORY_DIR, f"{char_id}_diary_{date}.txt")
+        diary_file = os.path.join(daily_history_dir, f"{char_id}_diary_{date}.txt")
         
         if not os.path.exists(log_file):
             return JSONResponse({"success": False, "error": "聊天记录文件不存在，无法重写日记"}, status_code=404)
@@ -300,7 +302,8 @@ def manual_distill_now(payload: dict = Body(default={})):
         char_name = config_data.get("character_name", "桌宠")
         
         today_str = datetime.now().strftime("%Y-%m-%d")
-        log_file_path = os.path.join(DAILY_HISTORY_DIR, f"chat_log_{today_str}.txt")
+        daily_history_dir = get_daily_history_dir()
+        log_file_path = os.path.join(daily_history_dir, f"chat_log_{today_str}.txt")
         
         if not os.path.exists(log_file_path):
             return JSONResponse({"success": False, "error": f"今天还没有聊天记录哦，快去和{char_name}聊聊天吧！"})
@@ -311,7 +314,7 @@ def manual_distill_now(payload: dict = Body(default={})):
         if not log_content:
             return JSONResponse({"success": False, "error": "今日聊天记录为空！"})
             
-        diary_file_path = os.path.join(DAILY_HISTORY_DIR, f"{char_id}_diary_{today_str}.txt")
+        diary_file_path = os.path.join(daily_history_dir, f"{char_id}_diary_{today_str}.txt")
         print(f"[MANUAL DISTILL] Generating today's diary for {char_name} ({today_str})...")
         today_diary, compressed_diary = generate_pet_diary(today_str, log_content)
         try:

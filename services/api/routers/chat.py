@@ -9,7 +9,7 @@ from fastapi import APIRouter, Request, Body, HTTPException, UploadFile, File, F
 from pydantic import BaseModel
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from core.config_manager import get_config, save_config, get_active_character_id
-from core.memory_manager import load_history, save_history, DAILY_HISTORY_DIR, get_memory_agent
+from core.memory_manager import load_history, save_history, get_daily_history_dir, get_memory_agent
 from core.profile_manager import get_favorability
 from graph.workflow import chat_workflow
 from graph.nodes import post_llm_node, update_history_node
@@ -212,7 +212,7 @@ def chat(payload: dict = Body(...), background_tasks: BackgroundTasks = Backgrou
         try:
             today_str = datetime.now().strftime("%Y-%m-%d")
             time_str = datetime.now().strftime("%H:%M:%S")
-            log_file = os.path.join(DAILY_HISTORY_DIR, f"chat_log_{today_str}.txt")
+            log_file = os.path.join(get_daily_history_dir(), f"chat_log_{today_str}.txt")
             
             with open(log_file, 'a', encoding='utf-8') as lf:
                 lf.write(f"[{time_str}] 你: {user_message}\n")
@@ -440,7 +440,7 @@ def pet_speak(payload: dict = Body(...), background_tasks: BackgroundTasks = Bac
         try:
             today_str = datetime.now().strftime("%Y-%m-%d")
             time_str = datetime.now().strftime("%H:%M:%S")
-            log_file = os.path.join(DAILY_HISTORY_DIR, f"chat_log_{today_str}.txt")
+            log_file = os.path.join(get_daily_history_dir(), f"chat_log_{today_str}.txt")
             
             with open(log_file, 'a', encoding='utf-8') as lf:
                 lf.write(f"[{time_str}] {char_name}({emotion}) (主动): {clean_content}\n\n")
@@ -518,7 +518,7 @@ def api_action_sync(payload: dict = Body(...)):
         # 同步记录到当天的日志文本中，供日记使用
         today_str = datetime.now().strftime("%Y-%m-%d")
         time_str = datetime.now().strftime("%H:%M:%S")
-        log_file = os.path.join(DAILY_HISTORY_DIR, f"chat_log_{today_str}.txt")
+        log_file = os.path.join(get_daily_history_dir(), f"chat_log_{today_str}.txt")
         with open(log_file, 'a', encoding='utf-8') as lf:
             lf.write(f"[{time_str}] [物理互动] {sync_msg}\n\n")
             

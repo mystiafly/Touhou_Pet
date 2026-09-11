@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 import threading
 
-from core.memory_manager import DAILY_HISTORY_DIR
+from core.memory_manager import get_daily_history_dir
 from core.databank_manager import load_databank, save_databank_state
 from core.llm_client import get_langchain_model
 from core.config_manager import get_config
@@ -49,14 +49,15 @@ from workers.distillation import generate_pet_diary
 
 def _process_missing_diaries():
     """后台处理缺失日记的核心逻辑，改为纯文本对账"""
-    if not os.path.exists(DAILY_HISTORY_DIR):
+    daily_history_dir = get_daily_history_dir()
+    if not os.path.exists(daily_history_dir):
         return
         
     config = get_config()
     char_id = config.get("character_id", "rumia")
     today_str = datetime.now().strftime("%Y-%m-%d")
     
-    for filename in sorted(os.listdir(DAILY_HISTORY_DIR)):
+    for filename in sorted(os.listdir(daily_history_dir)):
         if filename.startswith("chat_log_") and filename.endswith(".txt"):
             date_str = filename.replace("chat_log_", "").replace(".txt", "")
             
@@ -66,12 +67,12 @@ def _process_missing_diaries():
                 
             # 检查对应的日记文本是否存在
             diary_filename = f"{char_id}_diary_{date_str}.txt"
-            diary_path = os.path.join(DAILY_HISTORY_DIR, diary_filename)
+            diary_path = os.path.join(daily_history_dir, diary_filename)
             
             if os.path.exists(diary_path):
                 continue
                 
-            log_path = os.path.join(DAILY_HISTORY_DIR, filename)
+            log_path = os.path.join(daily_history_dir, filename)
             with open(log_path, 'r', encoding='utf-8') as f:
                 chat_content = f.read().strip()
                 

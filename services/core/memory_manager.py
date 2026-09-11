@@ -19,9 +19,13 @@ def set_hf_endpoint(endpoint: str):
 memory_agent = None
 memory_agent_lock = threading.Lock()
 
-DAILY_HISTORY_DIR = get_file_path("daily_history")
 MIN_HISTORY_ROUNDS = 8
 MAX_HISTORY_ROUNDS = 16
+
+
+def get_daily_history_dir():
+    """返回当前激活角色的每日历史目录，避免角色切换后继续写入旧目录。"""
+    return get_file_path("daily_history")
 
 def get_memory_agent():
     """线程安全获取 Mem0 记忆引擎实例 (自动感知当前激活的角色)"""
@@ -271,11 +275,12 @@ def save_history(messages):
         with open(get_file_path("dialog_history.json"), 'w', encoding='utf-8') as f:
             json.dump(messages, f, ensure_ascii=False, indent=2)
             
-        if not os.path.exists(DAILY_HISTORY_DIR):
-            os.makedirs(DAILY_HISTORY_DIR)
+        daily_history_dir = get_daily_history_dir()
+        if not os.path.exists(daily_history_dir):
+            os.makedirs(daily_history_dir)
             
         today_str = datetime.now().strftime("%Y-%m-%d")
-        daily_json = os.path.join(DAILY_HISTORY_DIR, f"dialog_history_{today_str}.json")
+        daily_json = os.path.join(daily_history_dir, f"dialog_history_{today_str}.json")
         with open(daily_json, 'w', encoding='utf-8') as df:
             json.dump(messages, df, ensure_ascii=False, indent=2)
     except IOError as e:
