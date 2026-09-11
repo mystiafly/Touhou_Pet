@@ -85,5 +85,10 @@ exit /b 1
 :START_BACKEND
 echo == Step 2/2 == Starting Backend API...
 set HF_ENDPOINT=https://hf-mirror.com
+set BACKEND_PYTHON=%PYTHON_EXE%
+if exist "%~dp0services\global_config.json" (
+    %PYTHON_EXE% -c "import json,sys; sys.exit(0 if json.load(open(r'%~dp0services\global_config.json', encoding='utf-8')).get('hide_console', False) else 1)" >nul 2>&1
+    if not errorlevel 1 if exist "%~dp0.venv\Scripts\pythonw.exe" set BACKEND_PYTHON="%~dp0.venv\Scripts\pythonw.exe"
+)
 cd services
-%PYTHON_EXE% web_interface.py
+%BACKEND_PYTHON% web_interface.py

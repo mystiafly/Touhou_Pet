@@ -12,6 +12,39 @@ import urllib.request
 import zipfile
 import shutil
 
+
+def should_hide_console(root_dir):
+    """读取启动配置，判断是否应使用无控制台模式运行。"""
+    config_path = os.path.join(root_dir, 'services', 'global_config.json')
+    try:
+        import json
+        with open(config_path, 'r', encoding='utf-8') as config_file:
+            return bool(json.load(config_file).get('hide_console', False))
+    except Exception:
+        return False
+
+
+def get_process_creationflags(hide_console):
+    """为 Windows 无控制台进程返回创建标志。"""
+    if os.name == 'nt' and hide_console:
+        return getattr(subprocess, 'CREATE_NO_WINDOW', 0x08000000)
+    return 0
+
+
+def configure_headless_output(root_dir, hide_console):
+    """为 pythonw.exe 提供日志输出，避免 stdout/stderr 为 None 导致启动失败。"""
+    if not hide_console or sys.stdout is not None:
+        return None
+    try:
+        log_dir = os.path.join(root_dir, 'logs')
+        os.makedirs(log_dir, exist_ok=True)
+        log_file = open(os.path.join(log_dir, 'launcher_output.log'), 'a', encoding='utf-8', buffering=1)
+        sys.stdout = log_file
+        sys.stderr = log_file
+        return log_file
+    except Exception:
+        return None
+
 def get_npm_command(root_dir):
     """获取 npm 命令路径。如果系统没配置 PATH，则自动扫描标准安装目录或下载国内镜像便携版。"""
     if os.name != 'nt':
@@ -100,12 +133,29 @@ def get_npm_command(root_dir):
 def main():
     # 获取当前脚本所在的根目录路径
     root_dir = os.path.dirname(os.path.abspath(__file__))
-    
+    hide_console = should_hide_console(root_dir)
+    configure_headless_output(root_dir, hide_console)
+
     # 自动检查并重定向到虚拟环境 Python (防止用户双击 run.py 或使用全局 Python 导致依赖缺失崩溃)
     venv_python = os.path.join(root_dir, '.venv', 'Scripts', 'python.exe') if os.name == 'nt' else os.path.join(root_dir, '.venv', 'bin', 'python')
-    if os.path.exists(venv_python) and os.path.abspath(sys.executable) != os.path.abspath(venv_python):
-        print(f"[SYSTEM] 检测到本地虚拟环境，已自动重定向并使用虚拟环境 Python 重新启动...")
-        subprocess.Popen([venv_python] + sys.argv, cwd=root_dir)
+    selected_python = venv_python if os.path.exists(venv_python) else sys.executable
+    if hide_console and os.name == 'nt':
+        venv_pythonw = os.path.join(root_dir, '.venv', 'Scripts', 'pythonw.exe')
+        system_pythonw = os.path.join(os.path.dirname(sys.executable), 'pythonw.exe')
+        if os.path.exists(venv_pythonw):
+            selected_python = venv_pythonw
+        elif os.path.exists(system_pythonw):
+            selected_python = system_pythonw
+
+    if os.path.abspath(sys.executable) != os.path.abspath(selected_python):
+        if not hide_console:
+            print(f"[SYSTEM] 检测到本地虚拟环境，已自动重定向并使用虚拟环境 Python 重新启动...")
+        subprocess.Popen(
+            [selected_python] + sys.argv,
+            cwd=root_dir,
+            creationflags=get_process_creationflags(hide_console),
+            close_fds=True,
+        )
         sys.exit(0)
         
     services_dir = os.path.join(root_dir, 'services')
@@ -129,7 +179,8 @@ def main():
         electron_process = subprocess.Popen(
             [electron_bin, '.'],
             cwd=root_dir,
-            env=electron_env
+            env=electron_env,
+            creationflags=get_process_creationflags(hide_console),
         )
     else:
         # 首次安装检查
@@ -151,7 +202,8 @@ def main():
             electron_process = subprocess.Popen(
                 [electron_bin, '.'],
                 cwd=root_dir,
-                env=electron_env
+                env=electron_env,
+                creationflags=get_process_creationflags(hide_console),
             )
         else:
             try:
@@ -159,7 +211,8 @@ def main():
                     [npm_cmd, 'start'],
                     cwd=root_dir,
                     shell=False,
-                    env=electron_env
+                    env=electron_env,
+                    creationflags=get_process_creationflags(hide_console),
                 )
             except Exception as e:
                 print(f"\n[ERROR] 启动前端失败: {e}")
@@ -171,25 +224,20 @@ def main():
     print("[2/2] 正在并发唤醒大脑 (FastAPI Backend)...")
     flask_process = subprocess.Popen(
         [sys.executable, 'web_interface.py'],
-        cwd=services_dir
+        cwd=services_dir,
+        creationflags=get_process_creationflags(hide_console),
     )
 
     print("\n>>> 桌宠已召唤成功！ <<<")
     print("提示：关闭桌宠窗口，或者关闭此黑框，都会结束程序。")
 
     # 检查是否开启了隐藏控制台窗口 (Console)
-    if os.name == 'nt':
+    if os.name == 'nt' and hide_console:
         try:
-            import json
-            cfg_path = os.path.join(services_dir, 'global_config.json')
-            if os.path.exists(cfg_path):
-                with open(cfg_path, 'r', encoding='utf-8') as gf:
-                    cfg_json = json.load(gf)
-                if cfg_json.get("hide_console"):
-                    import ctypes
-                    hwnd = ctypes.windll.kernel32.GetConsoleWindow()
-                    if hwnd:
-                        ctypes.windll.user32.ShowWindow(hwnd, 0)
+            import ctypes
+            hwnd = ctypes.windll.kernel32.GetConsoleWindow()
+            if hwnd:
+                ctypes.windll.user32.ShowWindow(hwnd, 0)
         except Exception:
             pass
 
