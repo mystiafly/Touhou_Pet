@@ -56,8 +56,8 @@ function walkFiles(rootDir, callback, relativeDir = '') {
   for (const entry of fs.readdirSync(rootDir, { withFileTypes: true })) {
     const relativePath = relativeDir ? path.join(relativeDir, entry.name) : entry.name;
     const absolutePath = path.join(rootDir, entry.name);
-    callback(absolutePath, relativePath, entry);
-    if (entry.isDirectory()) walkFiles(absolutePath, callback, relativePath);
+    const descend = callback(absolutePath, relativePath, entry);
+    if (entry.isDirectory() && descend !== false) walkFiles(absolutePath, callback, relativePath);
   }
 }
 
@@ -112,13 +112,29 @@ function requestBuffer(url, redirectCount = 0) {
   });
 }
 
-async function requestJson(url) {
-  const buffer = await requestBuffer(url);
-  try {
-    return JSON.parse(buffer.toString('utf8'));
-  } catch (_error) {
-    throw new Error('远程版本清单不是有效 JSON。');
+function mirrorUrls(url) {
+  if (!url.startsWith('https://github.com/') && !url.startsWith('https://raw.githubusercontent.com/')) {
+    return [url];
   }
+  return [
+    `https://gh-proxy.com/${url}`,
+    `https://ghfast.top/${url}`,
+    `https://github.moeyy.xyz/${url}`,
+    url,
+  ];
+}
+
+async function requestJson(url) {
+  let lastError = null;
+  for (const candidate of mirrorUrls(url)) {
+    try {
+      const buffer = await requestBuffer(candidate);
+      return JSON.parse(buffer.toString('utf8'));
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw new Error(`无法读取远程版本清单：${lastError?.message || '未知网络错误'}`);
 }
 
 function downloadFile(url, destination, onProgress, redirectCount = 0) {
@@ -159,6 +175,20 @@ function downloadFile(url, destination, onProgress, redirectCount = 0) {
     request.setTimeout(120000, () => request.destroy(new Error('下载远程更新超时。')));
     request.on('error', reject);
   });
+}
+
+async function downloadFromMirrors(url, destination, onProgress) {
+  let lastError = null;
+  for (const candidate of mirrorUrls(url)) {
+    try {
+      await downloadFile(candidate, destination, onProgress);
+      return;
+    } catch (error) {
+      lastError = error;
+      try { fs.rmSync(destination, { force: true }); } catch (_cleanupError) {}
+    }
+  }
+  throw new Error(`无法下载更新包：${lastError?.message || '未知网络错误'}`);
 }
 
 function extractZip(zipPath, destination) {
@@ -275,9 +305,9 @@ async function installLatestUpdate(sendProgress) {
 
   try {
     sendProgress(5, '正在下载最新版源码…');
-    await downloadFile(update.sourceUrl, sourceZip, (percent) => sendProgress(5 + percent * 0.3, '正在下载最新版源码…'));
+    await downloadFromMirrors(update.sourceUrl, sourceZip, (percent) => sendProgress(5 + percent * 0.3, '正在下载最新版源码…'));
     sendProgress(35, '正在下载对应版本后端…');
-    await downloadFile(update.backendUrl, backendZip, (percent) => sendProgress(35 + percent * 0.45, '正在下载对应版本后端…'));
+    await downloadFromMirrors(update.backendUrl, backendZip, (percent) => sendProgress(35 + percent * 0.45, '正在下载对应版本后端…'));
     sendProgress(82, '正在校验源码与后端…');
     await extractZip(sourceZip, sourceExtracted);
     await extractZip(backendZip, backendExtracted);

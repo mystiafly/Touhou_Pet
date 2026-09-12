@@ -79,7 +79,8 @@ updateButton.addEventListener('click', async () => {
     latestUpdate = null;
     progressBar.style.width = '100%';
     renderState(state);
-    setStatus('更新完成。', '用户数据和依赖缓存已保留，可以启动正式程序。', 'ready');
+    setStatus('更新完成，正在启动正式程序…', '用户数据和依赖缓存已保留。', 'ready');
+    await window.launcher.launchFormalApp();
   } catch (error) {
     setStatus('更新失败，现有程序未被替换。', error.message, 'error');
   } finally {
