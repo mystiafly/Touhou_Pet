@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>大贤者启动器</title>
+  <link rel="stylesheet" href="launcher.css">
+</head>
+<body>
+  <main class="launcher-shell">
+    <header class="brand-row">
+      <div class="brand-mark" aria-hidden="true">✦</div>
+      <div>
+        <p class="eyebrow">TOUHOU DESKTOP PET</p>
+        <h1>大贤者启动器</h1>
+      </div>
+    </header>
+
+    <section class="hero-card" aria-labelledby="about-title">
+      <div class="hero-copy">
+        <p class="eyebrow accent">ABOUT</p>
+        <h2 id="about-title">关于</h2>
+        <p>启动器只负责更新和启动。难下载的依赖、缓存与用户数据会留在本地，不会被更新覆盖。</p>
+      </div>
+      <div class="version-panel" aria-live="polite">
+        <span class="panel-label">当前版本</span>
+        <strong id="current-version">尚未安装</strong>
+        <span id="current-commit" class="muted">等待检查</span>
+      </div>
+    </section>
+
+    <section class="status-card" aria-labelledby="status-title">
+      <div class="section-heading">
+        <h2 id="status-title">更新器</h2>
+        <span id="status-dot" class="status-dot" aria-hidden="true"></span>
+      </div>
+      <p id="status-text" role="status">正在读取本地运行环境…</p>
+      <div class="progress-track" aria-hidden="true"><span id="progress-bar"></span></div>
+      <p id="status-detail" class="muted"></p>
+      <div class="actions">
+        <button id="check-button" class="button secondary" type="button">检查更新</button>
+        <button id="update-button" class="button primary" type="button" disabled>下载并更新</button>
+        <button id="launch-button" class="button launch" type="button" disabled>启动正式程序</button>
+      </div>
+    </section>
+
+    <section class="storage-card" aria-labelledby="storage-title">
+      <div>
+        <h2 id="storage-title">本地内容</h2>
+        <p class="muted">以下内容在更新时保留：</p>
+      </div>
+      <ul class="storage-list">
+        <li><span class="storage-icon" aria-hidden="true">◆</span><span>难下载的依赖缓存</span><strong id="dependency-state">读取中</strong></li>
+        <li><span class="storage-icon" aria-hidden="true">♥</span><span>用户数据（如果有）</span><strong>保留</strong></li>
+      </ul>
+    </section>
+
+    <footer>
+      <span>源码与对应后端必须成对更新</span>
+      <button id="quit-button" class="text-button" type="button">退出</button>
+    </footer>
+  </main>
+  <script src="renderer.js"></script>
+</body>
+</html>
