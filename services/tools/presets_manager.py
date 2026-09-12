@@ -110,6 +110,27 @@ def is_valid_keyword(kw, block_english):
             return False
     return True
 
+def is_favorability_allowed(preset, favorability):
+    """Return whether a preset is available at the current favorability."""
+    min_fav = preset.get("min_favorability")
+    max_fav = preset.get("max_favorability")
+
+    try:
+        if min_fav is not None and favorability < int(min_fav):
+            return False
+    except (TypeError, ValueError):
+        # Keep malformed legacy values from disabling the whole preset system.
+        pass
+
+    try:
+        if max_fav is not None and favorability > int(max_fav):
+            return False
+    except (TypeError, ValueError):
+        # Keep malformed legacy values from disabling the whole preset system.
+        pass
+
+    return True
+
 def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
     """加载并根据条件与关键词匹配触发相应的感应预设提示词 (混合模式：关键词直接触发 + AI二次语义感应)"""
     config = get_config()
@@ -153,6 +174,9 @@ def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
             
         # 检查是否被禁用
         if preset.get("disable", False):
+            continue
+
+        if not is_favorability_allowed(preset, favorability):
             continue
             
         # 检查常驻状态 (always_active 或 constant)
@@ -243,6 +267,9 @@ def load_and_trigger_presets(user_message, favorability, is_self_talk=False):
                 
             # 检查是否被禁用，以及是否被标记为“禁止递归触发”
             if preset.get("disable", False) or preset.get("prevent_recursion", False):
+                continue
+
+            if not is_favorability_allowed(preset, favorability):
                 continue
                 
             # 检查关键词是否匹配当前已触发的提示词文本池 (严格遵守复合逻辑 AND)
