@@ -36,6 +36,23 @@ function logDebug(msg) {
     } catch(e) {}
 }
 
+// The launcher stores the mutable formal-program payload outside the installed
+// launcher resources. Keep the legacy packaged layout as a fallback so existing
+// standalone installations continue to work unchanged.
+function getPackagedRuntimeRoot() {
+    return process.env.RUMIA_APP_ROOT || path.dirname(process.resourcesPath);
+}
+
+function getGlobalConfigPath() {
+    const appData = process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming');
+    const candidates = [
+        path.join(getPackagedRuntimeRoot(), 'services', 'global_config.json'),
+        path.join(appData, 'RumiaDesktopPet', 'global_config.json'),
+        path.join(getPackagedRuntimeRoot(), 'global_config.json')
+    ];
+    return candidates.find((candidate) => fs.existsSync(candidate)) || candidates[0];
+}
+
 // 保持对 window 对象的全局引用
 let mainWindow;
 let tray = null;
@@ -199,8 +216,7 @@ function syncInitialAutoStart() {
     try {
         let globalConfigPath;
         if (app.isPackaged) {
-            const appData = process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming');
-            globalConfigPath = path.join(appData, 'RumiaDesktopPet', 'global_config.json');
+            globalConfigPath = getGlobalConfigPath();
         } else {
             globalConfigPath = path.join(__dirname, 'services', 'global_config.json');
         }
@@ -224,8 +240,7 @@ function shouldHideConsole() {
     try {
         let globalConfigPath;
         if (app.isPackaged) {
-            const appData = process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming');
-            globalConfigPath = path.join(appData, 'RumiaDesktopPet', 'global_config.json');
+            globalConfigPath = getGlobalConfigPath();
         } else {
             globalConfigPath = path.join(__dirname, 'services', 'global_config.json');
         }
@@ -621,7 +636,7 @@ function startBackendService(force = false) {
         } catch(e) {}
         
         const baseDir = process.resourcesPath;
-        const rootDir = path.dirname(baseDir);
+        const rootDir = getPackagedRuntimeRoot();
         const exePaths = [
             path.join(rootDir, 'dist', 'backend', 'web_interface.exe'),
             path.join(rootDir, 'backend', 'web_interface.exe'),

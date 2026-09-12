@@ -1,0 +1,35 @@
+{
+  "appId": "com.mystiafly.rumiapet.launcher",
+  "productName": "大贤者启动器",
+  "artifactName": "Rumia Desktop Pet Launcher Setup ${version}.${ext}",
+  "electronVersion": "28.3.3",
+  "asar": true,
+  "directories": {
+    "output": "dist/launcher"
+  },
+  "files": [
+    "launcher/**/*",
+    "package.json"
+  ],
+  "extraResources": [
+    {
+      "from": "build/launcher_bootstrap",
+      "to": "bootstrap"
+    }
+  ],
+  "win": {
+    "target": "nsis"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "大贤者启动器"
+  },
+  "extraMetadata": {
+    "main": "launcher/main.js",
+    "name": "rumia-launcher"
+  }
+}
