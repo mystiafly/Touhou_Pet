@@ -13,9 +13,6 @@
     "electron": "28.3.3",
     "electron-builder": "^26.15.3"
   },
-  "dependencies": {
-    "electron": "28.3.3"
-  },
   "build": {
     "appId": "com.mystiafly.rumiapet",
     "productName": "Rumia Desktop Pet",
