@@ -14,7 +14,6 @@ const {
 
 const REPOSITORY = 'mystiafly/Touhou_Pet';
 const BRANCH = 'main';
-const SOURCE_PACKAGE_URL = `https://raw.githubusercontent.com/${REPOSITORY}/${BRANCH}/package.json`;
 const COMMITS_URL = `https://api.github.com/repos/${REPOSITORY}/commits/${BRANCH}`;
 const USER_AGENT = 'RumiaDesktopPetLauncher/1.x';
 
@@ -235,15 +234,14 @@ function getBackendRoot(extractedDir) {
 }
 
 async function getLatestUpdate() {
-  const [packageInfo, commitInfo] = await Promise.all([
-    requestJson(SOURCE_PACKAGE_URL),
-    requestJson(COMMITS_URL),
-  ]);
-  const version = String(packageInfo.version || '');
+  const commitInfo = await requestJson(COMMITS_URL);
   const commit = String(commitInfo.sha || '');
-  if (!/^\d+\.\d+\.\d+$/.test(version) || !/^[0-9a-f]{40}$/i.test(commit)) {
-    throw new Error('远程源码版本清单缺少有效版本号或提交号。');
+  if (!/^[0-9a-f]{40}$/i.test(commit)) {
+    throw new Error('远程源码清单缺少有效提交号。');
   }
+  const packageInfo = await requestJson(`https://raw.githubusercontent.com/${REPOSITORY}/${commit}/package.json`);
+  const version = String(packageInfo.version || '');
+  if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error('远程源码缺少有效版本号。');
   return {
     version,
     commit,
