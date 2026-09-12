@@ -53,6 +53,18 @@ function getGlobalConfigPath() {
     return candidates.find((candidate) => fs.existsSync(candidate)) || candidates[0];
 }
 
+function getDisplayVersion() {
+    if (process.env.RUMIA_APP_ROOT) {
+        try {
+            const runtimePackage = path.join(process.env.RUMIA_APP_ROOT, 'package.json');
+            return JSON.parse(fs.readFileSync(runtimePackage, 'utf-8')).version || app.getVersion();
+        } catch (e) {
+            logDebug(`[VERSION WARN] ${e.message}`);
+        }
+    }
+    return app.getVersion();
+}
+
 // 保持对 window 对象的全局引用
 let mainWindow;
 let tray = null;
@@ -447,7 +459,7 @@ function createSplashWindow() {
 
     splashWindow.webContents.on('did-finish-load', () => {
         try {
-            splashWindow.webContents.send('splash-version', `v${app.getVersion()}`);
+            splashWindow.webContents.send('splash-version', `v${getDisplayVersion()}`);
         } catch(e) {}
     });
 
@@ -713,7 +725,7 @@ function updateSplashLoading(count) {
             percent: p,
             message: msg,
             step: step,
-            version: `v${app.getVersion()}`
+            version: `v${getDisplayVersion()}`
         });
     } catch(e) {}
 }
@@ -754,7 +766,7 @@ app.whenReady().then(() => {
                             message: "正在初始化 Live2D 渲染视界...",
                             step: "render",
                             character: activeChar ? { name: activeChar.character_name, avatar: activeChar.avatar_url } : null,
-                            version: `v${app.getVersion()}`
+                            version: `v${getDisplayVersion()}`
                         });
                     }
 
