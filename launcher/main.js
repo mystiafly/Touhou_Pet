@@ -6,7 +6,7 @@ const os = require('os');
 const path = require('path');
 const http = require('http');
 const https = require('https');
-const { spawn } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
 const {
   isPreservedPath,
 } = require('./update_policy');
@@ -49,6 +49,19 @@ function copyPath(sourcePath, targetPath) {
   fs.cpSync(sourcePath, targetPath, { recursive: true, force: true });
 }
 
+function copyMissingPath(sourcePath, targetPath) {
+  if (!pathExists(sourcePath)) return;
+  const sourceStat = fs.statSync(sourcePath);
+  if (sourceStat.isDirectory()) {
+    fs.mkdirSync(targetPath, { recursive: true });
+    for (const entry of fs.readdirSync(sourcePath)) {
+      copyMissingPath(path.join(sourcePath, entry), path.join(targetPath, entry));
+    }
+    return;
+  }
+  if (!pathExists(targetPath)) copyPath(sourcePath, targetPath);
+}
+
 function walkFiles(rootDir, callback, relativeDir = '') {
   if (!pathExists(rootDir)) return;
   for (const entry of fs.readdirSync(rootDir, { withFileTypes: true })) {
@@ -73,7 +86,12 @@ function copySourceFiles(sourceRoot, targetRoot) {
 }
 
 function copyPreservedFiles(sourceRoot, targetRoot) {
+  const hasPythonArchive = pathExists(path.join(sourceRoot, 'dependency-cache', 'python-env.zip'));
   walkFiles(sourceRoot, (sourcePath, relativePath, entry) => {
+    const normalized = relativePath.replaceAll('\\', '/').toLowerCase();
+    if (hasPythonArchive && (normalized === 'dependency-cache/python-env' || normalized.startsWith('dependency-cache/python-env/'))) {
+      return false;
+    }
     if (!isPreservedPath(relativePath)) return;
     copyPath(sourcePath, path.join(targetRoot, relativePath));
     // A protected directory is copied as a whole, so walking its children again
@@ -207,6 +225,29 @@ function extractZip(zipPath, destination) {
   });
 }
 
+function extractZipSync(zipPath, destination) {
+  fs.mkdirSync(destination, { recursive: true });
+  const quotePowerShell = (value) => `'${value.replaceAll("'", "''")}'`;
+  const command = `$ErrorActionPreference = 'Stop'; Expand-Archive -LiteralPath ${quotePowerShell(zipPath)} -DestinationPath ${quotePowerShell(destination)} -Force`;
+  const result = spawnSync('powershell.exe', [
+    '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', command,
+  ], { windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'], encoding: 'utf8' });
+  if (result.error) throw result.error;
+  if (result.status !== 0) {
+    const details = String(result.stderr || '').trim();
+    throw new Error(`解压本地依赖缓存失败${details ? `：${details}` : '。'}`);
+  }
+}
+
+function ensurePythonEnvironment(runtimeDir) {
+  const environmentRoot = path.join(runtimeDir, 'dependency-cache', 'python-env');
+  const pythonPath = path.join(environmentRoot, 'base-python', 'python.exe');
+  if (pathExists(pythonPath)) return;
+  const archivePath = path.join(runtimeDir, 'dependency-cache', 'python-env.zip');
+  if (!pathExists(archivePath)) return;
+  extractZipSync(archivePath, environmentRoot);
+}
+
 function findDirectoryWithFile(rootDir, fileName) {
   if (pathExists(path.join(rootDir, fileName))) return rootDir;
   let found = null;
@@ -243,10 +284,13 @@ function ensureRuntimeStore() {
   const runtimeDir = getRuntimeDir();
   if (!pathExists(runtimeDir)) {
     fs.mkdirSync(runtimeDir, { recursive: true });
-    if (pathExists(getBootstrapDir())) copyPath(getBootstrapDir(), runtimeDir);
-  } else if (!pathExists(path.join(runtimeDir, 'dependency-cache')) && pathExists(path.join(getBootstrapDir(), 'dependency-cache'))) {
-    copyPath(path.join(getBootstrapDir(), 'dependency-cache'), path.join(runtimeDir, 'dependency-cache'));
   }
+  if (pathExists(getBootstrapDir())) {
+    // Seed only missing files. This lets a new installer repair an older
+    // launcher without replacing user data or an existing dependency cache.
+    copyMissingPath(getBootstrapDir(), runtimeDir);
+  }
+  ensurePythonEnvironment(runtimeDir);
   fs.mkdirSync(path.join(runtimeDir, 'launcher-state'), { recursive: true });
   return runtimeDir;
 }
@@ -299,7 +343,6 @@ async function installLatestUpdate(sendProgress) {
       // directory into one of its own children would fail on Windows.
       backupRuntime = path.join(path.dirname(runtimeDir), 'runtime-backups', `${Date.now()}-${update.version}`);
       fs.mkdirSync(path.dirname(backupRuntime), { recursive: true });
-      oldRuntime = runtimeDir;
       fs.renameSync(runtimeDir, backupRuntime);
     }
     fs.mkdirSync(runtimeDir, { recursive: true });

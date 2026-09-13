@@ -13,6 +13,7 @@ import os
 import shutil
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
 
 
@@ -62,47 +63,101 @@ def find_legacy_release(explicit: Path | None) -> Path | None:
     return None
 
 
+def add_tree_to_zip(
+    archive: zipfile.ZipFile,
+    source_root: Path,
+    archive_root: Path,
+    skip_parts: set[tuple[str, ...]] | None = None,
+) -> int:
+    """Add a directory without materializing a second expanded copy."""
+    added = 0
+    for source_path in source_root.rglob("*"):
+        if not source_path.is_file():
+            continue
+        relative_path = source_path.relative_to(source_root)
+        if skip_parts and any(relative_path.parts[:len(parts)] == parts for parts in skip_parts):
+            continue
+        if "__pycache__" in relative_path.parts or source_path.suffix in {".pyc", ".pyo"}:
+            continue
+        archive.write(source_path, (archive_root / relative_path).as_posix())
+        added += 1
+    return added
+
+
+def add_legacy_assets_to_zip(archive: zipfile.ZipFile, legacy_release: Path) -> tuple[list[str], list[str]]:
+    copied = []
+    missing = []
+    for relative_path in LEGACY_ASSETS:
+        source = legacy_release / relative_path
+        if not source.exists():
+            missing.append(str(relative_path))
+            continue
+        if source.is_dir():
+            added = add_tree_to_zip(archive, source, Path("legacy-release") / relative_path)
+            if added:
+                copied.append(f"{relative_path} ({added} files)")
+        else:
+            archive.write(source, (Path("legacy-release") / relative_path).as_posix())
+            copied.append(str(relative_path))
+    return copied, missing
+
+
+def add_python_base_to_zip(archive: zipfile.ZipFile, python_home: Path) -> int:
+    # The configured Python installation also contains unrelated global tools
+    # and site-packages. Only the interpreter, standard library and DLLs are
+    # needed; project packages come from the selected virtual environment.
+    return add_tree_to_zip(
+        archive,
+        python_home,
+        Path("base-python"),
+        skip_parts={
+            ("Doc",),
+            ("include",),
+            ("libs",),
+            ("Scripts",),
+            ("share",),
+            ("tcl",),
+            ("Lib", "site-packages"),
+        },
+    )
+
+
 def prepare_bootstrap(legacy_release: Path | None, python_environment: Path | None) -> dict[str, list[str]]:
     if BOOTSTRAP.exists():
         shutil.rmtree(BOOTSTRAP)
-    dependency_cache = BOOTSTRAP / "dependency-cache" / "legacy-release"
+    dependency_cache = BOOTSTRAP / "dependency-cache"
     dependency_cache.mkdir(parents=True, exist_ok=True)
 
     copied = []
     missing = []
     if legacy_release:
-        for relative_path in LEGACY_ASSETS:
-            source = legacy_release / relative_path
-            if not source.exists():
-                missing.append(str(relative_path))
-                continue
-            destination = dependency_cache / relative_path
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            if source.is_dir():
-                shutil.copytree(source, destination, dirs_exist_ok=True)
-            else:
-                shutil.copy2(source, destination)
-            copied.append(str(relative_path))
+        legacy_archive = dependency_cache / "legacy-release.zip"
+        with zipfile.ZipFile(legacy_archive, "w", compression=zipfile.ZIP_STORED) as archive:
+            legacy_copied, legacy_missing = add_legacy_assets_to_zip(archive, legacy_release)
+        copied.extend(f"legacy-release.zip: {item}" for item in legacy_copied)
+        missing.extend(legacy_missing)
     else:
         missing.extend(str(item) for item in LEGACY_ASSETS)
 
     if python_environment:
-        python_cache = BOOTSTRAP / "dependency-cache" / "python-env"
         python_home = find_python_home(python_environment)
         site_packages = python_environment / "Lib" / "site-packages"
         if not python_home or not site_packages.exists():
             missing.append("python-env/base-python-and-site-packages")
         else:
-            shutil.copytree(python_home, python_cache / "base-python", dirs_exist_ok=True)
-            shutil.copytree(site_packages, python_cache / "site-packages", dirs_exist_ok=True)
-            copied.extend(["python-env/base-python", "python-env/site-packages"])
+            python_archive = dependency_cache / "python-env.zip"
+            with zipfile.ZipFile(python_archive, "w", compression=zipfile.ZIP_STORED) as archive:
+                base_count = add_python_base_to_zip(archive, python_home)
+                packages_count = add_tree_to_zip(archive, site_packages, Path("site-packages"))
+            copied.append(f"python-env.zip: base-python ({base_count} files), site-packages ({packages_count} files)")
     else:
         missing.append("python-env/base-python-and-site-packages")
 
     readme = dependency_cache / "README.txt"
     readme.write_text(
         "这些文件来自旧版发行版，仅作为难下载依赖缓存保留。\n"
-        "python-env/.venv 是运行最新版源码所需的固定 Python 依赖环境。\n"
+        "python-env.zip 是运行最新版源码所需的固定 Python 依赖环境。\n"
+        "legacy-release.zip 保留旧发行版中的难下载依赖，不作为最新版源码运行。\n"
         "启动器更新时不会覆盖 dependency-cache，也不会把旧版后端当作最新版运行。\n",
         encoding="utf-8",
     )
