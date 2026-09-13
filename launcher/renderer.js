@@ -42,10 +42,14 @@ function renderState(state) {
 }
 
 async function loadState() {
+  setBusy(true);
+  setStatus('正在准备本地依赖…', '首次启动可能需要几分钟，窗口仍可响应。');
   try {
     renderState(await window.launcher.getState());
   } catch (error) {
     setStatus('无法读取本地运行环境。', error.message, 'error');
+  } finally {
+    setBusy(false);
   }
 }
 
@@ -73,7 +77,7 @@ updateButton.addEventListener('click', async () => {
   if (busy || !latestUpdate) return;
   setBusy(true);
   progressBar.style.width = '0%';
-    setStatus('正在下载更新…', '源码完成校验后才会替换正式程序。');
+  setStatus('正在下载更新…', '源码完成校验后才会替换正式程序。');
   try {
     const state = await window.launcher.installUpdate(latestUpdate);
     latestUpdate = null;

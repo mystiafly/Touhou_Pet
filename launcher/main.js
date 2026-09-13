@@ -6,10 +6,10 @@ const os = require('os');
 const path = require('path');
 const http = require('http');
 const https = require('https');
-const { spawn, spawnSync } = require('child_process');
-const {
-  isPreservedPath,
-} = require('./update_policy');
+const { spawn } = require('child_process');
+const { copySourceFiles, copyPreservedFiles, hasRequiredSourceFiles } = require('./runtime_files');
+const { ensureExtracted } = require('./runtime_cache');
+const { patchSourceBackendEntryPoint } = require('./source_compat');
 
 const REPOSITORY = 'mystiafly/Touhou_Pet';
 const BRANCH = 'main';
@@ -18,6 +18,10 @@ const USER_AGENT = 'RumiaDesktopPetLauncher/1.x';
 
 function getRuntimeDir() {
   return path.join(app.getPath('userData'), 'runtime');
+}
+
+function getDependencyDir() {
+  return path.join(app.getPath('userData'), 'dependency-cache');
 }
 
 function getBootstrapDir() {
@@ -44,24 +48,6 @@ function pathExists(filePath) {
   }
 }
 
-function copyPath(sourcePath, targetPath) {
-  fs.mkdirSync(path.dirname(targetPath), { recursive: true });
-  fs.cpSync(sourcePath, targetPath, { recursive: true, force: true });
-}
-
-function copyMissingPath(sourcePath, targetPath) {
-  if (!pathExists(sourcePath)) return;
-  const sourceStat = fs.statSync(sourcePath);
-  if (sourceStat.isDirectory()) {
-    fs.mkdirSync(targetPath, { recursive: true });
-    for (const entry of fs.readdirSync(sourcePath)) {
-      copyMissingPath(path.join(sourcePath, entry), path.join(targetPath, entry));
-    }
-    return;
-  }
-  if (!pathExists(targetPath)) copyPath(sourcePath, targetPath);
-}
-
 function walkFiles(rootDir, callback, relativeDir = '') {
   if (!pathExists(rootDir)) return;
   for (const entry of fs.readdirSync(rootDir, { withFileTypes: true })) {
@@ -69,66 +55,6 @@ function walkFiles(rootDir, callback, relativeDir = '') {
     const absolutePath = path.join(rootDir, entry.name);
     const descend = callback(absolutePath, relativePath, entry);
     if (entry.isDirectory() && descend !== false) walkFiles(absolutePath, callback, relativePath);
-  }
-}
-
-function copySourceFiles(sourceRoot, targetRoot) {
-  walkFiles(sourceRoot, (sourcePath, relativePath, entry) => {
-    const normalized = relativePath.replaceAll('\\', '/').toLowerCase();
-    if (normalized === 'dist/backend' || normalized.startsWith('dist/backend/')) return;
-    if (isPreservedPath(relativePath)) return;
-    if (entry.isDirectory()) {
-      fs.mkdirSync(path.join(targetRoot, relativePath), { recursive: true });
-      return;
-    }
-    copyPath(sourcePath, path.join(targetRoot, relativePath));
-  });
-}
-
-async function copyPreservedFiles(sourceRoot, targetRoot) {
-  const hasPythonArchive = pathExists(path.join(sourceRoot, 'dependency-cache', 'python-env.zip'));
-  const hasModelArchive = pathExists(path.join(sourceRoot, 'dependency-cache', 'models.zip'));
-  const visit = async (relativePath) => {
-    const normalized = relativePath.replaceAll('\\', '/').toLowerCase();
-    const sourcePath = path.join(sourceRoot, relativePath);
-    if (!pathExists(sourcePath)) return;
-
-    // The old compiled backend is deliberately not part of the current
-    // launcher design. Do not copy it from a runtime created by an older
-    // launcher installation.
-    if (normalized === 'dependency-cache/legacy-release' || normalized.startsWith('dependency-cache/legacy-release/')) {
-      return;
-    }
-    if (normalized === 'dependency-cache/legacy-release.zip') return;
-    if (hasPythonArchive && (normalized === 'dependency-cache/python-env' || normalized.startsWith('dependency-cache/python-env/'))) {
-      return;
-    }
-    if (hasModelArchive && (normalized === 'services/models' || normalized.startsWith('services/models/'))) {
-      return;
-    }
-    const entry = fs.lstatSync(sourcePath);
-    if (entry.isDirectory()) {
-      // Traverse container directories so excluded cache entries can be
-      // filtered before copying. Other protected directories are copied in one
-      // asynchronous operation to keep the Electron window responsive.
-      const isContainer = normalized === 'dependency-cache' || normalized === 'data' || normalized === 'services';
-      if (isPreservedPath(relativePath) && !isContainer) {
-        await fs.promises.cp(sourcePath, path.join(targetRoot, relativePath), { recursive: true, force: true });
-        return;
-      }
-      for (const child of fs.readdirSync(sourcePath)) {
-        await visit(path.join(relativePath, child));
-      }
-      return;
-    }
-    if (isPreservedPath(relativePath)) {
-      await fs.promises.mkdir(path.dirname(path.join(targetRoot, relativePath)), { recursive: true });
-      await fs.promises.copyFile(sourcePath, path.join(targetRoot, relativePath));
-    }
-  };
-
-  for (const entry of fs.readdirSync(sourceRoot)) {
-    await visit(entry);
   }
 }
 
@@ -257,35 +183,71 @@ function extractZip(zipPath, destination) {
   });
 }
 
-function extractZipSync(zipPath, destination) {
-  fs.mkdirSync(destination, { recursive: true });
-  const quotePowerShell = (value) => `'${value.replaceAll("'", "''")}'`;
-  const command = `$ErrorActionPreference = 'Stop'; Expand-Archive -LiteralPath ${quotePowerShell(zipPath)} -DestinationPath ${quotePowerShell(destination)} -Force`;
-  const result = spawnSync('powershell.exe', [
-    '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', command,
-  ], { windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'], encoding: 'utf8' });
-  if (result.error) throw result.error;
-  if (result.status !== 0) {
-    const details = String(result.stderr || '').trim();
-    throw new Error(`解压本地依赖缓存失败${details ? `：${details}` : '。'}`);
-  }
+function pythonEnvironmentComplete(root) {
+  return [
+    'base-python/python.exe',
+    'base-python/Lib/os.py',
+    'site-packages/fastapi/__init__.py',
+    'site-packages/starlette/__init__.py',
+    'site-packages/uvicorn/__init__.py',
+    'site-packages/mem0/__init__.py',
+  ].every((relativePath) => pathExists(path.join(root, relativePath)));
 }
 
-function ensurePythonEnvironment(runtimeDir) {
-  const environmentRoot = path.join(runtimeDir, 'dependency-cache', 'python-env');
-  const pythonPath = path.join(environmentRoot, 'base-python', 'python.exe');
-  if (pathExists(pythonPath)) return;
-  const archivePath = path.join(runtimeDir, 'dependency-cache', 'python-env.zip');
-  if (!pathExists(archivePath)) return;
-  extractZipSync(archivePath, environmentRoot);
+function validatePythonEnvironment(root) {
+  const pythonPath = path.join(root, 'base-python', 'python.exe');
+  const sitePackages = path.join(root, 'site-packages');
+  return new Promise((resolve, reject) => {
+    const child = spawn(pythonPath, ['-c', 'import fastapi, starlette, uvicorn, mem0, langgraph'], {
+      windowsHide: true,
+      env: {
+        ...process.env,
+        PYTHONPATH: sitePackages,
+        PYTHONNOUSERSITE: '1',
+        PYTHONDONTWRITEBYTECODE: '1',
+        PYTHONIOENCODING: 'utf-8',
+      },
+      stdio: ['ignore', 'ignore', 'pipe'],
+    });
+    let errors = '';
+    child.stderr.on('data', (chunk) => { errors += chunk.toString(); });
+    child.on('error', reject);
+    child.on('close', (code) => code === 0 ? resolve() : reject(new Error(`固定 Python 环境校验失败：${errors.trim() || `退出码 ${code}`}`)));
+  });
 }
 
-function ensureModelCache(runtimeDir) {
-  const modelRoot = path.join(runtimeDir, 'services', 'models');
-  if (pathExists(modelRoot)) return;
-  const archivePath = path.join(runtimeDir, 'dependency-cache', 'models.zip');
-  if (!pathExists(archivePath)) return;
-  extractZipSync(archivePath, runtimeDir);
+let dependencyPreparation = null;
+function prepareDependencies() {
+  if (dependencyPreparation) return dependencyPreparation;
+  dependencyPreparation = (async () => {
+    const cacheDir = getDependencyDir();
+    const bootstrap = path.join(getBootstrapDir(), 'dependency-cache');
+    await fs.promises.mkdir(cacheDir, { recursive: true });
+    sendProgress(0, '正在准备固定 Python 依赖，首次启动可能需要几分钟…');
+    await ensureExtracted({
+      archive: path.join(bootstrap, 'python-env.zip'),
+      target: path.join(cacheDir, 'python-env'),
+      isComplete: pythonEnvironmentComplete,
+      extract: extractZip,
+      validate: validatePythonEnvironment,
+    });
+    sendProgress(0, '正在准备本地嵌入模型…');
+    await ensureExtracted({
+      archive: path.join(bootstrap, 'models.zip'),
+      target: path.join(cacheDir, 'models'),
+      isComplete: (root) => pathExists(path.join(root, 'services', 'models', 'hub', 'models--sentence-transformers--all-MiniLM-L6-v2', 'refs', 'main')),
+      extract: extractZip,
+    });
+    const runtimeDir = getRuntimeDir();
+    const releaseState = path.join(runtimeDir, 'launcher-state', 'release.json');
+    if (pathExists(releaseState) && pathExists(path.join(runtimeDir, 'main.js'))) {
+      const state = readJson(releaseState);
+      if (state.launcher_source_mode === true) patchSourceBackendEntryPoint(runtimeDir);
+    }
+    sendProgress(0, '本地依赖已准备完成。');
+  })();
+  dependencyPreparation.catch(() => { dependencyPreparation = null; });
+  return dependencyPreparation;
 }
 
 function findDirectoryWithFile(rootDir, fileName) {
@@ -302,39 +264,6 @@ function findSourceRoot(extractedDir) {
   const packageRoot = findDirectoryWithFile(extractedDir, 'package.json');
   if (!packageRoot) throw new Error('源码包缺少 package.json。');
   return packageRoot;
-}
-
-function patchSourceBackendEntryPoint(sourceRoot) {
-  const mainPath = path.join(sourceRoot, 'main.js');
-  if (!pathExists(mainPath)) throw new Error('源码包缺少 main.js。');
-  let source = fs.readFileSync(mainPath, 'utf8');
-  if (source.includes('RUMIA_SOURCE_BACKEND')) return;
-
-  const marker = 'function startBackendService(force = false) {';
-  if (!source.includes(marker)) {
-    throw new Error('源码包的后端启动入口无法识别，已停止安装以避免启动半成品。');
-  }
-
-  const compatibility = `${marker}\n` +
-    `    if (process.env.RUMIA_SOURCE_BACKEND === '1') {\n` +
-    `        if (backendSpawning) return;\n` +
-    `        backendSpawning = true;\n` +
-    `        const { spawn } = require('child_process');\n` +
-    `        const pythonPath = resolvePythonPath();\n` +
-    `        logDebug(\`[LAUNCHER] 使用固定 Python 环境启动源码后端: \${pythonPath}\`);\n` +
-    `        backendProcess = spawn(pythonPath, ['services/web_interface.py'], {\n` +
-    `            cwd: __dirname,\n` +
-    `            windowsHide: true,\n` +
-    `            stdio: 'ignore',\n` +
-    `            env: process.env\n` +
-    `        });\n` +
-    `        backendProcess.unref();\n` +
-    `        backendProcess.on('error', (error) => logDebug(\`[LAUNCHER] 源码后端启动失败: \${error.message}\`));\n` +
-    `        setTimeout(() => { backendSpawning = false; }, 3000);\n` +
-    `        return;\n` +
-    `    }`;
-  source = source.replace(marker, compatibility);
-  fs.writeFileSync(mainPath, source, 'utf8');
 }
 
 async function getLatestUpdate() {
@@ -355,17 +284,7 @@ async function getLatestUpdate() {
 
 function ensureRuntimeStore() {
   const runtimeDir = getRuntimeDir();
-  if (!pathExists(runtimeDir)) {
-    fs.mkdirSync(runtimeDir, { recursive: true });
-  }
-  if (pathExists(getBootstrapDir())) {
-    // Seed only missing files. This lets a new installer repair an older
-    // launcher without replacing user data or an existing dependency cache.
-    copyMissingPath(getBootstrapDir(), runtimeDir);
-  }
-  ensurePythonEnvironment(runtimeDir);
-  ensureModelCache(runtimeDir);
-  fs.mkdirSync(path.join(runtimeDir, 'launcher-state'), { recursive: true });
+  fs.mkdirSync(runtimeDir, { recursive: true });
   return runtimeDir;
 }
 
@@ -373,22 +292,25 @@ function getLocalState() {
   const runtimeDir = ensureRuntimeStore();
   const packagePath = path.join(runtimeDir, 'package.json');
   const releaseStatePath = path.join(runtimeDir, 'launcher-state', 'release.json');
-  const pythonPath = path.join(runtimeDir, 'dependency-cache', 'python-env', 'base-python', 'python.exe');
+  const pythonRoot = path.join(getDependencyDir(), 'python-env');
+  const pythonPath = path.join(pythonRoot, 'base-python', 'python.exe');
   let packageInfo = null;
   let releaseState = null;
   try { if (pathExists(packagePath)) packageInfo = readJson(packagePath); } catch (_error) {}
   try { if (pathExists(releaseStatePath)) releaseState = readJson(releaseStatePath); } catch (_error) {}
 
-  const hasPythonEnvironment = pathExists(pythonPath);
+  const hasPythonEnvironment = pathExists(path.join(pythonRoot, '.launcher-ready')) && pythonEnvironmentComplete(pythonRoot);
   const sourceReady = releaseState?.launcher_source_mode === true;
-  const canLaunch = !!packageInfo && sourceReady && pathExists(path.join(runtimeDir, 'main.js')) && hasPythonEnvironment;
+  const hasSourceFiles = hasRequiredSourceFiles(runtimeDir);
+  const canLaunch = !!packageInfo && sourceReady && hasSourceFiles && hasPythonEnvironment;
   const backendStatus = canLaunch
     ? '最新版源码将使用本地固定依赖环境启动。'
-    : (hasPythonEnvironment ? '尚未安装正式程序。' : '缺少固定 Python 依赖环境，请重新安装启动器。');
+    : (!hasPythonEnvironment ? '固定 Python 依赖尚未准备完成。' :
+      (packageInfo && !hasSourceFiles ? '已安装源码缺少默认配置，请重新下载以修复。' : '尚未安装正式程序。'));
   return {
-    version: canLaunch ? packageInfo?.version || null : null,
-    commit: canLaunch ? releaseState?.commit || null : null,
-    hasDependencyCache: pathExists(path.join(runtimeDir, 'dependency-cache')),
+    version: packageInfo?.version || null,
+    commit: releaseState?.commit || null,
+    hasDependencyCache: pathExists(getDependencyDir()),
     hasPythonEnvironment,
     canLaunch,
     backendStatus,
@@ -396,6 +318,7 @@ function getLocalState() {
 }
 
 async function installLatestUpdate(sendProgress) {
+  await prepareDependencies();
   const update = await getLatestUpdate();
   const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'rumia-launcher-'));
   const sourceZip = path.join(temporaryRoot, 'source.zip');
@@ -422,7 +345,7 @@ async function installLatestUpdate(sendProgress) {
       fs.renameSync(runtimeDir, backupRuntime);
     }
     fs.mkdirSync(runtimeDir, { recursive: true });
-    copySourceFiles(sourceRoot, runtimeDir);
+    await copySourceFiles(sourceRoot, runtimeDir);
     if (backupRuntime) await copyPreservedFiles(backupRuntime, runtimeDir);
     writeJson(path.join(runtimeDir, 'launcher-state', 'release.json'), {
       version: update.version,
@@ -440,7 +363,7 @@ async function installLatestUpdate(sendProgress) {
     }
     throw error;
   } finally {
-    fs.rmSync(temporaryRoot, { recursive: true, force: true });
+    await fs.promises.rm(temporaryRoot, { recursive: true, force: true });
   }
 }
 
@@ -475,9 +398,13 @@ function sendProgress(percent, message) {
 }
 
 function registerHandlers() {
-  ipcMain.handle('launcher:get-state', () => getLocalState());
+  ipcMain.handle('launcher:get-state', async () => {
+    await prepareDependencies();
+    return getLocalState();
+  });
   ipcMain.handle('launcher:check-for-update', async () => {
     const latest = await getLatestUpdate();
+    await prepareDependencies();
     const state = getLocalState();
     return { ...latest, upToDate: state.version === latest.version && state.commit === latest.commit && state.canLaunch };
   });
@@ -487,8 +414,9 @@ function registerHandlers() {
     try { return await installLatestUpdate(sendProgress); }
     finally { updating = false; }
   });
-  ipcMain.handle('launcher:launch-formal-app', () => {
+  ipcMain.handle('launcher:launch-formal-app', async () => {
     if (updating) throw new Error('请等待更新完成。');
+    await prepareDependencies();
     const state = getLocalState();
     if (!state.canLaunch) throw new Error('正式程序尚未准备好，请先下载更新。');
     app.relaunch({ args: process.argv.slice(1).filter((arg) => arg !== '--run-formal').concat('--run-formal') });
@@ -500,13 +428,17 @@ function registerHandlers() {
 const runningFormalApp = process.argv.includes('--run-formal');
 if (runningFormalApp) {
   const formalRuntimeDir = getRuntimeDir();
+  const cacheDir = getDependencyDir();
   process.env.RUMIA_APP_ROOT = formalRuntimeDir;
   process.env.RUMIA_SOURCE_BACKEND = '1';
-  process.env.PYTHON_PATH = path.join(formalRuntimeDir, 'dependency-cache', 'python-env', 'base-python', 'python.exe');
-  const sitePackages = path.join(formalRuntimeDir, 'dependency-cache', 'python-env', 'site-packages');
-  process.env.PYTHONPATH = process.env.PYTHONPATH
-    ? `${sitePackages}${path.delimiter}${process.env.PYTHONPATH}`
-    : sitePackages;
+  process.env.PYTHON_PATH = path.join(cacheDir, 'python-env', 'base-python', 'python.exe');
+  process.env.HF_HOME = path.join(cacheDir, 'models', 'services', 'models');
+  process.env.RUMIA_LAUNCHER_BACKEND_LOG = path.join(app.getPath('userData'), 'logs', 'backend.log');
+  fs.mkdirSync(path.dirname(process.env.RUMIA_LAUNCHER_BACKEND_LOG), { recursive: true });
+  const sitePackages = path.join(cacheDir, 'python-env', 'site-packages');
+  process.env.PYTHONPATH = sitePackages;
+  process.env.PYTHONNOUSERSITE = '1';
+  process.env.PYTHONIOENCODING = 'utf-8';
   require(path.join(formalRuntimeDir, 'main.js'));
 } else {
   const gotTheLock = app.requestSingleInstanceLock();
@@ -521,7 +453,6 @@ if (runningFormalApp) {
       }
     });
     app.whenReady().then(() => {
-      ensureRuntimeStore();
       registerHandlers();
       createLauncherWindow();
     });
