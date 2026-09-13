@@ -39,6 +39,18 @@ def find_python_environment(explicit: Path | None, legacy_release: Path | None) 
     return None
 
 
+def find_python_home(virtual_environment: Path) -> Path | None:
+    config_path = virtual_environment / "pyvenv.cfg"
+    if not config_path.exists():
+        return None
+    for line in config_path.read_text(encoding="utf-8", errors="replace").splitlines():
+        if line.lower().startswith("home") and "=" in line:
+            configured_home = Path(line.split("=", 1)[1].strip())
+            if (configured_home / "python.exe").exists():
+                return configured_home
+    return None
+
+
 def find_legacy_release(explicit: Path | None) -> Path | None:
     candidates = []
     if explicit:
@@ -75,11 +87,17 @@ def prepare_bootstrap(legacy_release: Path | None, python_environment: Path | No
         missing.extend(str(item) for item in LEGACY_ASSETS)
 
     if python_environment:
-        destination = BOOTSTRAP / "dependency-cache" / "python-env" / ".venv"
-        shutil.copytree(python_environment, destination, dirs_exist_ok=True)
-        copied.append("python-env/.venv")
+        python_cache = BOOTSTRAP / "dependency-cache" / "python-env"
+        python_home = find_python_home(python_environment)
+        site_packages = python_environment / "Lib" / "site-packages"
+        if not python_home or not site_packages.exists():
+            missing.append("python-env/base-python-and-site-packages")
+        else:
+            shutil.copytree(python_home, python_cache / "base-python", dirs_exist_ok=True)
+            shutil.copytree(site_packages, python_cache / "site-packages", dirs_exist_ok=True)
+            copied.extend(["python-env/base-python", "python-env/site-packages"])
     else:
-        missing.append("python-env/.venv")
+        missing.append("python-env/base-python-and-site-packages")
 
     readme = dependency_cache / "README.txt"
     readme.write_text(

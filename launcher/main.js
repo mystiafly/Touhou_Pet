@@ -255,7 +255,7 @@ function getLocalState() {
   const runtimeDir = ensureRuntimeStore();
   const packagePath = path.join(runtimeDir, 'package.json');
   const releaseStatePath = path.join(runtimeDir, 'launcher-state', 'release.json');
-  const pythonPath = path.join(runtimeDir, 'dependency-cache', 'python-env', '.venv', 'Scripts', 'python.exe');
+  const pythonPath = path.join(runtimeDir, 'dependency-cache', 'python-env', 'base-python', 'python.exe');
   let packageInfo = null;
   let releaseState = null;
   try { if (pathExists(packagePath)) packageInfo = readJson(packagePath); } catch (_error) {}

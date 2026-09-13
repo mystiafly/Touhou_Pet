@@ -1,6 +1,6 @@
 # 启动器发行版
 
-启动器是一个独立的 Electron 入口。它把正式程序放在用户可写的运行目录中，把旧发行版里的难下载内容放在 `dependency-cache/legacy-release`，并把固定 Python 依赖环境放在 `dependency-cache/python-env/.venv`。
+启动器是一个独立的 Electron 入口。它把正式程序放在用户可写的运行目录中，把旧发行版里的难下载内容放在 `dependency-cache/legacy-release`，并把可搬运的 Python 解释器与第三方库放在 `dependency-cache/python-env`。
 
 更新流程固定为：
 

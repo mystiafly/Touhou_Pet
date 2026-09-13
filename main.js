@@ -620,6 +620,7 @@ let backendSpawning = false;
 function resolvePythonPath() {
     const runtimeRoot = getPackagedRuntimeRoot();
     const candidates = [
+        path.join(runtimeRoot, 'dependency-cache', 'python-env', 'base-python', 'python.exe'),
         path.join(runtimeRoot, 'dependency-cache', 'python-env', '.venv', 'Scripts', 'python.exe'),
         path.join(runtimeRoot, 'dependency-cache', 'python-env', '.venv', 'bin', 'python'),
         path.join(__dirname, '.venv', 'Scripts', 'python.exe'),
@@ -639,6 +640,22 @@ function resolvePythonPath() {
         }
     }
     return 'python';
+}
+
+function getPackagedPythonSitePackages(rootDir) {
+    return process.env.RUMIA_PYTHON_SITE_PACKAGES ||
+        path.join(rootDir, 'dependency-cache', 'python-env', 'site-packages');
+}
+
+function getPackagedPythonEnvironment(rootDir) {
+    const sitePackages = getPackagedPythonSitePackages(rootDir);
+    const existingPythonPath = process.env.PYTHONPATH || '';
+    return {
+        ...process.env,
+        RUMIA_APP_ROOT: rootDir,
+        RUMIA_SOURCE_BACKEND: '1',
+        PYTHONPATH: existingPythonPath ? `${sitePackages}${path.delimiter}${existingPythonPath}` : sitePackages
+    };
 }
 
 function startBackendService(force = false) {
@@ -668,7 +685,7 @@ function startBackendService(force = false) {
                 detached: false,
                 windowsHide: true,
                 stdio: 'ignore',
-                env: { ...process.env, RUMIA_APP_ROOT: rootDir, RUMIA_SOURCE_BACKEND: '1' }
+                env: getPackagedPythonEnvironment(rootDir)
             });
             backendProcess.on('error', (err) => {
                 logDebug(`[PACKAGED SOURCE BACKEND ERROR] 启动后端失败: ${err.message}`);
