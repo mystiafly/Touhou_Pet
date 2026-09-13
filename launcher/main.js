@@ -276,6 +276,39 @@ function findSourceRoot(extractedDir) {
   return packageRoot;
 }
 
+function patchSourceBackendEntryPoint(sourceRoot) {
+  const mainPath = path.join(sourceRoot, 'main.js');
+  if (!pathExists(mainPath)) throw new Error('源码包缺少 main.js。');
+  let source = fs.readFileSync(mainPath, 'utf8');
+  if (source.includes('RUMIA_SOURCE_BACKEND')) return;
+
+  const marker = 'function startBackendService(force = false) {';
+  if (!source.includes(marker)) {
+    throw new Error('源码包的后端启动入口无法识别，已停止安装以避免启动半成品。');
+  }
+
+  const compatibility = `${marker}\n` +
+    `    if (process.env.RUMIA_SOURCE_BACKEND === '1') {\n` +
+    `        if (backendSpawning) return;\n` +
+    `        backendSpawning = true;\n` +
+    `        const { spawn } = require('child_process');\n` +
+    `        const pythonPath = resolvePythonPath();\n` +
+    `        logDebug(\`[LAUNCHER] 使用固定 Python 环境启动源码后端: \${pythonPath}\`);\n` +
+    `        backendProcess = spawn(pythonPath, ['services/web_interface.py'], {\n` +
+    `            cwd: __dirname,\n` +
+    `            windowsHide: true,\n` +
+    `            stdio: 'ignore',\n` +
+    `            env: process.env\n` +
+    `        });\n` +
+    `        backendProcess.unref();\n` +
+    `        backendProcess.on('error', (error) => logDebug(\`[LAUNCHER] 源码后端启动失败: \${error.message}\`));\n` +
+    `        setTimeout(() => { backendSpawning = false; }, 3000);\n` +
+    `        return;\n` +
+    `    }`;
+  source = source.replace(marker, compatibility);
+  fs.writeFileSync(mainPath, source, 'utf8');
+}
+
 async function getLatestUpdate() {
   const commitInfo = await requestJson(COMMITS_URL);
   const commit = String(commitInfo.sha || '');
@@ -319,13 +352,14 @@ function getLocalState() {
   try { if (pathExists(releaseStatePath)) releaseState = readJson(releaseStatePath); } catch (_error) {}
 
   const hasPythonEnvironment = pathExists(pythonPath);
-  const canLaunch = !!packageInfo && pathExists(path.join(runtimeDir, 'main.js')) && hasPythonEnvironment;
+  const sourceReady = releaseState?.launcher_source_mode === true;
+  const canLaunch = !!packageInfo && sourceReady && pathExists(path.join(runtimeDir, 'main.js')) && hasPythonEnvironment;
   const backendStatus = canLaunch
     ? '最新版源码将使用本地固定依赖环境启动。'
     : (hasPythonEnvironment ? '尚未安装正式程序。' : '缺少固定 Python 依赖环境，请重新安装启动器。');
   return {
-    version: packageInfo?.version || null,
-    commit: releaseState?.commit || null,
+    version: canLaunch ? packageInfo?.version || null : null,
+    commit: canLaunch ? releaseState?.commit || null : null,
     hasDependencyCache: pathExists(path.join(runtimeDir, 'dependency-cache')),
     hasPythonEnvironment,
     canLaunch,
@@ -349,6 +383,7 @@ async function installLatestUpdate(sendProgress) {
     const sourceRoot = findSourceRoot(sourceExtracted);
     const sourcePackage = readJson(path.join(sourceRoot, 'package.json'));
     if (sourcePackage.version !== update.version) throw new Error('下载的源码版本与远程版本清单不匹配。');
+    patchSourceBackendEntryPoint(sourceRoot);
 
     const runtimeDir = ensureRuntimeStore();
     if (pathExists(runtimeDir)) {
@@ -364,6 +399,7 @@ async function installLatestUpdate(sendProgress) {
     writeJson(path.join(runtimeDir, 'launcher-state', 'release.json'), {
       version: update.version,
       commit: update.commit,
+      launcher_source_mode: true,
       updated_at: new Date().toISOString(),
     });
     sendProgress(100, '源码更新完成，用户数据和依赖缓存已保留。');
@@ -435,9 +471,15 @@ function registerHandlers() {
 
 const runningFormalApp = process.argv.includes('--run-formal');
 if (runningFormalApp) {
-  process.env.RUMIA_APP_ROOT = getRuntimeDir();
+  const formalRuntimeDir = getRuntimeDir();
+  process.env.RUMIA_APP_ROOT = formalRuntimeDir;
   process.env.RUMIA_SOURCE_BACKEND = '1';
-  require(path.join(getRuntimeDir(), 'main.js'));
+  process.env.PYTHON_PATH = path.join(formalRuntimeDir, 'dependency-cache', 'python-env', 'base-python', 'python.exe');
+  const sitePackages = path.join(formalRuntimeDir, 'dependency-cache', 'python-env', 'site-packages');
+  process.env.PYTHONPATH = process.env.PYTHONPATH
+    ? `${sitePackages}${path.delimiter}${process.env.PYTHONPATH}`
+    : sitePackages;
+  require(path.join(formalRuntimeDir, 'main.js'));
 } else {
   const gotTheLock = app.requestSingleInstanceLock();
   if (!gotTheLock) {
