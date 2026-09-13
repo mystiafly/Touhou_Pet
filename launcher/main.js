@@ -87,9 +87,13 @@ function copySourceFiles(sourceRoot, targetRoot) {
 
 function copyPreservedFiles(sourceRoot, targetRoot) {
   const hasPythonArchive = pathExists(path.join(sourceRoot, 'dependency-cache', 'python-env.zip'));
+  const hasModelArchive = pathExists(path.join(sourceRoot, 'dependency-cache', 'models.zip'));
   walkFiles(sourceRoot, (sourcePath, relativePath, entry) => {
     const normalized = relativePath.replaceAll('\\', '/').toLowerCase();
     if (hasPythonArchive && (normalized === 'dependency-cache/python-env' || normalized.startsWith('dependency-cache/python-env/'))) {
+      return false;
+    }
+    if (hasModelArchive && (normalized === 'services/models' || normalized.startsWith('services/models/'))) {
       return false;
     }
     if (!isPreservedPath(relativePath)) return;
@@ -248,6 +252,14 @@ function ensurePythonEnvironment(runtimeDir) {
   extractZipSync(archivePath, environmentRoot);
 }
 
+function ensureModelCache(runtimeDir) {
+  const modelRoot = path.join(runtimeDir, 'services', 'models');
+  if (pathExists(modelRoot)) return;
+  const archivePath = path.join(runtimeDir, 'dependency-cache', 'models.zip');
+  if (!pathExists(archivePath)) return;
+  extractZipSync(archivePath, runtimeDir);
+}
+
 function findDirectoryWithFile(rootDir, fileName) {
   if (pathExists(path.join(rootDir, fileName))) return rootDir;
   let found = null;
@@ -291,6 +303,7 @@ function ensureRuntimeStore() {
     copyMissingPath(getBootstrapDir(), runtimeDir);
   }
   ensurePythonEnvironment(runtimeDir);
+  ensureModelCache(runtimeDir);
   fs.mkdirSync(path.join(runtimeDir, 'launcher-state'), { recursive: true });
   return runtimeDir;
 }

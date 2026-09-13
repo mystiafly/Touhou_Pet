@@ -12,6 +12,7 @@ const PRESERVED_PREFIXES = [
   'data/',
   'dependency-cache/',
   'launcher-state/',
+  'services/models/',
 ];
 
 const PRESERVED_CHARACTER_PATHS = [

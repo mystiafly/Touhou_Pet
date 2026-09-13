@@ -1,8 +1,8 @@
-"""Build the small launcher and seed it with hard-to-download legacy assets.
+"""Build the launcher and seed it with hard-to-download project assets.
 
-The legacy distribution is copied into a cache only. The launcher runs the
-downloaded source with a separately preserved Python environment, so source
-updates do not require a new backend artifact for every commit.
+The launcher runs downloaded source with a separately preserved Python
+environment and the current project's local model cache. Source updates do
+not require a new backend artifact for every commit.
 """
 
 from __future__ import annotations
@@ -19,21 +19,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 BOOTSTRAP = ROOT / "build" / "launcher_bootstrap"
-LEGACY_ASSETS = (
-    Path("dist/backend"),
-    Path(".node_env"),
-    Path("wriggle_test.zip"),
-    Path("zh_core_web_sm-3.8.0-py3-none-any.whl"),
-)
+MODEL_CACHE = Path("services/models")
 
 
-def find_python_environment(explicit: Path | None, legacy_release: Path | None) -> Path | None:
+def find_python_environment(explicit: Path | None) -> Path | None:
     candidates = []
     if explicit:
         candidates.append(explicit)
     candidates.append(ROOT / ".venv")
-    if legacy_release:
-        candidates.append(legacy_release / ".venv")
     for candidate in candidates:
         if (candidate / "Scripts" / "python.exe").exists() or (candidate / "bin" / "python").exists():
             return candidate
@@ -49,17 +42,6 @@ def find_python_home(virtual_environment: Path) -> Path | None:
             configured_home = Path(line.split("=", 1)[1].strip())
             if (configured_home / "python.exe").exists():
                 return configured_home
-    return None
-
-
-def find_legacy_release(explicit: Path | None) -> Path | None:
-    candidates = []
-    if explicit:
-        candidates.append(explicit)
-    candidates.append(ROOT.parent / "rumia_clean_test_v2")
-    for candidate in candidates:
-        if candidate.is_dir() and (candidate / "dist" / "backend").exists():
-            return candidate
     return None
 
 
@@ -84,24 +66,6 @@ def add_tree_to_zip(
     return added
 
 
-def add_legacy_assets_to_zip(archive: zipfile.ZipFile, legacy_release: Path) -> tuple[list[str], list[str]]:
-    copied = []
-    missing = []
-    for relative_path in LEGACY_ASSETS:
-        source = legacy_release / relative_path
-        if not source.exists():
-            missing.append(str(relative_path))
-            continue
-        if source.is_dir():
-            added = add_tree_to_zip(archive, source, Path("legacy-release") / relative_path)
-            if added:
-                copied.append(f"{relative_path} ({added} files)")
-        else:
-            archive.write(source, (Path("legacy-release") / relative_path).as_posix())
-            copied.append(str(relative_path))
-    return copied, missing
-
-
 def add_python_base_to_zip(archive: zipfile.ZipFile, python_home: Path) -> int:
     # The configured Python installation also contains unrelated global tools
     # and site-packages. Only the interpreter, standard library and DLLs are
@@ -122,7 +86,7 @@ def add_python_base_to_zip(archive: zipfile.ZipFile, python_home: Path) -> int:
     )
 
 
-def prepare_bootstrap(legacy_release: Path | None, python_environment: Path | None) -> dict[str, list[str]]:
+def prepare_bootstrap(python_environment: Path | None) -> dict[str, list[str]]:
     if BOOTSTRAP.exists():
         shutil.rmtree(BOOTSTRAP)
     dependency_cache = BOOTSTRAP / "dependency-cache"
@@ -130,14 +94,15 @@ def prepare_bootstrap(legacy_release: Path | None, python_environment: Path | No
 
     copied = []
     missing = []
-    if legacy_release:
-        legacy_archive = dependency_cache / "legacy-release.zip"
-        with zipfile.ZipFile(legacy_archive, "w", compression=zipfile.ZIP_STORED) as archive:
-            legacy_copied, legacy_missing = add_legacy_assets_to_zip(archive, legacy_release)
-        copied.extend(f"legacy-release.zip: {item}" for item in legacy_copied)
-        missing.extend(legacy_missing)
+
+    model_source = ROOT / MODEL_CACHE
+    if model_source.is_dir():
+        model_archive = dependency_cache / "models.zip"
+        with zipfile.ZipFile(model_archive, "w", compression=zipfile.ZIP_STORED) as archive:
+            model_count = add_tree_to_zip(archive, model_source, Path("services/models"))
+        copied.append(f"models.zip: services/models ({model_count} files)")
     else:
-        missing.extend(str(item) for item in LEGACY_ASSETS)
+        missing.append(str(MODEL_CACHE))
 
     if python_environment:
         python_home = find_python_home(python_environment)
@@ -155,10 +120,10 @@ def prepare_bootstrap(legacy_release: Path | None, python_environment: Path | No
 
     readme = dependency_cache / "README.txt"
     readme.write_text(
-        "这些文件来自旧版发行版，仅作为难下载依赖缓存保留。\n"
+        "这些文件来自当前项目，仅作为难下载依赖缓存保留。\n"
         "python-env.zip 是运行最新版源码所需的固定 Python 依赖环境。\n"
-        "legacy-release.zip 保留旧发行版中的难下载依赖，不作为最新版源码运行。\n"
-        "启动器更新时不会覆盖 dependency-cache，也不会把旧版后端当作最新版运行。\n",
+        "models.zip 是当前项目内嵌的 HuggingFace 嵌入模型缓存。\n"
+        "启动器更新时不会覆盖 dependency-cache，也不会把用户数据或模型缓存重置。\n",
         encoding="utf-8",
     )
     return {"copied": copied, "missing": missing}
@@ -176,11 +141,6 @@ def build_installer() -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="构建大贤者启动器发行版")
     parser.add_argument(
-        "--legacy-release",
-        type=Path,
-        help="旧版发行目录，默认自动查找 ../rumia_clean_test_v2",
-    )
-    parser.add_argument(
         "--python-env",
         type=Path,
         help="可复用的 Python 虚拟环境，默认自动查找项目 .venv",
@@ -188,10 +148,9 @@ def main() -> int:
     parser.add_argument("--no-installer", action="store_true", help="只准备启动器依赖缓存，不运行 electron-builder")
     args = parser.parse_args()
 
-    legacy_release = find_legacy_release(args.legacy_release)
-    python_environment = find_python_environment(args.python_env, legacy_release)
-    result = prepare_bootstrap(legacy_release, python_environment)
-    print(json.dumps({"legacy_release": str(legacy_release) if legacy_release else None, **result}, ensure_ascii=False, indent=2))
+    python_environment = find_python_environment(args.python_env)
+    result = prepare_bootstrap(python_environment)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
     if not args.no_installer:
         build_installer()
     return 0
