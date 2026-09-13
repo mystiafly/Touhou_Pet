@@ -85,23 +85,51 @@ function copySourceFiles(sourceRoot, targetRoot) {
   });
 }
 
-function copyPreservedFiles(sourceRoot, targetRoot) {
+async function copyPreservedFiles(sourceRoot, targetRoot) {
   const hasPythonArchive = pathExists(path.join(sourceRoot, 'dependency-cache', 'python-env.zip'));
   const hasModelArchive = pathExists(path.join(sourceRoot, 'dependency-cache', 'models.zip'));
-  walkFiles(sourceRoot, (sourcePath, relativePath, entry) => {
+  const visit = async (relativePath) => {
     const normalized = relativePath.replaceAll('\\', '/').toLowerCase();
+    const sourcePath = path.join(sourceRoot, relativePath);
+    if (!pathExists(sourcePath)) return;
+
+    // The old compiled backend is deliberately not part of the current
+    // launcher design. Do not copy it from a runtime created by an older
+    // launcher installation.
+    if (normalized === 'dependency-cache/legacy-release' || normalized.startsWith('dependency-cache/legacy-release/')) {
+      return;
+    }
+    if (normalized === 'dependency-cache/legacy-release.zip') return;
     if (hasPythonArchive && (normalized === 'dependency-cache/python-env' || normalized.startsWith('dependency-cache/python-env/'))) {
-      return false;
+      return;
     }
     if (hasModelArchive && (normalized === 'services/models' || normalized.startsWith('services/models/'))) {
-      return false;
+      return;
     }
-    if (!isPreservedPath(relativePath)) return;
-    copyPath(sourcePath, path.join(targetRoot, relativePath));
-    // A protected directory is copied as a whole, so walking its children again
-    // is unnecessary and can cause duplicate work for large history folders.
-    if (entry.isDirectory()) return;
-  });
+    const entry = fs.lstatSync(sourcePath);
+    if (entry.isDirectory()) {
+      // Traverse container directories so excluded cache entries can be
+      // filtered before copying. Other protected directories are copied in one
+      // asynchronous operation to keep the Electron window responsive.
+      const isContainer = normalized === 'dependency-cache' || normalized === 'data' || normalized === 'services';
+      if (isPreservedPath(relativePath) && !isContainer) {
+        await fs.promises.cp(sourcePath, path.join(targetRoot, relativePath), { recursive: true, force: true });
+        return;
+      }
+      for (const child of fs.readdirSync(sourcePath)) {
+        await visit(path.join(relativePath, child));
+      }
+      return;
+    }
+    if (isPreservedPath(relativePath)) {
+      await fs.promises.mkdir(path.dirname(path.join(targetRoot, relativePath)), { recursive: true });
+      await fs.promises.copyFile(sourcePath, path.join(targetRoot, relativePath));
+    }
+  };
+
+  for (const entry of fs.readdirSync(sourceRoot)) {
+    await visit(entry);
+  }
 }
 
 function requestBuffer(url, redirectCount = 0) {
@@ -395,7 +423,7 @@ async function installLatestUpdate(sendProgress) {
     }
     fs.mkdirSync(runtimeDir, { recursive: true });
     copySourceFiles(sourceRoot, runtimeDir);
-    if (backupRuntime) copyPreservedFiles(backupRuntime, runtimeDir);
+    if (backupRuntime) await copyPreservedFiles(backupRuntime, runtimeDir);
     writeJson(path.join(runtimeDir, 'launcher-state', 'release.json'), {
       version: update.version,
       commit: update.commit,
