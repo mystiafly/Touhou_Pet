@@ -24,6 +24,10 @@
     "oneClick": false,
     "perMachine": false,
     "allowToChangeInstallationDirectory": true,
+    "allowElevation": true,
+    "runAfterFinish": true,
+    "deleteAppDataOnUninstall": false,
+    "include": "launcher/installer.nsh",
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
     "shortcutName": "大贤者启动器"
