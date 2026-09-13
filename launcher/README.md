@@ -1,6 +1,6 @@
 # 启动器发行版
 
-启动器从远程 `main` 下载正式程序源码，并使用安装包内的固定 Python 依赖与当前项目模型缓存运行。依赖在首次启动时异步展开到启动器用户目录下的 `dependency-cache/`；导入校验通过后才会开放正式程序启动按钮。后续更新只替换 `runtime/` 中的源码。
+启动器从远程 `main` 下载正式程序源码，并使用安装包内的固定 Python 依赖与当前项目模型缓存运行。运行内容全部放在启动器安装目录下：`runtime/` 保存正式源码与用户数据，`dependency-cache/` 保存难下载依赖，`logs/` 保存诊断日志。依赖在首次启动时异步展开；导入校验通过后才会开放正式程序启动按钮。后续更新只替换 `runtime/` 中的源码。
 
 更新流程固定为：
 
@@ -28,4 +28,4 @@ python build_launcher.py --python-env D:\rumia-runtime\.venv
 python build_launcher.py --no-installer
 ```
 
-旧版 `runtime/dependency-cache/` 会保留在更新备份中，但不会参与新版本的运行。后端输出保存在启动器用户目录下的 `logs/backend.log`。
+如果检测到旧版 `%APPDATA%/rumia-launcher/runtime`，启动器会把源码和用户数据复制到安装目录，原目录保留不变；旧版依赖缓存不迁移，会从当前安装包重新准备。后端输出保存在安装目录下的 `logs/backend.log`。

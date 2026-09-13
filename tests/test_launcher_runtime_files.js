@@ -6,6 +6,7 @@ const os = require('os');
 const path = require('path');
 const test = require('node:test');
 const { copySourceFiles, copyPreservedFiles, hasRequiredSourceFiles } = require('../launcher/runtime_files');
+const { getLauncherStorageRoot } = require('../launcher/storage_paths');
 
 function put(root, relativePath, value) {
   const filePath = path.join(root, relativePath);
@@ -43,6 +44,13 @@ test('an old download missing default configuration is not launchable', () => {
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('packaged launcher stores runtime beside its executable', () => {
+  assert.equal(
+    getLauncherStorageRoot({ isPackaged: true, executablePath: 'G:\\Apps\\Rumia\\大贤者启动器.exe' }),
+    path.resolve('G:\\Apps\\Rumia'),
+  );
 });
 
 test('update overlays user configs and memories without moving old caches', async () => {

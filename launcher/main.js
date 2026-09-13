@@ -10,18 +10,36 @@ const { spawn } = require('child_process');
 const { copySourceFiles, copyPreservedFiles, hasRequiredSourceFiles } = require('./runtime_files');
 const { ensureExtracted } = require('./runtime_cache');
 const { patchSourceBackendEntryPoint } = require('./source_compat');
+const { getLauncherStorageRoot } = require('./storage_paths');
 
 const REPOSITORY = 'mystiafly/Touhou_Pet';
 const BRANCH = 'main';
 const COMMITS_URL = `https://api.github.com/repos/${REPOSITORY}/commits/${BRANCH}`;
 const USER_AGENT = 'RumiaDesktopPetLauncher/1.x';
 
+function getLauncherDir() {
+  return getLauncherStorageRoot({
+    isPackaged: app.isPackaged,
+    executablePath: process.execPath,
+    appPath: app.getAppPath(),
+    override: process.env.RUMIA_LAUNCHER_DIR,
+  });
+}
+
 function getRuntimeDir() {
-  return path.join(app.getPath('userData'), 'runtime');
+  return path.join(getLauncherDir(), 'runtime');
 }
 
 function getDependencyDir() {
-  return path.join(app.getPath('userData'), 'dependency-cache');
+  return path.join(getLauncherDir(), 'dependency-cache');
+}
+
+function getLogDir() {
+  return path.join(getLauncherDir(), 'logs');
+}
+
+function getLegacyLauncherDir() {
+  return app.getPath('userData');
 }
 
 function getBootstrapDir() {
@@ -217,9 +235,30 @@ function validatePythonEnvironment(root) {
 }
 
 let dependencyPreparation = null;
+let legacyMigration = null;
+
+function migrateLegacyRuntime() {
+  if (legacyMigration) return legacyMigration;
+  legacyMigration = (async () => {
+    const launcherDir = getLauncherDir();
+    const legacyDir = getLegacyLauncherDir();
+    const sourceRuntime = path.join(legacyDir, 'runtime');
+    const targetRuntime = getRuntimeDir();
+    if (path.resolve(launcherDir).toLowerCase() === path.resolve(legacyDir).toLowerCase() ||
+        !pathExists(sourceRuntime) || pathExists(targetRuntime)) return;
+    sendProgress(0, '正在迁移旧版源码和用户数据到启动器目录…');
+    await fs.promises.mkdir(launcherDir, { recursive: true });
+    await copySourceFiles(sourceRuntime, targetRuntime);
+    sendProgress(0, '旧版用户数据已复制，原目录保留不变。');
+  })();
+  legacyMigration.catch(() => { legacyMigration = null; });
+  return legacyMigration;
+}
+
 function prepareDependencies() {
   if (dependencyPreparation) return dependencyPreparation;
   dependencyPreparation = (async () => {
+    await migrateLegacyRuntime();
     const cacheDir = getDependencyDir();
     const bootstrap = path.join(getBootstrapDir(), 'dependency-cache');
     await fs.promises.mkdir(cacheDir, { recursive: true });
@@ -433,7 +472,7 @@ if (runningFormalApp) {
   process.env.RUMIA_SOURCE_BACKEND = '1';
   process.env.PYTHON_PATH = path.join(cacheDir, 'python-env', 'base-python', 'python.exe');
   process.env.HF_HOME = path.join(cacheDir, 'models', 'services', 'models');
-  process.env.RUMIA_LAUNCHER_BACKEND_LOG = path.join(app.getPath('userData'), 'logs', 'backend.log');
+  process.env.RUMIA_LAUNCHER_BACKEND_LOG = path.join(getLogDir(), 'backend.log');
   fs.mkdirSync(path.dirname(process.env.RUMIA_LAUNCHER_BACKEND_LOG), { recursive: true });
   const sitePackages = path.join(cacheDir, 'python-env', 'site-packages');
   process.env.PYTHONPATH = sitePackages;
