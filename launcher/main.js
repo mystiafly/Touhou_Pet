@@ -176,6 +176,29 @@ function downloadFile(url, destination, onProgress, redirectCount = 0) {
   });
 }
 
+function requestStatus(url, method = 'HEAD', headers = {}, redirectCount = 0) {
+  if (redirectCount > 5) return Promise.reject(new Error('远程地址重定向次数过多。'));
+  const client = url.startsWith('https:') ? https : http;
+  return new Promise((resolve, reject) => {
+    const request = client.request(url, {
+      method,
+      headers: { 'User-Agent': USER_AGENT, ...headers },
+    }, (response) => {
+      if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
+        response.resume();
+        requestStatus(new URL(response.headers.location, url).toString(), method, headers, redirectCount + 1)
+          .then(resolve, reject);
+        return;
+      }
+      response.resume();
+      resolve(response.statusCode || 0);
+    });
+    request.setTimeout(30000, () => request.destroy(new Error('连接远程服务器超时。')));
+    request.on('error', reject);
+    request.end();
+  });
+}
+
 async function downloadFromMirrors(url, destination, onProgress) {
   let lastError = null;
   for (const candidate of mirrorUrls(url)) {
@@ -188,6 +211,29 @@ async function downloadFromMirrors(url, destination, onProgress) {
     }
   }
   throw new Error(`无法下载更新包：${lastError?.message || '未知网络错误'}`);
+}
+
+async function assertBackendAssetAvailable(url, version, commit) {
+  let lastStatus = 0;
+  let lastError = null;
+  for (const candidate of mirrorUrls(url)) {
+    try {
+      let status = await requestStatus(candidate);
+      // Some mirrors do not implement HEAD. A one-byte range request checks
+      // availability without downloading the full backend package.
+      if (status === 405 || status === 403) {
+        status = await requestStatus(candidate, 'GET', { Range: 'bytes=0-0' });
+      }
+      if (status === 200 || status === 206) return;
+      lastStatus = status;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  if (lastStatus === 404) {
+    throw new Error(`远程尚未发布 v${version}（${commit.slice(0, 8)}）对应的后端包，请先发布匹配后端后再更新。`);
+  }
+  throw new Error(`无法确认对应后端包是否可下载${lastError ? `：${lastError.message}` : `（HTTP ${lastStatus}）`}。`);
 }
 
 function extractZip(zipPath, destination) {
@@ -242,12 +288,14 @@ async function getLatestUpdate() {
   const packageInfo = await requestJson(`https://raw.githubusercontent.com/${REPOSITORY}/${commit}/package.json`);
   const version = String(packageInfo.version || '');
   if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error('远程源码缺少有效版本号。');
-  return {
+  const update = {
     version,
     commit,
     sourceUrl: `https://github.com/${REPOSITORY}/archive/${commit}.zip`,
     backendUrl: `https://github.com/${REPOSITORY}/releases/download/v${version}/Rumia-Backend-${version}-${commit}.zip`,
   };
+  await assertBackendAssetAvailable(update.backendUrl, version, commit);
+  return update;
 }
 
 function ensureRuntimeStore() {
