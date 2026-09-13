@@ -9,7 +9,6 @@ const https = require('https');
 const { spawn } = require('child_process');
 const {
   isPreservedPath,
-  validateMatchingArtifacts,
 } = require('./update_policy');
 
 const REPOSITORY = 'mystiafly/Touhou_Pet';
@@ -176,29 +175,6 @@ function downloadFile(url, destination, onProgress, redirectCount = 0) {
   });
 }
 
-function requestStatus(url, method = 'HEAD', headers = {}, redirectCount = 0) {
-  if (redirectCount > 5) return Promise.reject(new Error('远程地址重定向次数过多。'));
-  const client = url.startsWith('https:') ? https : http;
-  return new Promise((resolve, reject) => {
-    const request = client.request(url, {
-      method,
-      headers: { 'User-Agent': USER_AGENT, ...headers },
-    }, (response) => {
-      if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
-        response.resume();
-        requestStatus(new URL(response.headers.location, url).toString(), method, headers, redirectCount + 1)
-          .then(resolve, reject);
-        return;
-      }
-      response.resume();
-      resolve(response.statusCode || 0);
-    });
-    request.setTimeout(30000, () => request.destroy(new Error('连接远程服务器超时。')));
-    request.on('error', reject);
-    request.end();
-  });
-}
-
 async function downloadFromMirrors(url, destination, onProgress) {
   let lastError = null;
   for (const candidate of mirrorUrls(url)) {
@@ -211,29 +187,6 @@ async function downloadFromMirrors(url, destination, onProgress) {
     }
   }
   throw new Error(`无法下载更新包：${lastError?.message || '未知网络错误'}`);
-}
-
-async function assertBackendAssetAvailable(url, version, commit) {
-  let lastStatus = 0;
-  let lastError = null;
-  for (const candidate of mirrorUrls(url)) {
-    try {
-      let status = await requestStatus(candidate);
-      // Some mirrors do not implement HEAD. A one-byte range request checks
-      // availability without downloading the full backend package.
-      if (status === 405 || status === 403) {
-        status = await requestStatus(candidate, 'GET', { Range: 'bytes=0-0' });
-      }
-      if (status === 200 || status === 206) return;
-      lastStatus = status;
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  if (lastStatus === 404) {
-    throw new Error(`远程尚未发布 v${version}（${commit.slice(0, 8)}）对应的后端包，请先发布匹配后端后再更新。`);
-  }
-  throw new Error(`无法确认对应后端包是否可下载${lastError ? `：${lastError.message}` : `（HTTP ${lastStatus}）`}。`);
 }
 
 function extractZip(zipPath, destination) {
@@ -270,15 +223,6 @@ function findSourceRoot(extractedDir) {
   return packageRoot;
 }
 
-function getBackendRoot(extractedDir) {
-  const manifestRoot = findDirectoryWithFile(extractedDir, 'backend-manifest.json');
-  if (!manifestRoot) throw new Error('后端包缺少 backend-manifest.json。');
-  if (!pathExists(path.join(manifestRoot, 'web_interface.exe'))) {
-    throw new Error('后端包缺少 web_interface.exe。');
-  }
-  return manifestRoot;
-}
-
 async function getLatestUpdate() {
   const commitInfo = await requestJson(COMMITS_URL);
   const commit = String(commitInfo.sha || '');
@@ -288,14 +232,11 @@ async function getLatestUpdate() {
   const packageInfo = await requestJson(`https://raw.githubusercontent.com/${REPOSITORY}/${commit}/package.json`);
   const version = String(packageInfo.version || '');
   if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error('远程源码缺少有效版本号。');
-  const update = {
+  return {
     version,
     commit,
     sourceUrl: `https://github.com/${REPOSITORY}/archive/${commit}.zip`,
-    backendUrl: `https://github.com/${REPOSITORY}/releases/download/v${version}/Rumia-Backend-${version}-${commit}.zip`,
   };
-  await assertBackendAssetAvailable(update.backendUrl, version, commit);
-  return update;
 }
 
 function ensureRuntimeStore() {
@@ -313,27 +254,23 @@ function ensureRuntimeStore() {
 function getLocalState() {
   const runtimeDir = ensureRuntimeStore();
   const packagePath = path.join(runtimeDir, 'package.json');
-  const backendManifestPath = path.join(runtimeDir, 'dist', 'backend', 'backend-manifest.json');
+  const releaseStatePath = path.join(runtimeDir, 'launcher-state', 'release.json');
+  const pythonPath = path.join(runtimeDir, 'dependency-cache', 'python-env', '.venv', 'Scripts', 'python.exe');
   let packageInfo = null;
-  let backendManifest = null;
+  let releaseState = null;
   try { if (pathExists(packagePath)) packageInfo = readJson(packagePath); } catch (_error) {}
-  try { if (pathExists(backendManifestPath)) backendManifest = readJson(backendManifestPath); } catch (_error) {}
+  try { if (pathExists(releaseStatePath)) releaseState = readJson(releaseStatePath); } catch (_error) {}
 
-  let canLaunch = false;
-  let backendStatus = '尚未安装正式程序。';
-  if (packageInfo && backendManifest) {
-    try {
-      validateMatchingArtifacts({ version: packageInfo.version, commit: backendManifest.source_commit }, backendManifest);
-      canLaunch = pathExists(path.join(runtimeDir, 'main.js'));
-      backendStatus = canLaunch ? '源码与对应后端已匹配。' : '正式程序入口缺失。';
-    } catch (error) {
-      backendStatus = error.message;
-    }
-  }
+  const hasPythonEnvironment = pathExists(pythonPath);
+  const canLaunch = !!packageInfo && pathExists(path.join(runtimeDir, 'main.js')) && hasPythonEnvironment;
+  const backendStatus = canLaunch
+    ? '最新版源码将使用本地固定依赖环境启动。'
+    : (hasPythonEnvironment ? '尚未安装正式程序。' : '缺少固定 Python 依赖环境，请重新安装启动器。');
   return {
     version: packageInfo?.version || null,
-    commit: backendManifest?.source_commit || null,
+    commit: releaseState?.commit || null,
     hasDependencyCache: pathExists(path.join(runtimeDir, 'dependency-cache')),
+    hasPythonEnvironment,
     canLaunch,
     backendStatus,
   };
@@ -343,27 +280,18 @@ async function installLatestUpdate(sendProgress) {
   const update = await getLatestUpdate();
   const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'rumia-launcher-'));
   const sourceZip = path.join(temporaryRoot, 'source.zip');
-  const backendZip = path.join(temporaryRoot, 'backend.zip');
   const sourceExtracted = path.join(temporaryRoot, 'source');
-  const backendExtracted = path.join(temporaryRoot, 'backend');
-  let oldRuntime = null;
   let backupRuntime = null;
 
   try {
     sendProgress(5, '正在下载最新版源码…');
-    await downloadFromMirrors(update.sourceUrl, sourceZip, (percent) => sendProgress(5 + percent * 0.3, '正在下载最新版源码…'));
-    sendProgress(35, '正在下载对应版本后端…');
-    await downloadFromMirrors(update.backendUrl, backendZip, (percent) => sendProgress(35 + percent * 0.45, '正在下载对应版本后端…'));
-    sendProgress(82, '正在校验源码与后端…');
+    await downloadFromMirrors(update.sourceUrl, sourceZip, (percent) => sendProgress(5 + percent * 0.65, '正在下载最新版源码…'));
+    sendProgress(75, '正在校验源码并保留本地依赖…');
     await extractZip(sourceZip, sourceExtracted);
-    await extractZip(backendZip, backendExtracted);
 
     const sourceRoot = findSourceRoot(sourceExtracted);
-    const backendRoot = getBackendRoot(backendExtracted);
     const sourcePackage = readJson(path.join(sourceRoot, 'package.json'));
-    const backendManifest = readJson(path.join(backendRoot, 'backend-manifest.json'));
     if (sourcePackage.version !== update.version) throw new Error('下载的源码版本与远程版本清单不匹配。');
-    validateMatchingArtifacts({ version: update.version, commit: update.commit }, backendManifest);
 
     const runtimeDir = ensureRuntimeStore();
     if (pathExists(runtimeDir)) {
@@ -377,13 +305,12 @@ async function installLatestUpdate(sendProgress) {
     fs.mkdirSync(runtimeDir, { recursive: true });
     copySourceFiles(sourceRoot, runtimeDir);
     if (backupRuntime) copyPreservedFiles(backupRuntime, runtimeDir);
-    copyPath(backendRoot, path.join(runtimeDir, 'dist', 'backend'));
     writeJson(path.join(runtimeDir, 'launcher-state', 'release.json'), {
       version: update.version,
       commit: update.commit,
       updated_at: new Date().toISOString(),
     });
-    sendProgress(100, '更新完成，用户数据和依赖缓存已保留。');
+    sendProgress(100, '源码更新完成，用户数据和依赖缓存已保留。');
     return getLocalState();
   } catch (error) {
     const runtimeDir = getRuntimeDir();
@@ -453,6 +380,7 @@ function registerHandlers() {
 const runningFormalApp = process.argv.includes('--run-formal');
 if (runningFormalApp) {
   process.env.RUMIA_APP_ROOT = getRuntimeDir();
+  process.env.RUMIA_SOURCE_BACKEND = '1';
   require(path.join(getRuntimeDir(), 'main.js'));
 } else {
   const gotTheLock = app.requestSingleInstanceLock();

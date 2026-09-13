@@ -46,29 +46,9 @@ function isPreservedPath(relativePath) {
   return PRESERVED_CHARACTER_PATHS.some((pattern) => pattern.test(normalized));
 }
 
-function validateMatchingArtifacts(sourceManifest, backendManifest) {
-  if (!sourceManifest || !backendManifest) {
-    throw new Error('更新包缺少源码或后端清单。');
-  }
-  if (!sourceManifest.version || !sourceManifest.commit) {
-    throw new Error('源码清单缺少版本或提交号。');
-  }
-  if (backendManifest.version !== sourceManifest.version) {
-    throw new Error('源码与后端版本不匹配，已拒绝更新。');
-  }
-  if (backendManifest.source_commit !== sourceManifest.commit) {
-    throw new Error('源码与后端提交不匹配，已拒绝更新。');
-  }
-  if (backendManifest.format !== 1) {
-    throw new Error('后端更新包格式不受支持。');
-  }
-  return true;
-}
-
 module.exports = {
   PRESERVED_EXACT_PATHS,
   PRESERVED_PREFIXES,
   normalizeRelativePath,
   isPreservedPath,
-  validateMatchingArtifacts,
 };

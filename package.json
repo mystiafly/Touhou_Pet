@@ -1,13 +1,12 @@
 {
   "name": "rumia",
-  "version": "1.52.15",
+  "version": "1.52.16",
   "description": "Desktop Pet AI",
   "main": "main.js",
   "scripts": {
     "start": "electron . --enable-logging",
     "build": "electron-builder --win",
     "build:launcher": "python build_launcher.py",
-    "build:backend-package": "python build_backend_package.py"
   },
   "devDependencies": {
     "electron": "28.3.3",

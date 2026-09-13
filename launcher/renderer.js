@@ -32,9 +32,9 @@ function renderState(state) {
   window.__launcherState = state;
   currentVersion.textContent = state.version ? `v${state.version}` : '尚未安装';
   currentCommit.textContent = state.commit ? `源码 ${state.commit.slice(0, 8)}` : '等待检查';
-  dependencyState.textContent = state.hasDependencyCache ? '已准备' : '未找到';
+  dependencyState.textContent = state.hasPythonEnvironment ? '已准备' : '未找到';
   setStatus(
-    state.canLaunch ? '正式程序已就绪。' : '请先下载最新版正式程序。',
+    state.canLaunch ? '正式程序已就绪。' : '请先下载最新版源码。',
     state.backendStatus || '启动器不会覆盖依赖缓存和用户数据。',
     state.canLaunch ? 'ready' : '',
   );
@@ -52,7 +52,7 @@ async function loadState() {
 checkButton.addEventListener('click', async () => {
   if (busy) return;
   setBusy(true);
-  setStatus('正在检查远程版本…', '需要同时取得源码与对应后端。');
+  setStatus('正在检查远程版本…', '将拉取最新版源码，并使用本地固定依赖环境。');
   try {
     latestUpdate = await window.launcher.checkForUpdate();
     if (latestUpdate.upToDate) {
@@ -73,7 +73,7 @@ updateButton.addEventListener('click', async () => {
   if (busy || !latestUpdate) return;
   setBusy(true);
   progressBar.style.width = '0%';
-  setStatus('正在下载更新…', '源码与后端会先完成校验，再替换正式程序。');
+    setStatus('正在下载更新…', '源码完成校验后才会替换正式程序。');
   try {
     const state = await window.launcher.installUpdate(latestUpdate);
     latestUpdate = null;

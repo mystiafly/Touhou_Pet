@@ -618,7 +618,10 @@ let backendProcess = null;
 let backendSpawning = false;
 
 function resolvePythonPath() {
+    const runtimeRoot = getPackagedRuntimeRoot();
     const candidates = [
+        path.join(runtimeRoot, 'dependency-cache', 'python-env', '.venv', 'Scripts', 'python.exe'),
+        path.join(runtimeRoot, 'dependency-cache', 'python-env', '.venv', 'bin', 'python'),
         path.join(__dirname, '.venv', 'Scripts', 'python.exe'),
         path.join(__dirname, '..', '.venv', 'Scripts', 'python.exe'),
         path.join(__dirname, '.venv', 'bin', 'python'),
@@ -626,6 +629,9 @@ function resolvePythonPath() {
     ];
     if (process.env.PYTHON_PATH) {
         candidates.unshift(process.env.PYTHON_PATH);
+    }
+    if (process.env.RUMIA_PYTHON_PATH) {
+        candidates.unshift(process.env.RUMIA_PYTHON_PATH);
     }
     for (const c of candidates) {
         if (fs.existsSync(c)) {
@@ -649,6 +655,28 @@ function startBackendService(force = false) {
         
         const baseDir = process.resourcesPath;
         const rootDir = getPackagedRuntimeRoot();
+
+        if (process.env.RUMIA_SOURCE_BACKEND === '1') {
+            const pyExe = resolvePythonPath();
+            if (!fs.existsSync(pyExe) && pyExe !== 'python') {
+                logDebug(`[PACKAGED ERROR] 固定 Python 依赖环境不存在: ${pyExe}`);
+                return;
+            }
+            logDebug(`[PACKAGED] 使用固定 Python 依赖环境启动源码后端: ${pyExe}`);
+            backendProcess = spawn(pyExe, ['services/web_interface.py'], {
+                cwd: rootDir,
+                detached: false,
+                windowsHide: true,
+                stdio: 'ignore',
+                env: { ...process.env, RUMIA_APP_ROOT: rootDir, RUMIA_SOURCE_BACKEND: '1' }
+            });
+            backendProcess.on('error', (err) => {
+                logDebug(`[PACKAGED SOURCE BACKEND ERROR] 启动后端失败: ${err.message}`);
+                backendProcess = null;
+            });
+            return;
+        }
+
         const exePaths = [
             path.join(rootDir, 'dist', 'backend', 'web_interface.exe'),
             path.join(rootDir, 'backend', 'web_interface.exe'),
