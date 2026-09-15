@@ -80,6 +80,12 @@ window.__petIPC = {
     getAutostart: () => {
         return ipcRenderer.invoke('get-autostart');
     },
+    setQuickShortcuts: (bindings) => {
+        return ipcRenderer.invoke('set-quick-shortcuts', bindings);
+    },
+    onQuickShortcutTriggered: (callback) => {
+        ipcRenderer.on('quick-shortcut-triggered', (event, binding) => callback(binding));
+    },
     restartApp: () => {
         ipcRenderer.send('restart-app');
     }

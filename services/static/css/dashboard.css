@@ -403,6 +403,117 @@ input:checked + .slider:before {
     line-height: 1.5;
 }
 
+.quick-shortcuts-intro {
+    margin-bottom: 16px;
+}
+
+.quick-shortcuts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.quick-shortcuts-empty {
+    padding: 16px;
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.quick-shortcut-row {
+    padding: 14px;
+    background: rgba(0, 0, 0, 0.16);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+.quick-shortcut-grid {
+    display: grid;
+    grid-template-columns: minmax(120px, 1fr) minmax(160px, 1fr) minmax(150px, 1fr) minmax(180px, 1.5fr) auto;
+    gap: 10px;
+    align-items: end;
+}
+
+.quick-shortcut-field {
+    min-width: 0;
+}
+
+.quick-shortcut-field label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.quick-shortcut-input,
+.quick-shortcut-text {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 9px 10px;
+    background: var(--bg-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 7px;
+    color: var(--text-main);
+    font: inherit;
+    outline: none;
+}
+
+.quick-shortcut-input:focus,
+.quick-shortcut-text:focus {
+    border-color: var(--info);
+    box-shadow: 0 0 0 2px rgba(139, 233, 253, 0.15);
+}
+
+.quick-shortcut-text {
+    min-height: 38px;
+    resize: vertical;
+}
+
+.quick-shortcut-accelerator {
+    cursor: pointer;
+}
+
+.quick-shortcut-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 38px;
+    color: var(--text-muted);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.quick-shortcut-remove {
+    height: 38px;
+    padding: 0 10px;
+    border: 1px solid rgba(255, 85, 85, 0.45);
+    border-radius: 7px;
+    background: transparent;
+    color: var(--danger);
+    cursor: pointer;
+}
+
+.quick-shortcuts-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+@media (max-width: 900px) {
+    .quick-shortcut-grid {
+        grid-template-columns: repeat(2, minmax(140px, 1fr));
+    }
+}
+
+@media (max-width: 560px) {
+    .quick-shortcut-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .text-danger {
     color: var(--danger);
 }

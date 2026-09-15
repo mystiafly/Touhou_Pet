@@ -235,6 +235,7 @@ def get_config_api():
     config["auto_replies_mode"] = config.get("auto_replies_mode", "click")
     config["auto_replies_history_rounds"] = config.get("auto_replies_history_rounds", 3)
     config["immersive_package"] = config.get("immersive_package", "companion")
+    config["quick_shortcuts"] = config.get("quick_shortcuts", []) if isinstance(config.get("quick_shortcuts", []), list) else []
     config["success"] = True
     return config
 
@@ -305,6 +306,42 @@ def post_config_api(payload: dict = Body(...)):
                 set_console_visible(not val)
             except Exception:
                 pass
+        if "quick_shortcuts" in payload:
+            raw_shortcuts = payload["quick_shortcuts"]
+            if not isinstance(raw_shortcuts, list) or len(raw_shortcuts) > 20:
+                return JSONResponse({"success": False, "status": "error", "message": "快捷键配置格式无效，最多只能设置 20 条。"}, status_code=400)
+
+            valid_actions = {"read_process", "clean_memory", "analyze_screen", "send_text"}
+            cleaned_shortcuts = []
+            seen_accelerators = set()
+            for index, item in enumerate(raw_shortcuts):
+                if not isinstance(item, dict):
+                    return JSONResponse({"success": False, "status": "error", "message": f"第 {index + 1} 条快捷键配置无效。"}, status_code=400)
+                shortcut_id = str(item.get("id", "")).strip()[:80]
+                name = str(item.get("name", "")).strip()[:40]
+                accelerator = str(item.get("accelerator", "")).strip()[:80]
+                action = str(item.get("action", "")).strip()
+                text = str(item.get("text", ""))[:2000]
+                enabled = item.get("enabled", True) is not False
+                if not accelerator or not name:
+                    return JSONResponse({"success": False, "status": "error", "message": f"第 {index + 1} 条快捷键必须填写名称和组合键。"}, status_code=400)
+                if action not in valid_actions:
+                    return JSONResponse({"success": False, "status": "error", "message": f"第 {index + 1} 条快捷键的动作类型无效。"}, status_code=400)
+                if action == "send_text" and not text.strip():
+                    return JSONResponse({"success": False, "status": "error", "message": f"第 {index + 1} 条自定义快捷键必须填写预制文本。"}, status_code=400)
+                accelerator_key = accelerator.casefold()
+                if accelerator_key in seen_accelerators:
+                    return JSONResponse({"success": False, "status": "error", "message": f"快捷键“{accelerator}”重复绑定。"}, status_code=400)
+                seen_accelerators.add(accelerator_key)
+                cleaned_shortcuts.append({
+                    "id": shortcut_id or f"shortcut-{index + 1}",
+                    "name": name,
+                    "accelerator": accelerator,
+                    "action": action,
+                    "text": text,
+                    "enabled": enabled
+                })
+            config_data["quick_shortcuts"] = cleaned_shortcuts
         if "enable_tts" in payload:
             config_data["enable_tts"] = bool(payload["enable_tts"])
         if "enable_tts_click" in payload:

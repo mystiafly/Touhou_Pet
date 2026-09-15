@@ -1,4 +1,4 @@
-const { app, BrowserWindow, screen, ipcMain, Tray, Menu, clipboard } = require('electron');
+const { app, BrowserWindow, screen, ipcMain, Tray, Menu, clipboard, globalShortcut } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -94,6 +94,67 @@ function getGlobalConfigPath() {
         path.join(getPackagedRuntimeRoot(), 'global_config.json')
     ];
     return candidates.find((candidate) => fs.existsSync(candidate)) || candidates[0];
+}
+
+function readQuickShortcutBindings() {
+    try {
+        const configPath = getGlobalConfigPath();
+        if (!fs.existsSync(configPath)) return [];
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        return Array.isArray(config.quick_shortcuts) ? config.quick_shortcuts : [];
+    } catch (error) {
+        logDebug(`[SHORTCUTS READ WARN] ${error.message}`);
+        return [];
+    }
+}
+
+let registeredQuickShortcuts = new Map();
+
+function unregisterQuickShortcuts() {
+    for (const accelerator of registeredQuickShortcuts.keys()) {
+        try { globalShortcut.unregister(accelerator); } catch (error) {
+            logDebug(`[SHORTCUTS UNREGISTER WARN] ${accelerator}: ${error.message}`);
+        }
+    }
+    registeredQuickShortcuts.clear();
+}
+
+function registerQuickShortcuts(bindings) {
+    unregisterQuickShortcuts();
+    const failed = [];
+    const seen = new Set();
+
+    if (!Array.isArray(bindings)) return { success: true, registered: [], failed };
+
+    for (const binding of bindings) {
+        if (!binding || binding.enabled === false) continue;
+        const accelerator = String(binding.accelerator || '').trim();
+        if (!accelerator || seen.has(accelerator)) continue;
+        seen.add(accelerator);
+
+        try {
+            const registered = globalShortcut.register(accelerator, () => {
+                if (!mainWindow || mainWindow.isDestroyed() || mainWindow.webContents.isLoading()) return;
+                mainWindow.webContents.send('quick-shortcut-triggered', {
+                    id: String(binding.id || ''),
+                    name: String(binding.name || ''),
+                    accelerator,
+                    action: String(binding.action || ''),
+                    text: String(binding.text || '')
+                });
+            });
+            if (registered) {
+                registeredQuickShortcuts.set(accelerator, binding);
+            } else {
+                failed.push({ id: binding.id || '', name: binding.name || accelerator, accelerator, reason: '快捷键已被其他程序占用或无法注册' });
+            }
+        } catch (error) {
+            failed.push({ id: binding.id || '', name: binding.name || accelerator, accelerator, reason: error.message });
+        }
+    }
+
+    logDebug(`[SHORTCUTS] registered=${registeredQuickShortcuts.size}, failed=${failed.length}`);
+    return { success: failed.length === 0, registered: Array.from(registeredQuickShortcuts.keys()), failed };
 }
 
 function getDisplayVersion() {
@@ -343,6 +404,10 @@ ipcMain.handle('get-autostart', (event) => {
     } catch(e) {
         return false;
     }
+});
+
+ipcMain.handle('set-quick-shortcuts', (event, bindings) => {
+    return registerQuickShortcuts(bindings);
 });
 
 
@@ -850,6 +915,7 @@ function updateSplashLoading(count) {
 }
 
 app.whenReady().then(() => {
+    registerQuickShortcuts(readQuickShortcutBindings());
     // 1. 毫秒级展示启动加载界面 (Splash Screen)
     createSplashWindow();
 
@@ -910,6 +976,7 @@ app.whenReady().then(() => {
 });
 
 app.on('will-quit', () => {
+    unregisterQuickShortcuts();
     if (backendProcess) {
         try { backendProcess.kill(); } catch(e) {}
     }

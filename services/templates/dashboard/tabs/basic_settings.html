@@ -82,6 +82,17 @@
                     </div>
                 </div>
 
+                <div class="settings-card quick-shortcuts-card" style="border-left: 4px solid #8be9fd;">
+                    <h3><i class="fas fa-keyboard" style="color: #8be9fd;"></i> 快捷键与快速指令</h3>
+                    <p class="help-text quick-shortcuts-intro">将快速工具绑定到系统级快捷键，或设置一条按下后立即发送预制文本的快捷键。点击组合键输入框后直接按下组合键即可录入；快捷键会在桌宠、设置页或其他窗口前台时生效。</p>
+                    <div id="quick-shortcuts-list" class="quick-shortcuts-list" aria-live="polite"></div>
+                    <div class="quick-shortcuts-actions">
+                        <button id="add-quick-shortcut-btn" type="button" class="action-btn outline"><i class="fas fa-plus"></i> 添加快捷键</button>
+                        <button id="save-quick-shortcuts-btn" type="button" class="action-btn primary"><i class="fas fa-save"></i> 保存快捷键</button>
+                        <span id="quick-shortcuts-status" class="help-text" role="status"></span>
+                    </div>
+                </div>
+
                 <div class="settings-card" style="border-left: 4px solid #50fa7b;">
                     <h3><i class="fas fa-gamepad" style="color: #50fa7b;"></i> 全屏游戏挂起模式</h3>
                     <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">

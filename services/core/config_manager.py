@@ -126,7 +126,7 @@ GLOBAL_KEYS = {
     "weather_provider", "weather_api_key", "weather_city", "weather_lat", "weather_lon",
     "enable_dsh_agent", "dsh_run_mode", "dsh_preset", "dsh_api_provider", "dsh_timeout", "dsh_permission_mode",
     "enable_auto_replies", "auto_replies_prompt", "auto_replies_mode", "auto_replies_history_rounds",
-    "immersive_package", "hide_console"
+    "immersive_package", "hide_console", "quick_shortcuts"
 }
 
 def set_console_visible(visible: bool):

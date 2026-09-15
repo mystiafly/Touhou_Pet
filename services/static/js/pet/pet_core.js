@@ -233,6 +233,7 @@ class DesktopPetCore {
 
         this.initSettings();
         this.initPresets();
+        this.setupQuickShortcutBridge();
         this.setupScaleInteraction();
 
         if (this.thoughtBtn) {
@@ -1454,6 +1455,27 @@ class DesktopPetCore {
             if (this.actionPopup && !this.actionPopup.contains(e.target)) this.actionPopup.classList.add('hidden');
             if (this.presetsPopup && !this.presetsPopup.contains(e.target)) this.presetsPopup.classList.add('hidden');
             if (this.toolsPopup && !this.toolsPopup.contains(e.target)) this.toolsPopup.classList.add('hidden');
+        });
+    }
+
+    setupQuickShortcutBridge() {
+        if (!window.__petIPC || !window.__petIPC.onQuickShortcutTriggered) return;
+        window.__petIPC.onQuickShortcutTriggered((binding) => {
+            if (!binding) return;
+            const toolIds = {
+                read_process: 'tool-read-process',
+                clean_memory: 'tool-clean-memory',
+                analyze_screen: 'tool-vision'
+            };
+            const toolId = toolIds[binding.action];
+            if (toolId) {
+                const tool = document.getElementById(toolId);
+                if (tool) tool.click();
+                return;
+            }
+            if (binding.action === 'send_text' && String(binding.text || '').trim()) {
+                this.sendMessage(String(binding.text));
+            }
         });
     }
 
