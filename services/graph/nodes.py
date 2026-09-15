@@ -61,7 +61,8 @@ def recall_memories_node(state: AgentState) -> Dict[str, Any]:
         "launcher_result": None,
         "search_task": None,
         "search_result": None,
-        "vision_task": None,
+        # 保留快捷工具预置的识图任务，否则 recall 节点会在执行视觉节点前将其清空。
+        "vision_task": state.get("vision_task"),
         "vision_result": None,
         "clean_memory_task": None,
         "clean_memory_result": None,

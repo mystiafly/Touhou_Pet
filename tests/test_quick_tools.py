@@ -14,4 +14,5 @@ def test_visual_vision_quick_tool_is_wired_end_to_end():
     assert "type: 'analyze_screen'" in pet_core
     assert "request_type == 'analyze_screen'" in chat_router
     assert '"vision_task": "analyze_screen" if request_type == \'analyze_screen\'' in chat_router
+    assert '"vision_task": state.get("vision_task")' in graph_nodes
     assert 'vision_task = state.get("vision_task")' in graph_nodes
