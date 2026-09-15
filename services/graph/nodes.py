@@ -445,7 +445,8 @@ def parse_pre_response_node(state: AgentState) -> Dict[str, Any]:
     launcher_match = re.search(r'\[LAUNCH_APP:\s*(.*?)\]', raw_reply, re.IGNORECASE)
     if launcher_match: launcher_task = launcher_match.group(1).strip()
         
-    vision_task = None
+    # 快捷工具可以直接预置识图任务；不能因心流模式跳过前置模型而丢失它。
+    vision_task = state.get("vision_task")
     vision_match = re.search(r'\[ANALYZE_SCREEN\]', raw_reply, re.IGNORECASE)
     if vision_match: vision_task = "analyze_screen"
 

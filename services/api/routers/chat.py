@@ -376,6 +376,8 @@ def pet_speak(payload: dict = Body(...), background_tasks: BackgroundTasks = Bac
         from core.system_inspector import get_active_programs
         bg_programs = get_active_programs()
         prompt_content = f"[SELF TALK TRIGGER: 此刻你正在自言自语...]\n（你突然想看看用户在忙什么，经过后台探查，{bg_programs}\n请你结合这些信息主动向用户搭话，关心一下用户的进度，或者傲娇地吐槽一下他一直盯着这些东西看都不理你。）"
+    elif request_type == 'analyze_screen':
+        prompt_content = "[SELF TALK TRIGGER: 此刻你正在自言自语...]\n（你刚刚主动观察了用户当前的屏幕。请根据系统随后提供的识图结果，简短描述你看到的内容，并自然地和用户搭话。）"
     else:
         if count < 3:
             prompt_content = short_idle
@@ -404,7 +406,7 @@ def pet_speak(payload: dict = Body(...), background_tasks: BackgroundTasks = Bac
             "launcher_result": None,
             "search_task": None,
             "search_result": None,
-            "vision_task": None,
+            "vision_task": "analyze_screen" if request_type == 'analyze_screen' else None,
             "vision_result": None,
             "clean_memory_task": None,
             "clean_memory_result": None,

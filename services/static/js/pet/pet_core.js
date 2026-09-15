@@ -1407,6 +1407,36 @@ class DesktopPetCore {
             });
         }
 
+        if (document.getElementById('tool-vision')) {
+            document.getElementById('tool-vision').addEventListener('click', async (e) => {
+                e.stopPropagation();
+                this.toolsPopup.classList.add('hidden');
+
+                this.showBubble("正在观察屏幕中...", -1);
+                try {
+                    const response = await fetch('/api/pet_speak', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ type: 'analyze_screen' })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        this.showBubble(data.reply);
+                        this.setEmotion(data.emotion);
+                        if (data.favorability !== undefined) {
+                            this.favScore.innerText = data.favorability;
+                        }
+                    } else {
+                        this.showBubble("识图失败了捏...");
+                        setTimeout(() => this.showBubble(""), 3000);
+                    }
+                } catch (err) {
+                    console.error(err);
+                    this.showBubble("调用识图工具出错了...");
+                }
+            });
+        }
+
         if (this.presetsPopup) {
             const items = this.presetsPopup.querySelectorAll('.preset-item');
             items.forEach(item => {
