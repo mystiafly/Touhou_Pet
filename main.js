@@ -3,8 +3,51 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const http = require('http');
+const {
+    clampPetScale,
+    getPetWindowSize,
+} = require('./window_scale');
 
 let autoHiddenByGame = false;
+
+function getPetWorkArea(win) {
+    return screen.getDisplayMatching(win.getBounds()).workArea;
+}
+
+function getCurrentPetScale(win) {
+    return Number.isFinite(win.petScale) ? win.petScale : 1.0;
+}
+
+function getCurrentPetSize(win) {
+    return getPetWindowSize(getCurrentPetScale(win));
+}
+
+function setNormalPetBounds(win, x, y) {
+    const size = getCurrentPetSize(win);
+    win.setBounds({ x, y, width: size.width, height: size.height });
+}
+
+function setPetWindowScale(win, requestedScale, notify = true) {
+    if (!win || win.isDestroyed() || win.isImmersiveMode) return getCurrentPetScale(win);
+    const workArea = getPetWorkArea(win);
+    const scale = clampPetScale(requestedScale, workArea);
+    const nextSize = getPetWindowSize(scale);
+    const bounds = win.getBounds();
+    const centerX = bounds.x + bounds.width / 2;
+    const bottomY = bounds.y + bounds.height;
+    const nextBounds = {
+        x: Math.round(centerX - nextSize.width / 2),
+        y: Math.round(bottomY - nextSize.height),
+        width: nextSize.width,
+        height: nextSize.height,
+    };
+    nextBounds.x = Math.max(workArea.x, Math.min(nextBounds.x, workArea.x + workArea.width - nextBounds.width));
+    nextBounds.y = Math.max(workArea.y, Math.min(nextBounds.y, workArea.y + workArea.height - nextBounds.height));
+    win.petScale = scale;
+    win.setBounds(nextBounds);
+    if (notify) win.webContents.send('pet-window-scale', scale);
+    return scale;
+}
 
 // 关闭不必要的安全警告输出，保持控制台整洁
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
@@ -40,7 +83,7 @@ function logDebug(msg) {
 // launcher resources. Keep the legacy packaged layout as a fallback so existing
 // standalone installations continue to work unchanged.
 function getPackagedRuntimeRoot() {
-    return process.env.RUMIA_APP_ROOT || path.dirname(process.resourcesPath);
+    return process.env.RUMIA_APP_ROOT || (app.isPackaged ? path.dirname(process.resourcesPath) : __dirname);
 }
 
 function getGlobalConfigPath() {
@@ -63,6 +106,16 @@ function getDisplayVersion() {
         }
     }
     return app.getVersion();
+}
+
+function readPetWindowScale() {
+    try {
+        const scalePath = path.join(getPackagedRuntimeRoot(), 'data', 'pet_window.json');
+        const value = JSON.parse(fs.readFileSync(scalePath, 'utf8')).scale;
+        return clampPetScale(value, screen.getPrimaryDisplay().workArea);
+    } catch (_error) {
+        return 1.0;
+    }
 }
 
 // 保持对 window 对象的全局引用
@@ -129,14 +182,29 @@ ipcMain.on('window-drag', (event, { deltaX, deltaY }) => {
             win.webContents.send('pet-restore');
         }
         const bounds = win.getBounds();
-        // 强制锁定宽高，防止 Windows 下多屏幕/DPI 拖动导致的自动放大 Bug
+        const size = getCurrentPetSize(win);
+        // 拖动时保留当前整体缩放尺寸，防止窗口被重置成 400x600。
         win.setBounds({
             x: Math.round(bounds.x + deltaX),
             y: Math.round(bounds.y + deltaY),
-            width: 400,
-            height: 600
+            width: size.width,
+            height: size.height
         });
     }
+});
+
+ipcMain.handle('set-pet-window-scale', (event, requestedScale) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win) return 1.0;
+    const scale = setPetWindowScale(win, requestedScale);
+    try {
+        const scalePath = path.join(getPackagedRuntimeRoot(), 'data', 'pet_window.json');
+        fs.mkdirSync(path.dirname(scalePath), { recursive: true });
+        fs.writeFileSync(scalePath, `${JSON.stringify({ scale }, null, 2)}\n`, 'utf8');
+    } catch (error) {
+        logDebug(`[PET SCALE] 保存整体缩放失败: ${error.message}`);
+    }
+    return scale;
 });
 
 // 监听进入沉浸模式
@@ -164,13 +232,13 @@ ipcMain.on('exit-immersive-mode', (event) => {
         if (win.normalBounds) {
             win.setBounds(win.normalBounds);
         } else {
-            const { width, height } = screen.getPrimaryDisplay().workAreaSize;
-            win.setBounds({
-                x: width - 450,
-                y: height - 650,
-                width: 400,
-                height: 600
-            });
+            const workArea = screen.getPrimaryDisplay().workArea;
+            const size = getCurrentPetSize(win);
+            setNormalPetBounds(
+                win,
+                workArea.x + workArea.width - size.width - 50,
+                workArea.y + workArea.height - size.height - 50,
+            );
         }
         win.setAlwaysOnTop(true, 'screen-saver');
         win.webContents.send('immersive-mode-state', false);
@@ -285,11 +353,12 @@ ipcMain.on('pet-click-restore', (event) => {
     if (!win) return;
     if (win.petIsHidden) {
         win.petIsHidden = false;
+        const size = getCurrentPetSize(win);
         win.setBounds({
             x: win.petRestoreX,
             y: win.petRestoreY,
-            width: 400,
-            height: 600
+            width: size.width,
+            height: size.height
         });
         win.webContents.send('pet-restore');
     }
@@ -302,40 +371,42 @@ ipcMain.on('window-drag-end', (event) => {
     const bounds = win.getBounds();
     const workArea = screen.getDisplayMatching(bounds).workArea;
     const snapDistance = -150; // 距离边缘多少像素触发吸附（负数表示需要把窗口拖出屏幕该像素值，实现“压入身子”再触发）
-    const exposedPixels = 240; // 吸附后露出的宽度（确保莉莉与露米娅等桌宠在侧边探头时身体与表情清晰可见，不致潜入边缘过深）
+    const size = getCurrentPetSize(win);
+    const scale = getCurrentPetScale(win);
+    const exposedPixels = Math.round(240 * scale); // 按整体缩放比例保留相同可见比例
     
     let newX = bounds.x;
     let newY = bounds.y;
     let hidden = false;
     let side = '';
     
-    // 如果拖到了最上方（因为窗口高600且宠物在底部，增加容错，只有大半个窗口都出去了才算拖到顶部）
-    if (bounds.y <= workArea.y - 450) {
+    // 如果拖到了最上方（只有大半个窗口都出去了才算拖到顶部）
+    if (bounds.y <= workArea.y - Math.round(450 * scale)) {
         const center = bounds.x + bounds.width / 2;
         const workAreaCenter = workArea.x + workArea.width / 2;
         if (center < workAreaCenter) {
             // 滑向左边
-            newX = workArea.x - 400 + exposedPixels; // 固定宽度 400
+            newX = workArea.x - size.width + exposedPixels;
             side = 'left';
         } else {
             // 滑向右边
             newX = workArea.x + workArea.width - exposedPixels;
             side = 'right';
         }
-        win.petRestoreX = (side === 'left') ? workArea.x : (workArea.x + workArea.width - 400);
+        win.petRestoreX = (side === 'left') ? workArea.x : (workArea.x + workArea.width - size.width);
         win.petRestoreY = bounds.y; // 保持原有高度
         hidden = true;
     } 
     // 正常的左右吸附
     else if (bounds.x <= workArea.x + snapDistance) {
-        newX = workArea.x - 400 + exposedPixels;
+        newX = workArea.x - size.width + exposedPixels;
         win.petRestoreX = workArea.x;
         win.petRestoreY = bounds.y;
         hidden = true;
         side = 'left';
     } else if (bounds.x + bounds.width >= workArea.x + workArea.width - snapDistance) {
         newX = workArea.x + workArea.width - exposedPixels;
-        win.petRestoreX = workArea.x + workArea.width - 400;
+        win.petRestoreX = workArea.x + workArea.width - size.width;
         win.petRestoreY = bounds.y;
         hidden = true;
         side = 'right';
@@ -348,8 +419,8 @@ ipcMain.on('window-drag-end', (event) => {
         win.setBounds({
             x: newX,
             y: newY,
-            width: 400,
-            height: 600
+            width: size.width,
+            height: size.height
         });
         // 通知前端切换探头素材
         win.webContents.send('pet-hide-edge', side);
@@ -477,13 +548,15 @@ function createWindow(showImmediately = false) {
         return;
     }
 
-    const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+    const workArea = screen.getPrimaryDisplay().workArea;
+    const initialScale = readPetWindowScale();
+    const initialSize = getPetWindowSize(initialScale);
 
     mainWindow = new BrowserWindow({
-        width: 400,
-        height: 600,
-        x: width - 450,
-        y: height - 650,
+        width: initialSize.width,
+        height: initialSize.height,
+        x: workArea.x + workArea.width - initialSize.width - 50,
+        y: workArea.y + workArea.height - initialSize.height - 50,
         frame: false,
         transparent: true,
         alwaysOnTop: true,
@@ -499,12 +572,13 @@ function createWindow(showImmediately = false) {
     });
 
     const win = mainWindow;
+    win.petScale = initialScale;
     createTray(win);
     
     // 强制把窗口层级提升到最高，避免被全屏游戏或应用遮挡
     win.setAlwaysOnTop(true, 'screen-saver');
 
-    const petUrl = 'http://127.0.0.1:5000/pet?t=' + Date.now();
+    const petUrl = `http://127.0.0.1:5000/pet?t=${Date.now()}&window_scale=${initialScale}`;
     let isTransitionDone = false;
 
     function finishStartupTransition() {

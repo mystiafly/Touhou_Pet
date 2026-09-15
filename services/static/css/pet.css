@@ -1,5 +1,8 @@
 
 :root {
+  --pet-window-scale: 1;
+  --pet-base-width: 400px;
+  --pet-base-height: 600px;
   --theme-main: #ff6b8b;
   --theme-hover: #ff3b68;
   --theme-glow-02: rgba(255, 107, 139, 0.2);
@@ -58,9 +61,13 @@ body, html {
 
 /* 2. 主容器：底部对齐 */
 .pet-container {
-    position: relative;
-    width: 100%;
-    height: 100%;
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: var(--pet-base-width);
+    height: var(--pet-base-height);
+    transform: scale(var(--pet-window-scale));
+    transform-origin: bottom center;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1479,6 +1486,7 @@ body.peeking-mode .log-container {
 .pet-container.immersive-mode {
     width: 100vw !important;
     height: 100vh !important;
+    transform: none !important;
     overflow: hidden;
     background: #0d0e15 !important;
 }

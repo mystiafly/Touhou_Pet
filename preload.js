@@ -34,6 +34,10 @@ window.__petIPC = {
     sendWindowDragEnd: () => {
         ipcRenderer.send('window-drag-end');
     },
+    setPetWindowScale: (scale) => ipcRenderer.invoke('set-pet-window-scale', scale),
+    onPetWindowScale: (callback) => {
+        ipcRenderer.on('pet-window-scale', (event, scale) => callback(scale));
+    },
     onGlobalMouseMove: (callback) => {
         ipcRenderer.on('global-mouse-move', (event, point) => callback(point));
     },
