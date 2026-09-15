@@ -13,6 +13,7 @@ const { patchSourceBackendEntryPoint } = require('./source_compat');
 const { getLauncherStorageRoot } = require('./storage_paths');
 
 const REPOSITORY = 'mystiafly/Touhou_Pet';
+const GITEE_REPOSITORY = 'liu2721858715/touhou_pet';
 const BRANCH = 'main';
 const USER_AGENT = 'RumiaDesktopPetLauncher/1.x';
 
@@ -128,6 +129,18 @@ async function requestJson(url) {
   throw new Error(`无法读取远程版本清单：${lastError?.message || '未知网络错误'}`);
 }
 
+async function requestJsonFromCandidates(urls) {
+  let lastError = null;
+  for (const url of urls) {
+    try {
+      return await requestJson(url);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError || new Error('未知网络错误');
+}
+
 function downloadFile(url, destination, onProgress, redirectCount = 0) {
   if (redirectCount > 5) return Promise.reject(new Error('下载地址重定向次数过多。'));
   const client = url.startsWith('https:') ? https : http;
@@ -180,6 +193,21 @@ async function downloadFromMirrors(url, destination, onProgress) {
     }
   }
   throw new Error(`无法下载更新包：${lastError?.message || '未知网络错误'}`);
+}
+
+async function downloadFromCandidates(urls, destination, onProgress, validate = null) {
+  let lastError = null;
+  for (const url of urls) {
+    try {
+      await downloadFromMirrors(url, destination, onProgress);
+      if (validate) await validate(url);
+      return url;
+    } catch (error) {
+      lastError = error;
+      try { fs.rmSync(destination, { force: true }); } catch (_cleanupError) {}
+    }
+  }
+  throw lastError || new Error('无法下载更新包：未知网络错误');
 }
 
 function extractZip(zipPath, destination) {
@@ -307,13 +335,20 @@ function findSourceRoot(extractedDir) {
 async function getLatestUpdate() {
   // Do not depend on the unauthenticated GitHub commits API here. It is
   // frequently rate-limited with HTTP 403 even for public repositories.
-  const packageInfo = await requestJson(`https://raw.githubusercontent.com/${REPOSITORY}/${BRANCH}/package.json`);
+  const packageUrls = [
+    `https://raw.githubusercontent.com/${REPOSITORY}/${BRANCH}/package.json`,
+    `https://gitee.com/${GITEE_REPOSITORY}/raw/${BRANCH}/package.json`,
+  ];
+  const packageInfo = await requestJsonFromCandidates(packageUrls);
   const version = String(packageInfo.version || '');
   if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error('远程源码缺少有效版本号。');
   return {
     version,
     commit: null,
-    sourceUrl: `https://github.com/${REPOSITORY}/archive/refs/heads/${BRANCH}.zip`,
+    sourceUrls: [
+      `https://github.com/${REPOSITORY}/archive/refs/heads/${BRANCH}.zip`,
+      `https://gitee.com/${GITEE_REPOSITORY}/repository/archive/${BRANCH}.zip`,
+    ],
   };
 }
 
@@ -362,13 +397,22 @@ async function installLatestUpdate(sendProgress) {
 
   try {
     sendProgress(5, '正在下载最新版源码…');
-    await downloadFromMirrors(update.sourceUrl, sourceZip, (percent) => sendProgress(5 + percent * 0.65, '正在下载最新版源码…'));
+    let sourceRoot = null;
+    await downloadFromCandidates(
+      update.sourceUrls,
+      sourceZip,
+      (percent) => sendProgress(5 + percent * 0.65, '正在下载最新版源码…'),
+      async () => {
+        await fs.promises.rm(sourceExtracted, { recursive: true, force: true });
+        await extractZip(sourceZip, sourceExtracted);
+        sourceRoot = findSourceRoot(sourceExtracted);
+        const sourcePackage = readJson(path.join(sourceRoot, 'package.json'));
+        if (sourcePackage.version !== update.version) {
+          throw new Error('下载的源码版本与远程版本清单不匹配。');
+        }
+      },
+    );
     sendProgress(75, '正在校验源码并保留本地依赖…');
-    await extractZip(sourceZip, sourceExtracted);
-
-    const sourceRoot = findSourceRoot(sourceExtracted);
-    const sourcePackage = readJson(path.join(sourceRoot, 'package.json'));
-    if (sourcePackage.version !== update.version) throw new Error('下载的源码版本与远程版本清单不匹配。');
     patchSourceBackendEntryPoint(sourceRoot);
 
     const runtimeDir = ensureRuntimeStore();

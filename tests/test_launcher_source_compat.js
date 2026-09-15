@@ -38,6 +38,11 @@ test('launcher update checks do not depend on the rate-limited commits API', () 
   assert.doesNotMatch(launcherMain, /api\.github\.com\/repos\/\$\{REPOSITORY\}\/commits/);
   assert.match(launcherMain, /raw\.githubusercontent\.com\/\$\{REPOSITORY\}\/\$\{BRANCH\}\/package\.json/);
   assert.match(launcherMain, /archive\/refs\/heads\/\$\{BRANCH\}\.zip/);
+  assert.match(launcherMain, /GITEE_REPOSITORY = 'liu2721858715\/touhou_pet'/);
+  assert.match(launcherMain, /gitee\.com\/\$\{GITEE_REPOSITORY\}\/raw\/\$\{BRANCH\}\/package\.json/);
+  assert.match(launcherMain, /gitee\.com\/\$\{GITEE_REPOSITORY\}\/repository\/archive\/\$\{BRANCH\}\.zip/);
+  assert.match(launcherMain, /downloadFromCandidates\(\s*update\.sourceUrls/);
+  assert.match(launcherMain, /if \(validate\) await validate\(url\)/);
   assert.match(launcherMain, /upToDate: state\.version === latest\.version && state\.canLaunch/);
   assert.match(launcherRenderer, /formatRevision/);
 });
