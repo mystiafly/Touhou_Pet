@@ -14,7 +14,6 @@ const { getLauncherStorageRoot } = require('./storage_paths');
 
 const REPOSITORY = 'mystiafly/Touhou_Pet';
 const BRANCH = 'main';
-const COMMITS_URL = `https://api.github.com/repos/${REPOSITORY}/commits/${BRANCH}`;
 const USER_AGENT = 'RumiaDesktopPetLauncher/1.x';
 
 function getLauncherDir() {
@@ -306,18 +305,15 @@ function findSourceRoot(extractedDir) {
 }
 
 async function getLatestUpdate() {
-  const commitInfo = await requestJson(COMMITS_URL);
-  const commit = String(commitInfo.sha || '');
-  if (!/^[0-9a-f]{40}$/i.test(commit)) {
-    throw new Error('远程源码清单缺少有效提交号。');
-  }
-  const packageInfo = await requestJson(`https://raw.githubusercontent.com/${REPOSITORY}/${commit}/package.json`);
+  // Do not depend on the unauthenticated GitHub commits API here. It is
+  // frequently rate-limited with HTTP 403 even for public repositories.
+  const packageInfo = await requestJson(`https://raw.githubusercontent.com/${REPOSITORY}/${BRANCH}/package.json`);
   const version = String(packageInfo.version || '');
   if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error('远程源码缺少有效版本号。');
   return {
     version,
-    commit,
-    sourceUrl: `https://github.com/${REPOSITORY}/archive/${commit}.zip`,
+    commit: null,
+    sourceUrl: `https://github.com/${REPOSITORY}/archive/refs/heads/${BRANCH}.zip`,
   };
 }
 
@@ -445,7 +441,7 @@ function registerHandlers() {
     const latest = await getLatestUpdate();
     await prepareDependencies();
     const state = getLocalState();
-    return { ...latest, upToDate: state.version === latest.version && state.commit === latest.commit && state.canLaunch };
+    return { ...latest, upToDate: state.version === latest.version && state.canLaunch };
   });
   ipcMain.handle('launcher:install-update', async () => {
     if (updating) throw new Error('更新正在进行中。');

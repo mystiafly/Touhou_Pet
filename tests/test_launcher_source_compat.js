@@ -30,3 +30,14 @@ test('repairs the previous launcher injection without stacking another branch', 
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('launcher update checks do not depend on the rate-limited commits API', () => {
+  const launcherMain = fs.readFileSync(path.join(__dirname, '..', 'launcher', 'main.js'), 'utf8');
+  const launcherRenderer = fs.readFileSync(path.join(__dirname, '..', 'launcher', 'renderer.js'), 'utf8');
+
+  assert.doesNotMatch(launcherMain, /api\.github\.com\/repos\/\$\{REPOSITORY\}\/commits/);
+  assert.match(launcherMain, /raw\.githubusercontent\.com\/\$\{REPOSITORY\}\/\$\{BRANCH\}\/package\.json/);
+  assert.match(launcherMain, /archive\/refs\/heads\/\$\{BRANCH\}\.zip/);
+  assert.match(launcherMain, /upToDate: state\.version === latest\.version && state\.canLaunch/);
+  assert.match(launcherRenderer, /formatRevision/);
+});

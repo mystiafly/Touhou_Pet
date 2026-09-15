@@ -28,6 +28,10 @@ function setBusy(value) {
   launchButton.disabled = value || !window.__launcherState?.canLaunch;
 }
 
+function formatRevision(update) {
+  return update?.commit ? update.commit.slice(0, 8) : 'main 分支';
+}
+
 function renderState(state) {
   window.__launcherState = state;
   currentVersion.textContent = state.version ? `v${state.version}` : '尚未安装';
@@ -60,10 +64,10 @@ checkButton.addEventListener('click', async () => {
   try {
     latestUpdate = await window.launcher.checkForUpdate();
     if (latestUpdate.upToDate) {
-      setStatus('当前已经是最新版本。', `v${latestUpdate.version} · ${latestUpdate.commit.slice(0, 8)}`, 'ready');
+      setStatus('当前已经是最新版本。', `v${latestUpdate.version} · ${formatRevision(latestUpdate)}`, 'ready');
       latestUpdate = null;
     } else {
-      setStatus('发现可用更新。', `v${latestUpdate.version} · ${latestUpdate.commit.slice(0, 8)}`, 'ready');
+      setStatus('发现可用更新。', `v${latestUpdate.version} · ${formatRevision(latestUpdate)}`, 'ready');
     }
   } catch (error) {
     latestUpdate = null;
