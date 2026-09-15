@@ -20,6 +20,7 @@ def test_visual_vision_quick_tool_is_wired_end_to_end():
 
 def test_global_quick_shortcuts_are_wired_end_to_end():
     settings_template = (ROOT / "services" / "templates" / "dashboard" / "tabs" / "basic_settings.html").read_text(encoding="utf-8")
+    shortcut_template = (ROOT / "services" / "templates" / "dashboard" / "tabs" / "shortcut_settings.html").read_text(encoding="utf-8")
     dashboard_template = (ROOT / "services" / "templates" / "dashboard.html").read_text(encoding="utf-8")
     shortcut_module = (ROOT / "services" / "static" / "js" / "dashboard" / "modules" / "shortcut_settings.js").read_text(encoding="utf-8")
     pet_core = (ROOT / "services" / "static" / "js" / "pet" / "pet_core.js").read_text(encoding="utf-8")
@@ -28,7 +29,10 @@ def test_global_quick_shortcuts_are_wired_end_to_end():
     main_process = (ROOT / "main.js").read_text(encoding="utf-8")
     preload = (ROOT / "preload.js").read_text(encoding="utf-8")
 
-    assert 'id="quick-shortcuts-list"' in settings_template
+    assert 'id="quick-shortcuts-list"' not in settings_template
+    assert 'id="shortcut-settings-view"' in shortcut_template
+    assert 'id="quick-shortcuts-list"' in shortcut_template
+    assert 'data-target="shortcut-settings-view"' in dashboard_template
     assert 'shortcut_settings.js' in dashboard_template
     assert "quick_shortcuts" in shortcut_module
     assert "setQuickShortcuts" in shortcut_module
