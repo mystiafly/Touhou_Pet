@@ -272,6 +272,11 @@ ipcMain.handle('set-pet-window-scale', (event, requestedScale) => {
 ipcMain.on('enter-immersive-mode', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) {
+        // 沉浸模式与全屏游戏自动隐身互斥：进入时确保窗口重新显示，
+        // 避免此前由游戏模式设置的隐藏状态继续影响沉浸模式。
+        autoHiddenByGame = false;
+        win.show();
+        win.focus();
         if (!win.isImmersiveMode) {
             win.normalBounds = win.getBounds();
         }
@@ -290,6 +295,7 @@ ipcMain.on('exit-immersive-mode', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) {
         win.isImmersiveMode = false;
+        autoHiddenByGame = false;
         if (win.normalBounds) {
             win.setBounds(win.normalBounds);
         } else {
@@ -302,6 +308,8 @@ ipcMain.on('exit-immersive-mode', (event) => {
             );
         }
         win.setAlwaysOnTop(true, 'screen-saver');
+        win.show();
+        win.focus();
         win.webContents.send('immersive-mode-state', false);
     }
 });
@@ -712,11 +720,14 @@ function createWindow(showImmediately = false) {
 
     const gameCheckTimer = setInterval(() => {
         if (!win || win.isDestroyed()) return;
+        // 沉浸模式必须保持可见；检测到的全屏窗口可能只是其背后的游戏。
+        if (win.isImmersiveMode) return;
 
         http.get('http://127.0.0.1:5000/api/system/check_fullscreen_game', (res) => {
             let data = '';
             res.on('data', chunk => data += chunk);
             res.on('end', () => {
+                if (win.isImmersiveMode) return;
                 try {
                     const json = JSON.parse(data);
                     if (json.status === 'success') {
