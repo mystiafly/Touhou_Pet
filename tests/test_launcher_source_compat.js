@@ -46,3 +46,12 @@ test('launcher update checks do not depend on the rate-limited commits API', () 
   assert.match(launcherMain, /upToDate: state\.version === latest\.version && state\.canLaunch/);
   assert.match(launcherRenderer, /formatRevision/);
 });
+
+test('keeps the desktop pet entrypoint separate from the launcher entrypoint', () => {
+  const desktopMain = fs.readFileSync(path.join(__dirname, '..', 'main.js'), 'utf8');
+
+  assert.match(desktopMain, /createWindow/);
+  assert.match(desktopMain, /startBackendService/);
+  assert.doesNotMatch(desktopMain, /require\('\.\/runtime_files'\)/);
+  assert.doesNotMatch(desktopMain, /require\('\.\/runtime_cache'\)/);
+});
