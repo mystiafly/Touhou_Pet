@@ -135,6 +135,7 @@ class DesktopPetCore {
             this.enableTts = data.enable_tts !== false;
             this.enableTtsClick = data.enable_tts_click !== false;
             this.enableTtsAuto = data.enable_tts_auto === true || data.tts_speak_mode === "auto";
+            this.ttsSpeakMode = data.tts_speak_mode || (this.enableTtsAuto ? "auto" : "click");
             this.enableAutoReplies = data.enable_auto_replies === true;
             this.autoRepliesMode = data.auto_replies_mode || 'click';
             this.autoRepliesHistoryRounds = data.auto_replies_history_rounds || 3;

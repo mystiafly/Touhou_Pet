@@ -1482,6 +1482,40 @@ window.deleteCustomEngine = async function(id) {
         });
     }
 
+    const ttsClickToggle = document.getElementById('tts-mode-click-toggle');
+    if (ttsClickToggle) {
+        ttsClickToggle.addEventListener('change', async () => {
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ enable_tts_click: ttsClickToggle.checked })
+                });
+            } catch (e) {
+                console.error('保存点按朗读设置失败:', e);
+            }
+        });
+    }
+
+    const ttsAutoToggle = document.getElementById('tts-mode-auto-toggle');
+    if (ttsAutoToggle) {
+        ttsAutoToggle.addEventListener('change', async () => {
+            const enabled = ttsAutoToggle.checked;
+            try {
+                await fetch('/api/settings/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        enable_tts_auto: enabled,
+                        tts_speak_mode: enabled ? 'auto' : 'click'
+                    })
+                });
+            } catch (e) {
+                console.error('保存主动朗读设置失败:', e);
+            }
+        });
+    }
+
     const autoMinimizeGameToggle = document.getElementById('auto-minimize-fullscreen-game-toggle');
     if (autoMinimizeGameToggle) {
         autoMinimizeGameToggle.addEventListener('change', async () => {
